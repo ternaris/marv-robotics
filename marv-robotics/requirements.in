@@ -1,0 +1,5 @@
+-r ../marv-server/requirements.txt
+#marv-server
+matplotlib
+pillow
+utm

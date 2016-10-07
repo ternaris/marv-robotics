@@ -1,0 +1,189 @@
+# MARV is the framework used to implement MARV Robotics.  The robotics
+# profile is provided by MARV Robotics (via setuptools entry_point)
+# and contains MARV Robotics specific customizations.
+[marv]
+profile = robotics
+
+
+# A collection provides a listing view of filesets with summary and
+# filter fields as well as a detail view on individual filesets.  Base
+# for this are nodes that extract, filter, and transform data from bag
+# files.
+[collection]
+
+# Location of your bag files
+scanroot = SCANROOT
+
+# The fileset type is responsible for creation of filesets consisting
+# of one or more files.  The default bagset type groups split bags as
+# created by rosbag record and transparently serves messages from
+# these.  The bagset type understands that bags can be split and
+# contain messages.  While bags may be split, there is no need for it
+# implied by MARV Robotics.
+fileset_type = marv_robotics.bagset
+
+# While the marv_robotics.bagset type understands that bags contain
+# messages, nodes are responsible to understand what these messages
+# contain.  Nodes produce output aggregated per fileset, by default
+# under the name of the node, which is then available as input for
+# other nodes, and the listing and detail views.  More information on
+# the nodes is available in the docstrings of the respective modules.
+nodes =
+    # package_or_module:node_function
+    marv.nodes:md5
+    marv_robotics.bagset:messages
+    marv_robotics.bagset:bagset_name
+    marv_robotics.nodes.bagmeta:bagmeta
+    marv_robotics.nodes.camera_frames:camera_frames
+    marv_robotics.nodes.diag_count:diag_count
+    marv_robotics.nodes.fulltext:fulltext
+    marv_robotics.nodes.gnss:gnss_plots
+    marv_robotics.nodes.osm:navsatfix
+    marv_robotics.nodes.osm:geo_json_trajectory
+
+# All columns of the listing view are a result of this configuration.
+# Each line here defines one column in the listing table.
+#
+# The format used here is used throughout the configuration: each line
+# defines an item, fields are separated with ``|`` not unlike in a CSV
+# file.
+#
+# ``title`` is displayed in the listing table head; ``inputs`` are
+# made available to the ``extractor`` to extract a value to be send to
+# the frontend and be rendered there by the ``formatter``.  Optional
+# inputs are denoted by a trailing ``?``.  If required inputs are
+# missing an empty string is rendered.
+#
+# The listing is stored in an SQL database together with the filter
+# fields (see below).  Changing listing_columns or filters will result
+# in the listings for all filesets to be rerendered.  That's quicker
+# than it sounds -- no bags have to be opened for that.
+listing_columns =
+    # title     | formatter | inputs               | extractor
+    Name        | route     | fileset bagset_name? | detail_route(fileset, bagset_name)
+    Size        | filesize  | fileset              | sum(x.size for x in fileset.files)
+    Status      | icon[]    | status               | status
+    Tags        | pill[]    | tags                 | tags
+    Start time  | datetime  | bagmeta              | bagmeta.start_time
+    End time    | datetime  | bagmeta              | bagmeta.end_time
+    Duration    | timedelta | bagmeta              | bagmeta.duration
+
+# Listing column to sort by initially, by default ascending
+listing_sort = Start time | descending
+
+# For listing summary items the only available input is ``rows``,
+# which are all rows (matching user-supplied criteria).  On each row
+# the values of the listing table row are available on the ``values``
+# key.  This is uncomfortable and subject to change soon.
+listing_summary =
+    # title  | formatter | input | extractor
+    filesets | int       | rows  | len(rows)
+    size     | filesize  | rows  | sum(x['values'][1] or 0 for x in rows)
+    duration | timedelta | rows  | sum(x['values'][-1] or 0 for x in rows)
+
+# The web frontend as well as the json:api provided for integration
+# with other tools use these filters.  They are stored alongside the
+# listing rows configured above.  Changing listing_columns or filters
+# will result in the listing database to be regenerated, which is less
+# dramatic than it sounds.
+filters =
+    # API name | display title | operators         | value type | inputs      | extractor
+    name       | Name          | substring         | string     | bagset_name | bagset_name
+    uuid       | UUID          | startswith        | string     | fileset     | fileset.uuid
+    tags       | Tags          | any all           | subset     | tags        | tags
+    comments   | Comments      | substring         | string     | comments    | '\n'.join(c.comment for c in comments)
+    fulltext   | Fulltext      | words             | words      | fulltext    | fulltext.words
+    files      | Files         | substring_any     | string[]   | fileset     | x.relpath for x in fileset.files
+    size       | Size          | lt le eq ne ge gt | filesize   | fileset     | sum(x.size for x in fileset.files)
+    start_time | Start time    | lt le eq ne ge gt | datetime   | bagmeta     | bagmeta.start_time
+    end_time   | End time      | lt le eq ne ge gt | datetime   | bagmeta     | bagmeta.end_time
+    duration   | Duration      | lt le eq ne ge gt | timedelta  | bagmeta     | bagmeta.duration
+    topics     | Topics        | any all           | subset     | bagmeta     | bagmeta.topics.iterkeys()
+    msg_types  | Message types | any all           | subset     | bagmeta     | bagmeta.msg_types.iterkeys()
+
+# Every fileset has a UUID. In order to see something more catchy on
+# the detail view, you configure a detail_title.  The default
+# bagset_name is the rosbag "prefix", i.e. the part of the filename
+# without timestamp and split bag index.
+detail_title = bagset_name
+
+# The detail summary is displayed on the first tab of the detail view.
+detail_summary =
+    # title    | formatter | input   | extractor
+    size       | filesize  | fileset | sum(x.size for x in fileset.files)
+    files      | string    | fileset | len(fileset.files)
+    start time | datetime  | bagmeta | bagmeta.start_time
+    end time   | datetime  | bagmeta | bagmeta.end_time
+    duration   | timedelta | bagmeta | bagmeta.duration
+
+# Apart from the summary section, additional detail sections can be configured
+details =
+    bag_meta
+    topics
+    diagnostics
+    camera_frames
+    gnss_plots
+    trajectory
+
+
+# A detail section has a title and is filled by a widget which usually
+# requires some configuration.  Documentation is in progress.
+[detail bag_meta]
+title = Bag metadata
+widget = table
+columns =
+    Name          | rellink   | fileset | download_link(x, fileset) for x in fileset.files
+    Status        | icon[]    | fileset | file_status(x) for x in fileset.files
+    MD5           | string    | md5     | md5
+    Size          | filesize  | fileset | x.size for x in fileset.files
+    Start time    | datetime  | bagmeta | x.start_time for x in bagmeta.bags
+    End time      | datetime  | bagmeta | x.end_time for x in bagmeta.bags
+    Duration      | timedelta | bagmeta | x.duration for x in bagmeta.bags
+    Message count | string    | bagmeta | x.message_count for x in bagmeta.bags
+
+
+[detail diagnostics]
+title = Diagnostics
+widget = table
+sort = Name
+inputs = diag_count
+columns =
+    Name  | string | diag_count | diag_count.iterkeys()
+    OK    | int    | diag_count | x.get('OK', 0) for x in diag_count.itervalues()
+    WARN  | int    | diag_count | x.get('WARN', 0) for x in diag_count.itervalues()
+    ERROR | int    | diag_count | x.get('ERROR', 0) for x in diag_count.itervalues()
+    STALE | int    | diag_count | x.get('STALE', 0) for x in diag_count.itervalues()
+
+
+[detail topics]
+title = Topics
+widget = table
+sort = Topic
+inputs = bagmeta
+columns =
+    Topic         | string | bagmeta | bagmeta.topics.iterkeys()
+    Message type  | string | bagmeta | x.msg_type for x in bagmeta.topics.itervalues()
+    Message count | int    | bagmeta | x.message_count for x in bagmeta.topics.itervalues()
+
+
+[detail camera_frames]
+title = Image streams
+widget = gallery[]
+inputs = camera_frames
+caption = camera_frames.iterkeys()
+images = camera_frames.itervalues()
+
+
+[detail gnss_plots]
+title = Position and orientation
+widget = image[]
+inputs = gnss_plots
+caption = gnss_plots.iterkeys()
+image = gnss_plots.itervalues()
+
+
+[detail trajectory]
+title = Trajectory
+widget = osm
+inputs = geo_json_trajectory
+geo_json = geo_json_trajectory
