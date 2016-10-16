@@ -28,7 +28,7 @@ with open(os.path.join(here, 'README.rst')) as f:
 #     CHANGES = f.read()
 
 REQUIRES = [
-    'marv-server',
+    'marv',
     'matplotlib',
     'pillow',
     'utm',
