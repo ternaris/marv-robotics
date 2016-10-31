@@ -21,11 +21,11 @@ from __future__ import absolute_import, division, print_function
 import os
 from setuptools import setup
 
-here = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(here, 'README.rst')) as f:
+HERE = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(HERE, 'README.rst')) as f:
     README = f.read()
-# with open(os.path.join(here, 'CHANGES.txt')) as f:
-#     CHANGES = f.read()
+with open(os.path.join(HERE, 'CHANGES.rst')) as f:
+    CHANGES = f.read()
 
 REQUIRES = [
     'marv',
@@ -35,7 +35,7 @@ REQUIRES = [
     ]
 
 setup(name='marv-robotics',
-      version='2.0.0b2.dev',
+      version='2.0.0b2',
       description='Data management platform for robot logs',
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
