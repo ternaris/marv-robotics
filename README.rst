@@ -11,43 +11,73 @@ So far MARV Robotics supports the Robot Operating System (ROS) Bag format used b
 Robot Operating System (ROS)
 ----------------------------
 
-MARV Robotics is meant to support all alive ROS releases. Currently these are indigo, jade, and kinetic -- if you encounter difficulties, please report back! The following instructions are written for ROS kinetic, adjust to your needs.
+MARV Robotics is meant to support all alive ROS releases. Currently these are indigo, jade, and kinetic -- if you encounter difficulties, please report back!
+
+MARV Robotics is implemented in Python using the MARV framework. Most of its Python dependencies will be installed by pip automatically. Apart from these on an Ubuntu system the following are needed (as root). In case you succeeded installing ROS on anything else than Ubuntu, we trust you'll also succeed to transfer the following lines to the system you are installing to.
 
 
-Requirements
-------------
+Indigo
+^^^^^^
 
-MARV Robotics is implemented in Python using the MARV framework. Most of its Python dependencies will be installed by pip automatically. Apart from these on an Ubuntu system the following are needed (as root)::
+For indigo on Ubuntu 14.04 (trusty), first make sure you have the latest Python 2.7 version installed::
+
+  # apt-get install software-properties-common
+  # add-apt-repository ppa:fkrull/deadsnakes-python2.7
+  # apt-get update
+  # apt-get upgrade
+
+Then install the requirements::
 
   # apt-get install curl \
-                    ros-kinetic-ros-base \
+                    ros-indigo-ros-base \
+                    ros-indigo-cv-bridge \
+                    libffi-dev \
                     python2.7-dev \
-                    python-cv-bridge \
                     python-opencv \
                     python-virtualenv \
                     libjpeg-dev \
                     libz-dev
+  ...
   # rosdep init
 
-In case you succeeded installing ROS on anything else than Ubuntu, you'll also succeed to transfer above lines to the system you are installing to.
+Make sure ROS is set-up correctly for your user (not as root)::
+
+  $ rosdep update
+  $ source /opt/ros/indigo/setup.bash
+
+Kinetic
+^^^^^^^
+::
+
+  # apt-get install curl \
+                    ros-kinetic-ros-base \
+                    python-cv-bridge \
+                    python2.7-dev \
+                    python-opencv \
+                    python-virtualenv \
+                    libjpeg-dev \
+                    libz-dev
+  ...
+  # rosdep init
 
 Make sure ROS is set-up correctly for your user (not as root)::
 
   $ rosdep update
   $ source /opt/ros/kinetic/setup.bash
 
-
+  
 Installation
 ------------
 
 While strictly speaking a virtual Python environment is not necessary and MARV Robotics installs fine without, we highly recommend it.  For instructions to install into your user's home instead, see below.
 
 Option 1: Virtual Python Environment (recommended)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Create a virtual environment and activate it::
 
   $ virtualenv -p python2.7 --system-site-packages venv
   $ source venv/bin/activate
+  $ pip install -U pip setuptools
 
 Test whether ROS is available from within the activated virtualenv. The ``(venv)`` prefix indicates the activated virtualenv::
 
@@ -57,17 +87,24 @@ Test whether ROS is available from within the activated virtualenv. The ``(venv)
 For more information on virtualenvs see `Virtual Environments
 <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_.
 
-Install MARV Robotcs::
+Install MARV Robotics::
 
-  (venv) $ pip install marv-robotics
+  (venv) $ pip install -U marv-robotics
   ...
+
+To install the latest pre-release, add ``--pre``::
+
+  (venv) $ pip install -U --pre marv-robotics
+  ...
+
+Verify MARV Robotics is successfully installed::
+
   (venv) $ marv --help
 
 ``marv --help`` should print marv's usage instructions. In the following sections we assume that your virtualenv is activated. If ``marv`` cannot be found, chances are that the virtualenv containing MARV Robotics is not activated.
 
-
 Option 2: User install
-~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^
 
 An alternative to install into an isolated virtualenv (see above) is to install into the user's ``$HOME/.local`` folder where MARV Robotics might interfere with other installed programs. First check whether ``$HOME/.local/bin`` is in ``$PATH`` and ``$HOME/.local/lib/python2.7/site-packages`` in ``$PYTHONPATH``::
 
