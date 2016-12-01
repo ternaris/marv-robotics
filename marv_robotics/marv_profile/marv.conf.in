@@ -187,3 +187,8 @@ title = Trajectory
 widget = osm
 inputs = geo_json_trajectory
 geo_json = geo_json_trajectory
+
+[node marv_robotics.nodes.camera_frames:camera_frames]
+image_width = 320
+max_frames = 50
+encoding = rgb8
