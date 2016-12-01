@@ -34,7 +34,8 @@ imgmsg_to_cv2 = cv_bridge.CvBridge().imgmsg_to_cv2
 @marv.input('messages', filter=['*:sensor_msgs/Image'])
 @marv.param('image_width', help="Scale to image_width, keeping aspect ratio")
 @marv.param('max_frames', help="Maximum number of frames to extract")
-def camera_frames(bagmeta, messages, image_width=320, max_frames=50):
+@marv.param('encoding', help='Image encoding (default rgb8)')
+def camera_frames(bagmeta, messages, image_width=320, max_frames=50,encoding="rgb8"):
     """Extract camera frames from sensors_msgs/Image streams
 
     Images are scaled to image_width while keeping the aspect ratio
@@ -59,7 +60,7 @@ def camera_frames(bagmeta, messages, image_width=320, max_frames=50):
             continue
 
         try:
-            img = imgmsg_to_cv2(msg, "rgb8")
+            img = imgmsg_to_cv2(msg, encoding)
         except:
             import traceback
             marv.log_error('On topic %r: %s', topic, traceback.format_exc())
