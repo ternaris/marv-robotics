@@ -1,0 +1,35 @@
+[
+  {
+    "title": "Images", 
+    "widgets": [
+      {
+        "_which": "gallery", 
+        "gallery": {
+          "images": [
+            {
+              "src": "images-1/camB:jai:nir:image_raw-0.jpg"
+            }, 
+            {
+              "src": "images-1/camB:jai:nir:image_raw-1.jpg"
+            }
+          ]
+        }, 
+        "title": "/camB/jai/nir/image_raw"
+      }, 
+      {
+        "_which": "gallery", 
+        "gallery": {
+          "images": [
+            {
+              "src": "images-1/camB:jai:rgb:image_raw-0.jpg"
+            }, 
+            {
+              "src": "images-1/camB:jai:rgb:image_raw-1.jpg"
+            }
+          ]
+        }, 
+        "title": "/camB/jai/rgb/image_raw"
+      }
+    ]
+  }
+]

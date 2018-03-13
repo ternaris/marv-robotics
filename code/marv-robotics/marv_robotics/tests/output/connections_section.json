@@ -1,0 +1,125 @@
+[
+  {
+    "title": "Connections", 
+    "widgets": [
+      {
+        "_which": "table", 
+        "table": {
+          "actions": [], 
+          "columns": [
+            {
+              "align": "left", 
+              "formatter": "string", 
+              "list": false, 
+              "title": "Topic"
+            }, 
+            {
+              "align": "left", 
+              "formatter": "string", 
+              "list": false, 
+              "title": "Type"
+            }, 
+            {
+              "align": "left", 
+              "formatter": "string", 
+              "list": false, 
+              "title": "MD5"
+            }, 
+            {
+              "align": "left", 
+              "formatter": "string", 
+              "list": false, 
+              "title": "Latching"
+            }, 
+            {
+              "align": "right", 
+              "formatter": "string", 
+              "list": false, 
+              "title": "Message count"
+            }
+          ], 
+          "rows": [
+            {
+              "cells": [
+                {
+                  "_which": "text", 
+                  "text": "/chatter"
+                }, 
+                {
+                  "_which": "text", 
+                  "text": "std_msgs/String"
+                }, 
+                {
+                  "_which": "text", 
+                  "text": "992ce8a1687cec8c8bd883ec73ca41d1"
+                }, 
+                {
+                  "_which": "bool", 
+                  "bool": false
+                }, 
+                {
+                  "_which": "uint64", 
+                  "uint64": 29
+                }
+              ], 
+              "id": 0
+            }, 
+            {
+              "cells": [
+                {
+                  "_which": "text", 
+                  "text": "/rosout"
+                }, 
+                {
+                  "_which": "text", 
+                  "text": "rosgraph_msgs/Log"
+                }, 
+                {
+                  "_which": "text", 
+                  "text": "acffd30cd6b6de30f120938c17c593fb"
+                }, 
+                {
+                  "_which": "bool", 
+                  "bool": true
+                }, 
+                {
+                  "_which": "uint64", 
+                  "uint64": 34
+                }
+              ], 
+              "id": 1
+            }, 
+            {
+              "cells": [
+                {
+                  "_which": "text", 
+                  "text": "/rosout_agg"
+                }, 
+                {
+                  "_which": "text", 
+                  "text": "rosgraph_msgs/Log"
+                }, 
+                {
+                  "_which": "text", 
+                  "text": "acffd30cd6b6de30f120938c17c593fb"
+                }, 
+                {
+                  "_which": "bool", 
+                  "bool": false
+                }, 
+                {
+                  "_which": "uint64", 
+                  "uint64": 31
+                }
+              ], 
+              "id": 2
+            }
+          ], 
+          "sortcolumn": 0, 
+          "sortorder": "ascending"
+        }, 
+        "title": ""
+      }
+    ]
+  }
+]

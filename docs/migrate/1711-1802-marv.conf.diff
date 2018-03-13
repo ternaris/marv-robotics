@@ -1,0 +1,33 @@
+diff --git a/docs/config/marv.conf b/docs/config/marv.conf
+index 0e44b19..31dfe57 100644
+--- a/docs/config/marv.conf
++++ b/docs/config/marv.conf
+@@ -24,7 +24,7 @@ nodes =
+     marv_robotics.detail:summary_keyval
+     marv_robotics.detail:bagmeta_table
+     # detail sections
+-    marv_robotics.detail:topics_section
++    marv_robotics.detail:connections_section
+     marv_robotics.detail:images_section
+     marv_robotics.detail:video_section
+     marv_robotics.detail:gnss_section
+@@ -43,8 +43,8 @@ filters =
+     start_time | Start time    | lt le eq ne ge gt | datetime   | (get "bagmeta.start_time")
+     end_time   | End time      | lt le eq ne ge gt | datetime   | (get "bagmeta.end_time")
+     duration   | Duration      | lt le eq ne ge gt | timedelta  | (get "bagmeta.duration")
+-    topics     | Topics        | any all           | subset     | (get "bagmeta.topics[:].name")
+-    msg_types  | Message types | any all           | subset     | (get "bagmeta.msg_types[:].name")
++    topics     | Topics        | any all           | subset     | (get "bagmeta.topics")
++    msg_types  | Message types | any all           | subset     | (get "bagmeta.msg_types")
+ 
+ listing_columns =
+     # id       | Heading    | formatter | value function
+@@ -69,7 +69,7 @@ detail_summary_widgets =
+     bagmeta_table
+ 
+ detail_sections =
+-    topics_section
++    connections_section
+     images_section
+     video_section
+     gnss_section

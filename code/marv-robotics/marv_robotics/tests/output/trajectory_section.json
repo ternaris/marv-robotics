@@ -1,0 +1,12 @@
+[
+  {
+    "title": "Trajectory", 
+    "widgets": [
+      {
+        "_which": "mapPartial", 
+        "mapPartial": "marv-partial:trajectory_section-1/data.json", 
+        "title": ""
+      }
+    ]
+  }
+]

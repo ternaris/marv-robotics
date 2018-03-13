@@ -1,0 +1,15 @@
+-r ../cli/requirements.txt
+Flask-Cors
+Flask-SQLAlchemy
+PyJWT
+bcrypt
+configparser
+requests-oauthlib
+
+# for pycapnp
+cython
+Jinja2>=2.7.3
+
+# docs
+Sphinx
+sphinx_paramlinks

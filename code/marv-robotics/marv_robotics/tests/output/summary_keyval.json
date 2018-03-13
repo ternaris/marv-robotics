@@ -1,0 +1,55 @@
+[
+  {
+    "_which": "keyval", 
+    "keyval": {
+      "items": [
+        {
+          "cell": {
+            "_which": "uint64", 
+            "uint64": 40658
+          }, 
+          "formatter": "filesize", 
+          "list": false, 
+          "title": "size"
+        }, 
+        {
+          "cell": {
+            "_which": "uint64", 
+            "uint64": 2
+          }, 
+          "formatter": "string", 
+          "list": false, 
+          "title": "files"
+        }, 
+        {
+          "cell": {
+            "_which": "timestamp", 
+            "timestamp": 1423137547254540288
+          }, 
+          "formatter": "datetime", 
+          "list": false, 
+          "title": "start time"
+        }, 
+        {
+          "cell": {
+            "_which": "timestamp", 
+            "timestamp": 1423137550224936960
+          }, 
+          "formatter": "datetime", 
+          "list": false, 
+          "title": "end time"
+        }, 
+        {
+          "cell": {
+            "_which": "timedelta", 
+            "timedelta": 2970396672
+          }, 
+          "formatter": "timedelta", 
+          "list": false, 
+          "title": "duration"
+        }
+      ]
+    }, 
+    "title": ""
+  }
+]

@@ -1,0 +1,4 @@
+-r ../marv/requirements-develop.txt
+matplotlib
+mpld3
+pillow

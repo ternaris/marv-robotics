@@ -1,0 +1,32 @@
+.. Copyright 2016 - 2018  Ternaris.
+.. SPDX-License-Identifier: CC-BY-SA-4.0
+
+marv
+====
+
+
+Creating datasets
+-----------------
+
+.. automodule:: marv.scanner
+    :members:
+    :show-inheritance:
+
+
+Declaring nodes
+---------------
+
+.. automodule:: marv
+    :members: node, input
+    :undoc-members:
+    :show-inheritance:
+
+
+Interacting with marv
+---------------------
+
+.. automodule:: marv
+    :members:
+    :exclude-members: input, node
+    :undoc-members:
+    :show-inheritance:

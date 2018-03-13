@@ -1,0 +1,21 @@
+[
+  {
+    "title": "Videos", 
+    "widgets": [
+      {
+        "_which": "video", 
+        "title": "/camB/jai/nir/image_raw", 
+        "video": {
+          "src": "ffmpeg-1/camB_jai_nir_image_raw.webm"
+        }
+      }, 
+      {
+        "_which": "video", 
+        "title": "/camB/jai/rgb/image_raw", 
+        "video": {
+          "src": "ffmpeg-1/camB_jai_rgb_image_raw.webm"
+        }
+      }
+    ]
+  }
+]

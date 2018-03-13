@@ -1,0 +1,11 @@
+*.egg-info
+*.py[co]
+*.sw[op]
+.*.sw[op]
+*~
+.*~
+/.coverage
+/cover
+/dist
+/marv_robotics/tests/data
+/venv

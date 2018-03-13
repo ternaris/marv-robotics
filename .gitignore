@@ -1,0 +1,7 @@
+*.py[co]
+*.sw[op]
+.*.sw[op]
+.coverage
+*.egg-info/
+.pytest_cache/
+__pycache__/

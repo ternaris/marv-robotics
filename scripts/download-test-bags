@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+#
+# Copyright 2016 - 2018  Ternaris.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+cd "$(dirname "$(realpath "$0")")"/..
+
+curl https://ternaris.com/marv-robotics/marv_robotics.tests.data.tar.gz |tar xz -C code/marv-robotics/marv_robotics/tests

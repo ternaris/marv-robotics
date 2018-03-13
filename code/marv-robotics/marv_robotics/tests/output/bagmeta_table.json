@@ -1,0 +1,117 @@
+[
+  {
+    "_which": "table", 
+    "table": {
+      "actions": [], 
+      "columns": [
+        {
+          "align": "left", 
+          "formatter": "rellink", 
+          "list": false, 
+          "title": "Name"
+        }, 
+        {
+          "align": "left", 
+          "formatter": "filesize", 
+          "list": false, 
+          "title": "Size"
+        }, 
+        {
+          "align": "left", 
+          "formatter": "datetime", 
+          "list": false, 
+          "title": "Start time"
+        }, 
+        {
+          "align": "left", 
+          "formatter": "datetime", 
+          "list": false, 
+          "title": "End time"
+        }, 
+        {
+          "align": "left", 
+          "formatter": "timedelta", 
+          "list": false, 
+          "title": "Duration"
+        }, 
+        {
+          "align": "right", 
+          "formatter": "string", 
+          "list": false, 
+          "title": "Message count"
+        }
+      ], 
+      "rows": [
+        {
+          "cells": [
+            {
+              "_which": "link", 
+              "link": {
+                "href": "0", 
+                "target": "_blank", 
+                "title": "test_0.bag"
+              }
+            }, 
+            {
+              "_which": "uint64", 
+              "uint64": 17468
+            }, 
+            {
+              "_which": "timestamp", 
+              "timestamp": 1423137547254540288
+            }, 
+            {
+              "_which": "timestamp", 
+              "timestamp": 1423137548218460672
+            }, 
+            {
+              "_which": "timedelta", 
+              "timedelta": 963920384
+            }, 
+            {
+              "_which": "uint64", 
+              "uint64": 29
+            }
+          ], 
+          "id": 0
+        }, 
+        {
+          "cells": [
+            {
+              "_which": "link", 
+              "link": {
+                "href": "1", 
+                "target": "_blank", 
+                "title": "test_1.bag"
+              }
+            }, 
+            {
+              "_which": "uint64", 
+              "uint64": 23190
+            }, 
+            {
+              "_which": "timestamp", 
+              "timestamp": 1423137548265413120
+            }, 
+            {
+              "_which": "timestamp", 
+              "timestamp": 1423137550224936960
+            }, 
+            {
+              "_which": "timedelta", 
+              "timedelta": 1959523840
+            }, 
+            {
+              "_which": "uint64", 
+              "uint64": 65
+            }
+          ], 
+          "id": 1
+        }
+      ], 
+      "sortcolumn": 0, 
+      "sortorder": "ascending"
+    }, 
+    "title": ""
+  }
+]

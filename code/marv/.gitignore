@@ -1,0 +1,10 @@
+*.egg-info
+*.py[co]
+*~
+.*~
+/.coverage
+
+/cover
+/dist
+/docs/_build/
+/venv
