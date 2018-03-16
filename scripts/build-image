@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+#
+# Copyright 2016 - 2018  Ternaris.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+set -e
+
+cd "$(dirname "$(realpath "$0")")"/..
+
+BASENAME="$(basename "$PWD")"
+
+if [[ -n "$MARV_IMAGE" ]]; then
+    IMAGE="$MARV_IMAGE"
+elif [[ -e .image-name ]]; then
+    IMAGE="$(<.image-name)"
+else
+    IMAGE="$BASENAME"
+fi
+
+docker build -t "$IMAGE" "$@" .

@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+#
+# Copyright 2016 - 2018  Ternaris.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+set -e
+
+cd "$(dirname "$(realpath "$0")")"/..
+
+BASENAME="$(basename "$PWD")"
+NAME="${MARV_CONTAINER_NAME:-$BASENAME}"
+CONTAINER_USER="${CONTAINER_USER:-marv}"
+
+declare -a cmd
+
+if [[ -n "$1" ]]; then
+    cmd=( bash -lic "$*" )
+else
+    cmd=( bash -li )
+fi
+
+docker exec \
+       -e COLORFGBG \
+       -e TERM \
+       -ti \
+       -u "$CONTAINER_USER" \
+       "$NAME" \
+       "${cmd[@]}"

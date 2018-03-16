@@ -32,7 +32,7 @@ if ! python -c 'import rosbag; print("")'; then
 fi
 
 virtualenv -p python2.7 --system-site-packages "$TARGET"
-"$TARGET"/bin/pip install -U pip==10.0.1 setuptools==39.0.1 wheel==0.31.0
+"$TARGET"/bin/pip install -U pip==9.0.3 setuptools==39.0.1 wheel==0.31.0
 "$TARGET"/bin/pip install -Ur "$REQUIREMENTS"
 "$TARGET"/bin/pip install -U --force-reinstall --no-binary :all: uwsgi
 "$TARGET"/bin/pip install --no-deps -e code/marv

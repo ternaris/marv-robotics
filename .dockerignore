@@ -1,0 +1,8 @@
+*
+!.docker
+!CHANGES.rst
+!code
+!docs
+!requirements.txt
+!scripts
+!tutorial
