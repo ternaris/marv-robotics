@@ -1,5 +1,4 @@
 -r ../marv/requirements.txt
 matplotlib
-mpld3
 pillow
 utm

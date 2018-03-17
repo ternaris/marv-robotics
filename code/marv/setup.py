@@ -12,6 +12,18 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(HERE, 'README.rst')) as f:
     README = f.read()
 
+
+with open(os.path.join(HERE, 'requirements.in')) as f:
+    INSTALL_REQUIRES = [x for x in
+                        [x.strip() for x in f.readlines()]
+                        if x
+                        if not x.startswith('-r')
+                        if not x[0] == '#']
+INSTALL_REQUIRES.extend([
+    'marv-cli==3.0.0'
+])
+
+
 setup(name='marv',
       version='3.2.0',
       description='MARV framework',
@@ -48,25 +60,11 @@ setup(name='marv',
       ],
       include_package_data=True,
       zip_safe=False,
-      test_suite='nose.collector',
-      tests_require=['nose'],
-      install_requires=['Flask-Cors',
-                        'Flask-SQLAlchemy',
-                        'PyJWT',
-                        'bcrypt',
-                        'configparser',
-                        'cython',
-                        'Jinja2>=2.7.3',
-                        'requests-oauthlib',
-                        'pycapnp-for-marv',
-                        'marv-cli'],
-      extras_require={
-          'testing': ['coverage',
-                      'ipdb',
-                      'ipdbplugin',
-                      'ipython',
-                      'mock',
-                      'nose',
-                      'testfixtures'],
-      },
+      tests_require=[
+          'pytest',
+          'mock',
+          'testfixtures',
+      ],
+      setup_requires=['pytest-runner'],
+      install_requires=INSTALL_REQUIRES,
       entry_points={'marv_cli': ['marv = marv.cli']})

@@ -1,7 +1,15 @@
--r ./requirements-testing.txt
+# building documentation
+Sphinx
+sphinx_paramlinks
+
+# development
 flake8
 ipdb
-ipdbplugin
-ipython
+ipython==5.6.0  # pip-tools finds 6.3.1 but fails to install it
+mock
+pytest
+pytest-cov
 termcolor
+testfixtures
+uwsgi
 watchdog

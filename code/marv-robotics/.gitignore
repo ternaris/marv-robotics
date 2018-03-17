@@ -4,9 +4,14 @@
 .*.sw[op]
 *~
 .*~
+__pycache__/
 /.coverage
+/.eggs
+/.venv*/
 /cover
+/build
 /dist
+/docs/_build/
 /marv_robotics/docs/
 /marv_robotics/tests/data/
 /venv

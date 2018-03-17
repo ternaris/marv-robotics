@@ -12,6 +12,18 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(HERE, 'README.rst')) as f:
     README = f.read()
 
+
+with open(os.path.join(HERE, 'requirements.in')) as f:
+    INSTALL_REQUIRES = [x for x in
+                        [x.strip() for x in f.readlines()]
+                        if x
+                        if not x.startswith('-r')
+                        if not x[0] == '#']
+INSTALL_REQUIRES.extend([
+    'marv==3.2.0',
+])
+
+
 setup(name='marv-robotics',
       version='3.2.0',
       description='Data management platform for robot logs',
@@ -34,10 +46,10 @@ setup(name='marv-robotics',
       packages=['marv_robotics', 'marv_robotics.tests'],
       include_package_data=True,
       zip_safe=False,
-      test_suite='nose.collector',
-      tests_require=['nose'],
-      install_requires=['marv',
-                        'marv-ludwig',
-                        'matplotlib',
-                        'pillow',
-                        'utm'])
+      tests_require=[
+          'pytest',
+          'mock',
+          'testfixtures',
+      ],
+      setup_requires=['pytest-runner'],
+      install_requires=INSTALL_REQUIRES)

@@ -1,5 +1,0 @@
--r ./requirements.txt
-coverage
-mock
-nose
-testfixtures

@@ -2,9 +2,12 @@
 *.py[co]
 *~
 .*~
+__pycache__/
 /.coverage
-
+/.eggs
+/.venv*/
 /cover
+/build
 /dist
 /docs/_build/
 /venv

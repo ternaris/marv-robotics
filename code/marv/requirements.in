@@ -1,15 +1,11 @@
--r ../cli/requirements.txt
+-r ../marv-cli/requirements.txt
 Flask-Cors
 Flask-SQLAlchemy
 PyJWT
 bcrypt
 configparser
-requests-oauthlib
+pycapnp-for-marv==0.5.9
 
 # for pycapnp
 cython
 Jinja2>=2.7.3
-
-# docs
-Sphinx
-sphinx_paramlinks
