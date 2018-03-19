@@ -539,8 +539,16 @@ def marvcli_user_add(ctx, username, password):
 def marvcli_user_list():
     """List existing users"""
     app = create_app()
-    for name in db.session.query(User.name).order_by(User.name):
-        click.echo(name[0])
+    query = db.session.query(User).options(db.joinedload(User.groups))\
+                                  .order_by(User.name)
+    users = [(user.name, ', '.join(sorted(x.name for x in user.groups)))
+             for user in query]
+    users = [('User', 'Groups')] + users
+    uwidth, gwidth = reduce(lambda (xm, ym), (x, y): (max(x, xm), max(y, ym)),
+                            ((len(x), len(y)) for x, y in users))
+    fmt = '{:%ds} | {}' % uwidth
+    for x, y in users:
+        click.echo(fmt.format(x, y))
 
 
 @marvcli_user.command('pw')
@@ -565,5 +573,74 @@ def marvcli_user_rm(ctx, username):
     app = create_app()
     try:
         app.um.user_rm(username)
+    except ValueError as e:
+        ctx.fail(e.args[0])
+
+
+@marvcli.group('group')
+def marvcli_group():
+    """Manage user groups"""
+
+
+@marvcli_group.command('add')
+@click.argument('groupname')
+@click.pass_context
+def marvcli_group_add(ctx, groupname):
+    """Add a group"""
+    if not re.match(r'[0-9a-zA-Z\-_\.@+]+$', groupname):
+        click.echo('Invalid groupname: {}'.format(groupname), err=True)
+        click.echo('Must only contain ASCII letters, numbers, dash, underscore and dot',
+                   err=True)
+        sys.exit(1)
+    app = create_app()
+    try:
+        app.um.group_add(groupname)
+    except ValueError as e:
+        ctx.fail(e.args[0])
+
+
+@marvcli_group.command('list')
+def marvcli_group_list():
+    """List existing groups"""
+    app = create_app()
+    query = db.session.query(Group.name).order_by(Group.name)
+    for name in [x[0] for x in query]:
+        click.echo(name)
+
+
+@marvcli_group.command('adduser')
+@click.argument('username')
+@click.argument('groupname')
+@click.pass_context
+def marvcli_group_adduser(ctx, groupname, username):
+    """Add an user to a group"""
+    app = create_app()
+    try:
+        app.um.group_adduser(groupname, username)
+    except ValueError as e:
+        ctx.fail(e.args[0])
+
+
+@marvcli_group.command('rmuser')
+@click.argument('username')
+@click.argument('groupname')
+@click.pass_context
+def marvcli_group_rmuser(ctx, groupname, username):
+    """Remove an user from a group"""
+    app = create_app()
+    try:
+        app.um.group_rmuser(groupname, username)
+    except ValueError as e:
+        ctx.fail(e.args[0])
+
+
+@marvcli_group.command('rm')
+@click.argument('groupname')
+@click.pass_context
+def marvcli_group_rm(ctx, groupname):
+    """Remove a group"""
+    app = create_app()
+    try:
+        app.um.group_rm(groupname)
     except ValueError as e:
         ctx.fail(e.args[0])
