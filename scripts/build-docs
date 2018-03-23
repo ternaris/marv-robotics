@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+#
+# Copyright 2016 - 2018  Ternaris.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+set -e
+
+cd "$(dirname "$(realpath "$0")")"/../docs
+
+sphinx-build --help &>/dev/null || (
+    echo "ERROR: sphinx-build is not available, have you activate the virtualenv?"
+    exit 1
+)
+marv --help &>/dev/null || (
+    echo "ERROR: marv is not available, have you activate the virtualenv?"
+    exit 1
+)
+
+make clean
+make html
+rm -rf ../code/marv-robotics/marv_robotics/docs
+cp -a ./_build/html ../code/marv-robotics/marv_robotics/docs
+

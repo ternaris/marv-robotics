@@ -7,5 +7,6 @@
 /.coverage
 /cover
 /dist
-/marv_robotics/tests/data
+/marv_robotics/docs/
+/marv_robotics/tests/data/
 /venv

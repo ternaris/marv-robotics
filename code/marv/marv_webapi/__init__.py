@@ -27,3 +27,7 @@ webapi.add_endpoint(delete)
 webapi.add_endpoint(collection)
 webapi.add_endpoint(meta)
 webapi.add_endpoint(tag)
+
+
+from marv_robotics.webapi import robotics
+webapi.add_endpoint(robotics)
