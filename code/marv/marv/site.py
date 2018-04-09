@@ -75,6 +75,7 @@ def make_config(siteconf):
             'dburi': 'sqlite:///' + os.path.join(sitedir, 'db', 'db.sqlite'),
             'frontenddir': os.path.join(sitedir, 'frontend'),
             'oauth': '',
+            'reverse_proxy': None,
             'sessionkey_file': os.path.join(sitedir, 'sessionkey'),
             'staticdir': os.path.join(resource_filename('marv_ludwig', 'static')),
             'storedir': os.path.join(sitedir, 'store'),

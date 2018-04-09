@@ -80,6 +80,21 @@ Default:
    Keep the ``db/db.sqlite`` suffix for ease of migrations.
 
 
+.. _cfg_marv_reverse_proxy:
+
+reverse_proxy
+^^^^^^^^^^^^^
+When marv is running behind a reverse proxy, serving of files can be offloaded for greatly improved performance. Currently, the only supported reverse proxy is ``nginx``.
+
+Example:
+
+.. code-block:: ini
+
+   reverse_proxy = nginx
+
+See :ref:`deploy_nginx` for the corresponding nginx configuration.
+
+
 .. _cfg_marv_store:
 
 store
