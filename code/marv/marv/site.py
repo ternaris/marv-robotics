@@ -75,7 +75,7 @@ def make_config(siteconf):
             'frontenddir': os.path.join(sitedir, 'frontend'),
             'oauth': '',
             'sessionkey_file': os.path.join(sitedir, 'sessionkey'),
-            'staticdir': os.path.join(resource_filename('marv.app', 'static')),
+            'staticdir': os.path.join(resource_filename('marv_ludwig', 'static')),
             'storedir': os.path.join(sitedir, 'store'),
             'window_title': '',
         },
