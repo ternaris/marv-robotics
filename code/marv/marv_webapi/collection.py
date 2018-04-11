@@ -73,9 +73,15 @@ def parse_filters(specs, filters):
     return filters
 
 
-@marv_api_endpoint('/meta', acl=['__unauthenticated__', '__authenticated__'])
+@marv_api_endpoint('/meta', force_acl=['__unauthenticated__', '__authenticated__'])
 def meta():
     groups = request.user_groups
+
+    collection_acl = current_app.acl['collection']
+    if '__unauthenticated__' not in collection_acl and not request.username:
+        return flask.jsonify({
+            'realms': current_app.site.config.marv.oauth.keys(),
+        })
 
     # TODO: avoid clashes, forbid routes with same name / different name generation
     acl = sorted([
@@ -98,8 +104,8 @@ def meta():
     })
 
 
-@marv_api_endpoint('/collection', defaults={'collection_id': None}, acl=['__unauthenticated__', '__authenticated__'])
-@marv_api_endpoint('/collection/<collection_id>', acl=['__unauthenticated__', '__authenticated__'])
+@marv_api_endpoint('/collection', defaults={'collection_id': None})
+@marv_api_endpoint('/collection/<collection_id>')
 def collection(collection_id):
     collections = current_app.site.collections
     collection_id = collections.default_id if collection_id is None else collection_id

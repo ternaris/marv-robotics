@@ -149,7 +149,7 @@ def generate_token(username):
     }, current_app.config['SECRET_KEY'])
 
 
-@auth.endpoint('/auth', methods=['POST'], acl=['__unauthenticated__'])
+@auth.endpoint('/auth', methods=['POST'], force_acl=['__unauthenticated__'])
 def auth_post():
     req = flask.request.get_json()
     if not req:

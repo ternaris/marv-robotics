@@ -71,6 +71,7 @@ def make_config(siteconf):
     sitedir = os.path.dirname(siteconf)
     defaults = {
         'marv': {
+            'acl': 'marv_webapi.acls:authenticated',
             'dburi': 'sqlite:///' + os.path.join(sitedir, 'db', 'db.sqlite'),
             'frontenddir': os.path.join(sitedir, 'frontend'),
             'oauth': '',
@@ -102,6 +103,7 @@ def make_config(siteconf):
     }
     schema = {
         'marv': {
+            'acl': 'find_obj',
             'collections': 'space_separated_list',
             'oauth': 'lines',
             'staticdir': 'path',

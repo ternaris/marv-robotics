@@ -21,7 +21,7 @@ def dataset(app):
     pass
 
 
-@dataset.endpoint('/file-list', methods=['POST'], acl=['__unauthenticated__', '__authenticated__'])
+@dataset.endpoint('/file-list', methods=['POST'])
 def file_list():
     ids = flask.request.get_json()
     if not ids:
@@ -46,8 +46,8 @@ def file_list():
     return flask.jsonify({'paths': paths, 'urls': urls})
 
 
-@dataset.endpoint('/dataset/<setid>', defaults={'path': None}, acl=['__unauthenticated__', '__authenticated__'])
-@dataset.endpoint('/dataset/<setid>/<path:path>', acl=['__unauthenticated__', '__authenticated__'])
+@dataset.endpoint('/dataset/<setid>', defaults={'path': None})
+@dataset.endpoint('/dataset/<setid>/<path:path>')
 def detail(setid, path):
     try:
         setid = str(SetID(setid))

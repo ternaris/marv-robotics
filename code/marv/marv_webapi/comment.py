@@ -13,7 +13,7 @@ from marv.model import Comment, Dataset, db
 from .tooling import api_endpoint as marv_api_endpoint
 
 
-@marv_api_endpoint('/comment', methods=['POST'], acl=['__authenticated__'])
+@marv_api_endpoint('/comment', methods=['POST'])
 def comment():
     username = flask.request.username
     changes = flask.request.get_json()

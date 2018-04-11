@@ -13,7 +13,7 @@ from marv.model import Tag, dataset_tag, db
 from .tooling import api_endpoint as marv_api_endpoint
 
 
-@marv_api_endpoint('/tag', methods=['POST'], acl=['__authenticated__'])
+@marv_api_endpoint('/tag', methods=['POST'])
 def tag():
     # TODO: very similar to cli marv_tag
     changes = flask.request.get_json()

@@ -4,6 +4,12 @@
 marv
 ====
 
+Access control lists
+--------------------
+
+.. automodule:: marv_webapi.acls
+   :members:
+
 
 Creating datasets
 -----------------

@@ -25,6 +25,25 @@ marv section
    [marv]
 
 
+.. _cfg_marv_acl:
+
+acl
+^^^
+Use access control lists to control who can perform which actions. See :mod:`marv_webapi.acls` for more information.
+
+Example:
+
+.. code-block:: ini
+
+   acl = marv_webapi.acls:public
+
+Default:
+
+.. code-block:: ini
+
+   acl = marv_webapi.acls:authenticated
+
+
 .. _cfg_marv_collections:
 
 collections

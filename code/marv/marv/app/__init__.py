@@ -14,6 +14,7 @@ from uuid import uuid4
 import flask
 import sqlalchemy.exc
 
+from marv_webapi import webapi
 from ..model import db
 
 
@@ -50,16 +51,16 @@ def create_app(site, config_obj=None, app_root=None, checkdb=False, **kw):
     app.config.update(kw)
 
     db.init_app(app)
-    if checkdb:
-        with app.app_context():
+    with app.app_context():
+        if checkdb:
             try:
                 db.session.execute('SELECT name FROM sqlite_master WHERE type="table";')
             except sqlalchemy.exc.OperationalError:
                 log.critical('Database not initialized, run marv init and restart')
                 sys.exit(1)
 
-    from marv_webapi import webapi
-    webapi.init_app(app, url_prefix='/marv/api')
+        app.acl = site.config.marv.acl()
+        webapi.init_app(app, url_prefix='/marv/api')
 
     staticdir = site.config.marv.staticdir
     with open(os.path.join(staticdir, 'index.html')) as f:

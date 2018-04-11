@@ -15,13 +15,14 @@ class APIEndpoint(object):
     MIN_API_VERSION = 3
     LATEST_API_VERSION = 3
     HEADER_PREFIX = "application/vnd.marv.v"
+    acl = None
 
-    def __init__(self, name, func, url_rule, defaults=None, methods=None, version=None, acl=None):
+    def __init__(self, name, func, url_rule, defaults=None, methods=None, version=None, force_acl=None):
         self.name = name
         version = self.MIN_API_VERSION if version is None else version
         self.funcs = [(version, func)]
         self.url_rules = [(url_rule, {'defaults': defaults, 'methods': methods})]
-        self.acl = set(acl) if acl else set()
+        self._force_acl = set(force_acl) if force_acl else None
 
     def __call__(self, *args, **kw):
         authorization = request.headers.get('Authorization')
@@ -46,6 +47,7 @@ class APIEndpoint(object):
         return func(*args, **kw)
 
     def init_app(self, app, url_prefix=None, name_prefix=None):
+        self.acl = self._force_acl if self._force_acl else set(current_app.acl[self.name])
         name = '.'.join(filter(None, [name_prefix, self.name]))
         for url_rule, options in self.url_rules:
             url_rule = ''.join(filter(None, [url_prefix, url_rule]))
@@ -79,7 +81,7 @@ class APIGroup(object):
 
 
 def api_endpoint(url_rule, defaults=None, methods=None, version=None,
-                 cls=APIEndpoint, registry=None, acl=None):
+                 cls=APIEndpoint, registry=None, force_acl=None):
     def decorator(func):
         if isinstance(func, cls):
             func.url_rules.append((url_rule, {'defaults': defaults, 'methods': methods}))
@@ -87,7 +89,7 @@ def api_endpoint(url_rule, defaults=None, methods=None, version=None,
 
         name = func.func_name
         rv = cls(name, func, url_rule=url_rule, defaults=defaults,
-                 methods=methods, version=version, acl=acl)
+                 methods=methods, version=version, force_acl=force_acl)
         rv.__doc__ = func.__doc__
 
         if registry is not None:
