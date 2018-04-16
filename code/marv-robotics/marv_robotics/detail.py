@@ -187,7 +187,7 @@ def trajectory_section(geojson, title, minzoom, maxzoom, tile_server_protocol):
         {'title': 'Background',
          'tiles': [
              {'title': 'Roadmap',
-              'url': '%s//[abc].osm.ternaris.com/mapbox-studio-osm-bright/{z}/{x}/{y}.png' % tile_server_protocol,
+              'url': '%s//[abc].osm.ternaris.com/styles/osm-bright/rendered/{z}/{x}/{y}.png' % tile_server_protocol,
               'attribution': '© <a href="http://openstreetmap.org/copyright">OpenStreetMap</a> contributors',
               'retina': 3,
               'zoom': {'min': 0, 'max': 20}},
