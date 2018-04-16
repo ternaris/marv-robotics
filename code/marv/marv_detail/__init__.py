@@ -39,6 +39,7 @@ def detail_to_dict(obj):
             fixup_widget(widget)
         except:
             from pprint import pformat
+            print(pformat(dct), file=sys.stderr)
             print(pformat(widget), file=sys.stderr)
             raise
     return dct
