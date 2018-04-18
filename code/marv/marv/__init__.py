@@ -27,7 +27,6 @@ from marv_node.tools import select
 from marv_webapi.tooling import api_endpoint
 from marv_webapi.tooling import api_group
 
-
 __all__ = [
     'create_group',
     'create_stream',
@@ -43,6 +42,7 @@ __all__ = [
     'set_header',
 ]
 
+__version__ = '3.3.4'
 
 MODULE = sys.modules[__name__]
 for ep in iter_entry_points(group='marv_deco'):

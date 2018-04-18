@@ -1,6 +1,29 @@
+.. _changelog:
+
 Changelog
 ---------
 
+.. _v18_04:
+
+18.04 (2018-04-30)
+^^^^^^^^^^^^^^^^^^
+
+- Add command-line group management to Community Edition
+- Speed-up streaming of videos and point clouds with nginx reverse-proxy
+- Improve point cloud player controls
+- Support configuration of access control lists
+- Improve trajectory player controls
+- Make styling of widgets more consistent
+- Switch from nosetest to pytest and cleanup requirements
+- Drop Bootstrap v3 in favour of slim custom Bootstrap v4 derivate
+- Add docker setup with example site
+- Merge and cleanup individual repositories
+- [BUGFIX] Fix trajectory generation
+- [BUGFIX] Fix erroneous self-referentiality of some capnp structs
+- [BUGFIX] Fix color format for opencv bridge
+
+
+.. _v18_03:
 
 18.03 (2018-03-10)
 ^^^^^^^^^^^^^^^^^^
@@ -22,6 +45,8 @@ Changelog
 - [BUGFIX] Fix documentation in several places
 
 
+.. _v18_02:
+
 18.02 (2018-02-05)
 ^^^^^^^^^^^^^^^^^^
 
@@ -40,6 +65,8 @@ Changelog
 - [BUGFIX] Log error messages instead of several exceptions
 
 
+.. _v17_11:
+
 17.11 (2017-11-17)
 ^^^^^^^^^^^^^^^^^^
 
@@ -52,6 +79,8 @@ Changelog
 - Support import of datasets from community edition 16.10
 - Corelease 17.11 community and enterprise edition
 
+
+.. _v17_08:
 
 17.08 (2017-08-23)
 ^^^^^^^^^^^^^^^^^^
@@ -66,6 +95,8 @@ Changelog
 - Support system-wide configuration
 - Improve cli error handling and logging
 
+
+.. _v17_06:
 
 17.06 (2017-06-16)
 ^^^^^^^^^^^^^^^^^^
@@ -83,6 +114,8 @@ Changelog
 - [BUGFIX] Speed up loading of large collections
 - [BUGFIX] Render multi colored trajectories with markers correctly
 
+
+.. _v17_05:
 
 17.05 (2017-05-05)
 ^^^^^^^^^^^^^^^^^^
@@ -107,6 +140,8 @@ Changelog
 - [BUGFIX] Improve mass tagging performance
 - [BUGFIX] Improve listing update performance
 
+
+.. _v16_10:
 
 16.10 (2016-10-07)
 ^^^^^^^^^^^^^^^^^^

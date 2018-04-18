@@ -4,7 +4,7 @@ Flask-SQLAlchemy
 PyJWT
 bcrypt
 configparser
-pycapnp-for-marv==0.5.9
+pycapnp-for-marv==0.5.9-2
 
 # for pycapnp
 cython

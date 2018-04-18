@@ -8,6 +8,15 @@ Migration
 
 Before doing any migration you might want to check the :ref:`config` and :ref:`deploy` sections.
 
+18.03 -> 18.04
+--------------
+
+The list of system dependencies is updated and the installation has significantly changed. We recommend that you re-read the :ref:`install` instructions. The database has not changed and existing sites continue to function without migration.
+
+MARV now supports offloading the delivery of files to nginx. In case you are not using nginx as reverse-proxy, yet, you should seriously consider to change that now. See :ref:`cfg_marv_reverse_proxy` and :ref:`deploy_nginx`.
+
+MARV now supports access control lists (ACLs). The default ACL requires authentication to read anything, tag and comment; and only members of the group admin may discard datasets. For users of the Enterprise Edition this corresponds to the same behaviour as before. The :func:`marv_webapi.acls.public` closely resembles the previous Community Edition default, apart from requiring admin group membership to discard datasets. See :ref:`cfg_marv_acl` to change the effective ACL.
+
 
 18.02 -> 18.03
 --------------

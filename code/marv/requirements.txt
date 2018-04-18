@@ -15,7 +15,7 @@ flask==0.12.2             # via flask-cors, flask-sqlalchemy
 itsdangerous==0.24        # via flask
 jinja2==2.10
 markupsafe==1.0           # via jinja2
-pycapnp-for-marv==0.5.9
+pycapnp-for-marv==0.5.9-2
 pycparser==2.18           # via cffi
 pyjwt==1.6.1
 six==1.11.0               # via bcrypt, flask-cors

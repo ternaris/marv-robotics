@@ -3,6 +3,10 @@
 .*.sw[op]
 .coverage
 *.egg-info/
+.eggs/
 .pytest_cache/
 __pycache__/
 /.image-name
+/dist/
+/code/*/build/
+/code/*/dist/

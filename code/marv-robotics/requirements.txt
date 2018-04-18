@@ -20,7 +20,7 @@ markupsafe==1.0
 matplotlib==2.2.2
 numpy==1.14.2             # via matplotlib
 pillow==5.1.0
-pycapnp-for-marv==0.5.9
+pycapnp-for-marv==0.5.9-2
 pycparser==2.18
 pyjwt==1.6.1
 pyparsing==2.2.0          # via matplotlib
