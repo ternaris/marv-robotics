@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+#
+# Copyright 2016 - 2018  Ternaris.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+set -e
+
+usage() {
+    echo
+    echo "Usage: setup-venv REQUIREMENTS TARGET"
+    echo
+    echo "Example: ./scripts/setup-venv requirements.txt venv"
+    echo
+    exit 1
+}
+
+REQUIREMENTS="$1"; shift || usage
+TARGET="$1"; shift || usage
+[[ ! -d "$TARGET" ]] || (echo "The target directory must not exist, yet."; exit 1)
+
+REQUIREMENTS="$(realpath "$REQUIREMENTS")"
+TARGET="$(realpath "$TARGET")"
+
+cd "$(dirname "$(realpath "$0")")"/..
+
+if ! python -c 'import rosbag; print("")'; then
+    echo
+    echo "ERROR: The rosbag python library is not available."
+    echo "Make sure ROS is properly instealled."
+    echo
+    exit 1
+fi
+
+virtualenv -p python2.7 --system-site-packages "$TARGET"
+"$TARGET"/bin/pip install -U pip==10.0.1 setuptools==39.0.1 wheel==0.31.0
+"$TARGET"/bin/pip install -Ur "$REQUIREMENTS"
+"$TARGET"/bin/pip install -U --force-reinstall --no-binary :all: uwsgi
+"$TARGET"/bin/pip install --no-deps -e code/marv
+"$TARGET"/bin/pip install --no-deps -e code/marv-cli
+"$TARGET"/bin/pip install --no-deps -e code/marv-ludwig
+"$TARGET"/bin/pip install --no-deps -e code/marv-robotics
