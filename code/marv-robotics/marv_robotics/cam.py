@@ -115,7 +115,7 @@ def images(stream, image_width, max_frames, convert_32FC1_scale, convert_32FC1_o
         elif rosmsg.encoding == '8UC1':
             img = imgmsg_to_cv2(rosmsg)
         else:
-            img = imgmsg_to_cv2(rosmsg, "rgb8")
+            img = imgmsg_to_cv2(rosmsg, "bgr8")
         height = int(round(image_width * img.shape[0] / img.shape[1]))
         scaled_img = cv2.resize(img, (image_width, height),
                                 interpolation=cv2.INTER_AREA)
