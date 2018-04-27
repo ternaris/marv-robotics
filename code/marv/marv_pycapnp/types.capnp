@@ -43,11 +43,11 @@ struct UInt64Value {
 }
 
 struct Float32Value {
-  value @0 :Float32Value;
+  value @0 :Float32;
 }
 
 struct Float64Value {
-  value @0 :Float64Value;
+  value @0 :Float64;
 }
 
 struct TextValue {
@@ -104,12 +104,12 @@ struct TimedUInt64 {
 }
 
 struct TimedFloat32 {
-  value @0 :Float32Value;
+  value @0 :Float32;
   timestamp @1 :Timestamp;
 }
 
 struct TimedFloat64 {
-  value @0 :Float64Value;
+  value @0 :Float64;
   timestamp @1 :Timestamp;
 }
 
