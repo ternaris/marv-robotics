@@ -26,6 +26,7 @@ Welcome to MARV Robotics!
    deploy
    maintenance
    migrate/index
+   CHANGES
 
 
 API Reference
