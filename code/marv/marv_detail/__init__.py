@@ -116,7 +116,7 @@ def fixup_geojson(geojson):
             if timestamps:
                 properties['timestamps'] = [int(x / 1e6) for x in timestamps]
             else:
-                del properties['timecode']
+                del properties['timestamps']
             if not properties['rotations']:
                 del properties['rotations']
     elif geotype == 'geometryCollection':
