@@ -6,33 +6,87 @@
 Deployment
 ==========
 
-HTTP is sufficient for serving marv on localhost. To access marv via network, it requires https. You can either use a self-signed certificate or letsencrypt, if your webserver is accessible from the internet.
+MARV's frontend uses a service worker, which requires HTTPS for non-localhost access. You can either use a self-signed certificate or Let's Encrypt. The latter only if your webserver is accessible from the internet.
+
+For production usage we strongly recommend to use nginx as a reverse-proxy. The increased setup overhead is justified by greatly increased performance for serving large files.
 
 Two deployments are described here in short:
 
 - uWSGI with a self-signed certificate, and
-- nginx as a proper front-facing webserver with a letsencrypt certificate
+- nginx as a proper front-facing webserver with a Let's Encrypt certificate
 
 
 uWSGI with self-signed certificate
 ----------------------------------
 
-For uwsgi to support https, it needs to be compile from source with ssl headers being available:
+For uWSGI to support HTTPS, it needs to be compiled from source with SSL headers being available. This should have already been handled by the installation and is listed here only for completeness sake:
 
 .. code-block:: console
 
-   sudo apt-get install libssl-dev
-   pip install -U --force-reinstall --no-binary :all: uwsgi
+   $ sudo apt-get install libssl-dev
+   (venv) $ pip install -U --force-reinstall --no-binary :all: uwsgi
 
-Given that follow the steps outline in the uwsgi documentation:
+Given that follow the steps outlined in the uWSGI documentation:
 
 http://uwsgi-docs.readthedocs.io/en/latest/HTTPS.html#https-support-from-1-3
 
 
+Generate self-signed certificate
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+  openssl genrsa -out sites/example/uwsgi-ssl.key 2048
+  openssl req -new -key sites/example/uwsgi-ssl.key -out sites/example/uwsgi-ssl.csr
+
+::
+
+  openssl x509 -req -days 3650 \
+      -in sites/example/uwsgi-ssl.csr \
+      -signkey sites/example/uwsgi-ssl.key \
+      -out sites/example/uwsgi-ssl.crt
+
+Adjust uwsgi.conf
+^^^^^^^^^^^^^^^^^
+
+Enable https in ``sites/example/uwsgi.conf``.
+
+::
+
+   [uwsgi]
+   http = :8000
+   https = :8443,%d/uwsgi-ssl.crt,%d/uwsgi-ssl.key
+   ...
+
+
+Restart uwsgi.
+
+::
+
+   (venv) $ uwsgi --ini sites/example/uwsgi.conf
+
+
+**docker** Restart container and instruct it to also publish the port for https.
+
+::
+
+  ./scripts/run-container sites/example path/to/bags -p 127.0.0.1:8443:8443
+
+
+Errors
+^^^^^^
+
+::
+
+   [uwsgi-ssl] unable to assign certificate /home/marv/site/uwsgi-ssl.crt for context "http-:8443"
+
+This means uwsgi could not find the SSL certificate which should be right next to ``sites/example/uwsgi.conf`` (see above).
+
+
 .. _deploy_nginx:
 
-uWSGI behind NGINX with letsencrypt
------------------------------------
+uWSGI behind NGINX
+------------------
 
 References:
 
@@ -67,7 +121,7 @@ uwsgi config
 
 nginx config
 ^^^^^^^^^^^^
-Nginx allows marv to offload serving of files which is especially useful for large files. Adjust the paths of the nested internal location block to point to your store, within the docker container and outside of the docker container, under the assumption, that nginx is running directly on your host system. In case you are running marv in a virtual environment also directly on the host system, the paths are identical.
+Nginx allows marv to offload serving data from disk which is especially useful for large files. Adjust the paths of the nested internal location block to point to your store, within the docker container and outside of the docker container, under the assumption, that nginx is running directly on your host system. In case you are running marv in a virtual environment also directly on the host system, the paths are identical. For a **self-signed certificate** create it as above, remove ``ssl_trusted_certificate`` below and adjust ``ssl_certificate`` and ``ssl_certificate_key`` below accordingly.
 
 .. code-block:: nginx
 
