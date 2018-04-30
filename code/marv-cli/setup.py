@@ -59,6 +59,8 @@ setup(name=NAME,
       ],
       author='Ternaris',
       author_email='team@ternaris.com',
+      maintainer='Ternaris',
+      maintainer_email='team@ternaris.com',
       url='https://ternaris.com/marv-robotics',
       project_urls=OrderedDict((
           ('Documentation', 'https://ternaris.com/marv-robotics/docs/'),
