@@ -13,7 +13,7 @@ Welcome to MARV Robotics!
 .. toctree::
    :maxdepth: 2
 
-   install
+   install/index
    tutorial/setup-basic-site
    tutorial/write-your-own
    debug

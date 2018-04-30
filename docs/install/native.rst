@@ -1,10 +1,10 @@
 .. Copyright 2016 - 2018  Ternaris.
 .. SPDX-License-Identifier: CC-BY-SA-4.0
 
-.. _install:
+.. _install_native:
 
-Installation
-============
+Native
+======
 
 MARV Robotics is implemented in Python using the MARV framework. Most of its Python dependencies will be installed via Python's package management tools. Apart from these, ROS and some system libraries need to be installed, as outline in the following section.
 
