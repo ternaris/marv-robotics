@@ -46,6 +46,14 @@ There is one collection that uses marv robotics' default bag scanner :func:`marv
 
    Whenever you change your configuration, remember to stop ``uwsgi`` (see below), rerun ``marv init``, and then start ``uwsgi`` again.
 
+**docker**:
+
+Tell container to run ``marv init`` and install all code in development mode.
+
+.. code-block:: console
+
+   $ MARV_INIT=1 DEVELOP=1 ./scripts/run-container site site/scanroot
+
 
 Serve the site
 --------------
@@ -78,6 +86,18 @@ You should see something like the above lines and MARV should be accessible via 
    In the course of this tutorial we'll keep changing the configuration. For these changes to take effect, uwsgi has to be stopped (CTRL-C) and the site reinitialized with ``marv init``.
 
 
+**docker**:
+
+Restart container.
+
+.. code-block:: console
+
+   $ MARV_INIT=1 DEVELOP=1 ./scripts/run-container site site/scanroot
+   CTRL-C
+   $ MARV_INIT=1 DEVELOP=1 ./scripts/run-container site site/scanroot
+
+
+
 Create user account
 -------------------
 
@@ -95,6 +115,16 @@ After creating the user, you should be able to sign-in using his credentials and
 .. note::
 
    You can change the access control list, to allow for example public access to MARV (see :ref:`cfg_marv_acl`).
+
+**docker**: Run commands inside container, after entering it with ``./scripts/enter-container``.
+
+.. code-block:: console
+
+   $ ./scripts/enter-container
+   $ marv user add zaphod
+   Password:
+   Repeat for confirmation:
+   $ marv group adduser zaphod admin
 
 
 Populate scanroot
@@ -119,6 +149,8 @@ After scanning for datasets they will appear in the bag collection's listing:
   INFO marv.collection.bags added <Dataset vmgpndaq6frctewzwyqsrukg2y 2011-01-25-06-29-26>
 
 The *dataset ids*, or short *set ids*, are generated randomly -- you will see different ones. If not, watch out for the Heart of Gold. Now, reload the browser. The listing should contain the two datasets. Visiting a detail view, there is no information yet, but after logging in it's already possible to comment and tag the datasets.
+
+**docker**: Run commands inside container, after entering it with ``./scripts/enter-container``.
 
 
 Add and run basic nodes
@@ -163,6 +195,8 @@ Given that we are dealing with bag files, it makes sense to add nodes that extra
   INFO marv.run vmgpndaq6f.bagmeta_table.gahvdc4vpg.default finished
 
 Reload your browser and check the result.
+
+**docker**: Run commands inside container, after entering it with ``./scripts/enter-container``.
 
 
 Summary

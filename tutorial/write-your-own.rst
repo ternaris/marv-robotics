@@ -59,6 +59,14 @@ Finally, for marv to make use of your nodes, you need to install the package int
   $ source venv/bin/activate
   (venv) $ pip install -e code/company_marv
 
+**docker**:
+
+Tell container to run ``marv init`` and install all code in development mode.
+
+.. code-block:: console
+
+   $ MARV_INIT=1 DEVELOP=1 ./scripts/run-container site site/scanroot
+
 
 First node: Extract an image
 ----------------------------
@@ -167,6 +175,8 @@ Run nodes
   INFO marv.run vmgpndaq6f.image_section.io4thnkdxx.default finished
 
 Et voilà. Reload your browser (http://localhost:8000) and you should see the detail section with an image. Let's extract multiple images!
+
+**docker**: Run commands inside container, after entering it with ``./scripts/enter-container``.
 
 
 Display gallery of images
@@ -290,6 +300,8 @@ For nodes to be able to make files, they need to be persistent. We forgot to add
   INFO marv.run vmgpndaq6f.gallery_section.oamfub7jpa.default finished
   INFO marv.run vmgpndaq6f.filesize_plot.cpenbxihfq.default finished
   INFO marv.run vmgpndaq6f.combined_section.ft6zlxpbvn.default finished
+
+**docker**: Run commands inside container, after entering it with ``./scripts/enter-container``.
 
 
 Persistent nodes and custom output types

@@ -6,7 +6,10 @@
 Installation
 ============
 
+There are currently two modes of installation. One is based on `Docker <https://www.docker.com/>`_ the other installs MARV Robotics natively on your system and assume ROS to be installed natively as well. It might be a good idea to read both and decide then.
+
 .. toctree::
    :maxdepth: 2
 
+   docker
    native
