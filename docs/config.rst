@@ -97,19 +97,19 @@ See :ref:`deploy_nginx` for the corresponding nginx configuration.
 
 .. _cfg_marv_store:
 
-store
-^^^^^
+storedir
+^^^^^^^^
 Example:
 
 .. code-block:: ini
 
-   store = /var/local/lib/marv/store
+   storedir = /var/local/lib/marv/store
 
 Default:
 
 .. code-block:: ini
 
-   store = ./store
+   storedir = ./store
 
 
 .. _cfg_section_collection:
@@ -117,6 +117,7 @@ Default:
 collection section
 ------------------
 Configuration for a collection of datasets.
+
 
 .. _cfg_c_scanner:
 

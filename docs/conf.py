@@ -53,8 +53,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'MARV Robotics'
-copyright = u' Copyright 2016 - 2018 by Ternaris and the MARV contributors'
-author = u'Ternaris and the MARV contributors'
+copyright = u' Copyright 2016-2018  Ternaris'
+author = u'Ternaris'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
