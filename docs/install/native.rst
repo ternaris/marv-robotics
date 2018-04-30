@@ -6,50 +6,20 @@
 Native
 ======
 
-MARV Robotics is implemented in Python using the MARV framework. Most of its Python dependencies will be installed via Python's package management tools. Apart from these, ROS and some system libraries need to be installed, as outline in the following section.
+MARV Robotics is implemented in Python using the MARV framework. Most of its Python dependencies will be installed via Python's package management tools. Apart from these, ROS and some system libraries need to be installed, as outlined in the following section.
+
 
 Prerequisites
 -------------
 
-*EE*:
-
 - `Robot Operating System (ROS) <http://wiki.ros.org/ROS/Installation>`_
-- Checkout of your release of MARV Robotics EE
+- Checkout of MARV Robotics Enterprise Edition or `Community Edition <https://github.com/ternaris/marv-robotics>`_
 
-.. code-block:: console
-
-  $ ls -1
-  marvee  # checkout of your MARV Robotics EE
-  $ ln -s marvee/requirements.txt .
-  $ ln -s marvee/code/marv/docs/tutorial .
-  $ ls -1
-  marvee
-  requirements.txt
-  tutorial
-
-*CE*
-
-- `Robot Operating System (ROS) <http://wiki.ros.org/ROS/Installation>`_
-- Checkout of https://github.com/ternaris/marv
-
-.. code-block:: console
-
-  $ ls -1
-  marv  # checkout of marv community edition
-  $ curl -LO https://raw.githubusercontent.com/ternaris/marv-robotics/master/requirements.txt
-  $ ln -s marv/docs/tutorial .
-  $ ls -1
-  marv
-  requirements.txt
-  tutorial
-
-
-.. _ros-install:
 
 Robot Operating System
 ----------------------
 
-We assume you have working installation of ROS installed. MARV Robotics is meant to support all alive ROS releases (starting with kinetic). If you encounter difficulties with these, please report back!
+We assume you have working installation of ROS. MARV Robotics is meant to support all alive ROS releases (starting with kinetic). If you encounter difficulties with these, please report back!
 
 We dropped support for Indigo due to outdated system dependencies that cannot be easily upgraded. If you need indigo support please let us know.
 
@@ -65,7 +35,11 @@ Kinetic
                      curl \
                      ffmpeg \
                      libcapnp-dev \
+                     libffi-dev \
+                     libfreetype6-dev \
                      libjpeg-dev \
+                     libpng-dev \
+		     libssl-dev \
                      libz-dev \
                      python-cv-bridge \
                      python2.7-dev \
@@ -84,100 +58,45 @@ Make sure ROS is set-up correctly for your user (not as root):
    $ source /opt/ros/kinetic/setup.bash
 
 
-.. _marv-install:
-
 MARV Robotics
 -------------
 
-MARV Robotics is a Python application. For increased reproducability of installations we use a virtual python environment and a set of frozen requirements for installation.
+MARV Robotics is a Python application `published on PyPI <https://pypi.org/project/marv-robotics/>`_ and a simple ``pip install marv-robotics`` should get you going. However, for increased reproducibility of installations we use and recommend a virtual python environment and a set of frozen requirements.
 
-Create virtualenv
-^^^^^^^^^^^^^^^^^
+For the following commands we assume you are within the directory of your checkout of MARV Robotics.
 
-Create a Python virtual environment, activate it and update its package management tools:
+Setup MARV Robotics in Python virtual environment and activate it:
 
 .. code-block:: console
 
-  $ virtualenv -p python2.7 --system-site-packages venv
+  $ ./scripts/setup-venv requirements.txt venv
   $ source venv/bin/activate
-  $ pip install -U pip setuptools pip-tools
-
-Test whether ROS is available from within the activated virtualenv, as a result of the ``--system-site-packages`` option. The ``(venv)`` prefix indicates the activated virtualenv:
-
-.. code-block:: console
-
-  (venv) $ python -c 'import rosbag; print("rosbag available")'
-  rosbag available
-
-For more information see `Virtual Environments
-<http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_.
-
-
-Install requirements
-^^^^^^^^^^^^^^^^^^^^
-Let's synchronize the virtual environment to exactly those packages we want.
-
-.. code-block:: console
-
-  (venv) $ pip-sync requirements.txt
-
-.. warning::
-
-   ``pip-sync`` will remove everything from the virtual environment that is not mentioned in ``requirements.txt``! That is not an issue if you use it only for marv as outlined in this installation manual.
-
-
-Install MARV Robotics
-^^^^^^^^^^^^^^^^^^^^^
-
-*EE*:
-
-.. code-block:: console
-
-  (venv) $ pip install --no-index --find-links='' marvee/code/*
-
-*CE*:
-
-.. code-block:: console
-
-  (venv) $ pip install marv-robotics
-
-Verify MARV Robotics is successfully installed:
-
-.. code-block:: console
-
   (venv) $ marv --help
 
-``marv --help`` should print marv's usage instructions. In the following sections we assume that your virtualenv is activated. If ``marv`` cannot be found, chances are that the virtualenv containing MARV Robotics is not activated.
+Et voilà, marv is successfully installed. The ``(venv)`` prefix indicates the activated virtualenv. In the following sections we assume that your virtualenv is activated. If ``marv`` cannot be found, chances are that the virtualenv containing MARV Robotics is not activated.
+For more information see `Virtual Environments <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_.
 
 
-Serve documentation
--------------------
+Build and serve documentation
+-----------------------------
 
-Let's dedicate a terminal to start a small webserver to serve the documentation. Actually, to serve MARV Robotics EE already, which contains the documenation.
+Let's dedicate a terminal to build the documentation and to start a small webserver to serve the documentation; actually, to serve MARV Robotics already, which contains the documentation.
 
 .. code-block:: console
 
-  (venv) $ uwsgi --ini tutorial/docs-only-site/uwsgi-dev.conf
+   (venv) $ ./scripts/build-docs
+   (venv) $ uwsgi --ini tutorial/docs-only-site/uwsgi-dev.conf
 
 Now you have an instance of MARV running at: http://localhost:8000.
 
 It's documentation is linked in the footer and served at: http://localhost:8000/docs/
 
-If you are running marv inside a container, make sure port 8000 is forwarded to outside the container.
-
-Let's switch to your `locally served documentation <http://localhost:8000/docs/install.html#serve-documentation>`_.
+Let's switch to your `locally served documentation <http://localhost:8000/docs/install/native.html#build-and-serve-documentation>`_.
 
 
 Summary
 -------
 
-Based on an existing ROS installation, you installed some system dependencies, created a virtual python environment, installed MARV Robotics EE into it, and started a webserver with marv and its documentation:
+Based on an existing ROS installation, you installed some system dependencies, created a virtual python environment, installed MARV Robotics into it, and started a webserver with marv and its documentation:
 
-.. code-block:: console
-
-  $ ls -1
-  ...
-  tutorial  # link to tutorial directory
-  venv      # python virtualenv
-
-Now your are ready to `setup a basic site <./tutorial/setup-basic-site.html>`_.
+Now you are ready to `setup a basic site <../tutorial/setup-basic-site.html>`_.

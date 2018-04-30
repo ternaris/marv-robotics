@@ -8,19 +8,13 @@ Tutorial: Setup basic site
 
 A site holds everything MARV knows about your datasets. It contains one or more collections of datasets that can be browsed and queried separately. Here you learn how to setup a basic site with one collection and a couple of example bags.
 
-All code and configuration of this tutorial is included in the top-level ``tutorial`` folder of your release of MARV Robotics EE.
+All code and configuration of this tutorial is included in the top-level ``tutorial`` folder of your MARV Robotics checkout.
 
 
 Prerequisites
 -------------
 
 - :ref:`install`
-
-.. code-block:: console
-
-  $ ls -1
-  tutorial  # link to tutorial directory
-  venv      # python virtualenv (Installation)
 
 
 Initialize site
@@ -30,8 +24,8 @@ Let's start by creating a directory that will hold bag files, called a *scanroot
 
 .. code-block:: console
 
-  $ mkdir scanroot
   $ mkdir site
+  $ mkdir site/scanroot
 
 Then create the site configuration file ``site/marv.conf`` with the following content:
 
@@ -56,12 +50,12 @@ There is one collection that uses marv robotics' default bag scanner :func:`marv
 Serve the site
 --------------
 
-MARV is implemented using the Web Server Gateway Interface (`WSGI <https://www.python.org/dev/peps/pep-3333/>`_) and we are use the `uwsgi <https://uwsgi-docs.readthedocs.io/en/latest/>`_ application server with a simple configuration file ``site/uwsgi-dev.conf`` suitable to serve it for development:
+MARV is implemented using the Web Server Gateway Interface (`WSGI <https://www.python.org/dev/peps/pep-3333/>`_) and we are using the `uwsgi <https://uwsgi-docs.readthedocs.io/en/latest/>`_ application server with a simple configuration file ``site/uwsgi-dev.conf`` suitable to serve it for development:
 
 .. literalinclude:: setup-basic-site0/uwsgi-dev.conf
     :language: cfg
 
-uwsgi got installed into the virtual environment during installation of :ref:`marv-install` and you used it already to serve the documentation you are looking at. Let's stop that and restart with the configuration we just created. The new one will continue to serve the documentation:
+uwsgi got installed into the virtual environment during installation and you used it already to serve the documentation you are looking at. Let's stop that and restart with the configuration we just created. The new one will continue to serve the documentation:
 
 .. code-block:: console
 
@@ -87,8 +81,6 @@ You should see something like the above lines and MARV should be accessible via 
 Create user account
 -------------------
 
-*EE*:
-
 MARV requires you to be signed-in to see anything worthwhile. In order to be able to sign-in, you need to create a user first. Let's make him an admin, so he can also discard datasets from marv. From now on we can continue in the terminal we used to initialize the marv site previously:
 
 .. code-block:: console
@@ -100,9 +92,9 @@ MARV requires you to be signed-in to see anything worthwhile. In order to be abl
 
 After creating the user, you should be able to sign-in using his credentials and be presented with an yet empty listing of the bags collection.
 
-*CE*:
+.. note::
 
-The current community edition displays datasets without being signed-in and signed-in users all have the same permissions.
+   You can change the access control list, to allow for example public access to MARV (see :ref:`cfg_marv_acl`).
 
 
 Populate scanroot
@@ -112,10 +104,10 @@ Let's give marv two bag files from the `mit stata center data set <http://projec
 
 .. code-block:: console
 
-  (venv:~/site) $ cd ../scanroot
-  (venv:~/scanroot) $ curl -O http://infinity.csail.mit.edu/data/2011/2011-01-24-06-18-27.bag
-  (venv:~/scanroot) $ curl -O http://infinity.csail.mit.edu/data/2011/2011-01-25-06-29-26.bag
-  (venv:~/scanroot) $ cd -
+  (venv:~/site) $ cd scanroot
+  (venv:~/site/scanroot) $ curl -O http://infinity.csail.mit.edu/data/2011/2011-01-24-06-18-27.bag
+  (venv:~/site/scanroot) $ curl -O http://infinity.csail.mit.edu/data/2011/2011-01-25-06-29-26.bag
+  (venv:~/site/scanroot) $ cd -
   (venv:~/site) $
 
 After scanning for datasets they will appear in the bag collection's listing:
@@ -126,7 +118,7 @@ After scanning for datasets they will appear in the bag collection's listing:
   INFO marv.collection.bags added <Dataset qmflhjcp6j3hsq7e56xzktf3yq 2011-01-24-06-18-27>
   INFO marv.collection.bags added <Dataset vmgpndaq6frctewzwyqsrukg2y 2011-01-25-06-29-26>
 
-The *dataset ids*, or short *set ids*, are generated randomly -- you will see different ones. If not, watch out for the Heart of Gold. Now, reload the browser. The listing should contain the two datasets. Visiting a detail view, there is no information yet, but it's already possible to comment and tag the datasets.
+The *dataset ids*, or short *set ids*, are generated randomly -- you will see different ones. If not, watch out for the Heart of Gold. Now, reload the browser. The listing should contain the two datasets. Visiting a detail view, there is no information yet, but after logging in it's already possible to comment and tag the datasets.
 
 
 Add and run basic nodes
@@ -177,14 +169,6 @@ Summary
 -------
 
 You initialized a marv site with one collection that looks for bag files in a scanroot directory. You setup uwsgi to serve your site for development purposes, created a user account for sign-in to the web application, populated the scanroot with some bag files and configured and ran nodes to display meta information about these bag files.
-
-.. code-block:: console
-
-  $ ls -1
-  scanroot  # holds bag files
-  site      # holds config and databases
-  tutorial  # link to tutorial directory
-  venv      # python virtualenv (Installation)
 
 Familiarize yourself a bit with the web frontend (http://localhost:8000). We intend it to be self-explanatory. Please let us know if you have questions.
 

@@ -17,27 +17,19 @@ Prerequisites
 - :ref:`install`
 - :ref:`setup-basic-site`
 
-.. code-block:: console
-
-  $ ls -1
-  scanroot  # holds bag files (Setup basic site)
-  site      # holds config and databases (Setup basic site)
-  tutorial  # link to tutorial directory
-  venv      # python virtualenv (Installation)
-
 
 Create python package
 ---------------------
 
-First, you need a python package to hold the code of your nodes. Don't worry too much about the name: nodes can be easily moved to other packages later on:
+First, you need a python package to hold the code of your nodes. A good name for that package might be your company's name suffixed with ``_marv``:
 
 .. code-block:: console
 
-  $ mkdir mynodes  # directory holding python distribution
-  $ cp tutorial/code/setup.py mynodes/
+  $ mkdir code/company_marv  # directory holding python distribution
+  $ cp tutorial/code/setup.py code/company_marv/
 
-  $ mkdir mynodes/mynodes  # directory holding python package
-  $ touch mynodes/mynodes/__init__.py
+  $ mkdir code/company_marv/company_marv  # directory holding python package
+  $ touch code/company_marv/company_marv/__init__.py
 
 It might make sense that the distribution directory name matches the name provided in ``setup.py`` (see below). There, also the python package directory is listed as ``packages`` -- it must not contain dashes but may contain underscores. One python distribution can contain many packages. At some point you might want to dive into `Python Packaging <https://python-packaging.readthedocs.io/en/latest/>`_
 
@@ -49,25 +41,23 @@ We placed the Python code of this tutorial into the public domain, so you can fr
 ..    :caption: setup.py
 ..    :emphasize-lines: 1-11, 17,19,21-24
 
-The only purpose of the ``__future__`` `imports <https://docs.python.org/2/library/__future__.html>`_ *here* is to get you into the habit of not forgetting them.
+The only purpose of the `future imports <https://docs.python.org/2/library/__future__.html>`_ *here* is to get you into the habit of not forgetting them.
 
 Next, it's a good idea to place this code under version control:
 
 .. code-block:: console
 
-  $ cp tutorial/code/.gitignore mynodes/
-  $ cd mynodes
-  $ git init
-  $ git add .
-  $ git commit -m 'initial'
-  $ cd -
+  $ cp tutorial/code/.gitignore code/company_marv/
+  $ git checkout -b custom
+  $ git add code/company_marv
+  $ git commit -m 'Add empty company_marv package'
 
 Finally, for marv to make use of your nodes, you need to install the package into the virtual python enviroment. Install it in development mode (``-e``) for changes to be picked up without the need to reinstall. Activate the virtualenv first, if it is not already activated. Most of the time we use just ``$`` as prompt you can run the commands also with an activated virtualenv, creating a virtualenv being a notable exception. In case we use ``(venv) $`` as prompt, it has to be activated:
 
 .. code-block:: console
 
   $ source venv/bin/activate
-  (venv) $ pip install -e mynodes
+  (venv) $ pip install -e code/company_marv
 
 
 First node: Extract an image
