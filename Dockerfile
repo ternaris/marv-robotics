@@ -83,7 +83,7 @@ COPY --chown=marv:marv tutorial /home/marv/tutorial
 COPY --chown=marv:marv ${docs:-requirements.txt} /home/marv/docs
 RUN bash -c '\
 if [[ -z "$docs" ]]; then \
-    rm /home/marv/docs /home/marv/CHANGES.rst /home/marv/tutorial; \
+    rm -r /home/marv/docs /home/marv/CHANGES.rst /home/marv/tutorial; \
 fi'
 
 ARG scripts=scripts
