@@ -66,6 +66,8 @@ if [[ -n "$MARV_VENV" ]]; then \
     $MARV_VENV/bin/pip install -U pip==9.0.3 setuptools==39.0.1 wheel==0.31.0; \
     $MARV_VENV/bin/pip install -U -r /requirements.txt; \
     $MARV_VENV/bin/pip install -U --force-reinstall --no-binary :all: uwsgi; \
+    sed -e "s|^backend .*|backend : Agg|" \
+        -i $MARV_VENV/lib/python2.7/site-packages/matplotlib/mpl-data/matplotlibrc; \
 fi'
 
 ARG code=code

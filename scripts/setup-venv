@@ -35,6 +35,7 @@ virtualenv -p python2.7 --system-site-packages "$TARGET"
 "$TARGET"/bin/pip install -U pip==9.0.3 setuptools==39.0.1 wheel==0.31.0
 "$TARGET"/bin/pip install -Ur "$REQUIREMENTS"
 "$TARGET"/bin/pip install -U --force-reinstall --no-binary :all: uwsgi
+sed -e "s|^backend .*|backend : Agg|" -i "$TARGET"/lib/python2.7/site-packages/matplotlib/mpl-data/matplotlibrc
 "$TARGET"/bin/pip install --no-deps -e code/marv
 "$TARGET"/bin/pip install --no-deps -e code/marv-cli
 "$TARGET"/bin/pip install --no-deps -e code/marv-ludwig
