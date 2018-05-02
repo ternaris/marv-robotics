@@ -10,6 +10,8 @@ from collections import Mapping, Sequence
 
 from capnp.lib.capnp import _DynamicStructReader as StructReader
 from capnp.lib.capnp import _DynamicListReader as ListReader
+from flask import current_app
+
 from marv_node.setid import SetID
 
 
@@ -68,7 +70,10 @@ class Wrapper(object):
         return cls(struct_reader, None, None)
 
     def load(self, node):
-        return node.load(self._setdir)
+        from marv_store import Store
+        storedir = current_app.site.config.marv.storedir
+        store = Store(storedir, {node.name: node})
+        return store.load(self._setdir, node, default=None)
 
     @classmethod
     def _unwrap(cls, data):
