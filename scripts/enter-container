@@ -9,7 +9,7 @@ cd "$(dirname "$(realpath "$0")")"/..
 
 BASENAME="$(basename "$PWD")"
 NAME="${MARV_CONTAINER_NAME:-$BASENAME}"
-CONTAINER_USER="${CONTAINER_USER:-marv}"
+CONTAINER_USER="${MARV_CONTAINER_USER:-marv}"
 
 declare -a cmd
 
