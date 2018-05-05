@@ -46,7 +46,11 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
 
-RUN useradd -mU --shell /bin/bash marv
+ARG MARV_UID=1000
+ARG MARV_GID=1000
+
+RUN groupadd -g $MARV_GID marv && \
+    useradd -m -u $MARV_UID -g $MARV_GID --shell /bin/bash marv
 
 ARG venv=/opt/marv
 

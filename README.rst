@@ -31,6 +31,12 @@ Start container.
 
 There should be a couple of uwsgi workers waiting to serve requests and MARV Robotics is now running at: https://localhost:8000/
 
+If the container fails to start with *Permission denied*::
+
+  [Errno 13] Permission denied: '/home/marv/site/sessionkey'
+
+most likely the uid of your user outside docker does not match the one inside (1000). See `Docker <https://ternaris.com/marv-robotics/docs/install/docker.html>`_ on how to build a custom image with matching uid and gid.
+
 Additional arguments are passed as options to ``docker run``, e.g.
 
 ::
