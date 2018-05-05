@@ -37,3 +37,5 @@ virtualenv -p python2.7 --system-site-packages "$TARGET"
 "$TARGET"/bin/pip install -U --force-reinstall --no-binary :all: uwsgi
 sed -e "s|^backend .*|backend : Agg|" -i "$TARGET"/lib/python2.7/site-packages/matplotlib/mpl-data/matplotlibrc
 find code -maxdepth 2 -name setup.py -execdir "$TARGET"/bin/pip install --no-deps -e . \;
+# marv-ludwig is installed from PyPI as a dependency of marv-robotics
+"$TARGET"/bin/pip install -e code/marv-robotics
