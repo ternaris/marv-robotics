@@ -8,7 +8,7 @@ from marv_cli import setup_logging
 setup_logging(os.environ.get('MARV_LOGLEVEL', 'info'))
 
 config = os.environ['MARV_CONFIG']
-app_root = os.environ['MARV_APPLICATION_ROOT']
+app_root = os.environ.get('MARV_APPLICATION_ROOT') or '/'
 
 import marv.app
 import marv.site
