@@ -54,6 +54,11 @@ def create_app(push=True, init=None):
     except ConfigError as e:
         click.echo('Error {}'.format(e.args[0]), err=True)
         click.get_current_context().exit(1)
+    except OSError as e:
+        if e.errno == 13:
+            print(e, file=sys.stderr)
+            sys.exit(13)
+        raise
     if push:
         appctx = app.app_context()
         appctx.push()
