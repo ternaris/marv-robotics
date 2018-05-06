@@ -41,7 +41,7 @@ class NodeParamType(click.ParamType):
 NODE = NodeParamType()
 
 
-def create_app(push=True, init=False):
+def create_app(push=True, init=None):
     ctx = click.get_current_context()
     siteconf = ctx.obj
     if siteconf is None:
@@ -50,7 +50,7 @@ def create_app(push=True, init=False):
                  '  marv --config /path/to/marv.conf\n')
     site = Site(siteconf)
     try:
-        app = marv.app.create_app(site, checkdb=not init)
+        app = marv.app.create_app(site, init=init)
     except ConfigError as e:
         click.echo('Error {}'.format(e.args[0]), err=True)
         click.get_current_context().exit(1)
@@ -58,8 +58,6 @@ def create_app(push=True, init=False):
         appctx = app.app_context()
         appctx.push()
         ctx.call_on_close(appctx.pop)
-    if init:
-        site.init()
     return app
 
 

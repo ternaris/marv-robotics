@@ -7,9 +7,7 @@ from __future__ import absolute_import, division, print_function
 
 import base64
 import os
-import sys
 from logging import getLogger
-from uuid import uuid4
 
 import flask
 import sqlalchemy.exc
@@ -21,23 +19,13 @@ from ..model import db
 log = getLogger(__name__)
 
 
-def create_app(site, config_obj=None, app_root=None, checkdb=False, **kw):
+class DBNotInitialized(Exception):
+    pass
+
+
+def create_app(site, config_obj=None, app_root=None, init=None, **kw):
     app = flask.Flask(__name__)
     app.site = site
-
-    try:
-        fd = os.open(site.config.marv.sessionkey_file,
-                     os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o666)
-    except OSError as e:
-        if e.errno != 17:
-            raise
-    else:
-        with os.fdopen(fd, 'w') as f:
-            f.write(str(uuid4()))
-        log.verbose('Generated %s', site.config.marv.sessionkey_file)
-
-    with open(site.config.marv.sessionkey_file) as f:
-        app.config['SECRET_KEY'] = f.read()
 
     # default config
     app_root = app_root.rstrip('/') if app_root else None
@@ -52,15 +40,22 @@ def create_app(site, config_obj=None, app_root=None, checkdb=False, **kw):
 
     db.init_app(app)
     with app.app_context():
-        if checkdb:
-            try:
+        if init:
+            site.init()
+        try:
+            db.session.execute('SELECT name FROM sqlite_master WHERE type="table";')
+        except sqlalchemy.exc.OperationalError:
+            if init is None:  # auto-init
+                site.init()
                 db.session.execute('SELECT name FROM sqlite_master WHERE type="table";')
-            except sqlalchemy.exc.OperationalError:
-                log.critical('Database not initialized, run marv init and restart')
-                sys.exit(1)
+            else:
+                raise DBNotInitialized()
 
         app.acl = site.config.marv.acl()
         webapi.init_app(app, url_prefix='/marv/api')
+
+    with open(site.config.marv.sessionkey_file) as f:
+        app.config['SECRET_KEY'] = f.read()
 
     staticdir = site.config.marv.staticdir
     with open(os.path.join(staticdir, 'index.html')) as f:

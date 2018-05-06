@@ -15,11 +15,6 @@ if [[ -n "$DEVELOP" ]]; then
     find "$DEVELOP" -maxdepth 2 -name setup.py -execdir $MARV_VENV/bin/pip install -e . \;
 fi
 
-if [[ -e "$MARV_CONFIG" ]]; then
-    if [[ -n "$MARV_INIT" ]] || [[ ! -e "$MARV_SITE/sessionkey" ]]; then
-	$MARV_VENV/bin/marv init
-    fi
-fi
 
 ( cd "$MARV_SITE" && "$@" ) &
 PID="$!"

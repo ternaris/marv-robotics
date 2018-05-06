@@ -11,6 +11,7 @@ import shutil
 import time
 from itertools import count, groupby, product
 from logging import getLogger
+from uuid import uuid4
 
 from flask import current_app as app
 from pkg_resources import resource_filename
@@ -144,17 +145,30 @@ class Site(object):
 
     def init(self):
         try:
+            fd = os.open(self.config.marv.sessionkey_file,
+                         os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o666)
+        except OSError as e:
+            if e.errno != 17:
+                raise
+        else:
+            with os.fdopen(fd, 'w') as f:
+                f.write(str(uuid4()))
+            log.verbose('Generated %s', self.config.marv.sessionkey_file)
+
+        try:
             os.mkdir(self.config.marv.storedir)
             log.verbose('Created %s', self.config.marv.storedir)
-        except OSError:
-            pass
+        except OSError as e:
+            if e.errno != 17:
+                raise
 
         try:
             dbdir = os.path.dirname(self.config.marv.dburi.replace('sqlite:///', ''))
             os.mkdir(dbdir)
             log.verbose('Created %s', dbdir)
         except OSError:
-            pass
+            if e.errno != 17:
+                raise
 
         # TODO: maybe this should be an explicit method...
         # load models
