@@ -9,8 +9,8 @@ if [ -z "$CENV" ]; then
     if [[ -n "$ACTIVATE_VENV" ]] && [[ -n "$MARV_VENV" ]]; then
 	source $MARV_VENV/bin/activate
     fi
-    if [[ -d "$HOME/site" ]]; then
-	export MARV_SITE="$HOME/site"
+    if [[ -d "/home/marv/site" ]]; then
+	export MARV_SITE="/home/marv/site"
 	export MARV_CONFIG="$MARV_SITE/marv.conf"
     fi
     cd

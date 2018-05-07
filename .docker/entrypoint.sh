@@ -12,7 +12,7 @@ if [[ -n "$DEBUG" ]]; then
 fi
 
 if [[ -n "$DEVELOP" ]]; then
-    find "$DEVELOP" -maxdepth 2 -name setup.py -execdir $MARV_VENV/bin/pip install -e . \;
+    find "$DEVELOP" -maxdepth 2 -name setup.py -execdir su -c "$MARV_VENV/bin/pip install -e ." marv \;
 fi
 
 

@@ -121,9 +121,5 @@ COPY .docker/env.sh /etc/profile.d/marv_env.sh
 RUN echo 'source /etc/profile.d/marv_env.sh' >> /etc/bash.bashrc
 
 ENV ACTIVATE_VENV=1
-
-USER marv
-
-WORKDIR	/home/marv
 ENTRYPOINT ["/marv_entrypoint.sh"]
-CMD ["/opt/marv/bin/uwsgi", "--die-on-term", "--strict", "--ini", "uwsgi.conf"]
+CMD ["/opt/marv/bin/uwsgi", "--die-on-term", "--strict", "--uid", "marv", "--gid", "marv", "--ini", "uwsgi.conf"]
