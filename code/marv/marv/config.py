@@ -103,9 +103,14 @@ def detail_route(setid, name=None):
 
 
 def doget(value, name, lookup):
-    value = getattr(value, name)
+    value = getattr(value, name, None)
+    if value is None:
+        return None
     if lookup is not None:
-        value = value[lookup]
+        try:
+            return value[lookup]
+        except IndexError:
+            return None
     return value
 
 
