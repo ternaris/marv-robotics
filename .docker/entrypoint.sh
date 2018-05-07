@@ -11,10 +11,13 @@ if [[ -n "$DEBUG" ]]; then
     set -x
 fi
 
+echo "$TIMEZONE" > /etc/timezone
+ln -sf /usr/share/zoneinfo/"$TIMEZONE" /etc/localtime
+dpkg-reconfigure -f noninteractive tzdata
+
 if [[ -n "$DEVELOP" ]]; then
     find "$DEVELOP" -maxdepth 2 -name setup.py -execdir su -c "$MARV_VENV/bin/pip install -e ." marv \;
 fi
-
 
 ( cd "$MARV_SITE" && "$@" ) &
 PID="$!"
