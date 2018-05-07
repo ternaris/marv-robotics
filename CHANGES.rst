@@ -3,6 +3,24 @@
 Changelog
 ---------
 
+.. _v18_05:
+
+18.05 (2018-05-08)
+^^^^^^^^^^^^^^^^^^
+
+- Enable loading dataset node output in comparison views
+- Set default matplotlib backend to Agg, removing the need to set it manually
+- Auto-initialise previously unintialised site upon start
+- Set marv docker container timezone to host timezone
+- Support setting marv uid and gid for docker installation
+- [BUGFIX] Better support for colour formats
+- [BUGFIX] Add scanroot to documentation deploy example for nginx
+- [BUGFIX] Cleanup form submit handling
+- [BUGFIX] Fix native installation method for community edition
+- [BUGFIX] Fix loading of videos for community edition
+- [BUGFIX] Gracefully handle permission denied upon initialisation
+
+
 .. _v18_04:
 
 18.04 (2018-04-30)
