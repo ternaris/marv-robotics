@@ -126,4 +126,4 @@ USER marv
 
 WORKDIR	/home/marv
 ENTRYPOINT ["/marv_entrypoint.sh"]
-CMD ["/opt/marv/bin/uwsgi", "--ini", "uwsgi.conf"]
+CMD ["/opt/marv/bin/uwsgi", "--die-on-term", "--strict", "--ini", "uwsgi.conf"]
