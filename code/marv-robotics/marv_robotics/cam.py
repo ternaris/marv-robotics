@@ -20,6 +20,23 @@ from .bag import get_message_type, messages
 imgmsg_to_cv2 = cv_bridge.CvBridge().imgmsg_to_cv2
 
 
+def ros2cv(msg, scale=1, offset=0):
+    mono = msg.encoding.endswith('1')
+
+    # Work around cv_bridge bug
+    if msg.encoding == '8UC1':
+        msg.encoding = 'mono8'
+    elif msg.encoding == '16UC1':
+        msg.encoding = 'mono16'
+
+    if msg.encoding[2:4] == 'FC':
+        passimg = numpy.nan_to_num(imgmsg_to_cv2(msg, 'passthrough'))
+        valscaled = cv2.convertScaleAbs(passimg, None, scale, offset)
+        return (mono, valscaled)
+
+    return (mono, imgmsg_to_cv2(msg, 'mono8' if mono else 'bgr8'))
+
+
 @marv.node(File)
 @marv.input('stream', foreach=marv.select(messages, '*:sensor_msgs/Image'))
 @marv.input('speed', default=4)
@@ -42,13 +59,18 @@ def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):
         if msg is None:
             break
         rosmsg.deserialize(msg.data)
+        try:
+            mono, img = ros2cv(rosmsg, convert_32FC1_scale, convert_32FC1_offset)
+        except cv_bridge.CvBridgeError as e:
+            log = yield marv.get_logger()
+            log.error('could not convert image %s', e)
+            return
+
         if not encoder:
             ffargs = [
                 'ffmpeg',
                 '-f', 'rawvideo',
-                '-pixel_format', '%s' % {'mono8': 'gray',
-                                         '32FC1': 'gray',
-                                         '8UC1': 'gray'}.get(rosmsg.encoding, 'rgb24'),
+                '-pixel_format', '%s' % 'gray' if mono else 'bgr24',
                 '-video_size', '%dx%d' % (rosmsg.width, rosmsg.height),
                 '-framerate', '%s' % framerate,
                 '-i', '-',
@@ -62,16 +84,7 @@ def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):
             ]
             encoder = subprocess.Popen(ffargs, stdin=subprocess.PIPE)
 
-        if rosmsg.encoding == 'mono8':
-            data = rosmsg.data
-        elif rosmsg.encoding == '32FC1':
-            data = cv2.convertScaleAbs(numpy.nan_to_num(imgmsg_to_cv2(rosmsg, 'passthrough')),
-                                       None, convert_32FC1_scale, convert_32FC1_offset)
-        elif rosmsg.encoding == '8UC1':
-            data = imgmsg_to_cv2(rosmsg).tobytes()
-        else:
-            data = imgmsg_to_cv2(rosmsg, 'rgb8').tobytes()
-        encoder.stdin.write(data)
+        encoder.stdin.write(img)
 
     encoder.stdin.close()
     encoder.wait()
@@ -109,13 +122,13 @@ def images(stream, image_width, max_frames, convert_32FC1_scale, convert_32FC1_o
             continue
 
         rosmsg.deserialize(msg.data)
-        if rosmsg.encoding == '32FC1':
-            img = cv2.convertScaleAbs(numpy.nan_to_num(imgmsg_to_cv2(rosmsg, 'passthrough')),
-                                      None, convert_32FC1_scale, convert_32FC1_offset)
-        elif rosmsg.encoding == '8UC1':
-            img = imgmsg_to_cv2(rosmsg)
-        else:
-            img = imgmsg_to_cv2(rosmsg, "bgr8")
+        try:
+            mono, img = ros2cv(rosmsg, convert_32FC1_scale, convert_32FC1_offset)
+        except cv_bridge.CvBridgeError as e:
+            log = yield marv.get_logger()
+            log.error('could not convert image %s', e)
+            return
+
         height = int(round(image_width * img.shape[0] / img.shape[1]))
         scaled_img = cv2.resize(img, (image_width, height),
                                 interpolation=cv2.INTER_AREA)
