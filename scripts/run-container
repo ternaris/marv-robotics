@@ -5,8 +5,6 @@
 
 set -e
 
-cd "$(dirname "$(realpath "$0")")"/..
-
 usage() {
     echo
     echo "Usage: run-container SITE SCANROOT [EXTRA_OPTS ...]"
@@ -22,8 +20,16 @@ usage() {
     exit 1
 }
 
+if [[ -n "$DEBUG" ]]; then
+    set -x
+fi
+
+cd "$(dirname "$(realpath "$0")")"/..
+
 SITE="$1"; shift || usage
 SCANROOT="$1"; shift || usage
+[[ -d "$SCANROOT" ]] || usage
+SCANROOT="$(realpath "$SCANROOT")"
 
 BASENAME="$(basename "$PWD")"
 NAME="${MARV_CONTAINER_NAME:-$BASENAME}"
@@ -37,9 +43,6 @@ elif [[ -e .image-name ]]; then
 else
     IMAGE="$BASENAME"
 fi
-
-[[ -d "$SCANROOT" ]] || usage
-SCANROOT="$(realpath "$SCANROOT")"
 
 get_timezone() {
     tz=$(cat /etc/timezone 2>/dev/null|| true)
