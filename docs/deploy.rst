@@ -148,6 +148,24 @@ Nginx allows marv to offload serving data from disk which is especially useful f
          internal;
 	 alias /host/path/to/store;
        }
+       location /scanroot {
+         internal;
+	 alias /host/path/to/scanroot;
+       }
+       client_max_body_size 10m;
+       client_body_buffer_size 128k;
+       uwsgi_pass 127.0.0.1:8000;
+       include uwsgi_params;
+     }
+     location /other_instance {
+       location /other_instance/docker/container/path/to/store {
+         internal;
+	 alias /host/path/to/store;
+       }
+       location /other_instance/scanroot {
+         internal;
+	 alias /host/path/to/other/scanroot;
+       }
        client_max_body_size 10m;
        client_body_buffer_size 128k;
        uwsgi_pass 127.0.0.1:8000;
