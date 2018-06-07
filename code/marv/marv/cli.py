@@ -252,18 +252,19 @@ def marvcli_init():
 @click.option('--col', '--collection', 'collections', multiple=True,
               help='Limit to one or more collections or force listing of all with --collection=*')
 @click.option('--discarded/--no-discarded', help='Dataset is discarded')
+@click.option('--missing', is_flag=True, help='Datasets with missing files')
 @click.option('--outdated', is_flag=True, help='Datasets with outdated node output')
 @click.option('--path', type=click.Path(resolve_path=True),
               help='Dataset contains files whose path starts with PATH')
 @click.option('--tagged', 'tags', multiple=True, help='Match any given tag')
 @click.option('-0', '--null', is_flag=True, help='Use null byte to separate output instead of newlines')
 @click.pass_context
-def marvcli_query(ctx, list_tags, collections, discarded, outdated, path, tags, null):
+def marvcli_query(ctx, list_tags, collections, discarded, missing, outdated, path, tags, null):
     """Query datasets.
 
-    Use --collection=* to list all datasets across all collections.
+    Use --col=* to list all datasets across all collections.
     """
-    if not any([collections, discarded, list_tags, outdated, path, tags]):
+    if not any([collections, discarded, list_tags, missing, outdated, path, tags]):
         click.echo(ctx.get_help())
         ctx.exit(1)
 
@@ -286,7 +287,7 @@ def marvcli_query(ctx, list_tags, collections, discarded, outdated, path, tags, 
             click.echo('no tags', err=True)
         return
 
-    setids = site.query(collections, discarded, outdated, path, tags)
+    setids = site.query(collections, discarded, outdated, path, tags, missing=missing)
     if setids:
         sep = '\x00' if null else '\n'
         click.echo(sep.join(setids), nl=not null)

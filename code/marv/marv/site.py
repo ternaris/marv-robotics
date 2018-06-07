@@ -303,7 +303,7 @@ class Site(object):
         return tags
 
     def query(self, collections=None, discarded=None, outdated=None,
-              path=None, tags=None, abbrev=None):
+              path=None, tags=None, abbrev=None, missing=None):
         abbrev = 10 if abbrev is True else abbrev
         discarded = bool(discarded)
         query = db.session.query(Dataset.setid)
@@ -319,6 +319,12 @@ class Site(object):
         if path:
             relquery = db.session.query(File.dataset_id)\
                                  .filter(File.path.like('{}%'.format(esc(path)), escape='$'))\
+                                 .group_by(File.dataset_id)
+            query = query.filter(Dataset.id.in_(relquery.subquery()))
+
+        if missing:
+            relquery = db.session.query(File.dataset_id)\
+                                 .filter(File.missing.is_(True))\
                                  .group_by(File.dataset_id)
             query = query.filter(Dataset.id.in_(relquery.subquery()))
 
