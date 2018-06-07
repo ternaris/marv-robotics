@@ -166,7 +166,7 @@ class Site(object):
             dbdir = os.path.dirname(self.config.marv.dburi.replace('sqlite:///', ''))
             os.mkdir(dbdir)
             log.verbose('Created %s', dbdir)
-        except OSError:
+        except OSError as e:
             if e.errno != 17:
                 raise
 
