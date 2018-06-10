@@ -75,7 +75,7 @@ def make_status_property(bitmask, doc=None):
         return obj.status & bitmask
 
     def fset(obj, value):
-        status = obj.status
+        status = obj.status or 0
         if value:
             obj.status = status | bitmask
         else:

@@ -445,13 +445,15 @@ class Collection(object):
             ids = changes.keys()
             for dataset in Dataset.query.filter(Dataset.id.in_(ids)):
                 for file, change in changes.pop(dataset.id):
+                    check_outdated = False
                     if type(change) is bool:
                         file.missing = change
                         dataset.missing = change
                     else:
                         file.mtime = int(change * 1000)
-                        # TODO: optionally employ hash
-                        dataset.outdated = True
+                        check_outdated = True
+                if check_outdated:
+                    self._check_outdated(dataset)
                 dataset.time_updated = int(time.time())
             assert not changes
             db.session.commit()
@@ -488,6 +490,21 @@ class Collection(object):
             self._add_batch(log, batch)
 
         log.verbose("finished %s'%s'", 'dry_run ' if dry_run else '', scanpath)
+
+    def _check_outdated(self, dataset):
+        storedir = self.config.marv.storedir
+        setdir = os.path.join(storedir, str(dataset.setid))
+        latest = [os.path.realpath(x)
+                  for x in [os.path.join(setdir, x) for x in os.listdir(setdir)]
+                  if os.path.islink(x)]
+        oldest_mtime = os.stat(os.path.join(setdir, 'detail.json')).st_mtime
+        for nodedir in latest:
+            for dirpath, dirnames, filenames in os.walk(nodedir):
+                for name in filenames:
+                    path = os.path.join(dirpath, name)
+                    oldest_mtime = min(oldest_mtime, os.stat(path).st_mtime)
+        dataset_mtime = max(x.mtime for x in dataset.files)
+        dataset.outdated = int(oldest_mtime * 1000) < dataset_mtime
 
     def restore_datasets(self, data):
         log = getLogger('.'.join([__name__, self.name]))
@@ -634,6 +651,7 @@ class Collection(object):
         jsonfile.close()
         os.rename(os.path.join(setdir, '.detail.json'),
                   os.path.join(setdir, 'detail.json'))
+        self._check_outdated(dataset)
 
     def render_listing(self, dataset):
         storedir = self.config.marv.storedir
