@@ -62,6 +62,9 @@ def fixup_widget(dct):
             cell = item.pop('cell')
             transform = FORMATTER_MAP[item['formatter'] + ('[]' if item['list'] else '')]
             item['value'] = transform(cell[cell['_which']])
+    elif which == 'link':
+        if not data['download']:
+            del data['download']
     elif which == 'map':
         fixup_map(data)
     elif which == 'mapPartial':

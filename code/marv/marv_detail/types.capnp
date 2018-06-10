@@ -50,6 +50,7 @@ struct Link {
   href @0 :Text;
   target @1 :Text = "_blank";
   title @2 :Text;
+  download @3 :Text;
 }
 
 
@@ -89,6 +90,7 @@ struct Widget {
     gallery @2 :Gallery;
     image @3 :Image;
     keyval @4 :Keyval;
+    link @13 :Link;
     mpld3 @5 :Text;  # marv-partial or json
     map @6 :Map;
     mapPartial @11 :Text;
