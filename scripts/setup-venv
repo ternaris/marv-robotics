@@ -32,10 +32,16 @@ if ! python -c 'import rosbag; print("")'; then
 fi
 
 virtualenv -p python2.7 --system-site-packages "$TARGET"
-"$TARGET"/bin/pip install -U pip==9.0.3 setuptools==39.0.1 wheel==0.31.0
+"$TARGET"/bin/pip install -U pip==10.0.1 setuptools==39.2.0 wheel==0.31.0
 "$TARGET"/bin/pip install -Ur "$REQUIREMENTS"
 "$TARGET"/bin/pip install -U --force-reinstall --no-binary :all: uwsgi
-sed -e "s|^backend .*|backend : Agg|" -i "$TARGET"/lib/python2.7/site-packages/matplotlib/mpl-data/matplotlibrc
+
+# Set matplotlib backend to Agg
+sed -e "s|^backend .*|backend : Agg|" \
+    -i "$TARGET"/lib/python2.7/site-packages/matplotlib/mpl-data/matplotlibrc
+
+# Install all python distributions directly in code
 find code -maxdepth 2 -name setup.py -execdir "$TARGET"/bin/pip install --no-deps -e . \;
+
 # marv-ludwig is installed from PyPI as a dependency of marv-robotics
 "$TARGET"/bin/pip install -e code/marv-robotics
