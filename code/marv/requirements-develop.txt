@@ -4,17 +4,18 @@
 #
 #    pip-compile --output-file code/marv/requirements-develop.txt code/marv/requirements-develop.in
 #
-alabaster==0.7.10         # via sphinx
+alabaster==0.7.11         # via sphinx
 argh==0.26.2              # via watchdog
-attrs==17.4.0             # via pytest
-babel==2.5.3              # via sphinx
-certifi==2018.1.18        # via requests
+atomicwrites==1.1.5       # via pytest
+attrs==18.1.0             # via pytest
+babel==2.6.0              # via sphinx
+certifi==2018.4.16        # via requests
 chardet==3.0.4            # via requests
 coverage==4.5.1           # via pytest-cov
 decorator==4.3.0          # via ipython, traitlets
 docutils==0.14            # via sphinx
 flake8==3.5.0
-idna==2.6                 # via requests
+idna==2.7                 # via requests
 imagesize==1.0.0          # via sphinx
 ipdb==0.11
 ipython-genutils==0.2.0   # via traitlets
@@ -23,35 +24,35 @@ jinja2==2.10              # via sphinx
 markupsafe==1.0           # via jinja2
 mccabe==0.6.1             # via flake8
 mock==2.0.0
-more-itertools==4.1.0     # via pytest
+more-itertools==4.2.0     # via pytest
 packaging==17.1           # via sphinx
 pathtools==0.1.2          # via watchdog
-pbr==4.0.2                # via mock
-pexpect==4.5.0            # via ipython
+pbr==4.0.4                # via mock
+pexpect==4.6.0            # via ipython
 pickleshare==0.7.4        # via ipython
 pluggy==0.6.0             # via pytest
 prompt-toolkit==1.0.15    # via ipython
-ptyprocess==0.5.2         # via pexpect
+ptyprocess==0.6.0         # via pexpect
 py==1.5.3                 # via pytest
 pycodestyle==2.3.1        # via flake8
 pyflakes==1.6.0           # via flake8
 pygments==2.2.0           # via ipython, sphinx
 pyparsing==2.2.0          # via packaging
 pytest-cov==2.5.1
-pytest==3.5.0
+pytest==3.6.2
 pytz==2018.4              # via babel
 pyyaml==3.12              # via watchdog
-requests==2.18.4          # via sphinx
+requests==2.19.1          # via sphinx
 simplegeneric==0.8.1      # via ipython
 six==1.11.0               # via mock, more-itertools, packaging, prompt-toolkit, pytest, sphinx, traitlets
 snowballstemmer==1.2.1    # via sphinx
 sphinx-paramlinks==0.3.4
-sphinx==1.7.2
-sphinxcontrib-websupport==1.0.1  # via sphinx
+sphinx==1.7.5
+sphinxcontrib-websupport==1.1.0  # via sphinx
 termcolor==1.1.0
-testfixtures==6.0.0
+testfixtures==6.2.0
 traitlets==4.3.2          # via ipython
-urllib3==1.22             # via requests
+urllib3==1.23             # via requests
 uwsgi==2.0.17
 watchdog==0.8.3
 wcwidth==0.1.7            # via prompt-toolkit
