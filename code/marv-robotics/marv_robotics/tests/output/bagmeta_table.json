@@ -47,6 +47,7 @@
             {
               "_which": "link", 
               "link": {
+                "download": "", 
                 "href": "0", 
                 "target": "_blank", 
                 "title": "test_0.bag"
@@ -80,6 +81,7 @@
             {
               "_which": "link", 
               "link": {
+                "download": "", 
                 "href": "1", 
                 "target": "_blank", 
                 "title": "test_1.bag"
