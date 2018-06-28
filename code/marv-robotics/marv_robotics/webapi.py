@@ -23,4 +23,6 @@ def robotics(app):
     @app.route('/docs/', defaults={'path': 'index.html'})
     @app.route('/docs/<path:path>')
     def docs(path):
-        return flask.send_from_directory(DOCS, path, conditional=True)
+        resp = flask.send_from_directory(DOCS, path, conditional=True)
+        resp.headers['Cache-Control'] = 'no-cache'
+        return resp
