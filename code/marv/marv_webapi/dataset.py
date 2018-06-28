@@ -79,7 +79,9 @@ def _send_detail_json(setid, setdir):
     detail['collection'] = collection.name
     detail['id'] = dataset_id
     detail['setid'] = setid
-    return flask.jsonify(detail)
+    resp = flask.jsonify(detail)
+    resp.headers['Cache-Control'] = 'no-cache'
+    return resp
 
 
 @dataset.endpoint('/dataset/<setid>', defaults={'path': 'detail.json'})
@@ -115,7 +117,7 @@ def detail(setid, path):
         mime = mimetypes.guess_type(path)
         resp.headers['content-type'] = \
             mime[0] if mime[0] else 'application/octet-stream'
-        resp.headers['cache-control'] = 'public, max-age=0'
+        resp.headers['cache-control'] = 'no-cache'
         resp.headers['x-accel-buffering'] = 'no'
         resp.headers['x-accel-redirect'] = \
             (current_app.config['APPLICATION_ROOT'] or '') + path
@@ -124,6 +126,8 @@ def detail(setid, path):
         return resp
 
     try:
-        return flask.send_file(path, as_attachment=True, conditional=True)
+        resp = flask.send_file(path, as_attachment=True, conditional=True)
+        resp.headers['Cache-Control'] = 'no-cache'
+        return resp
     except ValueError:
         flask.abort(404)

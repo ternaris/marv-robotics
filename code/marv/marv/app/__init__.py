@@ -93,7 +93,9 @@ def create_app(site, config_obj=None, app_root=None, init=None, **kw):
     customdir = os.path.join(site.config.marv.frontenddir, 'custom')
     @app.route('/custom/<path:path>')
     def custom(path):
-        return flask.send_from_directory(customdir, path, conditional=True)
+        resp = flask.send_from_directory(customdir, path, conditional=True)
+        resp.headers['Cache-Control'] = 'no-cache'
+        return resp
 
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
@@ -102,7 +104,9 @@ def create_app(site, config_obj=None, app_root=None, init=None, **kw):
             path = 'index.html'
 
         if path == 'index.html':
-            return index_html
+            resp = flask.make_response(index_html)
+            resp.headers['Cache-Control'] = 'no-cache'
+            return resp
 
         if path == 'docs':
             return flask.redirect(flask.request.base_url + '/', 301)
@@ -110,6 +114,8 @@ def create_app(site, config_obj=None, app_root=None, init=None, **kw):
         if path == 'docs/':
             path = 'docs/index.html'
 
-        return flask.send_from_directory(staticdir, path, conditional=True)
+        resp = flask.send_from_directory(staticdir, path, conditional=True)
+        resp.headers['Cache-Control'] = 'no-cache'
+        return resp
 
     return app
