@@ -4,9 +4,12 @@
 .coverage
 *.egg-info/
 .eggs/
+htmlcov/
+.*venv/
 .pytest_cache/
 __pycache__/
 /.image-name
 /dist/
 /code/*/build/
 /code/*/dist/
+/venv/
