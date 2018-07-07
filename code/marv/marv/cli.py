@@ -283,8 +283,6 @@ def marvcli_query(ctx, list_tags, collections, discarded, missing, outdated, pat
         tags = site.listtags(collections)
         if tags:
             click.echo(sep.join(tags), nl=not null)
-        else:
-            click.echo('no tags', err=True)
         return
 
     setids = site.query(collections, discarded, outdated, path, tags, missing=missing)
