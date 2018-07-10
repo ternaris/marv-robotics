@@ -179,7 +179,7 @@ def collection(collection_id):
     }
     indent = None
     separators = (',', ':')
-    if current_app.config['JSONIFY_PRETTYPRINT_REGULAR'] and not request.is_xhr:
+    if current_app.config['JSONIFY_PRETTYPRINT_REGULAR'] or current_app.debug:
         indent = 2
         separators = (', ', ': ')
     jsondata = jsondumps(dct, indent=indent, separators=separators, sort_keys=True)

@@ -30,6 +30,7 @@ def create_app(site, config_obj=None, app_root=None, init=None, **kw):
     # default config
     app_root = app_root.rstrip('/') if app_root else None
     app.config['APPLICATION_ROOT'] = app_root or None
+    app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
     app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
     app.config['SQLALCHEMY_DATABASE_URI'] = site.config.marv.dburi
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
