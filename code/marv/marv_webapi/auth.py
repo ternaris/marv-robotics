@@ -18,6 +18,7 @@ from flask import current_app
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
 
+from marv import utils
 from marv.model import User, Group, db
 from .tooling import api_group as marv_api_group
 
@@ -41,7 +42,7 @@ class UserManager(object):
     def user_add(self, name, password, realm, realmuid):
         try:
             password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-            now = int(time.time())
+            now = int(utils.now())
             user = User(name=name, password=password, realm=realm,
                         realmuid=realmuid, time_created=now, time_updated=now)
             db.session.add(user)
@@ -64,7 +65,7 @@ class UserManager(object):
             raise ValueError('User {} does not exist'.format(username))
 
         user.password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-        user.time_updated = int(time.time())
+        user.time_updated = int(utils.now())
         db.session.commit()
 
     def group_add(self, groupname):

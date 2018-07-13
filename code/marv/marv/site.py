@@ -8,7 +8,6 @@ from __future__ import absolute_import, division, print_function
 import json
 import os
 import shutil
-import time
 from itertools import count, groupby, product
 from logging import getLogger
 from uuid import uuid4
@@ -18,12 +17,12 @@ from pkg_resources import resource_filename
 
 from marv_node.run import run_nodes
 from marv_store import Store
+from . import utils
 from .collection import esc
 from .collection import Collections
 from .config import Config
 from .model import STATUS_MISSING, STATUS_OUTDATED
 from .model import Comment, Dataset, File, Group, Tag, User, dataset_tag, db
-from .utils import find_obj
 
 
 DEFAULT_NODES = """
@@ -354,7 +353,7 @@ class Site(object):
             selected_nodes.update(collection.detail_deps)
         persistent = collection.nodes
         try:
-            nodes = {persistent[name] if not ':' in name else find_obj(name)
+            nodes = {persistent[name] if not ':' in name else utils.find_obj(name)
                      for name in selected_nodes
                      if name not in excluded_nodes
                      if name != 'dataset'}
@@ -397,7 +396,7 @@ class Site(object):
                 collection.scan(scanroot, dry_run)
 
     def comment(self, username, message, ids):
-        now = int(time.time() * 1000)
+        now = int(utils.now() * 1000)
         comments = [Comment(dataset_id=id, author=username, time_added=now,
                             text=message)
                     for id in ids]

@@ -5,7 +5,9 @@
 
 from __future__ import absolute_import, division, print_function
 
+import os
 import re
+import time
 from datetime import datetime, timedelta
 from datetime import tzinfo as tzinfo_base
 from importlib import import_module
@@ -24,6 +26,16 @@ def find_obj(objpath, name=False):
     mod = import_module(modpath)
     obj = getattr(mod, objname)
     return (objname, obj) if name else obj
+
+
+def mtime(path):
+    """Wrapper for st_mtime for ease of mocking"""
+    return os.stat(path).st_mtime
+
+
+def now():
+    """Wrapper for time.time for ease of mocking"""
+    return time.time()
 
 
 def parse_filesize(string):

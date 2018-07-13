@@ -19,10 +19,10 @@ from logging import getLogger
 
 from sqlalchemy.sql import column, func, select
 
+from marv import utils
 from marv.config import ConfigError, calltree, getdeps, make_funcs, parse_function
 from marv.model import Comment, Dataset, File, STATUS, Tag, dataset_tag, db
 from marv.model import make_listing_model
-from marv.utils import find_obj
 from marv_detail import FORMATTER_MAP, detail_to_dict
 from marv_detail.types_capnp import Detail
 from marv_node.setid import SetID
@@ -244,7 +244,7 @@ class Collection(object):
         linemap = {}
         for line in self.section.nodes:
             try:
-                nodename, node = find_obj(line, True)
+                nodename, node = utils.find_obj(line, True)
             except AttributeError:
                 raise ConfigError(self.section, 'nodes', 'Cannot find node %s' % line)
             if node in linemap:
@@ -260,7 +260,7 @@ class Collection(object):
 
     @property
     def scanner(self):
-        return find_obj(self.section.scanner)
+        return utils.find_obj(self.section.scanner)
 
     @property
     def scanroots(self):
@@ -428,17 +428,17 @@ class Collection(object):
             path = file.path
             known_filenames[os.path.dirname(path)].add(os.path.basename(path))
             try:
-                stat = os.stat(path)
+                mtime = utils.mtime(path)
                 missing = False
             except OSError:
-                stat = None
+                mtime = None
                 missing = True
             if missing ^ bool(file.missing):
                 log.info("%s '%s'", 'lost' if missing else 'recovered', path)
                 changes[file.dataset_id].append((file, missing))
-            if stat and int(stat.st_mtime * 1000) > file.mtime:
+            if mtime and int(mtime * 1000) > file.mtime:
                 log.info("mtime newer '%s'", path)
-                changes[file.dataset_id].append((file, stat.st_mtime))
+                changes[file.dataset_id].append((file, mtime))
 
         # Apply missing/mtime changes
         if not dry_run and changes:
@@ -454,7 +454,7 @@ class Collection(object):
                         check_outdated = True
                 if check_outdated:
                     self._check_outdated(dataset)
-                dataset.time_updated = int(time.time())
+                dataset.time_updated = int(utils.now())
             assert not changes
             db.session.commit()
 
@@ -497,12 +497,12 @@ class Collection(object):
         latest = [os.path.realpath(x)
                   for x in [os.path.join(setdir, x) for x in os.listdir(setdir)]
                   if os.path.islink(x)]
-        oldest_mtime = os.stat(os.path.join(setdir, 'detail.json')).st_mtime
+        oldest_mtime = utils.mtime(os.path.join(setdir, 'detail.json'))
         for nodedir in latest:
             for dirpath, dirnames, filenames in os.walk(nodedir):
                 for name in filenames:
                     path = os.path.join(dirpath, name)
-                    oldest_mtime = min(oldest_mtime, os.stat(path).st_mtime)
+                    oldest_mtime = min(oldest_mtime, utils.mtime(path))
         dataset_mtime = max(x.mtime for x in dataset.files)
         dataset.outdated = int(oldest_mtime * 1000) < dataset_mtime
 
@@ -597,11 +597,10 @@ class Collection(object):
 
     def make_dataset(self, files, name, time_added=None):
         setid = SetID.random()
-        files = [File(idx=i, mtime=int(stat.st_mtime * 1000),
-                      path=path, size=stat.st_size)
+        files = [File(idx=i, mtime=int(utils.mtime(path) * 1000), path=path, size=stat.st_size)
                  for i, (path, stat)
                  in enumerate((path, os.stat(path)) for path in files)]
-        time_added = int(time.time() * 1000) if time_added is None else time_added
+        time_added = int(utils.now() * 1000) if time_added is None else time_added
         dataset = Dataset(collection=self.name,
                           files=files,
                           name=name,
