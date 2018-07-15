@@ -268,7 +268,12 @@ def raw_messages(dataset, bagmeta):
             group = groups[name] = yield marv.create_group(name)
             create_stream = group.create_stream
         else:
-            topics = [name] if name in bagtopics else []
+            if name in bagtopics:
+                topics = [name]
+            else:
+                topics = []
+                stream = yield marv.create_stream(name)
+                yield stream.finish()
             group = None
             create_stream = marv.create_stream
 
