@@ -66,7 +66,7 @@ def positions(stream):
             erroneous += 1
             continue
 
-        e, n, _, _ = utm.from_latlon(rosmsg.longitude, rosmsg.latitude)
+        e, n, _, _ = utm.from_latlon(rosmsg.latitude, rosmsg.longitude)
         if e_offset is None:
             e_offset = e
             n_offset = n
