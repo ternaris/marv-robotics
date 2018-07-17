@@ -1,0 +1,325 @@
+[
+  {
+    "all_known_tags": [
+      "TAG2"
+    ], 
+    "collection": "bar", 
+    "comments": [], 
+    "error": "", 
+    "sections": [
+      {
+        "title": "Test", 
+        "widgets": [
+          {
+            "data": {
+              "items": [
+                {
+                  "formatter": "string", 
+                  "list": false, 
+                  "title": "value", 
+                  "value": 0
+                }
+              ]
+            }, 
+            "title": "", 
+            "type": "keyval"
+          }
+        ]
+      }
+    ], 
+    "setid": "e2oxlhpedjwked2llnnzir4tii", 
+    "summary": {
+      "title": "", 
+      "widgets": [
+        {
+          "data": {
+            "actions": [], 
+            "columns": [
+              {
+                "align": "left", 
+                "formatter": "rellink", 
+                "list": false, 
+                "title": "Name"
+              }, 
+              {
+                "align": "left", 
+                "formatter": "filesize", 
+                "list": false, 
+                "title": "Size"
+              }
+            ], 
+            "rows": [
+              {
+                "id": 0, 
+                "values": [
+                  {
+                    "download": "", 
+                    "href": "0", 
+                    "target": "_blank", 
+                    "title": "bar_a"
+                  }, 
+                  1
+                ]
+              }
+            ], 
+            "sortcolumn": 0, 
+            "sortorder": "ascending"
+          }, 
+          "title": "", 
+          "type": "table"
+        }
+      ]
+    }, 
+    "tags": [], 
+    "title": "bar_a"
+  }, 
+  {
+    "all_known_tags": [
+      "TAG2"
+    ], 
+    "collection": "bar", 
+    "comments": [
+      {
+        "author": "user2", 
+        "text": "more\ncomment", 
+        "timeAdded": 100001000
+      }
+    ], 
+    "error": "", 
+    "sections": [
+      {
+        "title": "Test", 
+        "widgets": [
+          {
+            "data": {
+              "items": [
+                {
+                  "formatter": "string", 
+                  "list": false, 
+                  "title": "value", 
+                  "value": 1
+                }
+              ]
+            }, 
+            "title": "", 
+            "type": "keyval"
+          }
+        ]
+      }
+    ], 
+    "setid": "phjg4ncymwbrbl4yx35bciqazq", 
+    "summary": {
+      "title": "", 
+      "widgets": [
+        {
+          "data": {
+            "actions": [], 
+            "columns": [
+              {
+                "align": "left", 
+                "formatter": "rellink", 
+                "list": false, 
+                "title": "Name"
+              }, 
+              {
+                "align": "left", 
+                "formatter": "filesize", 
+                "list": false, 
+                "title": "Size"
+              }
+            ], 
+            "rows": [
+              {
+                "id": 0, 
+                "values": [
+                  {
+                    "download": "", 
+                    "href": "0", 
+                    "target": "_blank", 
+                    "title": "bar_b"
+                  }, 
+                  1
+                ]
+              }
+            ], 
+            "sortcolumn": 0, 
+            "sortorder": "ascending"
+          }, 
+          "title": "", 
+          "type": "table"
+        }
+      ]
+    }, 
+    "tags": [
+      "TAG2"
+    ], 
+    "title": "bar_b"
+  }, 
+  {
+    "all_known_tags": [
+      "TAG1", 
+      "TAG2"
+    ], 
+    "collection": "foo", 
+    "comments": [
+      {
+        "author": "user1", 
+        "text": "comment\ntext", 
+        "timeAdded": 100000000
+      }
+    ], 
+    "error": "", 
+    "sections": [
+      {
+        "title": "Test", 
+        "widgets": [
+          {
+            "data": {
+              "items": [
+                {
+                  "formatter": "string", 
+                  "list": false, 
+                  "title": "value", 
+                  "value": 0
+                }
+              ]
+            }, 
+            "title": "", 
+            "type": "keyval"
+          }
+        ]
+      }
+    ], 
+    "setid": "l2vnfhfoe3z7ad7vclkd64tsqy", 
+    "summary": {
+      "title": "", 
+      "widgets": [
+        {
+          "data": {
+            "actions": [], 
+            "columns": [
+              {
+                "align": "left", 
+                "formatter": "rellink", 
+                "list": false, 
+                "title": "Name"
+              }, 
+              {
+                "align": "left", 
+                "formatter": "filesize", 
+                "list": false, 
+                "title": "Size"
+              }
+            ], 
+            "rows": [
+              {
+                "id": 0, 
+                "values": [
+                  {
+                    "download": "", 
+                    "href": "0", 
+                    "target": "_blank", 
+                    "title": "foo_a"
+                  }, 
+                  1
+                ]
+              }
+            ], 
+            "sortcolumn": 0, 
+            "sortorder": "ascending"
+          }, 
+          "title": "", 
+          "type": "table"
+        }
+      ]
+    }, 
+    "tags": [
+      "TAG1"
+    ], 
+    "title": "foo_a"
+  }, 
+  {
+    "all_known_tags": [
+      "TAG1", 
+      "TAG2"
+    ], 
+    "collection": "foo", 
+    "comments": [
+      {
+        "author": "user2", 
+        "text": "more\ncomment", 
+        "timeAdded": 100001000
+      }
+    ], 
+    "error": "", 
+    "sections": [
+      {
+        "title": "Test", 
+        "widgets": [
+          {
+            "data": {
+              "items": [
+                {
+                  "formatter": "string", 
+                  "list": false, 
+                  "title": "value", 
+                  "value": 1
+                }
+              ]
+            }, 
+            "title": "", 
+            "type": "keyval"
+          }
+        ]
+      }
+    ], 
+    "setid": "vdls3sgw5yanuat4uepmhjwcpm", 
+    "summary": {
+      "title": "", 
+      "widgets": [
+        {
+          "data": {
+            "actions": [], 
+            "columns": [
+              {
+                "align": "left", 
+                "formatter": "rellink", 
+                "list": false, 
+                "title": "Name"
+              }, 
+              {
+                "align": "left", 
+                "formatter": "filesize", 
+                "list": false, 
+                "title": "Size"
+              }
+            ], 
+            "rows": [
+              {
+                "id": 0, 
+                "values": [
+                  {
+                    "download": "", 
+                    "href": "0", 
+                    "target": "_blank", 
+                    "title": "foo_b"
+                  }, 
+                  1
+                ]
+              }
+            ], 
+            "sortcolumn": 0, 
+            "sortorder": "ascending"
+          }, 
+          "title": "", 
+          "type": "table"
+        }
+      ]
+    }, 
+    "tags": [
+      "TAG1", 
+      "TAG2"
+    ], 
+    "title": "foo_b"
+  }
+]

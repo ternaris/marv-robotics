@@ -39,12 +39,19 @@ class UserManager(object):
         hashed = user.password.encode('utf-8')
         return bcrypt.hashpw(password, hashed) == hashed
 
-    def user_add(self, name, password, realm, realmuid):
+    def user_add(self, name, password, realm, realmuid, given_name=None, family_name=None,
+                 email=None, time_created=None, time_updated=None, _restore=None):
         try:
-            password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+            if not _restore:
+                password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
             now = int(utils.now())
-            user = User(name=name, password=password, realm=realm,
-                        realmuid=realmuid, time_created=now, time_updated=now)
+            if not time_created:
+                time_created = now
+            if not time_updated:
+                time_updated = now
+            user = User(name=name, password=password, realm=realm, given_name=given_name,
+                        family_name=family_name, email=email, realmuid=realmuid,
+                        time_created=time_created, time_updated=time_updated)
             db.session.add(user)
             db.session.commit()
         except IntegrityError:

@@ -1,0 +1,428 @@
+{
+  "bar": {
+    "all_known": {
+      "node_test": [], 
+      "status": [
+        "error", 
+        "missing", 
+        "outdated", 
+        "pending"
+      ], 
+      "tags": []
+    }, 
+    "compare": false, 
+    "filters": {
+      "title": "Filter", 
+      "widget": {
+        "filters": [
+          {
+            "constraints": null, 
+            "key": "name", 
+            "operators": [
+              "substring"
+            ], 
+            "title": "Name", 
+            "value_type": "string"
+          }, 
+          {
+            "constraints": null, 
+            "key": "setid", 
+            "operators": [
+              "startswith"
+            ], 
+            "title": "Set Id", 
+            "value_type": "string"
+          }, 
+          {
+            "constraints": null, 
+            "key": "size", 
+            "operators": [
+              "lt", 
+              "le", 
+              "eq", 
+              "ne", 
+              "ge", 
+              "gt"
+            ], 
+            "title": "Size", 
+            "value_type": "filesize"
+          }, 
+          {
+            "constraints": [
+              "error", 
+              "missing", 
+              "outdated", 
+              "pending"
+            ], 
+            "key": "status", 
+            "operators": [
+              "any", 
+              "all"
+            ], 
+            "title": "Status", 
+            "value_type": "subset"
+          }, 
+          {
+            "constraints": [], 
+            "key": "tags", 
+            "operators": [
+              "any", 
+              "all"
+            ], 
+            "title": "Tags", 
+            "value_type": "subset"
+          }, 
+          {
+            "constraints": null, 
+            "key": "comments", 
+            "operators": [
+              "substring"
+            ], 
+            "title": "Comments", 
+            "value_type": "string"
+          }, 
+          {
+            "constraints": null, 
+            "key": "files", 
+            "operators": [
+              "substring_any"
+            ], 
+            "title": "File paths", 
+            "value_type": "string"
+          }, 
+          {
+            "constraints": null, 
+            "key": "time_added", 
+            "operators": [
+              "lt", 
+              "le", 
+              "eq", 
+              "ne", 
+              "ge", 
+              "gt"
+            ], 
+            "title": "Added", 
+            "value_type": "datetime"
+          }, 
+          {
+            "constraints": [], 
+            "key": "node_test", 
+            "operators": [
+              "any"
+            ], 
+            "title": "Test node", 
+            "value_type": "subset"
+          }
+        ], 
+        "type": "filter"
+      }
+    }, 
+    "listing": {
+      "title": "Data sets (0 found)", 
+      "widget": {
+        "data": {
+          "columns": [
+            {
+              "align": "left", 
+              "formatter": "route", 
+              "id": "name", 
+              "list": false, 
+              "sortkey": "title", 
+              "title": "Name"
+            }, 
+            {
+              "align": "right", 
+              "formatter": "filesize", 
+              "id": "size", 
+              "list": false, 
+              "sortkey": null, 
+              "title": "Size"
+            }, 
+            {
+              "align": "center", 
+              "formatter": "icon", 
+              "id": "status", 
+              "list": true, 
+              "sortkey": null, 
+              "title": "Status"
+            }, 
+            {
+              "align": "left", 
+              "formatter": "pill", 
+              "id": "tags", 
+              "list": true, 
+              "sortkey": null, 
+              "title": "Tags"
+            }, 
+            {
+              "align": "left", 
+              "formatter": "datetime", 
+              "id": "time_added", 
+              "list": false, 
+              "sortkey": null, 
+              "title": "Added"
+            }, 
+            {
+              "align": "right", 
+              "formatter": "int", 
+              "id": "node_test", 
+              "list": false, 
+              "sortkey": null, 
+              "title": "Test"
+            }
+          ], 
+          "rows": [], 
+          "sortcolumn": 0, 
+          "sortorder": "ascending"
+        }, 
+        "type": "table"
+      }
+    }, 
+    "summary_config": {
+      "items": [
+        {
+          "formatter": "int", 
+          "function": [
+            "len", 
+            {}
+          ], 
+          "id": "datasets", 
+          "islist": false, 
+          "title": "datasets"
+        }, 
+        {
+          "formatter": "filesize", 
+          "function": [
+            "sum", 
+            [
+              "map", 
+              {}, 
+              [
+                "idx", 
+                "size"
+              ], 
+              0
+            ]
+          ], 
+          "id": "size", 
+          "islist": false, 
+          "title": "size"
+        }
+      ], 
+      "title": "Summary"
+    }
+  }, 
+  "foo": {
+    "all_known": {
+      "node_test": [], 
+      "status": [
+        "error", 
+        "missing", 
+        "outdated", 
+        "pending"
+      ], 
+      "tags": []
+    }, 
+    "compare": false, 
+    "filters": {
+      "title": "Filter", 
+      "widget": {
+        "filters": [
+          {
+            "constraints": null, 
+            "key": "name", 
+            "operators": [
+              "substring"
+            ], 
+            "title": "Name", 
+            "value_type": "string"
+          }, 
+          {
+            "constraints": null, 
+            "key": "setid", 
+            "operators": [
+              "startswith"
+            ], 
+            "title": "Set Id", 
+            "value_type": "string"
+          }, 
+          {
+            "constraints": null, 
+            "key": "size", 
+            "operators": [
+              "lt", 
+              "le", 
+              "eq", 
+              "ne", 
+              "ge", 
+              "gt"
+            ], 
+            "title": "Size", 
+            "value_type": "filesize"
+          }, 
+          {
+            "constraints": [
+              "error", 
+              "missing", 
+              "outdated", 
+              "pending"
+            ], 
+            "key": "status", 
+            "operators": [
+              "any", 
+              "all"
+            ], 
+            "title": "Status", 
+            "value_type": "subset"
+          }, 
+          {
+            "constraints": [], 
+            "key": "tags", 
+            "operators": [
+              "any", 
+              "all"
+            ], 
+            "title": "Tags", 
+            "value_type": "subset"
+          }, 
+          {
+            "constraints": null, 
+            "key": "comments", 
+            "operators": [
+              "substring"
+            ], 
+            "title": "Comments", 
+            "value_type": "string"
+          }, 
+          {
+            "constraints": null, 
+            "key": "files", 
+            "operators": [
+              "substring_any"
+            ], 
+            "title": "File paths", 
+            "value_type": "string"
+          }, 
+          {
+            "constraints": null, 
+            "key": "time_added", 
+            "operators": [
+              "lt", 
+              "le", 
+              "eq", 
+              "ne", 
+              "ge", 
+              "gt"
+            ], 
+            "title": "Added", 
+            "value_type": "datetime"
+          }, 
+          {
+            "constraints": [], 
+            "key": "node_test", 
+            "operators": [
+              "any"
+            ], 
+            "title": "Test node", 
+            "value_type": "subset"
+          }
+        ], 
+        "type": "filter"
+      }
+    }, 
+    "listing": {
+      "title": "Data sets (0 found)", 
+      "widget": {
+        "data": {
+          "columns": [
+            {
+              "align": "left", 
+              "formatter": "route", 
+              "id": "name", 
+              "list": false, 
+              "sortkey": "title", 
+              "title": "Name"
+            }, 
+            {
+              "align": "right", 
+              "formatter": "filesize", 
+              "id": "size", 
+              "list": false, 
+              "sortkey": null, 
+              "title": "Size"
+            }, 
+            {
+              "align": "center", 
+              "formatter": "icon", 
+              "id": "status", 
+              "list": true, 
+              "sortkey": null, 
+              "title": "Status"
+            }, 
+            {
+              "align": "left", 
+              "formatter": "pill", 
+              "id": "tags", 
+              "list": true, 
+              "sortkey": null, 
+              "title": "Tags"
+            }, 
+            {
+              "align": "left", 
+              "formatter": "datetime", 
+              "id": "time_added", 
+              "list": false, 
+              "sortkey": null, 
+              "title": "Added"
+            }, 
+            {
+              "align": "right", 
+              "formatter": "int", 
+              "id": "node_test", 
+              "list": false, 
+              "sortkey": null, 
+              "title": "Test"
+            }
+          ], 
+          "rows": [], 
+          "sortcolumn": 0, 
+          "sortorder": "ascending"
+        }, 
+        "type": "table"
+      }
+    }, 
+    "summary_config": {
+      "items": [
+        {
+          "formatter": "int", 
+          "function": [
+            "len", 
+            {}
+          ], 
+          "id": "datasets", 
+          "islist": false, 
+          "title": "datasets"
+        }, 
+        {
+          "formatter": "filesize", 
+          "function": [
+            "sum", 
+            [
+              "map", 
+              {}, 
+              [
+                "idx", 
+                "size"
+              ], 
+              0
+            ]
+          ], 
+          "id": "size", 
+          "islist": false, 
+          "title": "size"
+        }
+      ], 
+      "title": "Summary"
+    }
+  }
+}

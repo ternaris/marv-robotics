@@ -512,15 +512,9 @@ class Collection(object):
         comments = []
         tags = []
         for dataset in data:
-            (directory,) = list({os.path.dirname(x) for x in dataset['files']})
-            filenames = [os.path.basename(x) for x in dataset['files']]
-            ((name, files),) = self.scanner(directory, [], filenames)
-            files = [x if os.path.isabs(x) else os.path.join(directory, x)
-                     for x in files]
-            assert files == dataset['files']
             _comments = dataset.pop('comments')
             _tags = dataset.pop('tags')
-            dataset = self.make_dataset(name=name, **dataset)
+            dataset = self.make_dataset(_restore=True, **dataset)
             comments.extend(Comment(dataset=dataset, **x) for x in _comments)
             tags.append((dataset, _tags))
             batch.append(dataset)
@@ -595,23 +589,28 @@ class Collection(object):
         db.session.commit()
         batch[:] = []
 
-    def make_dataset(self, files, name, time_added=None):
-        setid = SetID.random()
-        files = [File(idx=i, mtime=int(utils.mtime(path) * 1000), path=path, size=stat.st_size)
-                 for i, (path, stat)
-                 in enumerate((path, os.stat(path)) for path in files)]
+    def make_dataset(self, files, name, time_added=None, discarded=None, setid=None, status=None,
+                     timestamp=None, _restore=None):
+        setid = setid or SetID.random()
+        if _restore:
+            files = [File(idx=i, **x) for i, x in enumerate(files)]
+        else:
+            files = [File(idx=i, mtime=int(utils.mtime(path) * 1000), path=path, size=stat.st_size)
+                     for i, (path, stat)
+                     in enumerate((path, os.stat(path)) for path in files)]
         time_added = int(utils.now() * 1000) if time_added is None else time_added
         dataset = Dataset(collection=self.name,
                           files=files,
                           name=name,
-                          #status=8,  # pending state see marv/model
+                          discarded=discarded,
+                          status=status,
                           time_added=time_added,
-                          timestamp=max(x.mtime for x in files),
+                          timestamp=timestamp or max(x.mtime for x in files),
                           setid=setid)
 
         storedir = self.config.marv.storedir
         store = Store(storedir, self.nodes)
-        store.add_dataset(dataset)
+        store.add_dataset(dataset, exists_okay=_restore)
         self.render_detail(dataset)
         return dataset
 

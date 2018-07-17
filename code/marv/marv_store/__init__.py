@@ -55,9 +55,14 @@ class Store(Mapping, LoggerMixin):
     def __len__(self):
         raise NotImplementedError()
 
-    def add_dataset(self, dataset):
+    def add_dataset(self, dataset, exists_okay=None):
+        # In case of restoring a database the set directory may already exist.
         setdir = os.path.join(self.path, str(dataset.setid))
-        os.mkdir(setdir)
+        try:
+            os.mkdir(setdir)
+        except OSError as e:
+            if not e.errno == 17 or not exists_okay:
+                raise
 
     def create_stream(self, handle):
         assert handle.name == 'default', handle

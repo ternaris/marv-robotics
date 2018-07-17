@@ -20,7 +20,7 @@ import marv.app
 from marv.config import ConfigError
 from marv.model import Comment, Dataset, User, Group, dataset_tag, db
 from marv.model import STATUS_MISSING
-from marv.site import Site, UnknownNode
+from marv.site import Site, UnknownNode, dump_database, make_config
 from marv.utils import find_obj
 from marv_cli import marv as marvcli
 from marv_cli import IPDB
@@ -232,11 +232,31 @@ def marvcli_undiscard(datasets):
     db.session.commit()
 
 
+@marvcli.command('dump')
+@click.argument('dump_file', type=click.File('w'))
+def marvcli_dump(dump_file):
+    """Dump database to json file.
+
+    Use '-' for stdout.
+    """
+    ctx = click.get_current_context()
+    if ctx.obj is None:
+        ctx.fail('Could not find config file: ./marv.conf or /etc/marv/marv.conf.\n'
+                 'Change working directory or specify explicitly:\n\n'
+                 '  marv --config /path/to/marv.conf\n')
+    siteconf = make_config(ctx.obj)
+    dump = dump_database(siteconf.marv.dburi)
+    json.dump(dump, dump_file, sort_keys=True, indent=2)
+
+
 @marvcli.command('restore')
-@click.argument('file', type=click.File(), default='-')
-def marvcli_restore(file):
-    """Restore previously dumped database"""
-    data = json.load(file)
+@click.argument('dump_file', type=click.File())
+def marvcli_restore(dump_file):
+    """Restore previously dumped database from file.
+
+    Use '-' to read from stdin.
+    """
+    data = json.load(dump_file)
     site = create_app().site
     site.restore_database(**data)
 
