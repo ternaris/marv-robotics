@@ -5,6 +5,7 @@
 #    pip-compile --output-file requirements.txt code/marv-cli/requirements.txt code/marv/requirements.txt code/marv/requirements-develop.txt code/marv-robotics/requirements.txt
 #
 alabaster==0.7.11
+apipkg==1.5
 argh==0.26.2
 atomicwrites==1.1.5
 attrs==18.1.0
@@ -20,6 +21,7 @@ cycler==0.10.0
 cython==0.28.3
 decorator==4.3.0
 docutils==0.14
+execnet==1.5.0
 flake8==3.5.0
 flask-cors==3.0.6
 flask-sqlalchemy==2.3.2
@@ -56,6 +58,8 @@ pygments==2.2.0
 pyjwt==1.6.4
 pyparsing==2.2.0
 pytest-cov==2.5.1
+pytest-forked==0.2
+pytest-xdist==1.22.2
 pytest==3.6.2
 python-dateutil==2.7.3
 pytz==2018.4

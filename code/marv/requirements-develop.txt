@@ -5,6 +5,7 @@
 #    pip-compile --output-file code/marv/requirements-develop.txt code/marv/requirements-develop.in
 #
 alabaster==0.7.11         # via sphinx
+apipkg==1.5               # via execnet
 argh==0.26.2              # via watchdog
 atomicwrites==1.1.5       # via pytest
 attrs==18.1.0             # via pytest
@@ -14,6 +15,7 @@ chardet==3.0.4            # via requests
 coverage==4.5.1           # via pytest-cov
 decorator==4.3.0          # via ipython, traitlets
 docutils==0.14            # via sphinx
+execnet==1.5.0            # via pytest-xdist
 flake8==3.5.0
 idna==2.7                 # via requests
 imagesize==1.0.0          # via sphinx
@@ -39,6 +41,8 @@ pyflakes==1.6.0           # via flake8
 pygments==2.2.0           # via ipython, sphinx
 pyparsing==2.2.0          # via packaging
 pytest-cov==2.5.1
+pytest-forked==0.2        # via pytest-xdist
+pytest-xdist==1.22.2
 pytest==3.6.2
 pytz==2018.4              # via babel
 pyyaml==3.12              # via watchdog

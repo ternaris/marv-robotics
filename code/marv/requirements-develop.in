@@ -9,6 +9,7 @@ ipython==5.6.0  # pip-tools finds 6.3.1 but fails to install it
 mock
 pytest
 pytest-cov
+pytest-xdist
 termcolor
 testfixtures
 uwsgi
