@@ -258,24 +258,14 @@ def raw_messages(dataset, bagmeta):
     alltopics = set()
     bytopic = defaultdict(list)
     groups = {}
-    for name in [x.name for x in requested]:
-        if ':' in name:
-            reqtop, reqtype = name.split(':')
-            # BUG: topic with more than one type is not supported
-            topics = [con.topic for con in connections
-                      if ((reqtop == '*' or reqtop == con.topic) and
-                          (reqtype == '*' or reqtype == con.datatype))]
-            group = groups[name] = yield marv.create_group(name)
-            create_stream = group.create_stream
-        else:
-            if name in bagtopics:
-                topics = [name]
-            else:
-                topics = []
-                stream = yield marv.create_stream(name)
-                yield stream.finish()
-            group = None
-            create_stream = marv.create_stream
+    for name in [x.name for x in requested if ':' in x.name]:
+        reqtop, reqtype = name.split(':')
+        # BUG: topic with more than one type is not supported
+        topics = [con.topic for con in connections
+                  if ((reqtop == '*' or reqtop == con.topic) and
+                      (reqtype == '*' or reqtype == con.datatype))]
+        group = groups[name] = yield marv.create_group(name)
+        create_stream = group.create_stream
 
         for topic in topics:
             # BUG: topic with more than one type is not supported
@@ -294,6 +284,26 @@ def raw_messages(dataset, bagmeta):
         if group:
             yield group.finish()
 
+    for topic in [x.name for x in requested if ':' not in x.name]:
+        if topic in alltopics:
+            continue
+
+        # BUG: topic with more than one type is not supported
+        con = next((x for x in connections if x.topic == topic), None)
+        # TODO: start/end_time per topic?
+        header = {'start_time': bagmeta.start_time,
+                  'end_time': bagmeta.end_time,
+                  'msg_count': con.msg_count if con else 0,
+                  'msg_type': con.datatype if con else '',
+                  'msg_type_def': con.msg_def if con else '',
+                  'msg_type_md5sum': con.md5sum if con else '',
+                  'topic': topic}
+        stream = yield marv.create_stream(topic, **header)
+        if topic not in bagtopics:
+            yield stream.finish()
+        bytopic[topic].append(stream)
+        alltopics.add(topic)
+
     if not alltopics:
         return
 
@@ -310,10 +320,8 @@ _ConnectionInfo = namedtuple('_ConnectionInfo', 'md5sum datatype msg_def')
 
 def get_message_type(stream):
     """ROS message type from definition stored for stream."""
-    assert stream.msg_type
-    assert stream.msg_type_def
-    assert stream.msg_type_md5sum
-    info = _ConnectionInfo(md5sum=stream.msg_type_md5sum,
-                           datatype=stream.msg_type,
-                           msg_def=stream.msg_type_def)
-    return _get_message_type(info)
+    if stream.msg_type and stream.msg_type_def and stream.msg_type_md5sum:
+        info = _ConnectionInfo(md5sum=stream.msg_type_md5sum,
+                               datatype=stream.msg_type,
+                               msg_def=stream.msg_type_def)
+        return _get_message_type(info)
