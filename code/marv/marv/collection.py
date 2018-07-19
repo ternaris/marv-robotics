@@ -253,8 +253,9 @@ class Collection(object):
                                   (line, linemap[node]))
             linemap[node] = line
             if nodename in nodes:
-                raise ConfigError(self.section, 'nodes',
-                                  'duplicate name %s' % (nodename,))
+                raise ConfigError(self.section, 'nodes', 'duplicate name %s' % (nodename,))
+            if not node.schema:
+                raise ConfigError(self.section, 'nodes', '%s does not define a schema!' % (line,))
             nodes[nodename] = node
         return nodes
 
