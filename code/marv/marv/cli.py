@@ -365,6 +365,9 @@ def marvcli_run(ctx, datasets, deps, excluded_nodes, force, force_dependent,
     if list_dependent and not selected_nodes:
         ctx.fail('--list-dependent needs at least one selected --node')
 
+    if force_dependent and not selected_nodes:
+        ctx.fail('--force-dependent needs at least one selected --node')
+
     if not any([datasets, collections, list_nodes]):
         click.echo(ctx.get_help())
         ctx.exit(1)
