@@ -8,8 +8,14 @@ Migration
 
 Before doing any migration you might want to check the :ref:`config` and :ref:`deploy` sections.
 
-18.03 -> 18.04
+18.05 -> 18.07
 --------------
+
+The way inputs are handled has changed. Inputs selecting an individual topic are now optional. See :ref:`optional_inputs` for more information.
+
+
+18.03 -> 18.04 /18.05 /18.07
+----------------------------
 
 The list of system dependencies is updated and the installation has significantly changed. We recommend that you re-read the :ref:`install` instructions. The database has not changed and existing sites continue to function without migration.
 

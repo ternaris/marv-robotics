@@ -6,6 +6,28 @@
 Patterns and known issues
 =========================
 
+.. _optional_inputs:
+
+Optional inputs
+---------------
+
+Starting with 18.07 inputs selecting individual topics are optional. Your node needs to be prepared that such a stream has no messages. The first ``yield marv.pull()`` and moreover ``get_message_type()`` will return ``None``. The ``msg_type`` attribute for a known-to-be-empty stream is ``None``.
+
+.. code-block:: python
+
+   @marv.node()
+   @marv.input('stream', marv.select(messages, '/optional/stream'))
+   def mynode(stream):
+       yield marv.set_header()
+       rosmsg = get_message_type(stream)() if stream.msg_type else None
+       while True:
+           msg = yield marv.pull(stream)
+           if msg is None:
+               break
+           rosmsg.deserialize(msg.data)
+           yield marv.push({'value': rosmsg.data})
+
+
 .. _reduce_separately:
 
 Reduce separately

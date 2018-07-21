@@ -62,6 +62,8 @@ And likewise for setid:
    curl $MARV_API/collection |jq '.listing.widget.data.rows[] | .setid'
 
 
+.. _httpapi_filter:
+
 Filter
 ^^^^^^
 .. code-block:: bash
@@ -160,6 +162,8 @@ output:
 
 Deletion is idempotent.
 
+
+.. _httpapi_tag:
 
 Tag
 ---
