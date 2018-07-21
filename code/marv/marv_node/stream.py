@@ -17,6 +17,10 @@ from .setid import SetID
 CACHESIZE = 50
 
 
+class RequestedMessageTooOld(Exception):
+    """Indicate a message requested from a stream is not in memory anymore"""
+
+
 class Handle(Keyed):
     @property
     def key(self):
@@ -176,8 +180,10 @@ class VolatileStream(Stream):
         offset = self.cache[0].idx - req.idx if self.cache else -1
         if offset < 0:
             return None
-
-        msg = self.cache[offset]
+        try:
+            msg = self.cache[offset]
+        except IndexError:
+            raise RequestedMessageTooOld(req, offset)
         assert msg.data is not None
         self.logdebug('return %r', msg)
         return msg

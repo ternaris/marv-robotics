@@ -11,7 +11,7 @@ from collections import OrderedDict, deque
 
 from marv_pycapnp import Wrapper
 from marv_node.io import THEEND
-from marv_node.stream import Handle, Msg, Stream
+from marv_node.stream import Handle, Msg, RequestedMessageTooOld, Stream
 from marv_nodes.types_capnp import File
 
 
@@ -58,7 +58,10 @@ class ReadStream(Stream):
             msg = Msg(latest_idx + 1, req.handle, data)
             self.cache.appendleft(msg)
         else:
-            msg = self.cache[offset]
+            try:
+                msg = self.cache[offset]
+            except IndexError:
+                raise RequestedMessageTooOld(req, offset)
         assert msg.data is not None
         self.logdebug('return %r', msg)
         return msg
@@ -126,7 +129,10 @@ class PersistentStream(Stream):
             assert not self.ended
             return None
 
-        msg = self.cache[offset]
+        try:
+            msg = self.cache[offset]
+        except IndexError:
+            raise RequestedMessageTooOld(req, offset)
         assert msg.data is not None
         self.logdebug('return %r', msg)
         return msg

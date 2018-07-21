@@ -25,6 +25,7 @@ from marv.utils import find_obj
 from marv_cli import marv as marvcli
 from marv_cli import IPDB
 from marv_node.setid import SetID
+from marv_node.stream import RequestedMessageTooOld
 from marv_store import DirectoryAlreadyExists
 
 
@@ -435,6 +436,11 @@ def marvcli_run(ctx, datasets, deps, excluded_nodes, force, force_dependent,
                 click.echo('ERROR: unknown {!r}'.format(setid), err=True)
                 if not keep_going:
                     raise
+            except RequestedMessageTooOld as e:
+                ctx.fail((
+                    "{} pulled {} message {} not being in memory anymore."
+                    "\nSee https://ternaris.com/marv-robotics/docs/patterns.html#reduce-separately"
+                ).format(e.args[0]._requestor.node.name, e.args[0].handle.node.name, e.args[1]))
             except BaseException as e:
                 errors.append(setid)
                 if isinstance(e, KeyboardInterrupt):
