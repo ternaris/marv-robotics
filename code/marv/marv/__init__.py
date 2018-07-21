@@ -42,7 +42,7 @@ __all__ = [
     'set_header',
 ]
 
-__version__ = '3.3.5'
+__version__ = '3.4.0'
 
 MODULE = sys.modules[__name__]
 for ep in iter_entry_points(group='marv_deco'):

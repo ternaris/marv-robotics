@@ -3,6 +3,36 @@
 Changelog
 ---------
 
+.. _v18_07:
+
+18.07 (2018-07-22)
+^^^^^^^^^^^^^^^^^^
+
+- [BUGFIX] Support streams of individual topics as optional inputs
+- [BUGFIX] Allow fulltext node to be used while directly subscribing to topics of std_msgs/String
+- [BUGFIX] Document the need for configured nodes to define a schema
+- [BUGFIX] Document the need for setting stream headers
+- [BUGFIX] Improve cli exception handling and error messages for certain edge cases
+- [BUGFIX] Reset graphical tag filters on collection switch
+- [BUGFIX] Fix utm conversion for gnss node
+- [BUGFIX] Properly set and reset outdated state of datasets
+- [BUGFIX] Consistently set cache control header to disable caching of all content
+- Document pattern for reducing multiple streams
+- Add cli command for database dump and restore
+- Add controls to adjust pointcloud playback speed
+- Support querying for datasets with missing files
+- Support link widgets with download attribute
+- Update python dependencies, most notably latest pycapnp
+
+
+.. _v18_05_1:
+
+18.05.1 (2018-05-11)
+^^^^^^^^^^^^^^^^^^^^
+
+- [BUGFIX] Correct coordinate transformations for cached trajectories
+
+
 .. _v18_05:
 
 18.05 (2018-05-08)

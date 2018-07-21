@@ -5,7 +5,7 @@
 
 from __future__ import absolute_import, division, print_function
 
-__version__ = '3.3.5'
+__version__ = '3.4.0'
 
 import logging
 import os
