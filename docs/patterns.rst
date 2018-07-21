@@ -127,3 +127,9 @@ However, typically it is a sign of a wrongly structured node graph.
        yield marv.push({'sums': [sum1, sum2]})
 
 If this does not cover your use case and you expect MARV to behave differently, please check whether there is a fitting [issue](https://github.com/ternaris/marv-robotics/issues) already. If no such issue exist, please open a new one providing a [minimal working example](https://github.com/ternaris/marv-robotics#reporting-issues--minimal-working-example).
+
+
+Set header
+----------
+
+``yield marv.set_header(title='Title', ...)`` sets the header for a node's output stream. The header is available on the handle supplied to a node that requested the stream as input. Before setting a header a node can perform so far undocumented actions. Afterwards it can only pull and push messages. As long as a node did not set a header or started pushing messages, its downstream nodes cannot be instantiated. Therefore, it is good practice to ``yield marv.set_header()`` before starting to pull messages, independent of whether you want to set header fields.

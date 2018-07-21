@@ -153,7 +153,7 @@ Example:
 
 nodes
 ^^^^^
-List of nodes made available within this collection under the name following the column, which is also the name of the function the node is created from.
+List of nodes made available within this collection under the name following the column, which is also the name of the function the node is created from. When listing colums or filters are added, the given extractor function run for all the collection's datasets. For this to be quick, all node output used in listing colums and filters must be readily available. Therefore all nodes listed in the configuration are persisted in the store. For a node to be persisted it needs to define a message schema. See :ref:`tutorial_declare_image_node` for an example.
 
 Example:
 

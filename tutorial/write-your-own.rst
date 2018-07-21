@@ -85,6 +85,8 @@ At first glance, there are three blocks of imports: python standard library, ext
 Let's look at this, piece-by-piece.
 
 
+.. _tutorial_declare_image_node:
+
 Declare image node
 ^^^^^^^^^^^^^^^^^^
 
