@@ -101,11 +101,12 @@ if [[ -z "$scripts" ]]; then \
 fi'
 
 ARG version=
+ARG pypi_install_args=
 
 RUN bash -c '\
 if [[ -n "$MARV_VENV" ]]; then \
     if [[ -z "$code" ]]; then \
-        ${MARV_VENV}/bin/pip install marv-robotics${version:+==${version}}; \
+        ${MARV_VENV}/bin/pip install ${pypi_install_args} marv-robotics${version:+==${version}}; \
     else \
         find /home/marv/code -maxdepth 2 -name setup.py -execdir ${MARV_VENV}/bin/pip install --no-deps . \; ;\
         ${MARV_VENV}/bin/pip install /home/marv/code/marv-robotics; \
