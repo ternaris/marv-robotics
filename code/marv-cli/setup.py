@@ -16,7 +16,6 @@ DESCRIPTION = 'Core of the MARV command-line interface'
 ENTRY_POINTS = {
     'console_scripts': [
         'marv = marv_cli:cli',
-        'marv-ipdb = marv_cli:cli_ipdb',
     ],
 }
 INTERNAL_REQUIRES = [

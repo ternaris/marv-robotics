@@ -23,7 +23,7 @@ from marv.model import STATUS_MISSING
 from marv.site import Site, UnknownNode, dump_database, make_config
 from marv.utils import find_obj
 from marv_cli import marv as marvcli
-from marv_cli import IPDB
+from marv_cli import PDB
 from marv_node.setid import SetID
 from marv_node.stream import RequestedMessageTooOld
 from marv_store import DirectoryAlreadyExists
@@ -134,20 +134,20 @@ def marvcli_develop_server(port, public):
     app.site.load_for_web()
     CORS(app)
 
-    class IPDBMiddleware(object):
+    class PDBMiddleware(object):
         def __init__(self, app):
             self.app = app
 
         def __call__(self, environ, start_response):
-            from ipdb import launch_ipdb_on_exception
-            with launch_ipdb_on_exception():
+            from marv_cli import launch_pdb_on_exception
+            with launch_pdb_on_exception():
                 appiter = self.app(environ, start_response)
                 for item in appiter:
                     yield item
 
     app.debug = True
-    if IPDB:
-        app.wsgi_app = IPDBMiddleware(app.wsgi_app)
+    if PDB:
+        app.wsgi_app = PDBMiddleware(app.wsgi_app)
         app.run(use_debugger=False,
                 use_reloader=False,
                 host=('0.0.0.0' if public else '127.0.0.1'),
@@ -421,7 +421,7 @@ def marvcli_run(ctx, datasets, deps, excluded_nodes, force, force_dependent,
         setids = (SetID(x[0]) for x in query)
 
     for setid in setids:
-        if IPDB:
+        if PDB:
             site.run(setid, selected_nodes, deps, force, keep,
                      force_dependent, update_detail, update_listing,
                      excluded_nodes, cachesize=cachesize)

@@ -34,11 +34,11 @@ Given an exception during a node run:
    NameError: global name 'xx' is not defined
    2018-02-01 09:58:10,992 ERRO marv.cli Error occured for dataset b563ng6y6d3pjf6ycx7t52pqae: global name 'xx' is not defined
 
-one can enter ipdb by running ``marv-ipdb`` instead of ``marv``:
+one can enter pdbpp by running ``PDB=1 marv`` instead of ``marv``:
 
 .. code-block:: console
 
-   $ marv-ipdb run --node bagmeta b563ng6y6d3 --force
+   $ PDB=1 marv run --node bagmeta b563ng6y6d3 --force
    2018-02-01 13:04:41,524 INFO rospy.topics topicmanager initialized
    2018-02-01 13:04:41,979 INFO marv.run b563ng6y6d.bagmeta.dwz4xbykdt.default (bagmeta) started with force
    NameError("global name 'xx' is not defined",)
@@ -49,9 +49,9 @@ one can enter ipdb by running ``marv-ipdb`` instead of ``marv``:
    --> 171     xx
        172     connections = {}
 
-   ipdb> 
+   (Pdb++)
 
-Likewise ipdb can be used by placing ``import ipdb; ipdb.set_trace()`` anywhere in the code.
+Likewise pdb can be used by placing ``import pdb; pdb.set_trace()`` anywhere in the code.
 
 .. code-block:: console
 
@@ -61,8 +61,10 @@ Likewise ipdb can be used by placing ``import ipdb; ipdb.set_trace()`` anywhere 
    /webapp/venv/lib/python2.7/site-packages/IPython/core/debugger.py:243: DeprecationWarning: The `color_scheme` argument is deprecated since version 5.1
      DeprecationWarning)
    > /webapp/marv/suite/robotics/marv_robotics/bag.py(172)bagmeta()
-       171     import ipdb; ipdb.set_trace()
+       171     import pdb; pdb.set_trace()
    --> 172     connections = {}
        173     for path in paths:
 
-   ipdb> 
+   (Pdb++)
+
+For more information see https://github.com/antocuni/pdb

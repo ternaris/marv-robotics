@@ -8,6 +8,12 @@ Migration
 
 Before doing any migration you might want to check the :ref:`config` and :ref:`deploy` sections.
 
+18.07 -> UNRELEASED
+-------------------
+
+Support for ipdb has been dropped in favour of `pdb++ <https://github.com/antocuni/pdb>`_. Use ``PDB=1 marv run`` instead of ``marv-ipdb run``. For more information see :ref:`debug`.
+
+
 18.05 -> 18.07
 --------------
 

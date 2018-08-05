@@ -9,15 +9,15 @@ __version__ = '3.4.0'
 
 import logging
 import os
+from contextlib import contextmanager
 
 import click
 from collections import OrderedDict
 from pkg_resources import iter_entry_points
 
 
-FORMAT = os.environ.get('MARV_LOG_FORMAT',
-                        '%(asctime)s %(levelname).4s %(name)s %(message)s')
-IPDB = False
+FORMAT = os.environ.get('MARV_LOG_FORMAT', '%(asctime)s %(levelname).4s %(name)s %(message)s')
+PDB = None
 
 # needs to be in line with logging
 LOGLEVEL = OrderedDict((
@@ -50,7 +50,29 @@ def create_loglevels():
             logging.addLevelName(v, k.upper())
             method = make_log_method(k, v)
             setattr(cls, k, method)
+
+
 create_loglevels()
+
+
+@contextmanager
+def launch_pdb_on_exception(launch=True):
+    """Return contextmanager launching pdb upon exception.
+
+    Use like this, to toggle via env variable:
+
+    with launch_pdb_on_exception(os.environ.get('PDB')):
+        cli()
+    """
+    # pylint: disable=bare-except,no-member
+    try:
+        yield
+    except:  # noqa
+        if launch:
+            import pdb
+            pdb.xpm()
+        else:
+            raise
 
 
 def setup_logging(loglevel, verbosity=0, logfilter=None):
@@ -113,17 +135,12 @@ def marv(ctx, config, loglevel, logfilter, verbosity):
 
 def cli():
     """setuptools entry_point"""
-    for ep in iter_entry_points(group='marv_cli'):
-        ep.load()
-    marv(auto_envvar_prefix='MARV')
-
-
-def cli_ipdb():
-    global IPDB
-    IPDB = True
-    from ipdb import launch_ipdb_on_exception
-    with launch_ipdb_on_exception():
-        cli()
+    global PDB
+    PDB = bool(os.environ.get('PDB'))
+    with launch_pdb_on_exception(PDB):
+        for ep in iter_entry_points(group='marv_cli'):
+            ep.load()
+        marv(auto_envvar_prefix='MARV')
 
 
 if __name__ == '__main__':
