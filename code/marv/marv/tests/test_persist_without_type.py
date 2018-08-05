@@ -7,20 +7,15 @@ from __future__ import absolute_import, division, print_function
 
 import json
 import os
-from itertools import count
 
-import mock
 import pytest
-import sqlalchemy as sqla
-from flask import current_app
 from pathlib2 import Path
 
 import marv
 import marv.app
 from marv.config import ConfigError
 from marv.scanner import DatasetInfo
-from marv.site import Site, dump_database
-from marv.types import Int8Value, Section
+from marv.site import Site
 from marv_nodes import dataset as dataset_node
 
 
@@ -90,9 +85,11 @@ def app(site):
     app.testing = True
     with app.app_context():
         app = app.test_client()
+
         def get_json(*args, **kw):
             resp = app.get(*args, **kw)
             return json.loads(resp.data)
+
         app.get_json = get_json
         yield app
 
