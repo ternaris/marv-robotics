@@ -19,6 +19,7 @@ kiwisolver==1.0.1         # via matplotlib
 markupsafe==1.0
 matplotlib==2.2.2
 numpy==1.14.5             # via matplotlib
+pathlib2==2.3.2
 pillow==5.1.0
 pycapnp-for-marv==0.6.3
 pycparser==2.18

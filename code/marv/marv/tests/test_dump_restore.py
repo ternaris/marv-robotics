@@ -10,10 +10,10 @@ import os
 from itertools import count
 
 import mock
-import py.path
 import pytest
 import sqlalchemy as sqla
 from flask import current_app
+from pathlib2 import Path
 
 import marv
 import marv.app
@@ -23,7 +23,7 @@ from marv.types import Int8Value, Section
 from marv_nodes import dataset as dataset_node
 
 
-DATADIR = py.path.local(__file__).dirpath('data')
+DATADIR = Path(__file__).parent / 'data'
 RECORD = os.environ.get('MARV_TESTING_RECORD')
 SETIDS = [
     'l2vnfhfoe3z7ad7vclkd64tsqy',
@@ -159,8 +159,8 @@ def recorded(data, filename):
     """
     json_file = DATADIR / filename
     if RECORD:
-        json_file.write(json.dumps(data, sort_keys=True, indent=2))
-    recorded_data = json.loads(json_file.read())
+        json_file.write_bytes(json.dumps(data, sort_keys=True, indent=2))
+    recorded_data = json.loads(json_file.read_bytes())
     assert recorded_data == data, filename
     return True
 
@@ -296,7 +296,7 @@ def test_restore(app, site):
     assert recorded(listings, 'empty_listings.json')
 
     # Restore database
-    full_dump = json.loads((DATADIR / 'full_dump.json').read())
+    full_dump = json.loads((DATADIR / 'full_dump.json').read_bytes())
     for datasets in full_dump['datasets'].values():
         for ds in datasets:
             for file in ds['files']:
@@ -346,7 +346,7 @@ def test_restore(app, site):
     # Redump database and assert dumps are the same
     dump = dump_database(site.config.marv.dburi)
     dump = json.loads(json.dumps(dump))
-    full_dump = json.loads((DATADIR / 'full_dump.json').read())
+    full_dump = json.loads((DATADIR / 'full_dump.json').read_bytes())
     for datasets in full_dump['datasets'].values():
         for ds in datasets:
             for file in ds['files']:

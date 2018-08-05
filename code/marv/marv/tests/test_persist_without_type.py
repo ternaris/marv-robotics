@@ -10,10 +10,10 @@ import os
 from itertools import count
 
 import mock
-import py.path
 import pytest
 import sqlalchemy as sqla
 from flask import current_app
+from pathlib2 import Path
 
 import marv
 import marv.app
@@ -24,7 +24,7 @@ from marv.types import Int8Value, Section
 from marv_nodes import dataset as dataset_node
 
 
-DATADIR = py.path.local(__file__).dirpath('data')
+DATADIR = Path(__file__).parent / 'data'
 RECORD = os.environ.get('MARV_TESTING_RECORD')
 SETIDS = [
     'l2vnfhfoe3z7ad7vclkd64tsqy',
