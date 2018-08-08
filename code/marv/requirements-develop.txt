@@ -7,27 +7,37 @@
 alabaster==0.7.11         # via sphinx
 apipkg==1.5               # via execnet
 argh==0.26.2              # via watchdog
+astroid==1.6.5            # via pylint, pylint-flask
 atomicwrites==1.1.5       # via pytest
 attrs==18.1.0             # via pytest
 babel==2.6.0              # via sphinx
+backports.functools-lru-cache==1.5  # via astroid, pylint
+backports.shutil-get-terminal-size==1.0.0  # via ipython
 certifi==2018.4.16        # via requests
 chardet==3.0.4            # via requests
+configparser==3.5.0       # via flake8, pylint
 coverage==4.5.1           # via pytest-cov
 decorator==4.3.0          # via ipython, traitlets
 docutils==0.14            # via sphinx
+enum34==1.1.6             # via astroid, flake8, traitlets
 execnet==1.5.0            # via pytest-xdist
 fancycompleter==0.8       # via pdbpp
 flake8==3.5.0
+funcsigs==1.0.2           # via mock, pytest
+futures==3.2.0            # via isort
 idna==2.7                 # via requests
 imagesize==1.0.0          # via sphinx
 ipython-genutils==0.2.0   # via traitlets
 ipython==5.6.0
+isort==4.3.4              # via pylint
 jinja2==2.10              # via sphinx
+lazy-object-proxy==1.3.1  # via astroid
 markupsafe==1.0           # via jinja2
-mccabe==0.6.1             # via flake8
+mccabe==0.6.1             # via flake8, pylint
 mock==2.0.0
 more-itertools==4.2.0     # via pytest
 packaging==17.1           # via sphinx
+pathlib2==2.3.2           # via ipython, pickleshare
 pathtools==0.1.2          # via watchdog
 pbr==4.0.4                # via mock
 pdbpp==0.9.2
@@ -40,7 +50,11 @@ py==1.5.3                 # via pytest
 pycodestyle==2.3.1        # via flake8
 pyflakes==1.6.0           # via flake8
 pygments==2.2.0           # via ipython, pdbpp, sphinx
+pylint-flask==0.5
+pylint-plugin-utils==0.4  # via pylint-flask
+pylint==1.9.3
 pyparsing==2.2.0          # via packaging
+pyrepl==0.8.4             # via fancycompleter
 pytest-cov==2.5.1
 pytest-forked==0.2        # via pytest-xdist
 pytest-xdist==1.22.2
@@ -48,8 +62,10 @@ pytest==3.6.2
 pytz==2018.4              # via babel
 pyyaml==3.12              # via watchdog
 requests==2.19.1          # via sphinx
+scandir==1.9.0            # via pathlib2
 simplegeneric==0.8.1      # via ipython
-six==1.11.0               # via mock, more-itertools, packaging, prompt-toolkit, pytest, sphinx, traitlets
+singledispatch==3.4.0.3   # via astroid, pylint
+six==1.11.0               # via astroid, mock, more-itertools, packaging, pathlib2, prompt-toolkit, pylint, pytest, singledispatch, sphinx, traitlets
 snowballstemmer==1.2.1    # via sphinx
 sphinx-paramlinks==0.3.4
 sphinx==1.7.5
@@ -57,8 +73,10 @@ sphinxcontrib-websupport==1.1.0  # via sphinx
 termcolor==1.1.0
 testfixtures==6.2.0
 traitlets==4.3.2          # via ipython
+typing==3.6.6             # via sphinx
 urllib3==1.23             # via requests
 uwsgi==2.0.17
 watchdog==0.8.3
 wcwidth==0.1.7            # via prompt-toolkit
 wmctrl==0.3               # via pdbpp
+wrapt==1.10.11            # via astroid

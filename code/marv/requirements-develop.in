@@ -7,6 +7,8 @@ flake8
 ipython
 mock
 pdbpp
+pylint
+pylint-flask
 pytest
 pytest-cov
 pytest-xdist

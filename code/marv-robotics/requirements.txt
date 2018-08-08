@@ -4,6 +4,7 @@
 #
 #    pip-compile --output-file code/marv-robotics/requirements.txt code/marv-robotics/requirements.in
 #
+backports.functools-lru-cache==1.5  # via matplotlib
 bcrypt==3.1.4
 cffi==1.11.5
 click==6.7
@@ -27,7 +28,9 @@ pyjwt==1.6.4
 pyparsing==2.2.0          # via matplotlib
 python-dateutil==2.7.3    # via matplotlib
 pytz==2018.4              # via matplotlib
+scandir==1.9.0
 six==1.11.0
 sqlalchemy==1.2.8
+subprocess32==3.5.3       # via matplotlib
 utm==0.4.2
 werkzeug==0.14.1

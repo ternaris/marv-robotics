@@ -19,6 +19,7 @@ pathlib2==2.3.2
 pycapnp-for-marv==0.6.3
 pycparser==2.18           # via cffi
 pyjwt==1.6.4
+scandir==1.9.0            # via pathlib2
 six==1.11.0               # via bcrypt, flask-cors, pathlib2
 sqlalchemy==1.2.8         # via flask-sqlalchemy
 werkzeug==0.14.1          # via flask
