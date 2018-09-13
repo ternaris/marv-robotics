@@ -140,7 +140,7 @@ class TestCase(unittest.TestCase):
         if not os.path.isdir(dirpath):
             os.mkdir(dirpath)
         outfile = os.path.join(dirpath, name + '.json')
-        out = [x.to_dict(verbose=True, which=True) for x in output]
+        out = [x.to_dict(which=True) for x in output]
         if self.MARV_TESTING_RECORD:
             with open(outfile, 'w') as f:
                 json.dump(out, f, sort_keys=True, indent=2)
