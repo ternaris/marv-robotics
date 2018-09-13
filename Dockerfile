@@ -7,7 +7,6 @@ FROM ros:kinetic-ros-base
 # debconf: delaying package configuration, since apt-utils is not installed
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
-    apt-get upgrade -y && \
     apt-get install -y \
         bash-completion \
         bc \
@@ -32,7 +31,6 @@ RUN apt-get update && \
         python-opencv \
         python-pip \
         ros-kinetic-laser-geometry \
-        ros-kinetic-ros-base \
         rsync \
         sqlite3 \
         ssh \
