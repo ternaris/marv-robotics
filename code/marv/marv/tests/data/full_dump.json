@@ -32,11 +32,11 @@
           {
             "missing": false, 
             "mtime": 1006000, 
-            "path": "SITEDIR/scanroots/bar/bar_b", 
+            "path": "SITEDIR/scanroots/bar/bar_Ψ", 
             "size": 1
           }
         ], 
-        "name": "bar_b", 
+        "name": "bar_Ψ", 
         "setid": "phjg4ncymwbrbl4yx35bciqazq", 
         "status": 0, 
         "tags": [
@@ -86,11 +86,11 @@
           {
             "missing": false, 
             "mtime": 1002000, 
-            "path": "SITEDIR/scanroots/foo/foo_b", 
+            "path": "SITEDIR/scanroots/foo/foo_Ψ", 
             "size": 1
           }
         ], 
-        "name": "foo_b", 
+        "name": "foo_Ψ", 
         "setid": "vdls3sgw5yanuat4uepmhjwcpm", 
         "status": 0, 
         "tags": [

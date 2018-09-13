@@ -129,7 +129,7 @@ def site(tmpdir):
 
     # make scanroots
     for sitename in ('foo', 'bar'):
-        for idx, name in enumerate(['a', 'b']):
+        for idx, name in enumerate(['a', u'\u03a8'.encode('utf-8')]):
             name = '{}_{}'.format(sitename, name)
             path = tmpdir / 'scanroots' / sitename / name
             path.write(str(idx), ensure=True)

@@ -136,7 +136,7 @@
                     "download": "", 
                     "href": "0", 
                     "target": "_blank", 
-                    "title": "bar_b"
+                    "title": "bar_Ψ"
                   }, 
                   1
                 ]
@@ -153,7 +153,7 @@
     "tags": [
       "TAG2"
     ], 
-    "title": "bar_b"
+    "title": "bar_Ψ"
   }, 
   {
     "all_known_tags": [
@@ -302,7 +302,7 @@
                     "download": "", 
                     "href": "0", 
                     "target": "_blank", 
-                    "title": "foo_b"
+                    "title": "foo_Ψ"
                   }, 
                   1
                 ]
@@ -320,6 +320,6 @@
       "TAG1", 
       "TAG2"
     ], 
-    "title": "foo_b"
+    "title": "foo_Ψ"
   }
 ]

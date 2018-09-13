@@ -129,7 +129,7 @@ class Dataset(Model):
     pending = make_status_property(8)
 
     def __repr__(self):
-        return "<{} {} {}>".format(type(self).__name__, self.setid, self.name)
+        return "<{} {} {}>".format(type(self).__name__, self.setid, self.name.encode('utf-8'))
 
 
 class File(Model):
@@ -147,7 +147,7 @@ class File(Model):
     dataset = relationship('Dataset', back_populates='files', lazy='raise')
 
     def __repr__(self):
-        return "<{} '{}'>".format(type(self).__name__, self.path)
+        return "<{} '{}'>".format(type(self).__name__, self.path.encode('utf-8'))
 
 
 class Comment(Model):
@@ -237,7 +237,8 @@ def make_listing_model(name, filter_specs):
                                     secondary=secondary,
                                     lazy='raise',
                                     back_populates=fname),
-            '__repr__': lambda self: "<{} {} {}'>".format(type(self).__name__, self.id, self.value)
+            '__repr__': lambda self: "<{} {} {}'>".format(
+                type(self).__name__, self.id, self.value.encode('utf-8'))
         })
         return relationship(rel_model_name, secondary=secondary,
                             lazy='raise', back_populates='listing')
