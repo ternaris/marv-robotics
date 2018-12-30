@@ -661,8 +661,9 @@ class Collection(object):
         values = []
         for col, functree in self.listing_functions:
             value = calltree(functree, funcs)
-            transform = FORMATTER_MAP[col.formatter + ('[]' if col.islist else '')]
-            value = transform(value)
+            if value is not None:
+                transform = FORMATTER_MAP[col.formatter + ('[]' if col.islist else '')]
+                value = transform(value)
             values.append(value)
         row = {'id': dataset.id,
                'setid': str(dataset.setid),
