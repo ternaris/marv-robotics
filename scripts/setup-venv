@@ -34,6 +34,7 @@ fi
 virtualenv -p python2.7 --system-site-packages "$TARGET"
 "$TARGET"/bin/pip install -U pip==10.0.1 setuptools==39.2.0 wheel==0.31.0
 "$TARGET"/bin/pip install -Ur "$REQUIREMENTS"
+"$TARGET"/bin/pip install -Ur code/marv/requirements-develop.txt
 "$TARGET"/bin/pip install -U --force-reinstall --no-binary :all: uwsgi
 
 # Set matplotlib backend to Agg
