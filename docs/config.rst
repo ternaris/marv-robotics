@@ -220,6 +220,18 @@ The field type determines what python type the extractor function is expected to
 | input: int, bytes
 | operators: ``lt`` ``le`` ``eq`` ``ne`` ``ge`` ``gt``
 
+``float``
+''''''''''''
+| extract: float
+| input: float
+| operators: ``lt`` ``le`` ``eq`` ``ne`` ``ge`` ``gt``
+
+``int``
+''''''''''''
+| extract: int
+| input: int
+| operators: ``lt`` ``le`` ``eq`` ``ne`` ``ge`` ``gt``
+
 ``string``
 ''''''''''
 | extract: unicode
