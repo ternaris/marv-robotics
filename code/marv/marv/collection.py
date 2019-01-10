@@ -34,6 +34,8 @@ FILTER_OPERATORS = \
 FILTER_MAP = {
     'datetime': lambda ns: None if ns is None else int(ns / 10**6),
     'filesize': lambda x: None if x is None else int(x),
+    'float': lambda x: None if x is None else float(x),
+    'int': lambda x: None if x is None else int(x),
     'subset': lambda lst: [unicode(x) for x in lst or []],
     'string': lambda x: None if x is None else unicode(x),
     'string[]': lambda lst: [unicode(x) for x in lst or []],
