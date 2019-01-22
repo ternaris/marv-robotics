@@ -227,8 +227,14 @@ def video_section(videos, title):
         raise marv.Abort()
 
     videofiles = yield marv.pull_all(*videos)
-    widgets = [{'title': video.title, 'video': {'src': videofile.relpath}}
-               for video, videofile in zip(videos, videofiles)]
+    widgets = [
+        {
+            'title': video.title,
+            'video': {'src': videofile.relpath}
+        }
+        for video, videofile in zip(videos, videofiles)
+        if videofile is not None
+    ]
     assert len(set(x['title'] for x in widgets)) == len(widgets)
     if widgets:
         yield marv.push({'title': title, 'widgets': widgets})
