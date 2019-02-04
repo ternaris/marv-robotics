@@ -42,6 +42,10 @@ If the primary uid and gid of the user you are using to start the docker contain
 
    $ ./scripts/build-image --build-arg MARV_UID=1234 --build-arg MARV_GID=5678
 
+Failure to do so can lead to::
+
+  [Errno 13] Permission denied: '/home/marv/site/sessionkey'
+
 
 Community Edition: Official MARV Robotics CE Image
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
