@@ -15,8 +15,17 @@ For more information please see:
 - MARV Robotics `website <https://ternaris.com/marv-robotics/>`_
 
 
+Contributing
+============
+
+Thank you for considering to contribute to MARV.
+
+By contributing to MARV you accept and agree to the terms and
+conditions laid out in `CONTRIBUTING.rst <./CONTRIBUTING.rst>`_.
+
+
 Reporting issues / Minimal working example
-==========================================
+------------------------------------------
 
 In order to provide a minimal working example to reproduce issues you
 are seeing, please:
