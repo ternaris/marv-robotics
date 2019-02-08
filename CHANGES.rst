@@ -3,6 +3,22 @@
 Changelog
 ---------
 
+.. _v19_02_0:
+
+19.02.0 (2019-02-09)
+^^^^^^^^^^^^^^^^^^^^
+
+- [BUGFIX] Support unicode characters in filenames and rosbag string messages
+- [BUGFIX] Only call formatters for values other than None
+- [BUGFIX] Add support for GeoJSON points to trajectory widget
+- [BUGFIX] Properly load and initialise custom widgets
+- [BUGFIX] Properly reset state of button to fetch file lists
+- Improve frontend render performance
+- Improve testing and deployment infrastructure
+- Prepare migration to gitlab
+- Unify versioning of frontend and python packages
+
+
 .. _v18_07:
 
 18.07 (2018-07-22)
