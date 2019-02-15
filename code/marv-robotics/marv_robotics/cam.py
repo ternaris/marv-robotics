@@ -72,7 +72,7 @@ def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):
                 '-f', 'rawvideo',
                 '-pixel_format', '%s' % 'gray' if mono else 'bgr24',
                 '-video_size', '%dx%d' % (rosmsg.width, rosmsg.height),
-                '-framerate', '%s' % framerate,
+                '-framerate', '%d' % round(framerate),
                 '-i', '-',
                 '-c:v', 'libvpx-vp9',
                 '-pix_fmt', 'yuv420p',
