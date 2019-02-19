@@ -15,21 +15,27 @@ When searching for tags and other ``subset`` :ref:`cfg_c_filters`, marv presents
 
    marv cleanup --unused-tags
 
-
-When datasets are deleted (via frontend, API, cli) they are only marked as discarded and can be "undiscarded".
+When datasets are discarded (via frontend, API, cli) they are only marked to be removed from marv's database and can be "undiscarded".
 
 .. code-block:: bash
 
    marv undiscard --help
 
-To actually delete these
+To actually remove these from the database
 
 .. code-block:: bash
 
    marv cleanup --discarded
 
-Additional cleanup operations will be added in one of the next releases.
+After deleting datasets manually from the filesystem, you can remove them from the database as follows:
 
+.. code-block:: bash
+
+   marv scan
+   marv query --missing | xargs marv discard
+   marv cleanup --discarded
+
+Additional cleanup operations will be added in one of the next releases.
 
 Backup
 ------
