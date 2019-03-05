@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Copyright 2019 Ternaris.
+# SPDX-License-Identifier: Apache-2.0
+
+"""Check git commits for presence of Signed-off-by lines"""
+
+import sys
+from collections import namedtuple
+from email.utils import parseaddr
+from subprocess import PIPE, run
+from xml.sax.saxutils import escape
+
+
+class Commit(namedtuple('Commit', 'sha subject author_email committer trailers')):
+    @classmethod
+    def from_info(cls, info):
+        fields = info.split('\n')
+        return cls(fields.pop(0), fields.pop(0), fields.pop(0), fields.pop(0), fields)
+
+    @property
+    def signed_off_failure(self):
+        return ('Signed-off-by: ' + self.committer) not in self.trailers
+
+
+def runout(*args, **kw):
+    """Run cmd and return its stdout."""
+    return run(*args, stdout=PIPE, **kw).stdout.decode('utf-8')
+
+
+def cli():
+    """Generate sign-off-check.xml and fail if any required Signed-off-by lines are missing.
+
+    - Exclude commits authored by ternaris.com email address
+    - One Signed-off-by line needs to match committer
+    """
+    infos = runout('git log --pretty="%h\n%s\n%ae\n%cn <%ce>\n%(trailers)"',
+                   check=True, shell=True).split('\n\n')
+    commits = [
+        commit for commit in (
+            Commit.from_info(info) for info in infos if info
+        ) if not parseaddr(commit.author_email)[1].endswith('@ternaris.com')
+    ]
+    failed = [x for x in commits if x.signed_off_failure]
+
+    print('<?xml version="1.0" encoding="utf-8"?>')
+    print('<testsuite failures="{}" name="signed-off-by-check" tests="{}">'
+          .format(len(failed), len(commits)))
+
+    for commit in commits:
+        if commit.signed_off_failure:
+            print('  <testcase classname="sign-off" name="{} Missing Signed-off-by: {}">'
+                  .format(commit.sha, escape(commit.committer)))
+            print('    <failure type="MissingSignedOffBy">')
+            print('      Missing Signed-off-by: {}'.format(escape(commit.committer)))
+            print('      Please read the CONTRIBUTING.rst.')
+            print('    </failure>')
+            print('  </testcase>')
+        else:
+            print('  <testcase classname="sign-off" name="{0.sha} {0.subject}" />'.format(commit))
+    print('</testsuite>')
+
+    sys.exit(int(bool(failed)))
+
+
+if __name__ == '__main__':
+    cli()
