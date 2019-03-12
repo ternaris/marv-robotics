@@ -174,6 +174,10 @@ def gnss_plots(gps, orientation):
     gtitle = gps.title
 
     gps = yield marv.pull(gps)  # There is only one message
+    # Check whether there are any valid messages left
+    if gps is None:
+        log.error('No valid gps messages')
+        raise marv.Abort()
     gps = gps['values']
     if orientation is not None:
         otitle = orientation.title
