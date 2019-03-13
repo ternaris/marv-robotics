@@ -73,7 +73,7 @@ Run container provides instructions for the basic use case.
    It is mounted inside the container at /home/marv/site.
 
    The scanroot contains the log files for one or more collections.
-   It is mounted into the container at /scanroot.
+   It is mounted read-only into the container at /scanroot.
 
    All additional arguments are passed as options to docker run.
 
@@ -96,7 +96,7 @@ Either way, you can enter the running container.
    $ ./scripts/enter-container
    marv@ce:~$ marv --help
 
-The scanroot is mounted as ``/scanroot`` inside the container. Be aware of that when creating your own configuration.
+The scanroot is mounted read-only as ``/scanroot`` inside the container. Be aware of that when creating your own configuration.
 
 
 Adding your own code

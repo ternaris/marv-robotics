@@ -76,6 +76,11 @@ Setup MARV Robotics in Python virtual environment and activate it:
 Et voilà, marv is successfully installed. The ``(venv)`` prefix indicates the activated virtualenv. In the following sections we assume that your virtualenv is activated. If ``marv`` cannot be found, chances are that the virtualenv containing MARV Robotics is not activated.
 For more information see `Virtual Environments <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_.
 
+.. warning::
+   MARV Robotics does not need write access to your bag files. As a
+   safety measure install and run MARV as a user having only read-only
+   access to your bag files.
+
 
 Build and serve documentation
 -----------------------------

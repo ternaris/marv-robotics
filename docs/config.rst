@@ -148,6 +148,11 @@ Example:
        ./foo
        ./bar
 
+.. warning::
+   MARV Robotics does not need write access to your bag files. As a
+   safety measure install and run MARV as a user having only read-only
+   access to your bag files.
+
 
 .. _cfg_c_nodes:
 
