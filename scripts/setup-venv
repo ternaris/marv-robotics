@@ -16,6 +16,10 @@ usage() {
 
 REQUIREMENTS="$1"; shift || usage
 TARGET="$1"; shift || usage
+EXTRA_CODE="$1"  # intentionally undocumented and subject to change
+if [[ -n "$EXTRA_CODE" ]]; then
+    EXTRA_CODE="$(realpath "$EXTRA_CODE")"
+fi
 [[ ! -d "$TARGET" ]] || (echo "The target directory must not exist, yet."; exit 1)
 PIP_ARGS=${PIP_ARGS:--e}  # develop install by default
 
@@ -44,6 +48,10 @@ sed -e "s|^backend .*|backend : Agg|" \
 
 # Install all python distributions directly in code
 find code -maxdepth 2 -name setup.py -execdir "$TARGET"/bin/pip install --no-deps $PIP_ARGS . \;
+
+if [[ -n "$EXTRA_CODE" ]]; then
+    find "$EXTRA_CODE" -maxdepth 2 -name setup.py -execdir "$TARGET"/bin/pip install --no-deps $PIP_ARGS . \;
+fi
 
 # marv-ludwig is installed from PyPI as a dependency of marv-robotics
 "$TARGET"/bin/pip install -e code/marv-robotics
