@@ -9,6 +9,7 @@ import json
 from json import dumps as jsondumps
 
 import flask
+import pendulum
 from flask import current_app, request
 from sqlalchemy.sql import select
 
@@ -46,6 +47,9 @@ VALUE_TYPE_MAP = {
     'string[]': 'string',
     'words': 'string',
 }
+
+
+TIMEZONE = pendulum.local_timezone().name
 
 
 # Order corresponds to marv.model.STATUS OrderedDict
@@ -101,6 +105,7 @@ def meta():
         },
         'acl': acl,
         'realms': current_app.site.config.marv.oauth.keys(),
+        'timezone': TIMEZONE,
     })
     resp.headers['Cache-Control'] = 'no-cache'
     return resp
