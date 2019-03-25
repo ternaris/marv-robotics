@@ -62,7 +62,7 @@ pytest==3.6.2
 pytz==2018.4              # via babel
 pyyaml==3.12              # via watchdog
 requests==2.19.1          # via sphinx
-scandir==1.9.0            # via pathlib2
+scandir==1.10.0           # via pathlib2
 simplegeneric==0.8.1      # via ipython
 singledispatch==3.4.0.3   # via astroid, pylint
 six==1.11.0               # via astroid, mock, more-itertools, packaging, pathlib2, prompt-toolkit, pylint, pytest, singledispatch, sphinx, traitlets

@@ -16,10 +16,14 @@ itsdangerous==0.24        # via flask
 jinja2==2.10              # via flask, pycapnp-for-marv
 markupsafe==1.0           # via jinja2
 pathlib2==2.3.2
+pendulum==2.0.4
 pycapnp-for-marv==0.6.3
 pycparser==2.18           # via cffi
 pyjwt==1.6.4
-scandir==1.9.0            # via pathlib2
-six==1.11.0               # via bcrypt, flask-cors, pathlib2
+python-dateutil==2.8.0    # via pendulum
+pytzdata==2018.9          # via pendulum
+scandir==1.10.0           # via pathlib2
+six==1.11.0               # via bcrypt, flask-cors, pathlib2, python-dateutil
 sqlalchemy==1.2.8         # via flask-sqlalchemy
+typing==3.6.6             # via pendulum
 werkzeug==0.14.1          # via flask

@@ -21,16 +21,19 @@ markupsafe==1.0
 matplotlib==2.2.2
 numpy==1.14.5             # via matplotlib
 pathlib2==2.3.2
+pendulum==2.0.4
 pillow==5.1.0
 pycapnp-for-marv==0.6.3
 pycparser==2.18
 pyjwt==1.6.4
 pyparsing==2.2.0          # via matplotlib
-python-dateutil==2.7.3    # via matplotlib
+python-dateutil==2.8.0
 pytz==2018.4              # via matplotlib
-scandir==1.9.0
+pytzdata==2018.9
+scandir==1.10.0
 six==1.11.0
 sqlalchemy==1.2.8
 subprocess32==3.5.3       # via matplotlib
+typing==3.6.6
 utm==0.4.2
 werkzeug==0.14.1
