@@ -1,12 +1,13 @@
 stages:
   - sign-off
 
+
 sign-off check:
   stage: sign-off
   image: python:3.7-alpine
   script:
     - apk add git
-    - .gitlab-ci/signed-off-by-check > sign-off-report.xml
+    - .gitlab-ci/signed-off-by-check > ${CI_PROJECT_DIR}/sign-off-report.xml
   artifacts:
     reports:
       junit: sign-off-report.xml

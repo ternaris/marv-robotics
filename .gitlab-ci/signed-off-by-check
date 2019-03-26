@@ -35,7 +35,7 @@ def cli():
     - Exclude commits authored by ternaris.com email address
     - One Signed-off-by line needs to match committer
     """
-    infos = runout('git log --pretty="%h\n%s\n%ae\n%cn <%ce>\n%(trailers)"',
+    infos = runout('git log --pretty="%h\n%s\n%ae\n%cn <%ce>\n%(trailers)" origin/master..',
                    check=True, shell=True).split('\n\n')
     commits = [
         commit for commit in (
