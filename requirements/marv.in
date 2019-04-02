@@ -1,4 +1,4 @@
--r ../marv-cli/requirements.txt
+-r marv-cli.in
 Flask==0.12.4
 Flask-Cors
 Flask-SQLAlchemy

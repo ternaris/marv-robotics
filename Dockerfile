@@ -61,12 +61,13 @@ fi'
 
 USER marv
 
-COPY requirements.txt /
+COPY requirements/* /requirements/
 RUN bash -c '\
 if [[ -n "$MARV_VENV" ]]; then \
     virtualenv -p python2.7 --system-site-packages $MARV_VENV; \
     $MARV_VENV/bin/pip install -U pip==10.0.1 setuptools==39.2.0 wheel==0.31.0; \
-    $MARV_VENV/bin/pip install -U -r /requirements.txt; \
+    $MARV_VENV/bin/pip install -U -r /requirements/marv-robotics.txt; \
+    $MARV_VENV/bin/pip install -U -r /requirements/develop.txt; \
     $MARV_VENV/bin/pip install -U --force-reinstall --no-binary :all: uwsgi; \
     sed -e "s|^backend .*|backend : Agg|" \
         -i $MARV_VENV/lib/python2.7/site-packages/matplotlib/mpl-data/matplotlibrc; \
@@ -74,7 +75,7 @@ fi'
 
 ARG code=code
 
-COPY --chown=marv:marv ${code:-requirements.txt} /home/marv/code
+COPY --chown=marv:marv ${code:-CHANGES.rst} /home/marv/code
 RUN bash -c '\
 if [[ -z "$code" ]]; then \
     rm /home/marv/code; \
@@ -84,7 +85,7 @@ ARG docs=docs
 
 COPY --chown=marv:marv CHANGES.rst /home/marv/CHANGES.rst
 COPY --chown=marv:marv tutorial /home/marv/tutorial
-COPY --chown=marv:marv ${docs:-requirements.txt} /home/marv/docs
+COPY --chown=marv:marv ${docs:-CHANGES.rst} /home/marv/docs
 RUN bash -c '\
 if [[ -z "$docs" ]]; then \
     rm -r /home/marv/docs /home/marv/CHANGES.rst /home/marv/tutorial; \
@@ -92,7 +93,7 @@ fi'
 
 ARG scripts=scripts
 
-COPY --chown=marv:marv ${scripts:-requirements.txt} /home/marv/scripts
+COPY --chown=marv:marv ${scripts:-CHANGES.rst} /home/marv/scripts
 RUN bash -c '\
 if [[ -z "$scripts" ]]; then \
     rm /home/marv/scripts; \
