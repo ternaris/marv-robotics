@@ -63,7 +63,7 @@ def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):
             mono, img = ros2cv(rosmsg, convert_32FC1_scale, convert_32FC1_offset)
         except cv_bridge.CvBridgeError as e:
             log = yield marv.get_logger()
-            log.error('could not convert image %s', e)
+            log.error('could not convert image from topic %s: %s ', stream.topic, e)
             return
 
         if not encoder:
@@ -126,7 +126,7 @@ def images(stream, image_width, max_frames, convert_32FC1_scale, convert_32FC1_o
             mono, img = ros2cv(rosmsg, convert_32FC1_scale, convert_32FC1_offset)
         except cv_bridge.CvBridgeError as e:
             log = yield marv.get_logger()
-            log.error('could not convert image %s', e)
+            log.error('could not convert image from topic %s: %s ', stream.topic, e)
             return
 
         height = int(round(image_width * img.shape[0] / img.shape[1]))
