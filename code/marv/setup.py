@@ -6,7 +6,6 @@
 from __future__ import absolute_import, division, print_function
 
 import io
-import re
 import os
 from collections import OrderedDict
 from setuptools import find_packages, setup
@@ -28,8 +27,8 @@ os.chdir(os.path.abspath(os.path.dirname(__file__)))
 with io.open(os.path.join('README.rst'), 'rt', encoding='utf8') as f:
     README = f.read()
 
-with io.open(os.path.join(NAME.replace('-', '_'), '__init__.py'), encoding='utf8') as f:
-    VERSION = re.search(r'__version__ = \'(.*?)\'', f.read()).group(1)
+with io.open('version', encoding='utf8') as f:
+    VERSION = f.read().strip()
 
 with io.open('requirements.in', 'rt', encoding='utf8') as f:
     INSTALL_REQUIRES = [

@@ -42,8 +42,6 @@ __all__ = [
     'set_header',
 ]
 
-__version__ = '19.02.0'
-
 MODULE = sys.modules[__name__]
 for ep in iter_entry_points(group='marv_deco'):
     assert not hasattr(MODULE, ep.name)
