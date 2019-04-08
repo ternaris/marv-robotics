@@ -70,6 +70,14 @@ def parse_datetime(s):
     return datetime(*(int(x) for x in groups[:-1]), tzinfo=tzinfo)
 
 
+def parse_timedelta(d):
+    match = re.match(r'^\s*(?:(\d+)\s*h)?'
+                     r'\s*(?:(\d+)\s*m)?'
+                     r'\s*(?:(\d+)\s*s?)?\s*$', d)
+    h, m, s = match.groups() if match else (None, None, None)
+    return (int(h or 0) * 3600 + int(m or 0) * 60 + int(s or  0)) * 1000;
+
+
 def profile(func, sort='cumtime'):
     import functools
     import pstats

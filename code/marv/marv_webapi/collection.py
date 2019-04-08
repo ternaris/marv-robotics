@@ -15,7 +15,7 @@ from sqlalchemy.sql import select
 
 from marv.collection import Filter, UnknownOperator
 from marv.model import STATUS, Tag, db
-from marv.utils import parse_datetime, parse_filesize
+from marv.utils import parse_datetime, parse_filesize, parse_timedelta
 from .tooling import APIEndpoint, api_endpoint as marv_api_endpoint
 
 
@@ -38,7 +38,7 @@ FILTER_PARSER = {
     'string': str,
     'string[]': str,
     'subset': lambda x: x,
-    'timedelta': lambda x: x,
+    'timedelta': parse_timedelta,
     'words': lambda x: x.split(),
 }
 
