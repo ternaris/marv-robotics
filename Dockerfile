@@ -37,7 +37,7 @@ RUN apt-get update && \
         unzip \
         vim \
     && rm -rf /var/lib/apt/lists/*
-RUN pip install -U pip==10.0.1 pip-tools==2.0.2 setuptools==39.2.0 virtualenv==16.0.0 wheel==0.31.0
+RUN pip install -U pip==19.0.3 pip-tools==3.6.0 setuptools==41.0.0 virtualenv==16.4.3 wheel==0.33.1
 
 RUN locale-gen en_US.UTF-8; dpkg-reconfigure -f noninteractive locales
 ENV LANG en_US.UTF-8
@@ -65,7 +65,7 @@ COPY requirements/* /requirements/
 RUN bash -c '\
 if [[ -n "$MARV_VENV" ]]; then \
     virtualenv -p python2.7 --system-site-packages $MARV_VENV; \
-    $MARV_VENV/bin/pip install -U pip==10.0.1 setuptools==39.2.0 wheel==0.31.0; \
+    $MARV_VENV/bin/pip install -U pip==19.0.3 setuptools==41.0.0 wheel==0.33.1; \
     $MARV_VENV/bin/pip install -U -r /requirements/marv-robotics.txt; \
     $MARV_VENV/bin/pip install -U -r /requirements/develop.txt; \
     $MARV_VENV/bin/pip install -U --force-reinstall --no-binary :all: uwsgi; \
