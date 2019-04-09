@@ -16,9 +16,6 @@ ENTRY_POINTS = {
     'marv_cli': ['marv = marv.cli'],
     'marv_stream': ['messages = marv_ros_stream:messages'],
 }
-INTERNAL_REQUIRES = [
-    'marv-cli',
-]
 
 # Copy/paste block below here
 
@@ -32,12 +29,13 @@ with io.open('version', encoding='utf8') as f:
 
 with io.open('requirements.in', 'rt', encoding='utf8') as f:
     INSTALL_REQUIRES = [
-        x for x in
-        [x.strip() for x in f.readlines()]
-        if x
-        if not x.startswith('-r')
-        if not x[0] == '#'
-    ] + ['{}=={}'.format(x, VERSION) for x in INTERNAL_REQUIRES]
+        '{}=={}'.format(
+            os.path.basename(req.split()[1])[:-3],  # e.g. -r ../path/to/file/package_name.in
+            VERSION
+        ) if req.startswith('-r') else req
+        for req in [line.strip() for line in f.readlines() if not line.startswith('#')]
+        if req
+    ]
 
 setup(name=NAME,
       version=VERSION,
