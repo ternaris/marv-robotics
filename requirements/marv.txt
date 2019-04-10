@@ -175,9 +175,8 @@ six==1.12.0 \
     --hash=sha256:3350809f0555b11f552448330d0b52d5f24c91a322ea4a15ef22629740f3761c \
     --hash=sha256:d16a0141ec1a18405cd4ce8b4613101da75da0e9a7aec5bdd4fa804d0e0eba73 \
     # via bcrypt, flask-cors, pathlib2, python-dateutil
-sqlalchemy==1.3.2 \
-    --hash=sha256:d5432832f91d200c3d8b473a266d59442d825f9ea744c467e68c5d9a9479fbce \
-    # via flask-sqlalchemy
+sqlalchemy==1.2.18 \
+    --hash=sha256:8027fa183f5be466030617a497b2d64e0e16c8d615e5a34bdf9fab6f66bf4723
 typing==3.6.6 \
     --hash=sha256:4027c5f6127a6267a435201981ba156de91ad0d1d98e9ddc2aa173453453492d \
     --hash=sha256:57dcf675a99b74d64dacf6fba08fb17cf7e3d5fdff53d4a30ea2a5e7e52543d4 \
