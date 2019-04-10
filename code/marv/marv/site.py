@@ -468,7 +468,11 @@ def dump_database(dburi):
     meta = sqla.MetaData(engine)
     meta.reflect()
     con = engine.connect()
-    tables = {k: v for k, v in meta.tables.items() if not k.startswith('listing_')}
+    tables = {
+        k: v for k, v in meta.tables.items()
+        if not k.startswith('listing_')
+        if not k.startswith('sqlite_')
+    }
     select = sqla.sql.select
 
     def rows2dcts(stmt):

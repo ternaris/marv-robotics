@@ -174,7 +174,11 @@ def test_dump(app, site):
     meta = sqla.MetaData(engine)
     meta.reflect()
     con = engine.connect()
-    tables = {k: v for k, v in meta.tables.items() if not k.startswith('listing_')}
+    tables = {
+        k: v for k, v in meta.tables.items()
+        if not k.startswith('listing_')
+        if not k.startswith('sqlite_')
+    }
     assert tables.viewkeys() == \
         {'dataset', 'dataset_tag', 'tag', 'file', 'comment', 'user', 'user_group', 'group'}
     for name, table in sorted(tables.items()):
@@ -275,7 +279,11 @@ def test_restore(app, site):
     meta = sqla.MetaData(engine)
     meta.reflect()
     con = engine.connect()
-    tables = {k: v for k, v in meta.tables.items() if not k.startswith('listing_')}
+    tables = {
+        k: v for k, v in meta.tables.items()
+        if not k.startswith('listing_')
+        if not k.startswith('sqlite_')
+    }
     assert tables.viewkeys() == \
         {'dataset', 'dataset_tag', 'tag', 'file', 'comment', 'user', 'user_group', 'group'}
     for name, table in sorted(tables.items()):
