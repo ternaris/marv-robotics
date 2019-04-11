@@ -12,6 +12,7 @@ Welcome to MARV Robotics!
    install/index
    tutorial/setup-basic-site
    tutorial/write-your-own
+   CONTRIBUTING
    patterns
    debug
    views
