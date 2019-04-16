@@ -20,32 +20,10 @@ Contributing
 
 Thank you for considering to contribute to MARV.
 
+To submit issues or create merge requests please follow the
+instructions provided in the `contribution guide
+<./CONTRIBUTING.rst>`_.
+
 By contributing to MARV you accept and agree to the terms and
-conditions laid out in `CONTRIBUTING.rst <./CONTRIBUTING.rst>`_.
-
-
-Reporting issues / Minimal working example
-------------------------------------------
-
-In order to provide a minimal working example to reproduce issues you
-are seeing, please:
-
-1. Create a fork of this repository and clone it.
-
-2. Create a site folder in `<./sites>`_ containing your configuration.
-
-3. If there is custom code involved, please add a minimal working
-   example based on it to a python package in `<./code>`_. We don't
-   need to see your real code, but we cannot help without code.
-
-4. Create a ``scanroot`` folder within your site folder and add
-   minimal bags or other log files as needed.
-
-5. Make sure the issues you are seeing are exposed by this setup.
-
-6. Push your changes to your fork.
-
-7. Create an issue in https://github.com/ternaris/marv-robotics/issues
-   and add a link to the minimal working example.
-
+conditions laid out in there.
 
