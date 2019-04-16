@@ -9,7 +9,7 @@ Migration
 Before doing any migration you might want to check the :ref:`config` and :ref:`deploy` sections.
 
 
-.. _from_18_07_to_19_02_0:
+.. _migrate_18_07_to_19_02_0:
 
 18.07 -> 19.02.0
 ----------------
@@ -17,7 +17,7 @@ Before doing any migration you might want to check the :ref:`config` and :ref:`d
 Support for ipdb has been dropped in favour of `pdb++ <https://github.com/antocuni/pdb>`_. Use ``PDB=1 marv run`` instead of ``marv-ipdb run``. For more information see :ref:`debug`.
 
 
-.. _from_18_05_to_18_07:
+.. _migrate_18_05_to_18_07:
 
 18.05 -> 18.07
 --------------
@@ -25,7 +25,7 @@ Support for ipdb has been dropped in favour of `pdb++ <https://github.com/antocu
 The way inputs are handled has changed. Inputs selecting an individual topic are now optional. See :ref:`optional_inputs` for more information.
 
 
-.. _from_18.03_to_18.04:
+.. _migrate_18_03_to_18_04:
 
 18.03 -> 18.04
 --------------
@@ -37,7 +37,7 @@ MARV now supports offloading the delivery of files to nginx. In case you are not
 MARV now supports access control lists (ACLs). The default ACL requires authentication to read anything, tag and comment; and only members of the group admin may discard datasets. For users of the Enterprise Edition this corresponds to the same behaviour as before. The :func:`marv_webapi.acls.public` closely resembles the previous Community Edition default, apart from requiring admin group membership to discard datasets. See :ref:`cfg_marv_acl` to change the effective ACL.
 
 
-.. _from_18.02_to_18.03:
+.. _migrate_18_02_to_18_03:
 
 18.02 -> 18.03
 --------------
@@ -53,7 +53,7 @@ To update the store to the new format rerun the trajectory nodes using:
    marv run --node trajectory --force --force-dependent --collection=*
 
 
-.. _from_17.11_to_18.02:
+.. _migrate_17_11_to_18_02:
 
 17.11 -> 18.02
 --------------
@@ -81,7 +81,7 @@ Now, nodes can be run, that were previously missing message type definitions. ``
    marv run --node gnss_plots --force --force-dependent --collection=*
 
 
-.. _from_16.10_to_17.11:
+.. _migrate_16_10_to_17_11:
 
 16.10 -> 17.11
 --------------
