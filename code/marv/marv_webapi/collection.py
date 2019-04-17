@@ -72,7 +72,8 @@ class FilterParseError(Exception):
 
 def parse_filters(specs, filters):
     filters = json.loads(filters)
-    filters = [Filter(k, FILTER_PARSER[specs[k].value_type](v['val']), v['op'])
+    filters = [Filter(k, FILTER_PARSER[specs[k].value_type](v['val']), v['op'],
+                      specs[k].value_type)
                for k, v in filters.items()]
     return filters
 

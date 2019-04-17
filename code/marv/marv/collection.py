@@ -41,7 +41,7 @@ FILTER_MAP = {
     'words': lambda lst: ' '.join(lst or []),
 }
 
-Filter = namedtuple('Filter', 'name value operator')
+Filter = namedtuple('Filter', 'name value operator type')
 FilterSpec = namedtuple('FilterSpec', 'name title operators value_type function')
 ListingColumn = namedtuple('ListingColumn', 'name heading formatter islist function')
 SummaryItem = namedtuple('SummaryItem', 'id title formatter islist function')
@@ -318,7 +318,7 @@ class Collection(object):
                                     .outerjoin(dataset_tag)
                                     .outerjoin(Tag))\
                        .where(Dataset.discarded.isnot(True))
-        for name, value, op in filters:
+        for name, value, op, val_type in filters:
             if isinstance(value, long):
                 value = min([value, sys.maxsize])
 
@@ -358,6 +358,17 @@ class Collection(object):
                 else:
                     raise UnknownOperator(op)
                 continue
+            elif val_type == 'datetime':
+                if op == 'eq':
+                    col = getattr(Listing, name)
+                    stmt = stmt.where(col.between(value, value + 24 * 3600 * 1000))
+                    continue
+                elif op == 'ne':
+                    col = getattr(Listing, name)
+                    stmt = stmt.where(~col.between(value, value + 24 * 3600 * 1000))
+                    continue
+                elif op in ['le', 'gt']:
+                    value = value + 24 * 3600 * 1000
 
             col = getattr(Listing, name)
             if op == 'lt':
