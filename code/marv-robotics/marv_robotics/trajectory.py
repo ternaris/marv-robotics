@@ -41,6 +41,27 @@ def navsatfix(stream):
         log.warn('skipped %d erroneous messages', erroneous)
 
 
+def _create_feature(coords, quality, timestamps):
+    if len(coords) == 1:
+        coords = coords[0]
+        geotype = 'point'
+    else:
+        geotype = 'line_string'
+
+    color = ((1., 0.,   0., 1.),  # rgba
+             (1., 0.65, 0., 1.),
+             (0., 0.,   1., 1.),
+             (0., 1.,   0., 1.))[quality]
+    return {
+        'properties': {
+            'color': color,
+            'width': 4.,
+            'timestamps': timestamps,
+            'markervertices': [c * 30 for c in (0., 0., -1., .3, -1., -.3)]},
+        'geometry': {geotype: {'coordinates': coords}}
+    }
+
+
 @marv.node(GeoJson)
 @marv.input('navsatfixes', default=navsatfix)
 def trajectory(navsatfixes):
@@ -49,7 +70,8 @@ def trajectory(navsatfixes):
         raise marv.Abort()
     yield marv.set_header(title=navsatfix.title)
     features = []
-    prev_quality = None
+    quality = None
+    coords = []
     timestamps = []
     while True:
         msg = yield marv.pull(navsatfix)
@@ -68,23 +90,23 @@ def trajectory(navsatfixes):
         # STATUS_GBAS_FIX = 2 -> ground-based augmentation    -> color id 3 = green
         #                     -> unknown status id            -> color id 4 = black
         if -1 <= msg['status'] <= 2:
-            quality = msg['status'] + 1
+            new_quality = msg['status'] + 1
         else:
-            quality = 4
-        if quality != prev_quality:
-            color = ((1., 0.,   0., 1.),  # rgba
-                     (1., 0.65, 0., 1.),
-                     (0., 0.,   1., 1.),
-                     (0., 1.,   0., 1.))[quality]
+            new_quality = 4
+
+        # start new feature if quality changed
+        if quality != new_quality:
+            if coords:
+                features.append(_create_feature(coords, quality, timestamps))
+            quality = new_quality
             coords = []
-            feat = {'properties': {'color': color,
-                                   'width': 4.,
-                                   'timestamps': timestamps,
-                                   'markervertices': [c * 30 for c in (0., 0., -1., .3, -1., -.3)]},
-                    'geometry': {'line_string': {'coordinates': coords}}}
-            features.append(feat)
-            prev_quality = quality
+            timestamps = []
+
         coords.append((msg['lon'], msg['lat']))
+
+    if coords:
+        features.append(_create_feature(coords, quality, timestamps))
+
     if features:
         out = {'feature_collection': {'features': features}}
         yield marv.push(out)
