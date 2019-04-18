@@ -54,6 +54,7 @@ Fixed
 - Hitting enter key in subset filter now applies filters
 - Fix initial zoom level for maps with empty geometries
 - Fix support for GeoJSON points in trajectory widget `#50 <https://gitlab.com/ternaris/marv-robotics/issues/50>`_
+- Let trajectory node produce correct GeoJSON for segments with only one coordinate
 
 Security
 ~~~~~~~~
