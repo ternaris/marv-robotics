@@ -7,6 +7,5 @@ PyJWT
 bcrypt
 configparser
 jinja2
-pathlib2
 pendulum
 pycapnp-for-marv==0.6.3

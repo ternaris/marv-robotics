@@ -1,7 +1,3 @@
-backports.functools-lru-cache==1.5 \
-    --hash=sha256:9d98697f088eb1b0fa451391f91afb5e3ebde16bbdb272819fd091151fda4f1a \
-    --hash=sha256:f0b0e4eba956de51238e17573b7087e852dfe9854afd2e9c873f73fc0ca0a6dd \
-    # via matplotlib
 bcrypt==3.1.6 \
     --hash=sha256:0ba875eb67b011add6d8c5b76afbd92166e98b1f1efab9433d5dc0fafc76e203 \
     --hash=sha256:21ed446054c93e209434148ef0b362432bb82bbdaf7beef70a32c221f3e33d1c \
@@ -107,8 +103,7 @@ itsdangerous==1.1.0 \
     # via flask
 jinja2==2.10.1 \
     --hash=sha256:065c4f02ebe7f7cf559e49ee5a95fb800a9e4528727aec6f24402a5374c65013 \
-    --hash=sha256:14dd6caf1527abb21f08f86c784eac40853ba93edb79552aa1e4b8aef1b61c7b \
-    # via flask, pycapnp-for-marv
+    --hash=sha256:14dd6caf1527abb21f08f86c784eac40853ba93edb79552aa1e4b8aef1b61c7b
 kiwisolver==1.0.1 \
     --hash=sha256:0ee4ed8b3ae8f5f712b0aa9ebd2858b5b232f1b9a96b0943dceb34df2a223bc3 \
     --hash=sha256:0f7f532f3c94e99545a29f4c3f05637f4d2713e7fd91b4dd8abfc18340b86cd5 \
@@ -217,9 +212,6 @@ numpy==1.16.2 \
     --hash=sha256:dc235bf29a406dfda5790d01b998a1c01d7d37f449128c0b1b7d1c89a84fae8b \
     --hash=sha256:fb3c83554f39f48f3fa3123b9c24aecf681b1c289f9334f8215c1d3c8e2f6e5b \
     # via matplotlib
-pathlib2==2.3.3 \
-    --hash=sha256:25199318e8cc3c25dcb45cbe084cc061051336d5a9ea2a12448d3d8cb748f742 \
-    --hash=sha256:5887121d7f7df3603bca2f710e7219f3eca0eb69e0b7cc6e0a022e155ac931a7
 pendulum==2.0.4 \
     --hash=sha256:0f43d963b27e92b04047ce8352e4c277db99f20d0b513df7d0ceafe674a2f727 \
     --hash=sha256:14e60d26d7400980123dbb6e3f2a90b70d7c18c63742ffe5bd6d6a643f8c6ef1 \
@@ -279,37 +271,19 @@ pytzdata==2018.9 \
     --hash=sha256:9626e42fd9df77b16aedbd909d1e5fda839be47966adb7089b990f3452c45dd8 \
     --hash=sha256:dddaaf4f1717820a6fdcac94057e03c1a15b3829a44d9eaf19988917977db408 \
     # via pendulum
-scandir==1.10.0 \
-    --hash=sha256:2586c94e907d99617887daed6c1d102b5ca28f1085f90446554abf1faf73123e \
-    --hash=sha256:2ae41f43797ca0c11591c0c35f2f5875fa99f8797cb1a1fd440497ec0ae4b022 \
-    --hash=sha256:2b8e3888b11abb2217a32af0766bc06b65cc4a928d8727828ee68af5a967fa6f \
-    --hash=sha256:2c712840c2e2ee8dfaf36034080108d30060d759c7b73a01a52251cc8989f11f \
-    --hash=sha256:4d4631f6062e658e9007ab3149a9b914f3548cb38bfb021c64f39a025ce578ae \
-    --hash=sha256:67f15b6f83e6507fdc6fca22fedf6ef8b334b399ca27c6b568cbfaa82a364173 \
-    --hash=sha256:7d2d7a06a252764061a020407b997dd036f7bd6a175a5ba2b345f0a357f0b3f4 \
-    --hash=sha256:8c5922863e44ffc00c5c693190648daa6d15e7c1207ed02d6f46a8dcc2869d32 \
-    --hash=sha256:92c85ac42f41ffdc35b6da57ed991575bdbe69db895507af88b9f499b701c188 \
-    --hash=sha256:b24086f2375c4a094a6b51e78b4cf7ca16c721dcee2eddd7aa6494b42d6d519d \
-    --hash=sha256:cb925555f43060a1745d0a321cca94bcea927c50114b623d73179189a4e100ac \
-    # via pathlib2
 six==1.12.0 \
     --hash=sha256:3350809f0555b11f552448330d0b52d5f24c91a322ea4a15ef22629740f3761c \
     --hash=sha256:d16a0141ec1a18405cd4ce8b4613101da75da0e9a7aec5bdd4fa804d0e0eba73 \
-    # via bcrypt, cycler, flask-cors, matplotlib, pathlib2, python-dateutil
+    # via bcrypt, cycler, flask-cors, matplotlib, python-dateutil
 sqlalchemy==1.2.18 \
     --hash=sha256:8027fa183f5be466030617a497b2d64e0e16c8d615e5a34bdf9fab6f66bf4723
-subprocess32==3.5.3 \
-    --hash=sha256:24a7f627ef7a5695138601b665057ad131fa26e80d49d5ffa6b4fdb2357a80d3 \
-    --hash=sha256:6bc82992316eef3ccff319b5033809801c0c3372709c5f6985299c88ac7225c3 \
-    # via matplotlib
-typing==3.6.6 \
-    --hash=sha256:4027c5f6127a6267a435201981ba156de91ad0d1d98e9ddc2aa173453453492d \
-    --hash=sha256:57dcf675a99b74d64dacf6fba08fb17cf7e3d5fdff53d4a30ea2a5e7e52543d4 \
-    --hash=sha256:a4c8473ce11a65999c8f59cb093e70686b6c84c98df58c1dae9b3b196089858a \
-    # via pendulum
 utm==0.4.2 \
     --hash=sha256:a6608a67df84418fd959a79b228b90ab55b2ae877827f9c210947104c5a75d0e
 werkzeug==0.15.2 \
     --hash=sha256:0a73e8bb2ff2feecfc5d56e6f458f5b99290ef34f565ffb2665801ff7de6af7a \
     --hash=sha256:7fad9770a8778f9576693f0cc29c7dcc36964df916b83734f4431c0e612a7fbc \
     # via flask
+
+# WARNING: The following packages were not pinned, but pip requires them to be
+# pinned when the requirements file includes hashes. Consider using the --allow-unsafe flag.
+# setuptools==41.0.1        # via kiwisolver
