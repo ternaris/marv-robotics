@@ -5,7 +5,6 @@
 
 if [ -z "$CENV" ]; then
     export CENV=1
-    source "/opt/ros/$ROS_DISTRO/setup.bash"
     if [[ -n "$ACTIVATE_VENV" ]] && [[ -n "$MARV_VENV" ]]; then
 	source $MARV_VENV/bin/activate
     fi

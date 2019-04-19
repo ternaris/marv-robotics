@@ -1,7 +1,9 @@
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-FROM ros:kinetic-ros-base
+FROM ubuntu:bionic
+
+ARG PYTHON=python3.7
 
 # This warning can simply be ignore:
 # debconf: delaying package configuration, since apt-utils is not installed
@@ -17,26 +19,28 @@ RUN apt-get update && \
         jq \
         less \
         libcapnp-dev \
-	libffi-dev \
-	libfreetype6-dev \
+        libffi-dev \
+        libfreetype6-dev \
         libjpeg-dev \
-	libpng-dev \
+        liblz4-dev \
+        libpng-dev \
         libssl-dev \
         libz-dev \
         locales \
         lsof \
         man \
-        python-cv-bridge \
-        python2.7-dev \
-        python-opencv \
-        python-pip \
+        python3-pip \
+        ${PYTHON} \
+        ${PYTHON}-dev \
+        ${PYTHON}-venv \
         rsync \
         sqlite3 \
         ssh \
+        strace \
+        tzdata \
         unzip \
         vim \
     && rm -rf /var/lib/apt/lists/*
-RUN pip install -U pip==19.0.3 pip-tools==3.6.0 setuptools==41.0.0 virtualenv==16.4.3 wheel==0.33.1
 
 RUN locale-gen en_US.UTF-8; dpkg-reconfigure -f noninteractive locales
 ENV LANG en_US.UTF-8
@@ -63,13 +67,13 @@ USER marv
 COPY requirements/* /requirements/
 RUN bash -c '\
 if [[ -n "$MARV_VENV" ]]; then \
-    virtualenv -p python2.7 --system-site-packages $MARV_VENV; \
+    ${PYTHON} -m venv $MARV_VENV; \
     $MARV_VENV/bin/pip install -U pip==19.0.3 setuptools==41.0.0 wheel==0.33.1; \
     $MARV_VENV/bin/pip install -U -r /requirements/marv-robotics.txt; \
     $MARV_VENV/bin/pip install -U -r /requirements/develop.txt; \
     $MARV_VENV/bin/pip install -U --force-reinstall --no-binary :all: uwsgi; \
     sed -e "s|^backend .*|backend : Agg|" \
-        -i $MARV_VENV/lib/python2.7/site-packages/matplotlib/mpl-data/matplotlibrc; \
+        -i $MARV_VENV/lib/python*/site-packages/matplotlib/mpl-data/matplotlibrc; \
 fi'
 
 ARG code=code

@@ -28,15 +28,7 @@ TARGET="$(realpath "$TARGET")"
 
 cd "$(dirname "$(realpath "$0")")"/..
 
-if ! python -c 'import rosbag; print("")'; then
-    echo
-    echo "ERROR: The rosbag python library is not available."
-    echo "Make sure ROS is properly instealled."
-    echo
-    exit 1
-fi
-
-virtualenv -p python2.7 --system-site-packages "$TARGET"
+python3.7 -m venv "$TARGET"
 "$TARGET"/bin/pip install -U pip==19.0.3 setuptools==41.0.0 wheel==0.33.1
 "$TARGET"/bin/pip install -Ur "$REQUIREMENTS"
 "$TARGET"/bin/pip install -Ur requirements/develop.txt
@@ -44,7 +36,7 @@ virtualenv -p python2.7 --system-site-packages "$TARGET"
 
 # Set matplotlib backend to Agg
 sed -e "s|^backend .*|backend : Agg|" \
-    -i "$TARGET"/lib/python2.7/site-packages/matplotlib/mpl-data/matplotlibrc
+    -i "$TARGET"/lib/python*/site-packages/matplotlib/mpl-data/matplotlibrc
 
 # Install all python distributions directly in code
 find code -maxdepth 2 -name setup.py -execdir "$TARGET"/bin/pip install --no-deps $PIP_ARGS . \;
