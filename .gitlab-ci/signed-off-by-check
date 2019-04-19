@@ -6,14 +6,18 @@
 
 """Check git commits for presence of Signed-off-by lines"""
 
+import itertools
+import os
+import shutil
 import sys
+import tempfile
 from collections import namedtuple
-from email.utils import parseaddr
+from functools import partial
 from subprocess import PIPE, run
 from xml.sax.saxutils import escape
 
 
-class Commit(namedtuple('Commit', 'sha subject author_email committer trailers')):
+class Commit(namedtuple('Commit', 'sha subject author committer trailers')):
     @classmethod
     def from_info(cls, info):
         fields = info.split('\n')
@@ -21,7 +25,13 @@ class Commit(namedtuple('Commit', 'sha subject author_email committer trailers')
 
     @property
     def signed_off_failure(self):
-        return ('Signed-off-by: ' + self.committer) not in self.trailers
+        if not self.committer.endswith('@ternaris.com>') and \
+           'Signed-off-by: {}'.format(self.committer) not in self.trailers:
+            return 'Signed-off-by: ' + self.committer
+
+        if self.committer.endswith('@ternaris.com>') and \
+           not any(x.startswith('Signed-off-by: ') for x in self.trailers):
+            return 'Signed-off-by original committer'
 
 
 def runout(*args, **kw):
@@ -30,17 +40,20 @@ def runout(*args, **kw):
 
 
 def cli():
-    """Generate sign-off-check.xml and fail if any required Signed-off-by lines are missing.
+    """Check Signed-off-by lines and print sign-off-check.xml
 
-    - Exclude commits authored by ternaris.com email address
-    - One Signed-off-by line needs to match committer
+    - Skip commits authored by Ternaris
+    - Commits by a contributor need a Signed-off-by line matching the
+      contributor
+    - Commits committed by Ternaris need a Signed-off-by line by somebody
+      (This is the case after Ternaris rebased the branch of an MR)
     """
-    infos = runout('git log --pretty="%h\n%s\n%ae\n%cn <%ce>\n%(trailers)" origin/master..',
+    infos = runout('git log --pretty="%h\n%s\n%an <%ae>\n%cn <%ce>\n%(trailers)" origin/master..',
                    check=True, shell=True).split('\n\n')
     commits = [
         commit for commit in (
             Commit.from_info(info) for info in infos if info
-        ) if not parseaddr(commit.author_email)[1].endswith('@ternaris.com')
+        ) if not commit.author.endswith('@ternaris.com>')
     ]
     failed = [x for x in commits if x.signed_off_failure]
 
@@ -49,20 +62,72 @@ def cli():
           .format(len(failed), len(commits)))
 
     for commit in commits:
-        if commit.signed_off_failure:
-            print('  <testcase classname="sign-off" name="{} Missing Signed-off-by: {}">'
-                  .format(commit.sha, escape(commit.committer)))
+        failure = commit.signed_off_failure
+        if failure:
+            print('  <testcase classname="sign-off" name="{} \'{}\' misses {}">'
+                  .format(commit.sha, commit.subject, escape(failure)))
             print('    <failure type="MissingSignedOffBy">')
-            print('      Missing Signed-off-by: {}'.format(escape(commit.committer)))
-            print('      Please read the CONTRIBUTING.rst.')
+            print('      Missing ' + escape(failure))
+            print('      Please read the contributors guide CONTRIBUTING.rst.')
             print('    </failure>')
             print('  </testcase>')
         else:
             print('  <testcase classname="sign-off" name="{0.sha} {0.subject}" />'.format(commit))
     print('</testsuite>')
 
-    sys.exit(int(bool(failed)))
+    return int(bool(failed))
+
+
+def selftest():
+    tmpdir = tempfile.mkdtemp()
+    remote = os.path.join(tmpdir, 'remote.git')
+    clone = os.path.join(tmpdir, 'clone')
+    os.mkdir(remote)
+    run('git init --bare', cwd=remote, shell=True)
+    run('git clone remote.git clone', cwd=tmpdir, shell=True)
+    _shell = partial(run, cwd=clone, shell=True)
+
+    counter = itertools.count()
+    def _create_commit(author, committer, msg):
+        env = os.environ.copy()
+        env['GIT_AUTHOR_NAME'] = author.split('<')[0].strip()
+        env['GIT_AUTHOR_EMAIL'] = author.split('<')[1][:-1]
+        env['GIT_COMMITTER_NAME'] = committer.split('<')[0].strip()
+        env['GIT_COMMITTER_EMAIL'] = committer.split('<')[1][:-1]
+        with open(os.path.join(clone, 'a'), 'w') as f:
+            f.write(str(next(counter)))
+        run(['git', 'add', 'a'], cwd=clone)
+        run(['git', 'commit', '-m', msg], cwd=clone, env=env)
+
+    _create_commit('Contributor <contri@butor>', 'Contributor <contri@butor>', 'not checked')
+    _shell('git push -u origin')
+
+    _create_commit('Ternaris <foo@ternaris.com>', 'Contributor <contri@butor>', 'not checked')
+
+    _create_commit('Contributor <contri@butor>', 'Contributor <contri@butor>', 'missing')
+    _create_commit('Contributor <contri@butor>', 'Contributor <contri@butor>',
+                   'mismatch\n\nSigned-off-by: Contributor <OTHER@butor>')
+    _create_commit('Contributor <contri@butor>', 'Contributor <contri@butor>',
+                   'ok\n\nSigned-off-by: Contributor <contri@butor>')
+
+    _create_commit('Author <auth@or>', 'Contributor <contri@butor>', 'missing')
+    _create_commit('Author <auth@or>', 'Contributor <contri@butor>',
+                   'mismatch\n\nSigned-off-by: Author <auth@or>')
+    _create_commit('Author <auth@or>', 'Contributor <contri@butor>',
+                   'ok\n\nSigned-off-by: Contributor <contri@butor>')
+
+    _create_commit('Author <auth@or>', 'Ternaris <foo@ternaris.com>', 'missing')
+    _create_commit('Author <auth@or>', 'Ternaris <foo@ternaris.com>',
+                   'ok\n\nSigned-off-by: Contributor <contri@butor>')
+
+    os.chdir(clone)
+    return_code = cli()
+    shutil.rmtree(clone)
+    sys.exit(int(not bool(return_code)))
 
 
 if __name__ == '__main__':
-    cli()
+    if len(sys.argv) > 1 and sys.argv[1] == 'selftest':
+        selftest()
+    else:
+        sys.exit(cli())
