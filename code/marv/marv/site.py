@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 import fcntl
 import json
@@ -20,11 +16,11 @@ from pkg_resources import resource_filename
 from marv_node.run import run_nodes
 from marv_store import Store
 from . import utils
-from .collection import esc
 from .collection import Collections
+from .collection import esc
 from .config import Config
-from .model import STATUS_MISSING, STATUS_OUTDATED
 from .model import Comment, Dataset, File, Group, Tag, User, dataset_tag, db
+from .model import STATUS_OUTDATED
 
 
 DEFAULT_NODES = """
@@ -93,7 +89,7 @@ def make_config(siteconf):
             'listing_sort': '| ascending',
             'listing_summary': DEFAULT_LISTING_SUMMARY,
             'nodes': DEFAULT_NODES,
-        }
+        },
     }
     required = {
         'marv': [
@@ -129,13 +125,14 @@ def make_config(siteconf):
                             required=required, schema=schema)
 
 
-class Site(object):
+class Site:
     def __init__(self, siteconf):
         self.config = make_config(siteconf)
         # TODO: maybe ordereddict for meta, or generate multiple keys
-        self.config.marv.oauth = dict(
-            (i.split(' ')[0], [s.strip() for s in i.split('|')]
-        ) for i in self.config.marv.oauth)
+        self.config.marv.oauth = {
+            line.split(' ', 1)[0]: [field.strip() for field in line.split('|')]
+            for line in self.config.marv.oauth
+        }
         self.collections = Collections(config=self.config)
 
     def load_for_web(self):
@@ -144,7 +141,8 @@ class Site(object):
             ('compare', 'filter_specs', 'listing_columns', 'model',
              'sortcolumn', 'sortorder', 'summary_items'))]
 
-    def init(self):
+    def init(self):  # noqa: C901
+        # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         try:
             fd = os.open(self.config.marv.sessionkey_file,
                          os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o666)
@@ -175,22 +173,22 @@ class Site(object):
         # load models
         _ = [x.model for x in self.collections.values()]
 
-        prefixes = ['listing_{}'.format(col) for col in self.collections.keys()]
+        prefixes = [f'listing_{col}' for col in self.collections.keys()]
         result = db.session.execute('SELECT name FROM sqlite_master WHERE type="table";')
         tables = {name for name in [x[0] for x in result]
                   if any(name.startswith(prefix) for prefix in prefixes)}
         for table in [x for x in tables if x.endswith('_sec')]:
-            db.session.execute('DROP TABLE {};'.format(table))
+            db.session.execute(f'DROP TABLE {table};')
             tables.discard(table)
         for table in [x for x in tables if x not in prefixes]:
-            db.session.execute('DROP TABLE {};'.format(table))
+            db.session.execute(f'DROP TABLE {table};')
             tables.discard(table)
         for table in tables:
-            db.session.execute('DROP TABLE {};'.format(table))
+            db.session.execute(f'DROP TABLE {table};')
 
         db.create_all()
         for name in ('admin', ):
-            if not Group.query.filter(Group.name==name).count():
+            if not Group.query.filter(Group.name == name).count():
                 db.session.add(Group(name=name))
                 db.session.commit()
 
@@ -198,7 +196,7 @@ class Site(object):
             with open('users', 'r') as usersfile:
                 users = json.load(usersfile)
                 for name, password in users.items():
-                    if not User.query.filter(User.name==name).count():
+                    if not User.query.filter(User.name == name).count():
                         db.session.add(User(name=name, password=password))
                         db.session.commit()
             os.rename('users', 'users.imported')
@@ -216,7 +214,7 @@ class Site(object):
                                   .filter(Dataset.collection == col)\
                                   .options(db.joinedload(Dataset.files))\
                                   .limit(batchsize)\
-                                  .offset(batchsize*loop.next())\
+                                  .offset(batchsize*next(loop))\
                                   .all()
                 for dataset in batch:
                     collection.render_detail(dataset)
@@ -278,7 +276,8 @@ class Site(object):
                        .delete(synchronize_session=False)
         db.session.commit()
 
-    def cleanup_tags(self):
+    @staticmethod
+    def cleanup_tags():
         db.session.query(Tag)\
                   .filter(~Tag.datasets.any())\
                   .delete(synchronize_session=False)
@@ -301,7 +300,8 @@ class Site(object):
             key = self.collections.keys()[0] if key == 'DEFAULT_COLLECTION' else key
             self.collections[key].restore_datasets(sets)
 
-    def listtags(self, collections=None):
+    @staticmethod
+    def listtags(collections=None):
         query = db.session.query(Tag.value)
         if collections:
             query = query.filter(Tag.collection.in_(collections))
@@ -310,8 +310,11 @@ class Site(object):
         tags = [x[0] for x in query]
         return tags
 
-    def query(self, collections=None, discarded=None, outdated=None,
-              path=None, tags=None, abbrev=None, missing=None):
+    @staticmethod
+    def query(collections=None, discarded=None, outdated=None, path=None, tags=None, abbrev=None,
+              missing=None):
+        # pylint: disable=too-many-arguments
+
         abbrev = 10 if abbrev is True else abbrev
         discarded = bool(discarded)
         query = db.session.query(Dataset.setid)
@@ -326,7 +329,7 @@ class Site(object):
 
         if path:
             relquery = db.session.query(File.dataset_id)\
-                                 .filter(File.path.like('{}%'.format(esc(path)), escape='$'))\
+                                 .filter(File.path.like(f'{esc(path)}%', escape='$'))\
                                  .group_by(File.dataset_id)
             query = query.filter(Dataset.id.in_(relquery.subquery()))
 
@@ -349,6 +352,8 @@ class Site(object):
     def run(self, setid, selected_nodes=None, deps=None, force=None, keep=None,
             force_dependent=None, update_detail=None, update_listing=None,
             excluded_nodes=None, cachesize=None):
+        # pylint: disable=too-many-arguments,too-many-locals
+
         assert not force_dependent or selected_nodes
 
         excluded_nodes = set(excluded_nodes or [])
@@ -362,7 +367,7 @@ class Site(object):
             selected_nodes.update(collection.detail_deps)
         persistent = collection.nodes
         try:
-            nodes = {persistent[name] if not ':' in name else utils.find_obj(name)
+            nodes = {persistent[name] if ':' not in name else utils.find_obj(name)
                      for name in selected_nodes
                      if name not in excluded_nodes
                      if name != 'dataset'}
@@ -383,15 +388,6 @@ class Site(object):
                 changed = run_nodes(dataset, nodes, store, force=force,
                                     persistent=persistent,
                                     deps=deps, cachesize=cachesize)
-        except:
-            raise
-        else:
-            if changed or update_detail:
-                collection.render_detail(dataset)
-                log.verbose('%s detail rendered', setid)
-            if changed or update_listing:
-                collection.update_listings([dataset])
-                log.verbose('%s listing rendered', setid)
         finally:
             if not keep:
                 for tmpdir, tmpdir_fd in store.pending.values():
@@ -401,6 +397,13 @@ class Site(object):
                     os.close(tmpdir_fd)
                 store.pending.clear()
 
+        if changed or update_detail:
+            collection.render_detail(dataset)
+            log.verbose('%s detail rendered', setid)
+        if changed or update_listing:
+            collection.update_listings([dataset])
+            log.verbose('%s listing rendered', setid)
+
         return changed
 
     def scan(self, dry_run=None):
@@ -408,7 +411,8 @@ class Site(object):
             for scanroot in collection.scanroots:
                 collection.scan(scanroot, dry_run)
 
-    def comment(self, username, message, ids):
+    @staticmethod
+    def comment(username, message, ids):
         now = int(utils.now() * 1000)
         comments = [Comment(dataset_id=id, author=username, time_added=now,
                             text=message)
@@ -416,7 +420,8 @@ class Site(object):
         db.session.add_all(comments)
         db.session.commit()
 
-    def tag(self, setids, add=None, remove=None):
+    @staticmethod
+    def tag(setids, add=None, remove=None):
         assert setids
         assert add or remove, (add, remove)
         add = sorted(add or [])
@@ -424,9 +429,11 @@ class Site(object):
         addremove = set(add) | set(remove)
         assert len(addremove) == len(add) + len(remove), (add, remove)
 
+        # pylint: disable=no-member
         query = db.session.query(Dataset.collection, Dataset.id, Dataset.setid)\
                           .filter(Dataset.setid.in_(setids))\
                           .order_by(Dataset.collection)
+        # pylint: enable=no-member
         for collection, group in groupby(query, key=lambda x: x[0]):
             setidmap = {setid: id for _, id, setid in group}
             dataset_ids = setidmap.values()
@@ -448,21 +455,22 @@ class Site(object):
                                     product(dataset_ids, (tags[x] for x in add))])
 
             if remove:
-                where = (dataset_tag.c.tag_id.in_(tags[x] for x in remove) &
-                         dataset_tag.c.dataset_id.in_(dataset_ids))
+                where = (dataset_tag.c.tag_id.in_(tags[x] for x in remove)
+                         & dataset_tag.c.dataset_id.in_(dataset_ids))
                 stmt = dataset_tag.delete().where(where)
                 db.session.execute(stmt)
 
         db.session.commit()
 
 
-def dump_database(dburi):
+def dump_database(dburi):  # noqa: C901
     """Dump database.
 
     The structure of the database is reflected and therefore also
     older databases, not matching the current version of marv, can be
     dumped.
     """
+    # pylint: disable=too-many-locals,too-many-statements
 
     engine = sqla.create_engine(dburi)
     meta = sqla.MetaData(engine)

@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 import json
 from json import dumps as jsondumps
@@ -29,8 +25,7 @@ ALIGN = {
 
 FILTER_PARSER = {
     'datetime': lambda x: int(
-        (parse_datetime(x) - parse_datetime('1970-01-01T00:00:00+00:00'))
-        .total_seconds() * 1000
+        (parse_datetime(x) - parse_datetime('1970-01-01T00:00:00+00:00')).total_seconds() * 1000,
     ),
     'filesize': parse_filesize,
     'float': float,
@@ -85,13 +80,13 @@ def meta():
     collection_acl = current_app.acl['collection']
     if '__unauthenticated__' not in collection_acl and not request.username:
         return flask.jsonify({
-            'realms': current_app.site.config.marv.oauth.keys(),
+            'realms': list(current_app.site.config.marv.oauth),
         })
 
     # TODO: avoid clashes, forbid routes with same name / different name generation
     acl = sorted([
         name.split('.')[-1]
-        for name, view in current_app.view_functions.viewitems()
+        for name, view in current_app.view_functions.items()
         if isinstance(view, APIEndpoint)
         if view.acl.intersection(groups)
     ])
@@ -102,10 +97,10 @@ def meta():
     resp = flask.jsonify({
         'collections': {
             'default': collection_id,
-            'items': [{'id': x, 'title': x} for x in collections.keys()],
+            'items': [{'id': x, 'title': x} for x in collections],
         },
         'acl': acl,
-        'realms': current_app.site.config.marv.oauth.keys(),
+        'realms': list(current_app.site.config.marv.oauth),
         'timezone': TIMEZONE,
     })
     resp.headers['Cache-Control'] = 'no-cache'
@@ -118,7 +113,7 @@ def collection(collection_id):
     collections = current_app.site.collections
     collection_id = collections.default_id if collection_id is None else collection_id
     try:
-        collection = collections[collection_id]
+        collection = collections[collection_id]  # pylint: disable=redefined-outer-name
     except KeyError:
         flask.abort(404)
 
@@ -126,13 +121,13 @@ def collection(collection_id):
         filters = parse_filters(collection.filter_specs,
                                 request.args.get('filter', '{}'))
     except (KeyError, ValueError):
-        current_app.logger.warn('Bad request', exc_info=True)
+        current_app.logger.warning('Bad request', exc_info=True)
         return flask.abort(400)
 
     try:
         stmt = collection.filtered_listing(filters)
     except UnknownOperator:
-        current_app.logger.warn('Bad request', exc_info=True)
+        current_app.logger.warning('Bad request', exc_info=True)
         flask.abort(400)
 
     fspecs = collection.filter_specs
@@ -144,7 +139,7 @@ def collection(collection_id):
         for name, rel in collection.model.relations.items()
         if {'any', 'all'}.intersection(fspecs[name].operators)
     }
-    all_known['status'] = STATUS.keys()
+    all_known['status'] = list(STATUS)
     all_known['tags'] = [x[0] for x in
                          db.session.execute(select([Tag.value])
                                             .where(Tag.collection == collection.name)
@@ -168,7 +163,7 @@ def collection(collection_id):
         'filters': {'title': 'Filter',
                     'widget': {'type': 'filter', 'filters': filters}},
         'summary_config': {'title': 'Summary', 'items': collection.summary_items},
-        'listing': {'title': 'Data sets ({} found)'.format(len(rows)),
+        'listing': {'title': f'Data sets ({len(rows)} found)',
                     'widget': {
                         'data': {
                             'columns': [{

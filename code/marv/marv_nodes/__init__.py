@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 import os
 import sys
@@ -14,16 +10,16 @@ import marv
 from marv_detail import Widget
 from marv_node.setid import SetID
 from marv_pycapnp import Wrapper
-from .types_capnp import Dataset
+from .types_capnp import Dataset  # pylint: disable=import-error
 
 
 @marv.node(Dataset)
 def dataset():
     raise RuntimeError('Datasets are added not run')
-    yield
+    yield  # pylint: disable=unreachable
 
 
-def load_dataset(setdir, dataset):
+def load_dataset(setdir, dataset):  # pylint: disable=redefined-outer-name
     setid = SetID(dataset.setid)
     files = [{'path': x.path,
               'missing': bool(x.missing),
@@ -43,14 +39,16 @@ def load_dataset(setdir, dataset):
             pformat(dct),
             Dataset.schema.node.displayName), file=sys.stderr)
         raise e
-    wrapper._setdir = setdir  # needed by dataset.load(node)
+    wrapper._setdir = setdir  # needed by dataset.load(node)  # pylint: disable=protected-access
     return [wrapper]
+
+
 dataset.load = load_dataset
 
 
 @marv.node(Widget)
 @marv.input('dataset', default=dataset)
-def summary_keyval(dataset):
+def summary_keyval(dataset):  # pylint: disable=redefined-outer-name
     dataset = yield marv.pull(dataset)
     if len(dataset.files) < 2:
         return
@@ -60,22 +58,30 @@ def summary_keyval(dataset):
              'cell': {'uint64': sum(x.size for x in dataset.files)}},
             {'title': 'files', 'list': False,
              'cell': {'uint64': len(dataset.files)}},
-        ]
+        ],
     }})
 
 
 @marv.node(Widget)
 @marv.input('dataset', default=dataset)
-def meta_table(dataset):
+def meta_table(dataset):  # pylint: disable=redefined-outer-name
     dataset = yield marv.pull(dataset)
     columns = [
         {'title': 'Name', 'formatter': 'rellink'},
         {'title': 'Size', 'formatter': 'filesize'},
     ]
     # dataset.id is setid here
-    rows = [{'id': idx, 'cells': [
-        {'link': {'href': '{}'.format(idx),
-                  'title': os.path.basename(f.path)}},
-        {'uint64': f.size},
-    ]} for idx, f in enumerate(dataset.files)]
+    rows = [
+        {
+            'id': idx,
+            'cells': [
+                {'link': {
+                    'href': f'{idx}',
+                    'title': os.path.basename(f.path),
+                }},
+                {'uint64': f.size},
+            ],
+        }
+        for idx, f in enumerate(dataset.files)
+    ]
     yield marv.push({'table': {'columns': columns, 'rows': rows}})

@@ -1,30 +1,26 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 import functools
 import json
 import os
 import re
 import sys
-import time
-from collections import Mapping, OrderedDict, defaultdict, namedtuple
-from functools import partial
+from collections import OrderedDict, defaultdict, namedtuple
+from collections.abc import Mapping
+from functools import reduce
 from inspect import getmembers
 from itertools import cycle, groupby
 from logging import getLogger
 
-from sqlalchemy.sql import column, func, select
+from sqlalchemy import sql
 
 from marv import utils
 from marv.config import ConfigError, calltree, getdeps, make_funcs, parse_function
 from marv.model import Comment, Dataset, File, STATUS, Tag, dataset_tag, db
 from marv.model import make_listing_model
 from marv_detail import FORMATTER_MAP, detail_to_dict
-from marv_detail.types_capnp import Detail
+from marv_detail.types_capnp import Detail  # pylint: disable=no-name-in-module
 from marv_node.setid import SetID
 from marv_store import Store
 
@@ -36,9 +32,9 @@ FILTER_MAP = {
     'filesize': lambda x: None if x is None else int(x),
     'float': lambda x: None if x is None else float(x),
     'int': lambda x: None if x is None else int(x),
-    'subset': lambda lst: [unicode(x) for x in lst or []],
-    'string': lambda x: None if x is None else unicode(x),
-    'string[]': lambda lst: [unicode(x) for x in lst or []],
+    'subset': lambda lst: [str(x) for x in lst or []],
+    'string': lambda x: None if x is None else str(x),
+    'string[]': lambda lst: [str(x) for x in lst or []],
     'timedelta': lambda ns: None if ns is None else int(ns / 10**6),
     'words': lambda lst: ' '.join(lst or []),
 }
@@ -67,11 +63,11 @@ def make_listing_column(line):
 
 def make_summary_item(line):
     fields = [x.strip() for x in line.split('|', 3)]
-    id, title, formatter, function = fields
+    name, title, formatter, function = fields
     islist = formatter.endswith('[]')
     if islist:
         formatter = formatter[:-2]
-    return SummaryItem(id, title, formatter, islist, function)
+    return SummaryItem(name, title, formatter, islist, function)
 
 
 def flatten_syntax(functree):
@@ -99,13 +95,14 @@ class UnknownOperator(Exception):
     pass
 
 
-def esc(s):
-    return s.replace('$', '$$')\
-            .replace('_', '$_')\
-            .replace('%', '$%')
+def esc(string):
+    return string.replace('$', '$$')\
+                 .replace('_', '$_')\
+                 .replace('%', '$%')
 
 
-rowdumps = partial(json.dumps, sort_keys=True, separators=(',', ':'))
+def rowdumps(*args, **kw):
+    return json.dumps(*args, sort_keys=True, separators=(',', ':'), **kw)
 
 
 class Collections(Mapping):
@@ -113,7 +110,7 @@ class Collections(Mapping):
 
     @property
     def default_id(self):
-        return self._dct.iterkeys().next()
+        return next(iter(self._dct.keys()))
 
     @property
     def _dct(self):
@@ -126,9 +123,11 @@ class Collections(Mapping):
     def loadconfig(config):
         names = config.marv.collections
         collections = OrderedDict((x, Collection(config, x)) for x in names)
-        assert names == collections.keys(), (names, collections.keys())
-        scanroots = [x for collection in collections.values()
-                     for x in collection.scanroots]
+        assert not collections.keys() ^ names, (names, collections.keys())
+        scanroots = [
+            x for collection in collections.values()
+            for x in collection.scanroots
+        ]
         assert len(set(scanroots)) == len(scanroots),\
             "Scanroots must not be shared between collections"
         return collections
@@ -137,8 +136,9 @@ class Collections(Mapping):
         self.config = config
 
     def __dir__(self):
-        return list(self._dct.viewkeys() | self.__dict__.viewkeys() |
-                    {x[0] for x in getmembers(type(self))})
+        return list(self._dct.keys()
+                    | self.__dict__.keys()
+                    | {x[0] for x in getmembers(type(self))})
 
     def __getattr__(self, name):
         return self[name]
@@ -157,7 +157,7 @@ def cached_property(func):
     """Create read-only property that caches its function's value"""
     @functools.wraps(func)
     def cached_func(self):
-        cacheattr = '_{}'.format(func.func_name)
+        cacheattr = f'_{func.__name__}'
         try:
             return getattr(self, cacheattr)
         except AttributeError:
@@ -167,7 +167,9 @@ def cached_property(func):
     return property(cached_func)
 
 
-class Collection(object):
+class Collection:
+    # pylint: disable=too-many-public-methods
+
     @property
     def compare(self):
         # TODO: should we load?
@@ -274,8 +276,8 @@ class Collection(object):
         listing_sort = self.section.listing_sort
         try:
             return 0 if not listing_sort[0] else \
-                (i for i, x in enumerate(self.listing_columns)
-                 if x.name == listing_sort[0]).next()
+                next(i for i, x in enumerate(self.listing_columns)
+                     if x.name == listing_sort[0])
         except StopIteration:
             raise ValueError("No column named '%s'" % listing_sort[0])
 
@@ -289,8 +291,7 @@ class Collection(object):
         except IndexError:
             return 'ascending'
         except KeyError:
-            raise ConfigError(self.section, 'listing_sort',
-                              '{} not in [{}]'.format(sortorder, ', '.join(orders)))
+            raise ConfigError(self.section, 'listing_sort', f'{sortorder} not in {orders}')
 
     @cached_property
     def summary_items(self):
@@ -300,96 +301,123 @@ class Collection(object):
 
     @property
     def section(self):
-        return self.config['collection {}'.format(self.name)]
+        return self.config[f'collection {self.name}']
 
     def __init__(self, config, name):
         self.config = config
         self.name = name
 
-    def filtered_listing(self, filters):
+    def filtered_listing(self, filters):  # noqa: C901
+        # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+
         model = self.model
-        Listing = model.Listing
+        Listing = model.Listing  # pylint: disable=invalid-name
         listing = Listing.__table__
         relations = model.relations
         secondaries = model.secondaries
-        stmt = select([Listing.id.label('id'),
-                       Listing.row.label('row'),
-                       Dataset.status.label('status'),
-                       Tag.value.label('tag_value')])\
-                       .select_from(listing.outerjoin(Dataset)
-                                    .outerjoin(dataset_tag)
-                                    .outerjoin(Tag))\
-                       .where(Dataset.discarded.isnot(True))
-        for name, value, op, val_type in filters:
-            if isinstance(value, long):
+        stmt = sql.select([Listing.id.label('id'),
+                           Listing.row.label('row'),
+                           Dataset.status.label('status'),
+                           Tag.value.label('tag_value')])\
+                  .select_from(listing.outerjoin(Dataset)
+                               .outerjoin(dataset_tag)
+                               .outerjoin(Tag))\
+                  .where(Dataset.discarded.isnot(True))
+
+        for name, value, operator, val_type in filters:
+            if isinstance(value, int):
                 value = min([value, sys.maxsize])
 
             if name == 'comments':
-                containstext = Comment.text.like('%{}%'.format(esc(value)), escape='$')
+                containstext = Comment.text.like(f'%{esc(value)}%', escape='$')
                 commentquery = db.session.query(Comment.dataset_id)\
                                          .filter(containstext)\
                                          .group_by(Comment.dataset_id)
                 stmt = stmt.where(Listing.id.in_(commentquery.subquery()))
                 continue
+
             elif name == 'status':
                 status_ids = STATUS.keys()
                 bitmasks = [2**status_ids.index(x) for x in value]
-                if op == 'any':
-                    stmt = stmt.where(reduce(lambda x, y: x|y,
-                                             (Dataset.status.op('&')(x) for x in bitmasks)))
-                elif op == 'all':
+                if operator == 'any':
+                    stmt = stmt.where(reduce(
+                        lambda x, y: x | y,
+                        (Dataset.status.op('&')(x) for x in bitmasks),
+                    ))
+
+                elif operator == 'all':
                     bitmask = sum(bitmasks)
                     stmt = stmt.where(Dataset.status.op('&')(bitmask) == bitmask)
+
                 else:
-                    raise UnknownOperator(op)
+                    raise UnknownOperator(operator)
+
                 continue
+
             elif name == 'tags':
-                if op == 'any':
+                if operator == 'any':
                     relquery = db.session.query(dataset_tag.c.dataset_id)\
                                          .join(Tag)\
                                          .filter(Tag.value.in_(value))
                     stmt = stmt.where(Listing.id.in_(relquery.subquery()))
-                elif op == 'all':
+
+                elif operator == 'all':
                     relquery = Tag.query\
                                   .join(dataset_tag)\
-                                  .filter(reduce(lambda x, y: x|y, (Tag.value == x for x in value)))\
+                                  .filter(reduce(
+                                      lambda x, y: x | y,
+                                      (Tag.value == x for x in value),
+                                  ))\
                                   .group_by(dataset_tag.c.dataset_id)\
                                   .having(db.func.count('*') == len(value))\
                                   .with_entities(dataset_tag.c.dataset_id)
                     stmt = stmt.where(Listing.id.in_(relquery.subquery()))
+
                 else:
-                    raise UnknownOperator(op)
+                    raise UnknownOperator(operator)
+
                 continue
+
             elif val_type == 'datetime':
-                if op == 'eq':
+                if operator == 'eq':
                     col = getattr(Listing, name)
                     stmt = stmt.where(col.between(value, value + 24 * 3600 * 1000))
                     continue
-                elif op == 'ne':
+
+                elif operator == 'ne':
                     col = getattr(Listing, name)
                     stmt = stmt.where(~col.between(value, value + 24 * 3600 * 1000))
                     continue
-                elif op in ['le', 'gt']:
+
+                elif operator in ['le', 'gt']:
                     value = value + 24 * 3600 * 1000
 
             col = getattr(Listing, name)
-            if op == 'lt':
+            if operator == 'lt':
                 stmt = stmt.where(col < value)
-            elif op == 'le':
+
+            elif operator == 'le':
                 stmt = stmt.where(col <= value)
-            elif op == 'eq':
+
+            elif operator == 'eq':
                 stmt = stmt.where(col == value)
-            elif op == 'ne':
+
+            elif operator == 'ne':
                 stmt = stmt.where(col != value)
-            elif op == 'ge':
+
+            elif operator == 'ge':
                 stmt = stmt.where(col >= value)
-            elif op == 'gt':
+
+            elif operator == 'gt':
                 stmt = stmt.where(col > value)
-            elif op == 'substring':
-                stmt = stmt.where(col.like('%{}%'.format(esc(value)), escape='$'))
-            elif op == 'startswith':
-                stmt = stmt.where(col.like('{}%'.format(esc(value)), escape='$'))
-            elif op == 'any':
+
+            elif operator == 'substring':
+                stmt = stmt.where(col.like(f'%{esc(value)}%', escape='$'))
+
+            elif operator == 'startswith':
+                stmt = stmt.where(col.like(f'{esc(value)}%', escape='$'))
+
+            elif operator == 'any':
                 rel = relations[name]
                 sec = secondaries[name]
                 relquery = rel.query\
@@ -397,42 +425,48 @@ class Collection(object):
                               .filter(rel.value.in_(value))\
                               .with_entities(sec.c.listing_id)
                 stmt = stmt.where(Listing.id.in_(relquery.subquery()))
-            elif op == 'all':
+
+            elif operator == 'all':
                 rel = relations[name]
                 sec = secondaries[name]
                 relquery = rel.query\
                               .join(sec)\
-                              .filter(reduce(lambda x, y: x|y, (rel.value == x for x in value)))\
+                              .filter(reduce(lambda x, y: x | y, (rel.value == x for x in value)))\
                               .group_by(sec.c.listing_id)\
                               .having(db.func.count('*') == len(value))\
                               .with_entities(sec.c.listing_id)
                 stmt = stmt.where(Listing.id.in_(relquery.subquery()))
-            elif op == 'substring_any':
+
+            elif operator == 'substring_any':
                 rel = relations[name]
-                stmt = stmt.where(col.any(rel.value.like('%{}%'.format(esc(value)),
-                                                            escape='$')))
-            elif op == 'words':
-                stmt = reduce(lambda stmt, x: stmt.where(col.like('%{}%'.format(esc(x)),
-                                                             escape='$')),
-                               value, stmt)
+                stmt = stmt.where(col.any(rel.value.like(f'%{esc(value)}%', escape='$')))
+
+            elif operator == 'words':
+                stmt = reduce(
+                    lambda stmt, x, col=col: stmt.where(col.like(f'%{esc(x)}%', escape='$')),
+                    value,
+                    stmt,
+                )
             else:
-                raise UnknownOperator(op)
-        stmt = select([column('row'), column('status'), func.json_group_array(column('tag_value'))])\
-               .select_from(stmt.order_by(column('tag_value')))\
-               .group_by('id')
+                raise UnknownOperator(operator)
+        stmt = sql.select([sql.column('row'),
+                           sql.column('status'),
+                           sql.func.json_group_array(sql.column('tag_value'))])\
+                  .select_from(stmt.order_by(sql.column('tag_value')))\
+                  .group_by('id')
         return stmt
 
-    def scan(self, scanpath, dry_run=False):
-        Listing = self.model.Listing
+    def scan(self, scanpath, dry_run=False):  # noqa: C901
+        # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+
         log = getLogger('.'.join([__name__, self.name]))
-        scanroot = (x for x in self.scanroots if scanpath.startswith(x)).next()
         if not os.path.isdir(scanpath):
-            log.warn('%s does not exist or is not a directory', scanpath)
+            log.warning('%s does not exist or is not a directory', scanpath)
 
         log.verbose("scanning %s'%s'", 'dry_run ' if dry_run else '', scanpath)
 
         # missing/changed flag for known files
-        startswith = File.path.like('{}%'.format(esc(scanpath)), escape='$')
+        startswith = File.path.like(f'{esc(scanpath)}%', escape='$')
         known_files = File.query.filter(startswith)\
                                 .join(Dataset)\
                                 .filter(Dataset.discarded.isnot(True))
@@ -460,7 +494,7 @@ class Collection(object):
             for dataset in Dataset.query.filter(Dataset.id.in_(ids)):
                 for file, change in changes.pop(dataset.id):
                     check_outdated = False
-                    if type(change) is bool:
+                    if isinstance(change, bool):
                         file.missing = change
                         dataset.missing = change
                     else:
@@ -513,7 +547,7 @@ class Collection(object):
                   if os.path.islink(x)]
         oldest_mtime = utils.mtime(os.path.join(setdir, 'detail.json'))
         for nodedir in latest:
-            for dirpath, dirnames, filenames in os.walk(nodedir):
+            for dirpath, _, filenames in os.walk(nodedir):
                 for name in filenames:
                     path = os.path.join(dirpath, name)
                     oldest_mtime = min(oldest_mtime, utils.mtime(path))
@@ -561,7 +595,9 @@ class Collection(object):
         data[:] = []
 
     def _add_batch(self, log, batch):
-        Listing = self.model.Listing
+        # pylint: disable=too-many-locals
+
+        Listing = self.model.Listing  # pylint: disable=invalid-name
         relations = self.model.relations
 
         # We need ids to render the listings; flush would result in
@@ -589,7 +625,7 @@ class Collection(object):
             if not values:
                 relmap[key] = {}
                 continue
-            Rel = relations[key]
+            Rel = relations[key]  # pylint: disable=invalid-name
             insert = Rel.__table__.insert().prefix_with('OR IGNORE')
             db.session.execute(insert, [{'value': x} for x in values])
             query = db.session.query(Rel)\
@@ -605,6 +641,8 @@ class Collection(object):
 
     def make_dataset(self, files, name, time_added=None, discarded=None, setid=None, status=None,
                      timestamp=None, _restore=None):
+        # pylint: disable=too-many-arguments
+
         setid = setid or SetID.random()
         if _restore:
             files = [File(idx=i, **x) for i, x in enumerate(files)]
@@ -640,21 +678,21 @@ class Collection(object):
         funcs = make_funcs(dataset, setdir, store)
 
         summary_widgets = [
-            x[0]._reader for x in
+            x[0]._reader for x in  # pylint: disable=protected-access
             [store.load(setdir, node, default=None) for node in self.detail_summary_widgets]
             if x
         ]
 
         sections = [
-            x[0]._reader for x in
+            x[0]._reader for x in  # pylint: disable=protected-access
             [store.load(setdir, node, default=None) for node in self.detail_sections]
             if x
         ]
 
-        kw = {'title': calltree(self.detail_title, funcs),
-              'sections': sections,
-              'summary': {'widgets': summary_widgets}}
-        detail = Detail.new_message(**kw).as_reader()
+        dct = {'title': calltree(self.detail_title, funcs),
+               'sections': sections,
+               'summary': {'widgets': summary_widgets}}
+        detail = Detail.new_message(**dct).as_reader()
         dct = detail_to_dict(detail)
         fd = os.open(os.path.join(setdir, '.detail.json'),
                      os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o666)
@@ -666,6 +704,8 @@ class Collection(object):
         self._check_outdated(dataset)
 
     def render_listing(self, dataset):
+        # pylint: disable=too-many-locals
+
         storedir = self.config.marv.storedir
         setdir = os.path.join(storedir, str(dataset.setid))
         store = Store(storedir, self.nodes)
@@ -696,6 +736,8 @@ class Collection(object):
         return row, fields, relfields
 
     def update_listings(self, datasets):
+        # pylint: disable=too-many-locals
+
         assert datasets
         # TODO: similar to _add_batch
         relations = self.model.relations
@@ -706,10 +748,9 @@ class Collection(object):
         render_listing = self.render_listing
         rendered = [render_listing(x) for x in datasets]
         listings = []
-        for i, (row, fields, relfields) in enumerate(rendered):
+        for dataset, (row, fields, relfields) in zip(datasets, rendered):
             assert 'id' not in fields
             assert 'row' not in fields
-            dataset = datasets[i]
             fields['id'] = listing_id = dataset.id
             fields['row'] = rowdumps(row)
             listings.append(fields)
@@ -733,8 +774,10 @@ class Collection(object):
             relmap[key] = {value: id for value, id in query}
 
         # bulk delete associations per relation
-        for key, listing_ids in [(key, [x[0] for x in group])
-                         for key, group in groupby(queue, lambda x: x[1])]:
+        for key, listing_ids in [
+                (key, [x[0] for x in group])
+                for key, group in groupby(queue, lambda x: x[1])
+        ]:
             secondary = secondaries[key]
             stmt = secondary.delete()\
                             .where(secondary.c.listing_id.in_(listing_ids))

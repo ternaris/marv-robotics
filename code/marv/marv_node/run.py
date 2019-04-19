@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-from __future__ import absolute_import, division, print_function
+# pylint: disable=too-many-locals,pointless-statement,unused-variable,too-many-statements
+# pylint: disable=too-few-public-methods,no-member
+# pylint: disable=too-many-return-statements,too-many-branches,no-else-return,protected-access
 
 import functools
 import os
@@ -14,11 +14,10 @@ from pprint import pformat
 from marv_node.setid import SetID
 from marv_nodes import dataset as dataset_node
 from marv_store.streams import ReadStream
-
 from .driver import Driver
 from .event import DefaultOrderedDict
+from .io import MsgRequest, Task
 from .io import NEXT, PAUSED, RESUME, THEEND
-from .io import Task, MsgRequest
 from .stream import Handle, Msg, Stream, VolatileStream
 
 
@@ -31,8 +30,8 @@ MARV_RUN_LOGBREAK = os.environ.get('MARV_RUN_LOGBREAK')
 RAISE_IF_UNFINISHED = False
 
 
-def run_nodes(dataset, nodes, store, persistent=None, force=None,
-              deps=None, cachesize=None):
+def run_nodes(dataset, nodes, store, persistent=None, force=None, deps=None, cachesize=None):
+    # pylint: disable=too-many-arguments
 
     if cachesize is not None:
         import marv_node
@@ -64,8 +63,8 @@ def run_nodes(dataset, nodes, store, persistent=None, force=None,
     return streams
 
 
-def run_nodes_async(dataset, nodes, store, queue, persistent=None,
-                    force=None, deps=None):
+def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=None, deps=None):  # pylint: disable=line-too-long  # noqa: C901
+    # pylint: disable=too-many-arguments
     deps = True if deps is None else deps
     force = False if force is None else force
     assert len(nodes) == len(set(nodes)), nodes
@@ -102,7 +101,7 @@ def run_nodes_async(dataset, nodes, store, queue, persistent=None,
         send_queue.append((driver, driver.start()))
         store_name = persistent.get(driver.node)
 
-        class LoggerProxy(object):
+        class LoggerProxy:
             def __init__(self, name, prefix):
                 self.logger = getLogger(name)
                 self.prefix = prefix
@@ -123,7 +122,7 @@ def run_nodes_async(dataset, nodes, store, queue, persistent=None,
         loggers[driver] = logger
         logmeth = getattr(logger, 'info' if store_name else 'verbose')
         logmeth('%sstarted%s',
-                '({}) '.format(store_name) if store_name else '',
+                f'({store_name}) ' if store_name else '',
                 ' with force' if force else '')
 
     logverbose('evaluating %s %s', setid.abbrev, ' '.join(sorted(getname(x) for x in nodes)))
@@ -133,8 +132,8 @@ def run_nodes_async(dataset, nodes, store, queue, persistent=None,
             if not force:
                 logverbose('skipping stored %s', getname(node))
                 continue
-        stream = store.create_stream(handle) if node in persistent \
-                 else VolatileStream(handle)
+        stream = (store.create_stream(handle) if node in persistent
+                  else VolatileStream(handle))
         driver = Driver(stream)
         start_driver(driver, force and handle in store)
 
@@ -188,25 +187,27 @@ def run_nodes_async(dataset, nodes, store, queue, persistent=None,
             ('drivers', list(drivers.values())),
             ('done', list(done)),
             ('queue', list(queue)),
-            ('send_queue', ['{!r} {!r}'.format(x, y) for x, y in send_queue]),
+            ('send_queue', [f'{x!r} {y!r}' for x, y in send_queue]),
             ('suspended', list(suspended)),
             ('pulling', list(pulling)),
-            ('waiting', sorted(['{!r} {!r} {}'.format(driver, handle, idx)
-                                for (handle, idx), lst in waiting.items()
-                                for driver in lst])),
+            ('waiting', sorted([
+                f'{driver!r} {handle!r} {idx}'
+                for (handle, idx), lst in waiting.items()
+                for driver in lst
+            ])),
             ('streams', [(repr(v), v.info()) for k, v in streams.items()]),
         ]).split('\n'))
         return '\n'.join(lines)
 
     def ppwait():
         return pformat([
-            '{} {} {}'.format(driver.key_abbrev, handle.key_abbrev, idx)
+            f'{driver.key_abbrev} {handle.key_abbrev} {idx}'
             for (handle, idx), lst in waiting.items()
             for driver in lst
         ])
+
     def pppinfo():
         print(ppinfo())
-
 
     class Counter:
         msgnum = 0
@@ -241,7 +242,7 @@ def run_nodes_async(dataset, nodes, store, queue, persistent=None,
             assert isinstance(promise, Task), promise
             queue.append((current, promise))
             Counter.msgnum += 1
-            #loggers[current].debug('recv %r', promise)
+            # loggers[current].debug('recv %r', promise)
         except StopIteration:
             methname = 'info' if current.node in persistent else 'verbose'
             logmeth = getattr(loggers[current], methname)
@@ -279,8 +280,8 @@ def run_nodes_async(dataset, nodes, store, queue, persistent=None,
             # TODO: in case of a restart this is ok, see also comment
             # below near reqdriver
             #
-            #assert stream.handle not in streams, stream.handle
-            #assert stream.handle not in serving
+            # assert stream.handle not in streams, stream.handle
+            # assert stream.handle not in serving
             streams[stream.handle] = stream
             serving[stream.handle] = current
             logger.noisy('ADDSTREAM %s', stream.name)
@@ -402,7 +403,7 @@ def run_nodes_async(dataset, nodes, store, queue, persistent=None,
                 handles.append(handle)
                 reqdriver.add_stream_request(*handles)
         else:
-            raise RuntimeError('Unknown task: {!r} from {!r}'.format(task, current))
+            raise RuntimeError(f'Unknown task: {task!r} from {current!r}')
 
         return loop()
 
@@ -419,8 +420,7 @@ def run_nodes_async(dataset, nodes, store, queue, persistent=None,
         if unfinished:
             logdebug("state %s", ppinfo())
             logerror('The following nodes did not finish:\n  %s',
-                     '\n  '.join('{} waiting for {}'.format(*x) for x in
-                                 sorted(unfinished)))
+                     '\n  '.join(f'{x[0]} waiting for {x[1]}' for x in sorted(unfinished)))
             if RAISE_IF_UNFINISHED:
                 assert not unfinished, sorted(unfinished)
 

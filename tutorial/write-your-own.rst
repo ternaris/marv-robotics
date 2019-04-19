@@ -41,8 +41,6 @@ We placed the Python code of this tutorial into the public domain, so you can fr
 ..    :caption: setup.py
 ..    :emphasize-lines: 1-11, 17,19,21-24
 
-The only purpose of the `future imports <https://docs.python.org/2/library/__future__.html>`_ *here* is to get you into the habit of not forgetting them.
-
 Next, it's a good idea to place this code under version control:
 
 .. code-block:: console

@@ -1,15 +1,11 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 import time
 
 import flask
 
-from marv.model import Comment, Dataset, db
+from marv.model import Comment, db
 from .tooling import api_endpoint as marv_api_endpoint
 
 

@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 import unittest
 
@@ -44,7 +40,7 @@ class TestCase(unittest.TestCase):
             DSI(name='set2', files=['set2.bag']),
             DSI(name='set2', files=['set2_0000-00-00-00-00-00_0.bag',
                                     'set2_0000-00-00-00-00-00_1.bag',
-                                    'set2_0000-00-00-00-00-00_2.bag'])
+                                    'set2_0000-00-00-00-00-00_2.bag']),
         ])
 
     def test_scan_broken_set_edge_cases(self):

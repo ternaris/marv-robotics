@@ -1,19 +1,14 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 """Marv config parsing."""
-from __future__ import absolute_import, division, print_function
-
 import os
 import sys
-from inspect import getmembers
-from collections import Mapping
-from functools import partial
-from logging import getLogger
-
+from collections.abc import Mapping
 from configparser import ConfigParser
+from functools import partial
+from inspect import getmembers
+from logging import getLogger
 
 from .utils import find_obj
 
@@ -23,11 +18,11 @@ log = getLogger(__name__)
 class ConfigError(Exception):
     def __str__(self):
         try:
-            section, key, message = self.args
+            section, key, message = self.args  # pylint: disable=unpacking-non-sequence
         except ValueError:
-            section, key = self.args
+            section, key = self.args  # pylint: disable=unpacking-non-sequence
             message = 'missing'
-        return '{} [{}] {}: {}'.format(section.filename, section.name, key, message)
+        return f'{section.filename} [{section.name}] {key}: {message}'
 
 
 def make_funcs(dataset, setdir, store):
@@ -63,7 +58,7 @@ def make_summary_funcs(rows, ids):
         'min': min,
         'rows': partial(summary_rows, rows, ids),
         'sum': sum,
-        'trace': print_trace
+        'trace': print_trace,
     }
 
 
@@ -78,7 +73,7 @@ def summary_rows(rows, ids, id=None, default=None):
 def calltree(functree, funcs):
     name, args = functree
     func = funcs[name]
-    args = [calltree(x, funcs) if type(x) == tuple else x for x in args]
+    args = [calltree(x, funcs) if isinstance(x, tuple) else x for x in args]
     return func(*args)
 
 
@@ -89,7 +84,7 @@ def getdeps(functree, deps=None):
         deps.add(getnode(None, None, None, args[0], _name_only=True))
     else:
         for arg in args:
-            if type(arg) == tuple:
+            if isinstance(arg, tuple):
                 getdeps(arg, deps)
     return deps
 
@@ -114,7 +109,7 @@ def doget(value, name, lookup):
     return value
 
 
-def getnode(dataset, setdir, store, objpath, default=None, _name_only=False):
+def getnode(dataset, setdir, store, objpath, default=None, _name_only=False):  # noqa: C901
     try:
         nodename, rest = objpath.split('.', 1)
     except ValueError:
@@ -174,50 +169,48 @@ def print_trace(args):
     return args
 
 
-def parse_function(s, pos=0):
-    assert s[pos] == '(', s
+def parse_function(string, pos=0):
+    assert string[pos] == '(', string
     start = pos + 1
-    end = len(s) - 1
+    end = len(string) - 1
     try:
-        pos = s.index(' ', start)
+        pos = string.index(' ', start)
     except ValueError:
         pos = end
-    name = s[start:pos]
+    name = string[start:pos]
     pos += 1
     args = []
     functree = (name, args)
-    while s[pos] != ')' and pos < end:
-        if s[pos] == '(':
-            #print('FUNC', pos, s[pos:])
-            func, pos = parse_function(s, pos)
+    while string[pos] != ')' and pos < end:
+        if string[pos] == '(':
+            func, pos = parse_function(string, pos)
             args.append(func)
-        elif s[pos:pos+2] == '[]':
+        elif string[pos:pos+2] == '[]':
             args.append([])
             pos += 2
-        elif s[pos] == '"':
-            #print('STR"', pos, s[pos:])
+        elif string[pos] == '"':
             start = pos + 1
-            pos = s.index('"', start)
-            args.append(s[start:pos])
+            pos = string.index('"', start)
+            args.append(string[start:pos])
             pos += 1
-        elif s[pos] == "'":
-            #print("STR'", pos, s[pos:])
+        elif string[pos] == "'":
             start = pos + 1
-            pos = s.index("'", start)
-            args.append(s[start:pos])
+            pos = string.index("'", start)
+            args.append(string[start:pos])
             pos += 1
-        elif s[pos] == '0':
+        elif string[pos] == '0':
             args.append(0)
             pos += 1
-        elif s[pos] == ' ':
+        elif string[pos] == ' ':
             pos += 1
         else:
-            raise RuntimeError(pos, s[pos:])
+            raise RuntimeError(pos, string[pos:])
     return functree, pos + 1
 
 
 class Section(Mapping):
     def __init__(self, name, dct, filename, defaults=None, schema=None):
+        # pylint: disable=too-many-arguments
         self.name = name
         self._configdir = os.path.dirname(filename)
         self.filename = filename
@@ -226,8 +219,9 @@ class Section(Mapping):
         self._schema = schema or {}
 
     def __dir__(self):
-        return list(self._dct.viewkeys() | self.__dict__.viewkeys() |
-                    {x[0] for x in getmembers(type(self))})
+        return list(self._dct.keys()
+                    | self.__dict__.keys()
+                    | {x[0] for x in getmembers(type(self))})
 
     def __getattr__(self, name):
         return self[name]
@@ -246,39 +240,39 @@ class Section(Mapping):
         return value
 
     def __iter__(self):
-        return iter(list(self._dct.viewkeys() | self._defaults.viewkeys()))
+        return iter(self._dct.keys() | self._defaults.keys())
 
     def __len__(self):
-        return len(self._dct.viewkeys() | self._defaults.viewkeys())
+        return len(self._dct.keys() | self._defaults.keys())
 
     def _parse(self, value, value_type):
         if value_type == 'function':
             # TODO: lookup node to fail early
             func, pos = parse_function(value)
             assert pos == len(value)
-            return func
+            result = func
         elif value_type == 'find_obj':
-            return find_obj(value)
+            result = find_obj(value)
         elif value_type == 'lines':
-            return [x.strip() for x in value.splitlines()]
+            result = [x.strip() for x in value.splitlines()]
         elif value_type == 'nodes':
-            return [find_obj(x.strip()) for x in value.splitlines()]
+            result = [find_obj(x.strip()) for x in value.splitlines()]
         elif value_type == 'path':
-            return self._abspath(value)
+            result = self._abspath(value)
         elif value_type == 'path_lines':
-            return [self._abspath(x.strip()) for x in value.splitlines()]
+            result = [self._abspath(x.strip()) for x in value.splitlines()]
         elif value_type == 'pipe_separated_list':
-            return [x.strip() for x in value.split('|')]
+            result = [x.strip() for x in value.split('|')]
         elif value_type == 'space_separated_list':
-            return value.split()
+            result = value.split()
         else:
             raise ValueError('Unknown value_type %r' % value_type)
+        return result
 
     def _abspath(self, value):
         if os.path.isabs(value):
             return value
-        else:
-            return os.path.realpath(os.path.join(self._configdir, value))
+        return os.path.realpath(os.path.join(self._configdir, value))
 
 
 class Config(Mapping):
@@ -302,7 +296,7 @@ class Config(Mapping):
             k: Section(name=k, dct=v, filename=filename,
                        defaults=defaults.get(k) or defaults.get(k.split(None, 1)[0]),
                        schema=(schema.get(k) or schema.get(k.split(None, 1)[0])))
-            for k, v in parser._sections.items()
+            for k, v in parser._sections.items()  # pylint: disable=protected-access
         }
         if required:
             for name, section in sections.items():
@@ -313,8 +307,9 @@ class Config(Mapping):
         return cls(filename, sections)
 
     def __dir__(self):
-        return list(self._dct.viewkeys() | self.__dict__.viewkeys() |
-                    {x[0] for x in getmembers(type(self))})
+        return list(self._dct.keys()
+                    | self.__dict__.keys()
+                    | {x[0] for x in getmembers(type(self))})
 
     def __getattr__(self, name):
         return self[name]

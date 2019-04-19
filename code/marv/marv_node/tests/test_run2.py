@@ -1,18 +1,15 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-from __future__ import absolute_import, division, print_function
+# pylint: disable=invalid-name,unused-variable,pointless-statement
 
 import unittest
 from collections import defaultdict
 from itertools import product
 
-from ..testing import make_dataset, make_sink, marv
-
 from ..run import run_nodes
 from ..stream import Handle
+from ..testing import make_dataset, make_sink, marv
 
 
 dataset = make_dataset()
@@ -82,7 +79,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(source_sink.stream, [1, 2, 3])
         self.assertEqual(cubic_sink.stream, [1, 8, 27])
 
-    def test_ondemand_group(self):
+    def test_ondemand_group(self):  # noqa: C901
         @marv.node(group='ondemand')
         def source():
             requested = yield marv.get_requested()
@@ -173,7 +170,7 @@ class TestCase(unittest.TestCase):
         ])
         self.assertEqual(msgs, [('a', 1), ('b', 1), ('a', 2), ('b', 2)])
 
-    def test_ondemand_group_with_restart_and_foreach(self):
+    def test_ondemand_group_with_restart_and_foreach(self):  # noqa: C901
         reqs = []
         @marv.node(group='ondemand')
         def source():
@@ -184,7 +181,7 @@ class TestCase(unittest.TestCase):
             for create in creates:
                 stream = yield create
                 streams.append(stream)
-            msgs = list(product(streams, [1,2]))
+            msgs = list(product(streams, [1, 2]))
             for stream, msg in msgs:
                 yield marv.push(stream.msg(msg))
 
@@ -350,10 +347,12 @@ class TestCase(unittest.TestCase):
                     break
                 streams.append(stream)
 
-            msgs = yield marv.pull_all(*streams)
-            while filter(None, msgs):
+            _streams = streams[:]
+            msgs = yield marv.pull_all(*_streams)
+            while _streams:
                 all_msgs.append(msgs)
-                msgs = yield marv.pull_all(*streams)
+                msgs = yield marv.pull_all(*_streams)
+                _streams = [stream for stream, msg in zip(_streams, msgs) if msg is not None]
 
         run_nodes(dataset, [foreach, withall], {})
         self.assertEqual(streams, [Handle(SETID, source, 'Output 1'),

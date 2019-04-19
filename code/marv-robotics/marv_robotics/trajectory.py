@@ -1,14 +1,10 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 import numpy as np
 
 import marv
-from marv.types import File, GeoJson
+from marv.types import GeoJson
 from .bag import get_message_type, messages
 
 
@@ -38,7 +34,7 @@ def navsatfix(stream):
         yield marv.push(out)
     if erroneous:
         log = yield marv.get_logger()
-        log.warn('skipped %d erroneous messages', erroneous)
+        log.warning('skipped %d erroneous messages', erroneous)
 
 
 def _create_feature(coords, quality, timestamps):
@@ -48,24 +44,25 @@ def _create_feature(coords, quality, timestamps):
     else:
         geotype = 'line_string'
 
-    color = ((1., 0.,   0., 1.),  # rgba
+    color = ((1., 0.00, 0., 1.),  # rgba
              (1., 0.65, 0., 1.),
-             (0., 0.,   1., 1.),
-             (0., 1.,   0., 1.))[quality]
+             (0., 0.00, 1., 1.),
+             (0., 1.00, 0., 1.))[quality]
     return {
         'properties': {
             'color': color,
             'width': 4.,
             'timestamps': timestamps,
             'markervertices': [c * 30 for c in (0., 0., -1., .3, -1., -.3)]},
-        'geometry': {geotype: {'coordinates': coords}}
+        'geometry': {geotype: {'coordinates': coords}},
     }
 
 
 @marv.node(GeoJson)
 @marv.input('navsatfixes', default=navsatfix)
 def trajectory(navsatfixes):
-    navsatfix = yield marv.pull(navsatfixes)  # Only one topic for now
+    # Only one topic for now
+    navsatfix = yield marv.pull(navsatfixes)  # pylint: disable=redefined-outer-name
     if not navsatfix:
         raise marv.Abort()
     yield marv.set_header(title=navsatfix.title)
@@ -78,7 +75,7 @@ def trajectory(navsatfixes):
         if msg is None:
             break
 
-        dt = msg['timestamp']
+        dt = msg['timestamp']  # pylint: disable=invalid-name
         timestamps.append(int(dt * 1e9))
 
         # Whether to output an augmented fix is determined by both the fix

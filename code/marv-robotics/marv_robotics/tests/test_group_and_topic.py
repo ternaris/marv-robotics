@@ -1,31 +1,31 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-from __future__ import absolute_import, division, print_function
+from pkg_resources import resource_filename
 
 import marv
 import marv_node.testing
 from marv_node.testing import make_dataset, make_sink, run_nodes, temporary_directory
-from marv_store import Store
-from pkg_resources import resource_filename
-
-from marv_robotics.bag import messages
+from marv_robotics.bag import get_message_type, messages
 from marv_robotics.fulltext import fulltext
+from marv_store import Store
 
 
 @marv.node()
 @marv.input('chatter', default=marv.select(messages, '/chatter'))
 def collect(chatter):
+    pytype = get_message_type(chatter)
+    rosmsg = pytype()
     msg = yield marv.pull(chatter)
     assert msg is not None
-    yield marv.push(msg.data)
+    rosmsg.deserialize(msg.data)
+    yield marv.push(rosmsg.data)
     while True:
         msg = yield marv.pull(chatter)
         if msg is None:
             return
-        yield marv.push(msg.data)
+        rosmsg.deserialize(msg.data)
+        yield marv.push(rosmsg.data)
 
 
 class TestCase(marv_node.testing.TestCase):

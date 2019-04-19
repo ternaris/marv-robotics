@@ -1,17 +1,13 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 import unittest
 
 from ..run import run_nodes
 from ..testing import make_dataset, make_sink, marv
 
-dataset = make_dataset()
-SETID = dataset.setid
+DATASET = make_dataset()
+SETID = DATASET.setid
 
 
 class TestCase(unittest.TestCase):
@@ -55,6 +51,6 @@ class TestCase(unittest.TestCase):
             yield marv.push({'galleries': galleries})
 
         sink = make_sink(images_section)
-        run_nodes(dataset, [sink], {})
+        run_nodes(DATASET, [sink], {})
         self.assertEqual(sink.stream, [{'galleries': [{'images': [1, 2, 3, 4, 5]},
                                                       {'images': [11, 12, 13, 14, 15]}]}])

@@ -1,13 +1,10 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 import io
 import os
 from collections import OrderedDict
+
 from setuptools import find_packages, setup
 
 NAME = 'marv'
@@ -27,10 +24,8 @@ with io.open(os.path.join('README.rst'), 'rt', encoding='utf8') as f:
 
 with io.open('requirements.in', 'rt', encoding='utf8') as f:
     INSTALL_REQUIRES = [
-        '{}=={}'.format(
-            os.path.basename(req.split()[1])[:-3],  # e.g. -r ../path/to/file/package_name.in
-            VERSION
-        ) if req.startswith('-r') else req
+        # e.g. -r ../path/to/file/package_name.in
+        f'{os.path.basename(req.split()[1])[:-3]}=={VERSION}' if req.startswith('-r') else req
         for req in [line.strip() for line in f.readlines() if not line.startswith('#')]
         if req
     ]

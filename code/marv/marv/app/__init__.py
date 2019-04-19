@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 import base64
 import os
@@ -23,7 +19,9 @@ class DBNotInitialized(Exception):
     pass
 
 
-def create_app(site, config_obj=None, app_root=None, init=None, **kw):
+def create_app(site, config_obj=None, app_root=None, init=None, **kw):  # noqa: C901
+    # pylint: disable=too-many-statements
+
     app = flask.Flask(__name__)
     app.site = site
 
@@ -72,8 +70,11 @@ def create_app(site, config_obj=None, app_root=None, init=None, **kw):
         assert '<script async src="main-built.js"></script>' in index_html
         index_html = index_html.replace(
             '<script async src="main-built.js"></script>',
-            '<script src="data:text/javascript;base64,{}"></script>'.format(data) +
-            '\n<script async src="main-built.js"></script>', 1
+            (
+                f'<script src="data:text/javascript;base64,{data}"></script>\n'
+                '<script async src="main-built.js"></script>'
+            ),
+            1,
         )
 
     customcss = os.path.join(site.config.marv.frontenddir, 'custom.css')
@@ -86,20 +87,23 @@ def create_app(site, config_obj=None, app_root=None, init=None, **kw):
         assert '<link async rel="stylesheet" href="main-built.css" />' in index_html
         index_html = index_html.replace(
             '<link async rel="stylesheet" href="main-built.css" />',
-            '<link async rel="stylesheet" href="main-built.css" />' +
-            '<link rel="stylesheet" href="data:text/css;base64,{}" />'.format(data), 1
+            (
+                '<link async rel="stylesheet" href="main-built.css" />'
+                f'<link rel="stylesheet" href="data:text/css;base64,{data}" />'
+            ),
+            1,
         )
 
     customdir = os.path.join(site.config.marv.frontenddir, 'custom')
     @app.route('/custom/<path:path>')
-    def custom(path):
+    def custom(path):  # pylint: disable=unused-variable
         resp = flask.send_from_directory(customdir, path, conditional=True)
         resp.headers['Cache-Control'] = 'no-cache'
         return resp
 
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
-    def assets(path):
+    def assets(path):  # pylint: disable=unused-variable
         if not path:
             path = 'index.html'
 

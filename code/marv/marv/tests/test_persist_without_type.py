@@ -1,15 +1,11 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-from __future__ import absolute_import, division, print_function
-
 import json
 import os
+from pathlib import Path
 
 import pytest
-from pathlib2 import Path
 
 import marv
 import marv.app
@@ -25,7 +21,7 @@ SETIDS = [
     'l2vnfhfoe3z7ad7vclkd64tsqy',
     'vdls3sgw5yanuat4uepmhjwcpm',
     'e2oxlhpedjwked2llnnzir4tii',
-    'phjg4ncymwbrbl4yx35bciqazq'
+    'phjg4ncymwbrbl4yx35bciqazq',
 ]
 
 MARV_CONF = """
@@ -49,7 +45,7 @@ listing_columns =
 """
 
 
-def scanner(dirpath, dirnames, filenames):
+def scanner(dirpath, dirnames, filenames):  # pylint: disable=unused-argument
     return [DatasetInfo(x, [x]) for x in filenames]
 
 
@@ -72,7 +68,7 @@ def site(tmpdir):
     # make scanroots
     for sitename in ('foo',):
         for idx, name in enumerate(['a', 'b']):
-            name = '{}_{}'.format(sitename, name)
+            name = f'{sitename}_{name}'
             path = tmpdir / 'scanroots' / sitename / name
             path.write(str(idx), ensure=True)
 
@@ -80,20 +76,20 @@ def site(tmpdir):
 
 
 @pytest.fixture(scope='function')
-def app(site):
-    app = marv.app.create_app(site, init=True)
-    app.testing = True
-    with app.app_context():
-        app = app.test_client()
+def app(site):  # pylint: disable=redefined-outer-name
+    _app = marv.app.create_app(site, init=True)
+    _app.testing = True
+    with _app.app_context():
+        client = _app.test_client()
 
         def get_json(*args, **kw):
-            resp = app.get(*args, **kw)
+            resp = client.get(*args, **kw)
             return json.loads(resp.data)
 
-        app.get_json = get_json
-        yield app
+        client.get_json = get_json
+        yield client
 
 
-def test_fail_notype(app, site):
-    with pytest.raises(ConfigError) as einfo:
+def test_fail_notype(app, site):  # pylint: disable=redefined-outer-name,unused-argument
+    with pytest.raises(ConfigError):
         site.scan()

@@ -1,21 +1,13 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-from __future__ import absolute_import, division, print_function
-
-from collections import defaultdict
-from itertools import product
-
-from ..testing import make_dataset, make_sink, marv
+# pylint: disable=invalid-name,redefined-outer-name
 
 from ..run import run_nodes
-from ..stream import Handle
+from ..testing import make_dataset, make_sink, marv
 
-
-dataset = make_dataset()
-SETID = dataset.setid
+DATASET = make_dataset()
+SETID = DATASET.setid
 
 
 @marv.node()
@@ -30,9 +22,9 @@ def messages(meta):
     """Produce streams for requested topics if they exist"""
     meta = yield marv.pull(meta)
     requested = yield marv.get_requested()
-    all_msgs = {'a': range(1),
-                'b': range(2),
-                'c': range(3)}
+    all_msgs = {'a': list(range(1)),
+                'b': list(range(2)),
+                'c': list(range(3))}
     topics = [x.name for x in requested]
     streams = {}
     for topic in topics:
@@ -43,10 +35,10 @@ def messages(meta):
             yield stream.finish()
 
     while streams:
-        for topic, stream in streams.items():
+        for topic, stream in list(streams.items()):
             msgs = all_msgs[topic]
             msg = msgs.pop(0)
-            yield stream.msg('{}{}'.format(topic, msg))
+            yield stream.msg(f'{topic}{msg}')
             if not msgs:
                 del streams[topic]
 
@@ -59,7 +51,7 @@ def nodeA(a):
         msg = yield marv.pull(a)
         if msg is None:
             return
-        yield marv.push('nodeA-{}'.format(msg))
+        yield marv.push(f'nodeA-{msg}')
 
 
 @marv.node()
@@ -70,7 +62,7 @@ def nodeB(b):
         msg = yield marv.pull(b)
         if msg is None:
             return
-        yield marv.push('nodeB-{}'.format(msg))
+        yield marv.push(f'nodeB-{msg}')
 
 
 @marv.node()
@@ -81,7 +73,7 @@ def nodeC(c):
         msg = yield marv.pull(c)
         if msg is None:
             return
-        yield marv.push('nodeC-{}'.format(msg))
+        yield marv.push(f'nodeC-{msg}')
 
 
 @marv.node()
@@ -104,5 +96,5 @@ def collect(nodeA, nodeB, nodeC):
 
 def test():
     sink = make_sink(collect)
-    run_nodes(dataset, [sink], {})
+    run_nodes(DATASET, [sink], {})
     assert sink.stream == [{'acc': ['nodeB-b0', 'nodeC-c0', 'nodeB-b1', 'nodeC-c1', 'nodeC-c2']}]

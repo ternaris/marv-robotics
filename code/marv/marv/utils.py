@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 import os
 import re
@@ -13,12 +9,12 @@ from datetime import tzinfo as tzinfo_base
 from importlib import import_module
 from itertools import islice
 
-from marv_node.setid import decode_setid, encode_setid
+from marv_node.setid import decode_setid, encode_setid  # pylint: disable=unused-import
 
 
 def chunked(iterable, chunk_size):
-    it = iter(iterable)
-    return iter(lambda: tuple(islice(it, chunk_size)), ())
+    itr = iter(iterable)
+    return iter(lambda: tuple(islice(itr, chunk_size)), ())
 
 
 def find_obj(objpath, name=False):
@@ -47,10 +43,13 @@ def parse_filesize(string):
     return int(val)
 
 
-def parse_datetime(s):
+def parse_datetime(string):
     class TZInfo(tzinfo_base):
         def __init__(self, offset=None):
             self.offset = offset
+
+        def dst(self, dt):
+            raise NotImplementedError()
 
         def tzname(self, dt):
             return self.offset
@@ -64,35 +63,35 @@ def parse_datetime(s):
             return offset if self.offset[0] == '+' else -offset
 
     groups = re.match(r'^(\d\d\d\d)-(\d\d)-(\d\d)T'
-                     r'(\d\d):(\d\d):(\d\d)((?:[+-]\d\d:\d\d)|Z)$', s)\
-              .groups()
+                      r'(\d\d):(\d\d):(\d\d)((?:[+-]\d\d:\d\d)|Z)$', string)\
+               .groups()
     tzinfo = TZInfo(groups[-1])
     return datetime(*(int(x) for x in groups[:-1]), tzinfo=tzinfo)
 
 
-def parse_timedelta(d):
+def parse_timedelta(delta):
     match = re.match(r'^\s*(?:(\d+)\s*h)?'
                      r'\s*(?:(\d+)\s*m)?'
-                     r'\s*(?:(\d+)\s*s?)?\s*$', d)
-    h, m, s = match.groups() if match else (None, None, None)
-    return (int(h or 0) * 3600 + int(m or 0) * 60 + int(s or  0)) * 1000;
+                     r'\s*(?:(\d+)\s*s?)?\s*$', delta)
+    h, m, s = match.groups() if match else (None, None, None)  # pylint: disable=invalid-name
+    return (int(h or 0) * 3600 + int(m or 0) * 60 + int(s or 0)) * 1000
 
 
 def profile(func, sort='cumtime'):
     import functools
     import pstats
     from cProfile import Profile
-    pr = Profile()
+    _profile = Profile()
     @functools.wraps(func)
     def profiled(*args, **kw):
-        pr.enable()
-        rv = func(*args, **kw)
-        pr.disable()
-        ps = pstats.Stats(pr).sort_stats(sort)
-        ps.print_stats()
-        return rv
+        _profile.enable()
+        result = func(*args, **kw)
+        _profile.disable()
+        stats = pstats.Stats(_profile).sort_stats(sort)
+        stats.print_stats()
+        return result
     return profiled
 
 
-def underscore_to_camelCase(s):
-    return ''.join(x.capitalize() for x in s.split('_'))
+def underscore_to_camelCase(string):  # pylint: disable=invalid-name
+    return ''.join(x.capitalize() for x in string.split('_'))

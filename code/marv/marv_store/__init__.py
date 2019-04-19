@@ -1,16 +1,12 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 import fcntl
 import json
 import os
 import shutil
-from collections import Mapping, defaultdict
-from pathlib2 import Path
+from collections.abc import Mapping
+from pathlib import Path
 
 from marv_node.mixins import LoggerMixin
 from marv_pycapnp import Wrapper
@@ -64,7 +60,7 @@ class Store(Mapping, LoggerMixin):
         try:
             os.mkdir(setdir)
         except OSError as e:
-            if not e.errno == 17 or not exists_okay:
+            if e.errno != 17 or not exists_okay:
                 raise
 
     def create_stream(self, handle):
@@ -77,9 +73,9 @@ class Store(Mapping, LoggerMixin):
             curgen = int(os.readlink(symlink).rsplit('-')[-1])
         except OSError:
             curgen = 0
-        next_name = '{}-{}'.format(name, curgen + 1)
+        next_name = f'{name}-{curgen + 1}'
         nextdir = os.path.join(setdir, next_name)
-        newlink = os.path.join(setdir, '.{}'.format(name))
+        newlink = os.path.join(setdir, f'.{name}')
         tmpdir = os.path.join(setdir, '.' + next_name)
         try:
             os.mkdir(tmpdir)
@@ -100,7 +96,7 @@ class Store(Mapping, LoggerMixin):
         self.logdebug('created directory %r', tmpdir)
 
         def commit(stream):
-            assert not stream.group or stream.done == stream.streams.viewkeys()
+            assert not stream.group or stream.done == stream.streams.keys()
             self.lognoisy('committing %r', nextdir)
             streams = self._streaminfo(stream)
             path = os.path.join(tmpdir, 'streams.json')
@@ -137,6 +133,7 @@ class Store(Mapping, LoggerMixin):
                 msgs = node.schema.read_multiple_packed(f)
                 return [Wrapper(x, None, setdir) for x in msgs]
         except IOError:
-            if default is not ():
+            # https://github.com/PyCQA/pylint/issues/3031
+            if default is not ():  # pylint: disable=literal-comparison
                 return default
             raise

@@ -1,14 +1,10 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 
 def download_link(file, dataset):
     return {
-        'href': 'download/{}'.format(dataset.files.index(file)),
+        'href': f'download/{dataset.files.index(file)}',
         'target': '_blank',
         'title': file.relpath,
     }

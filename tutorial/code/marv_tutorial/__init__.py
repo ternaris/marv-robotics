@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: CC0-1.0
-
-from __future__ import absolute_import, division, print_function
 
 import json
 import os
@@ -16,11 +12,13 @@ import mpld3
 imgmsg_to_cv2 = cv_bridge.CvBridge().imgmsg_to_cv2
 
 import marv
-from marv_nodes.types_capnp import File
-from marv_detail.types_capnp import Section, Widget
+from marv_detail.types_capnp import Section, Widget  # pylint: disable=no-name-in-module
+from marv_nodes.types_capnp import File  # pylint: disable=no-name-in-module
 from marv_robotics.bag import get_message_type, raw_messages
 
 TOPIC = '/wide_stereo/left/image_rect_throttle'
+
+# pylint: disable=redefined-outer-name
 
 
 @marv.node(File)
@@ -46,7 +44,7 @@ def image(cam):
     rosmsg.deserialize(msg.data)
 
     # Write image to jpeg and push it to output stream
-    name = '{}.jpg'.format(cam.topic.replace('/', ':')[1:])
+    name = f"{cam.topic.replace('/', ':')[1:]}.jpg"
     imgfile = yield marv.make_file(name)
     img = imgmsg_to_cv2(rosmsg, "rgb8")
     cv2.imwrite(imgfile.path, img, (cv2.IMWRITE_JPEG_QUALITY, 60))
@@ -183,16 +181,16 @@ def filesize_plot(filesizes):
     # EE: create plot widget referencing file
     widget = {
         'title': 'Filesizes',
-        'mpld3': 'marv-partial:{}'.format(plotfile.relpath),
+        'mpld3': f'marv-partial:{plotfile.relpath}',
     }
 
-    # Alternative code for community edition
-    #plotfile = yield marv.make_file('filesizes.jpg')
-    #fig.savefig(plotfile.path)
-    #widget = {
-    #    'title': 'Filesizes',
-    #    'image': {'src': plotfile.relpath},
-    #}
+    # Alternative code for community edition:
+    # plotfile = yield marv.make_file('filesizes.jpg')
+    # fig.savefig(plotfile.path)
+    # widget = {
+    #     'title': 'Filesizes',
+    #     'image': {'src': plotfile.relpath},
+    # }
 
     yield marv.push(widget)
 
@@ -251,8 +249,8 @@ def filesize_plot_fixed(filesizes):
     fig = plt.figure()
     axis = fig.add_subplot(1, 1, 1)
     axis.plot(sizes, 'bo')
-    #axis.set_xlabel('foo')
-    #axis.set_ylabel('bat')
+    # axis.set_xlabel('foo')
+    # axis.set_ylabel('bat')
 
     # save figure to file
     plotfile = yield marv.make_file('filesizes.json')
@@ -262,9 +260,10 @@ def filesize_plot_fixed(filesizes):
     # create plot widget referencing file
     widget = {
         'title': 'Filesizes',
-        'mpld3': 'marv-partial:{}'.format(plotfile.relpath),
+        'mpld3': f'marv-partial:{plotfile.relpath}',
     }
     yield marv.push(widget)
 
 
+# pylint: disable=invalid-name
 combined_section_fixed = combined_section.clone(filesize_plot=filesize_plot_fixed)

@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 from collections import OrderedDict, namedtuple
 
@@ -16,7 +12,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from marv_node.setid import SetID
 from .utils import underscore_to_camelCase
 
-_LISTING_PREFIX = ''
+_LISTING_PREFIX = ''  # Only for testing
 
 STATUS = OrderedDict((
     ('error', 'ERROR: One or more errors occured while processing this dataset'),
@@ -30,6 +26,7 @@ STATUS_OUTDATED = 4
 STATUS_PENDING = 8
 
 
+# pylint: disable=invalid-name
 db = flask_sqlalchemy.SQLAlchemy()
 Boolean = db.Boolean
 Column = db.Column
@@ -40,10 +37,11 @@ Model = db.Model
 String = db.String
 Table = db.Table
 relationship = db.relationship
+# pylint: enable=invalid-name
 
 
 @event.listens_for(Engine, "connect")
-def set_sqlite_pragma_connect(dbapi_connection, connection_record):
+def set_sqlite_pragma_connect(dbapi_connection, _):
     cursor = dbapi_connection.cursor()
     # page_size must be before journal_mode
     cursor.execute('PRAGMA foreign_keys=ON;')
@@ -56,7 +54,7 @@ def set_sqlite_pragma_connect(dbapi_connection, connection_record):
 
 
 @event.listens_for(Engine, "close")
-def set_sqlite_pragma_close(dbapi_connection, connection_record):
+def set_sqlite_pragma_close(dbapi_connection, _):
     cursor = dbapi_connection.cursor()
     cursor.execute('PRAGMA optimize;')  # ignored prior to 3.18.0
     cursor.close()
@@ -87,7 +85,7 @@ def make_status_property(bitmask, doc=None):
     return property(fget, fset, fdel, doc)
 
 
-dataset_tag = Table(
+dataset_tag = Table(  # pylint: disable=invalid-name
     'dataset_tag',
     Column('dataset_id', Integer, ForeignKey('dataset.id'), primary_key=True),
     Column('tag_id', Integer, ForeignKey('tag.id'), primary_key=True),
@@ -110,9 +108,11 @@ class Dataset(Model):
     @hybrid_property
     def setid(self):
         return SetID(self._setid)
+
     @setid.setter
     def setid(self, value):
         self._setid = str(value)
+
     @setid.expression
     def setid(self):
         return self._setid
@@ -129,10 +129,12 @@ class Dataset(Model):
     pending = make_status_property(8)
 
     def __repr__(self):
-        return "<{} {} {}>".format(type(self).__name__, self.setid, self.name.encode('utf-8'))
+        return f'<{type(self).__name__} {self.setid} {self.name}>'
 
 
 class File(Model):
+    # pylint: disable=too-few-public-methods
+
     __table_args__ = (
         {'info': {'without_rowid': True}},
     )
@@ -147,10 +149,12 @@ class File(Model):
     dataset = relationship('Dataset', back_populates='files', lazy='raise')
 
     def __repr__(self):
-        return "<{} '{}'>".format(type(self).__name__, self.path.encode('utf-8'))
+        return f"<{type(self).__name__} '{self.path}'>"
 
 
 class Comment(Model):
+    # pylint: disable=too-few-public-methods
+
     id = Column(Integer, primary_key=True)
     dataset_id = Column(Integer, ForeignKey('dataset.id'))
 
@@ -162,6 +166,8 @@ class Comment(Model):
 
 
 class Tag(Model):
+    # pylint: disable=too-few-public-methods
+
     __table_args__ = (
         Index('idx_tag_collection_value', 'collection', 'value', unique=True),
     )
@@ -172,7 +178,7 @@ class Tag(Model):
                             backref='tags')
 
 
-user_group = Table(
+user_group = Table(  # pylint: disable=invalid-name
     'user_group',
     Column('user_id', Integer, ForeignKey('user.id'), primary_key=True),
     Column('group_id', Integer, ForeignKey('group.id'), primary_key=True),
@@ -181,6 +187,8 @@ user_group = Table(
 
 
 class User(Model):
+    # pylint: disable=too-few-public-methods
+
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False, unique=True)
     password = Column(String)
@@ -194,35 +202,39 @@ class User(Model):
 
 
 class Group(Model):
+    # pylint: disable=too-few-public-methods
+
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False, unique=True)
     # TODO: switch to lazy raise
     users = relationship('User', secondary=user_group, backref='groups')
 
 
+# pylint: disable=invalid-name
 dataset = Dataset.__table__
 file = File.__table__
 comment = Comment.__table__
 tag = Tag.__table__
 user = User.__table__
 group = Group.__table__
-
+# pylint: enable=invalid-name
 
 ListingModel = namedtuple('ListingModel', 'db Listing relations secondaries')
+
 
 def make_listing_model(name, filter_specs):
     relations = {}
     secondaries = {}
-    listing_name = '{}listing_{}'.format(_LISTING_PREFIX, name)
-    listing_model_name = underscore_to_camelCase(listing_name).encode('ascii')
-    listingid = '{}.id'.format(listing_name)
+    listing_name = f'{_LISTING_PREFIX}listing_{name}'
+    listing_model_name = underscore_to_camelCase(listing_name)
+    listingid = f'{listing_name}.id'
 
     def generate_relation(fname):
-        sec_name = '{}_{}_sec'.format(listing_name, fname)
-        rel_name = '{}_{}'.format(listing_name, fname)
-        rel_model_name = underscore_to_camelCase(rel_name).encode('ascii')
-        relid = '{}.id'.format(rel_name)
-        assert not '_' in rel_model_name, rel_model_name
+        sec_name = f'{listing_name}_{fname}_sec'
+        rel_name = f'{listing_name}_{fname}'
+        rel_model_name = underscore_to_camelCase(rel_name)
+        relid = f'{rel_name}.id'
+        assert '_' not in rel_model_name, rel_model_name
         secondary = Table(
             sec_name,
             Column('listing_id', Integer, ForeignKey(listingid), primary_key=True),
@@ -237,8 +249,7 @@ def make_listing_model(name, filter_specs):
                                     secondary=secondary,
                                     lazy='raise',
                                     back_populates=fname),
-            '__repr__': lambda self: "<{} {} {}'>".format(
-                type(self).__name__, self.id, self.value.encode('utf-8'))
+            '__repr__': lambda self: f'<{type(self).__name__} {self.id} {self.value!r}>',
         })
         return relationship(rel_model_name, secondary=secondary,
                             lazy='raise', back_populates='listing')
@@ -263,9 +274,9 @@ def make_listing_model(name, filter_specs):
         'id': Column(Integer, ForeignKey('dataset.id'), primary_key=True),
         'row': Column(String),
         'dataset': relationship('Dataset'),
-        '__repr__': lambda self: "<{} {}>".format(type(self).__name__, self.id)
+        '__repr__': lambda self: f'<{type(self).__name__} {self.id}>',
     }
-    assert not filter_specs.viewkeys() & dct.viewkeys()
+    assert not filter_specs.keys() & dct.keys()
     dct.update((fspec.name, coltype_factories[fspec.value_type](fspec.name))
                for fspec in filter_specs.values()
                if fspec.name not in ('comments', 'status', 'tags'))

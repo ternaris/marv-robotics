@@ -1,14 +1,12 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-from __future__ import absolute_import, division, print_function
+# pylint: disable=blacklisted-name
 
 import unittest
 
-from ..testing import marv
 from ..node import InputNameCollision, Node
+from ..testing import marv
 
 
 class TestCase(unittest.TestCase):
@@ -17,7 +15,7 @@ class TestCase(unittest.TestCase):
             @marv.node()
             @marv.input('a')
             @marv.input('a')
-            def no_inputs():
+            def no_inputs():  # pylint: disable=unused-variable
                 yield
 
     @unittest.skip  # Do we want this?
@@ -31,8 +29,8 @@ class TestCase(unittest.TestCase):
         with self.assertRaises(TypeError):
             @marv.node()
             @marv.node()
-            def foo():
-                yield  #pragma: nocoverage
+            def foo():  # pylint: disable=unused-variable
+                yield  # pragma: nocoverage
 
     def test_node_repr(self):
         @marv.node()
@@ -41,16 +39,16 @@ class TestCase(unittest.TestCase):
         foo()
         self.assertEqual(
             repr(foo),
-            '<Node foo.fy4oo6zcym>'
+            '<Node foo.fy4oo6zcym>',
         )
 
     def test_comparisons(self):
         @marv.node()
-        def a():
+        def a():  # pylint: disable=invalid-name
             yield
 
         @marv.node()
-        def b():
+        def b():  # pylint: disable=invalid-name
             yield
 
         self.assertIs(type(a), type(b))

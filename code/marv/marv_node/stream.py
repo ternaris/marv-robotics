@@ -1,16 +1,11 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 from collections import deque
 from itertools import count
 from numbers import Integral
-from types import NoneType
 
-from .mixins import Keyed, LoggerMixin, Task, Request
+from .mixins import Keyed, LoggerMixin, Request, Task
 from .setid import SetID
 
 
@@ -31,6 +26,7 @@ class Handle(Keyed):
         return '.'.join([self.setid.abbrev, self.node.abbrev, self.name])
 
     def __init__(self, setid, node, name, group=None, header=None):
+        # pylint: disable=too-many-arguments
         from .node import Node
         assert isinstance(setid, SetID), setid
         assert isinstance(node, Node), node
@@ -47,7 +43,7 @@ class Handle(Keyed):
         data = kw if __msg is None else __msg
         if self.group:
             assert isinstance(data, Handle) or data is THEEND, (self, data)
-        return Msg(self._counter.next(), self, data)
+        return Msg(next(self._counter), self, data)
 
     def finish(self):
         from .io import THEEND
@@ -69,7 +65,7 @@ class Handle(Keyed):
             raise AttributeError(name)
 
     def __repr__(self):
-        return '<{} {}>'.format(type(self).__name__, self.key_abbrev)
+        return f'<{type(self).__name__} {self.key_abbrev}>'
 
 
 class Msg(Keyed):
@@ -90,7 +86,7 @@ class Msg(Keyed):
         return self._data
 
     def __init__(self, idx=None, handle=None, data=None):
-        assert isinstance(idx, (NoneType, Integral)), idx
+        assert idx is None or isinstance(idx, Integral), idx
         assert isinstance(handle, Handle), handle
         self._idx = idx
         self._handle = handle
@@ -102,8 +98,9 @@ class Msg(Keyed):
     def __repr__(self):
         from .io import THEEND
         flags = ' HANDLE' if isinstance(self.data, Handle) else \
-                ' THEEND' if self.data is THEEND else ''  # data={!r}'.format(self.data)
-        return 'Msg({}, {!r}{})'.format(self._idx, self.handle, flags)
+                ' THEEND' if self.data is THEEND else ''
+        return f'Msg({self._idx}, {self.handle!r}{flags})'
+
 
 Task.register(Msg)  # TODO: maybe not
 Request.register(Msg)
@@ -141,10 +138,10 @@ class Stream(Keyed, LoggerMixin):
         return self.handle.group
 
     def info(self):
-        return [repr(msg) for msg in self.cache]
+        return [repr(msg) for msg in self.cache]  # pylint: disable=not-an-iterable
 
     def __repr__(self):
-        return '<{} {}>'.format(type(self).__name__, self.key_abbrev)
+        return f'<{type(self).__name__} {self.key_abbrev}>'
 
 
 Task.register(Stream)

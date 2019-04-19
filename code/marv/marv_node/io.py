@@ -1,14 +1,10 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 from collections import namedtuple
 from numbers import Integral
 
-from .mixins import Keyed, Task, Request
+from .mixins import Keyed, Request, Task
 from .stream import Handle
 
 
@@ -21,17 +17,17 @@ def create_stream(name, **header):
 
     All keyword arguments will be used to form the header.
     """
-    assert isinstance(name, basestring), name
+    assert isinstance(name, str), name
     return CreateStream(parent=None, name=name, group=False, header=header)
 
 
 def create_group(name, **header):
-    assert isinstance(name, basestring), name
+    assert isinstance(name, str), name
     return CreateStream(parent=None, name=name, group=True, header=header)
 
 
 def fork(name, inputs, group):
-    assert isinstance(name, basestring), name
+    assert isinstance(name, str), name
     assert inputs
     return Fork(name, inputs, group)
 
@@ -49,7 +45,7 @@ def get_stream(node, name='default', setid=None):
 
 
 def make_file(name):
-    assert isinstance(name, basestring)
+    assert isinstance(name, str)
     return MakeFile(None, name)
 
 
@@ -86,10 +82,6 @@ def pull(handle, enumerate=False):
 def pull_all(*handles):
     """Pulls next message of all handles."""
     return PullAll(handles)
-
-
-def pull_any(handles):
-    raise NotImplementedError
 
 
 def push(msg):
@@ -142,25 +134,30 @@ Request.register(GetStream)
 Request.register(MakeFile)
 
 
-class Signal(Task):
+class Signal(Task):  # pylint: disable=too-few-public-methods
     def __repr__(self):
         return type(self).__name__.upper()
 
-class Next(Signal):
+
+class Next(Signal):  # pylint: disable=too-few-public-methods
     """Instruct to send next pending task."""
     __slots__ = ()
 
-class Paused(Signal):
+
+class Paused(Signal):  # pylint: disable=too-few-public-methods
     """Indicate a generator has paused."""
     __slots__ = ()
 
-class Resume(Signal):
+
+class Resume(Signal):  # pylint: disable=too-few-public-methods
     """Instruct a generator to resume."""
     __slots__ = ()
 
-class TheEnd(Signal):
+
+class TheEnd(Signal):  # pylint: disable=too-few-public-methods
     """Indicate the end of a stream, resulting in None being sent into consumers."""
     __slots__ = ()
+
 
 NEXT = Next()
 PAUSED = Paused()
@@ -193,4 +190,4 @@ class MsgRequest(Task, Keyed):
         return iter(self.key)
 
     def __repr__(self):
-        return 'MsgRequest({}, {!r})'.format(self._handle, self._idx)
+        return f'MsgRequest({self._handle}, {self._idx!r})'

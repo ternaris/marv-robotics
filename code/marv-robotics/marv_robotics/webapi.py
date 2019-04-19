@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 import os
 
@@ -22,7 +18,7 @@ def robotics(app):
     @app.route('/docs', defaults={'path': 'index.html'})
     @app.route('/docs/', defaults={'path': 'index.html'})
     @app.route('/docs/<path:path>')
-    def docs(path):
+    def docs(path):  # pylint: disable=unused-variable
         resp = flask.send_from_directory(DOCS, path, conditional=True)
         resp.headers['Cache-Control'] = 'no-cache'
         return resp

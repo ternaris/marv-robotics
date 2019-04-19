@@ -1,21 +1,19 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 import json
 import os
 
 import marv
 import marv_nodes
-from marv_detail import make_map_dict
 from marv.types import Section, Widget
+from marv_detail import make_map_dict
 from .bag import bagmeta
 from .cam import ffmpeg, images
 from .gnss import gnss_plots
 from .trajectory import trajectory
+
+# pylint: disable=redefined-outer-name
 
 
 @marv.node(Widget)
@@ -38,8 +36,8 @@ def summary_keyval(dataset, bagmeta):
             {'title': 'end time', 'formatter': 'datetime', 'list': False,
              'cell': {'timestamp': bagmeta.end_time}},
             {'title': 'duration', 'formatter': 'timedelta', 'list': False,
-             'cell': {'timedelta': bagmeta.duration}}
-        ]
+             'cell': {'timedelta': bagmeta.duration}},
+        ],
     }})
 
 
@@ -61,13 +59,12 @@ def bagmeta_table(bagmeta, dataset):
         {'title': 'Message count', 'align': 'right'},
     ]
     rows = [{'id': idx, 'cells': [
-        {'link': {'href': '{}'.format(idx),
-                  'title': os.path.basename(f.path)}},
+        {'link': {'href': f'{idx}', 'title': os.path.basename(f.path)}},
         {'uint64': f.size},
         {'timestamp': bag.start_time},
         {'timestamp': bag.end_time},
         {'timedelta': bag.duration},
-        {'uint64': bag.msg_count}
+        {'uint64': bag.msg_count},
     ]} for idx, (bag, f) in enumerate(zip(bagmeta.bags, dataset.files))]
     yield marv.push({'table': {'columns': columns, 'rows': rows}})
 
@@ -146,14 +143,14 @@ def connections_section(bagmeta, dataset, title):
         {'title': 'Type'},
         {'title': 'MD5'},
         {'title': 'Latching'},
-        {'title': 'Message count', 'align': 'right'}
+        {'title': 'Message count', 'align': 'right'},
     ]
     rows = [{'id': idx, 'cells': [
         {'text': con.topic},
         {'text': con.datatype},
         {'text': con.md5sum},
         {'bool': con.latching},
-        {'uint64': con.msg_count}
+        {'uint64': con.msg_count},
     ]} for idx, con in enumerate(bagmeta.connections)]
     widgets = [{'table': {'columns': columns, 'rows': rows}}]
     # TODO: Add text widget explaining what can be seen here: ROS bag
@@ -187,13 +184,24 @@ def trajectory_section(geojson, title, minzoom, maxzoom, tile_server_protocol):
         {'title': 'Background',
          'tiles': [
              {'title': 'Roadmap',
-              'url': '%s//[abc].osm.ternaris.com/styles/osm-bright/rendered/{z}/{x}/{y}.png' % tile_server_protocol,
-              'attribution': '© <a href="http://openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+              'url': (
+                  '%s//[abc].osm.ternaris.com/styles/osm-bright/rendered/{z}/{x}/{y}.png'
+                  % tile_server_protocol
+              ),
+              'attribution': (
+                  '© <a href="http://openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              ),
               'retina': 3,
               'zoom': {'min': 0, 'max': 20}},
              {'title': 'Satellite',
-              'url': '%s//server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png' % tile_server_protocol,
-              'attribution': 'Sources: Esri, DigitalGlobe, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community',
+              'url': (
+                  '%s//server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png'  # pylint: disable=line-too-long
+                  % tile_server_protocol
+              ),
+              'attribution': (
+                  'Sources: Esri, DigitalGlobe, GeoEye, Earthstar Geographics, CNES/Airbus DS, '
+                  'USDA, USGS, AeroGRID, IGN, and the GIS User Community'
+              ),
               'zoom': {'min': 0, 'max': 18}},
          ]},
         {'title': 'Trajectory',
@@ -208,7 +216,7 @@ def trajectory_section(geojson, title, minzoom, maxzoom, tile_server_protocol):
     with open(jsonfile.path, 'w') as f:
         json.dump(dct, f, sort_keys=True)
     yield marv.push({'title': title,
-                     'widgets': [{'map_partial': 'marv-partial:{}'.format(jsonfile.relpath)}]})
+                     'widgets': [{'map_partial': f'marv-partial:{jsonfile.relpath}'}]})
 
 
 @marv.node(Section)
@@ -230,7 +238,7 @@ def video_section(videos, title):
     widgets = [
         {
             'title': video.title,
-            'video': {'src': videofile.relpath}
+            'video': {'src': videofile.relpath},
         }
         for video, videofile in zip(videos, videofiles)
         if videofile is not None

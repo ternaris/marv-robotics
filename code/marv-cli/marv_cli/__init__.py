@@ -1,16 +1,12 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-from __future__ import absolute_import, division, print_function
-
 import logging
 import os
+from collections import OrderedDict
 from contextlib import contextmanager
 
 import click
-from collections import OrderedDict
 from pkg_resources import iter_entry_points
 
 
@@ -36,18 +32,18 @@ def make_log_method(name, numeric):
 
     def method(self, msg, *args, **kw):
         if self.isEnabledFor(numeric):
-            self._log(numeric, msg, args, **kw)
+            self._log(numeric, msg, args, **kw)  # pylint: disable=protected-access
     method.__name__ = name
     return method
 
 
 def create_loglevels():
     cls = logging.getLoggerClass()
-    for k, v in LOGLEVEL.items():
-        if not hasattr(cls, k):
-            logging.addLevelName(v, k.upper())
-            method = make_log_method(k, v)
-            setattr(cls, k, method)
+    for name, value in LOGLEVEL.items():
+        if not hasattr(cls, name):
+            logging.addLevelName(value, name.upper())
+            method = make_log_method(name, value)
+            setattr(cls, name, method)
 
 
 create_loglevels()
@@ -62,10 +58,9 @@ def launch_pdb_on_exception(launch=True):
     with launch_pdb_on_exception(os.environ.get('PDB')):
         cli()
     """
-    # pylint: disable=broad-except
     try:
         yield
-    except Exception:  # noqa
+    except Exception:  # pylint: disable=broad-except
         if launch:
             import pdb
             pdb.xpm()  # pylint: disable=no-member
@@ -76,7 +71,7 @@ def launch_pdb_on_exception(launch=True):
 def setup_logging(loglevel, verbosity=0, logfilter=None):
     create_loglevels()
 
-    class Filter(logging.Filter):
+    class Filter(logging.Filter):  # pylint: disable=too-few-public-methods
         def filter(self, record):
             if logfilter and not any(record.name.startswith(x) for x in logfilter):
                 return False
@@ -93,7 +88,7 @@ def setup_logging(loglevel, verbosity=0, logfilter=None):
     root = logging.getLogger()
     root.addHandler(handler)
 
-    levels = LOGLEVEL.keys()
+    levels = list(LOGLEVEL.keys())
     level = levels[min(levels.index(loglevel) + verbosity, len(levels) - 1)]
     root.setLevel(LOGLEVEL[level])
 
@@ -133,11 +128,12 @@ def marv(ctx, config, loglevel, logfilter, verbosity):
 
 def cli():
     """setuptools entry_point"""
-    global PDB
+    global PDB  # pylint: disable=global-statement
     PDB = bool(os.environ.get('PDB'))
     with launch_pdb_on_exception(PDB):
-        for ep in iter_entry_points(group='marv_cli'):
-            ep.load()
+        for entry_point in iter_entry_points(group='marv_cli'):
+            entry_point.load()
+        # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
         marv(auto_envvar_prefix='MARV')
 
 

@@ -1,17 +1,13 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 import re
 import sys
 from collections import defaultdict, namedtuple
+from functools import reduce
 from itertools import groupby
-from logging import getLogger
 
-import capnp
+import capnp  # pylint: disable=unused-import
 import genpy
 import rosbag
 from rosbag.bag import _get_message_type
@@ -19,7 +15,7 @@ from rosbag.bag import _get_message_type
 import marv
 import marv_nodes
 from marv.scanner import DatasetInfo
-from .bag_capnp import Bagmeta, Header, Message
+from .bag_capnp import Bagmeta, Header, Message  # pylint: disable=import-error
 
 
 # Regular expression used to aggregate individual bags into sets (see
@@ -47,15 +43,15 @@ REGEX = re.compile(r"""
 """, re.VERBOSE)
 
 
-_Baginfo = namedtuple('Baginfo', 'filename basename name timestamp idx')
-class Baginfo(_Baginfo):
+class Baginfo(namedtuple('Baginfo', 'filename basename name timestamp idx')):
     def __new__(cls, filename, basename, name, timestamp=None, idx=None):
+        # pylint: disable=too-many-arguments
         idx = None if idx is None else int(idx)
         return super(Baginfo, cls).__new__(cls, filename, basename,
                                            name, timestamp, idx)
 
 
-def scan(dirpath, dirnames, filenames):
+def scan(dirpath, dirnames, filenames):  # pylint: disable=unused-argument
     """Default scanner for ROS bag files
 
     Bags suffixed with a consecutive index are grouped into sets::
@@ -149,11 +145,13 @@ def bagmeta(dataset):
     A topic's message type and latching mode, and a message type's
     md5sum are assumed not to change across split bags.
     """
+    # pylint: disable=too-many-locals
+
     dataset = yield marv.pull(dataset)
     paths = [x.path for x in dataset.files if x.path.endswith('.bag')]
 
     bags = []
-    start_time = sys.maxint
+    start_time = sys.maxsize
     end_time = 0
     connections = {}
     for path in paths:
@@ -162,15 +160,15 @@ def bagmeta(dataset):
                 _start_time = int(bag.get_start_time() * 1.e9)
                 _end_time = int(bag.get_end_time() * 1.e9)
             except rosbag.ROSBagException:
-                _start_time = sys.maxint
+                _start_time = sys.maxsize
                 _end_time = 0
 
             start_time = _start_time if _start_time < start_time else start_time
             end_time = _end_time if _end_time > end_time else end_time
 
             _msg_counts = defaultdict(int)
-            for chunk in bag._chunks:
-                for conid, count in chunk.connection_counts.iteritems():
+            for chunk in bag._chunks:  # pylint: disable=protected-access
+                for conid, count in chunk.connection_counts.items():
                     _msg_counts[conid] += count
 
             _connections = [
@@ -179,16 +177,16 @@ def bagmeta(dataset):
                  'md5sum': x.md5sum,
                  'msg_def': x.msg_def,
                  'msg_count': _msg_counts[x.id],
-                 'latching': {'0': False, '1': True}[x.header.get('latching', '0')]}
-                for x in bag._connections.itervalues()
+                 'latching': bool(int(x.header.get('latching', 0)))}
+                for x in bag._connections.values()  # pylint: disable=protected-access
             ]
 
-            _start_time = _start_time if _start_time != sys.maxint else 0
+            _start_time = _start_time if _start_time != sys.maxsize else 0
             bags.append({
                 'start_time': _start_time,
                 'end_time': _end_time,
                 'duration': _end_time - _start_time,
-                'msg_count': sum(_msg_counts.itervalues()),
+                'msg_count': sum(_msg_counts.values()),
                 'connections': _connections,
                 'version': bag.version,
             })
@@ -204,7 +202,7 @@ def bagmeta(dataset):
 
     connections = sorted(connections.values(),
                          key=lambda x: (x['topic'], x['datatype'], x['md5sum']))
-    start_time = start_time if start_time != sys.maxint else 0
+    start_time = start_time if start_time != sys.maxsize else 0
     yield marv.push({
         'start_time': start_time,
         'end_time': end_time,
@@ -226,9 +224,9 @@ def read_messages(paths, topics=None, start_time=None, end_time=None):
     msgs = {}
     prev_timestamp = genpy.Time(0)
     while True:
-        for key in (gens.viewkeys() - msgs.viewkeys()):
+        for key in gens.keys() - msgs.keys():
             try:
-                msgs[key] = gens[key].next()
+                msgs[key] = next(gens[key])
             except StopIteration:
                 bags[key].close()
                 del bags[key]
@@ -246,14 +244,15 @@ def read_messages(paths, topics=None, start_time=None, end_time=None):
 @marv.node(Message, Header, group='ondemand')
 @marv.input('dataset', marv_nodes.dataset)
 @marv.input('bagmeta', bagmeta)
-def raw_messages(dataset, bagmeta):
+def raw_messages(dataset, bagmeta):  # pylint: disable=redefined-outer-name
     """Stream messages from a set of bag files."""
+    # pylint: disable=too-many-locals
+
     bagmeta, dataset = yield marv.pull_all(bagmeta, dataset)
     bagtopics = bagmeta.topics
     connections = bagmeta.connections
     paths = [x.path for x in dataset.files if x.path.endswith('.bag')]
     requested = yield marv.get_requested()
-    log = yield marv.get_logger()
 
     alltopics = set()
     bytopic = defaultdict(list)
@@ -261,14 +260,16 @@ def raw_messages(dataset, bagmeta):
     for name in [x.name for x in requested if ':' in x.name]:
         reqtop, reqtype = name.split(':')
         # BUG: topic with more than one type is not supported
-        topics = [con.topic for con in connections
-                  if ((reqtop == '*' or reqtop == con.topic) and
-                      (reqtype == '*' or reqtype == con.datatype))]
+        topics = [
+            con.topic for con in connections
+            if reqtop in ('*', con.topic) and reqtype in ('*', con.datatype)
+        ]
         group = groups[name] = yield marv.create_group(name)
         create_stream = group.create_stream
 
         for topic in topics:
             # BUG: topic with more than one type is not supported
+            # pylint: disable=stop-iteration-return
             con = next(x for x in connections if x.topic == topic)
             # TODO: start/end_time per topic?
             header = {'start_time': bagmeta.start_time,
@@ -308,15 +309,16 @@ def raw_messages(dataset, bagmeta):
         return
 
     # BUG: topic with more than one type is not supported
-    for topic, raw, t in read_messages(paths, topics=list(alltopics)):
-        dct = {'data': raw[1], 'timestamp': t.to_nsec()}
+    for topic, raw, timestamp in read_messages(paths, topics=list(alltopics)):
+        dct = {'data': raw[1], 'timestamp': timestamp.to_nsec()}
         for stream in bytopic[topic]:
             yield stream.msg(dct)
 
-messages = raw_messages
 
+messages = raw_messages  # pylint: disable=invalid-name
 
 _ConnectionInfo = namedtuple('_ConnectionInfo', 'md5sum datatype msg_def')
+
 
 def get_message_type(stream):
     """ROS message type from definition stored for stream."""
@@ -325,3 +327,4 @@ def get_message_type(stream):
                                datatype=stream.msg_type,
                                msg_def=stream.msg_type_def)
         return _get_message_type(info)
+    return None

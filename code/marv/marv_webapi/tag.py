@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-from __future__ import absolute_import, division, print_function
-
+from functools import reduce
 from itertools import cycle
 
 import flask
@@ -27,8 +24,8 @@ def tag():
         addop = ops.get('add', {})
         removeop = ops.get('remove', {})
 
-        add = addop.viewkeys()
-        remove = removeop.viewkeys()
+        add = addop.keys()
+        remove = removeop.keys()
 
         if add:
             stmt = Tag.__table__.insert().prefix_with('OR IGNORE')

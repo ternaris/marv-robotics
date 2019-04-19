@@ -1,24 +1,20 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-from __future__ import absolute_import, division, print_function
-
-import json
 import os
 from collections import OrderedDict, deque
 
-from marv_pycapnp import Wrapper
 from marv_node.io import THEEND
 from marv_node.stream import Handle, Msg, RequestedMessageTooOld, Stream
-from marv_nodes.types_capnp import File
+from marv_nodes.types_capnp import File  # pylint: disable=no-name-in-module
+from marv_pycapnp import Wrapper
 
 
 class ReadStream(Stream):
     streamfile = None
 
     def __init__(self, prehandle, streamdir, setdir, msgs=None, info=None):
+        # pylint: disable=too-many-arguments
         header = info['header'] if info else {}
         handle = Handle(*prehandle.key, group=prehandle.group, header=header)
         self.handle = handle
@@ -31,10 +27,11 @@ class ReadStream(Stream):
                 for x in info['streams'].values()
             ])
         elif msgs:
+            # pylint: disable=protected-access
             self.stream = (Wrapper(x._reader, streamdir, setdir) for x in msgs)
         else:
             assert not info['streams']
-            path = os.path.join(streamdir, '{}-stream'.format(handle.name))
+            path = os.path.join(streamdir, f'{handle.name}-stream')
             streamfile = open(path, 'rb')
             self.streamfile = streamfile
             self.stream = (Wrapper(x, streamdir, setdir) for x in
@@ -49,7 +46,7 @@ class ReadStream(Stream):
         if offset < 0:
             assert offset == -1  # for now
             try:
-                data = self.stream.next()
+                data = next(self.stream)
             except StopIteration:
                 data = THEEND
                 if self.streamfile:
@@ -68,9 +65,12 @@ class ReadStream(Stream):
 
 
 class PersistentStream(Stream):
+    # pylint: disable=too-many-instance-attributes
+
     ended = False
 
     def __init__(self, handle, streamdir, setdir, commit, parent=None):
+        # pylint: disable=too-many-arguments
         self.parent = parent
         self.handle = handle
         self.streamdir = streamdir
@@ -78,7 +78,7 @@ class PersistentStream(Stream):
         self.cache = deque((), self.CACHESIZE)
         self.streams = OrderedDict() if self.group else None
         # open right away: empty stream -> empty file
-        path = os.path.join(streamdir, '{}-stream'.format(handle.name))
+        path = os.path.join(streamdir, f'{handle.name}-stream')
         self.streamfile = None if self.group else open(path, 'wb')
         self.done = set()
         self._commit = commit
@@ -96,13 +96,14 @@ class PersistentStream(Stream):
         assert msg.idx == expected_idx, (msg.idx, expected_idx)
 
         self.logdebug('adding %r', msg)
+        # pylint: disable=protected-access
         if msg.data is THEEND:
             self.ended = True
             self.logdebug('ended')
-            if not self.group or self.done == self.streams.viewkeys():
+            if not self.group or self.done == self.streams.keys():
                 self._commit(self)
-        elif isinstance(msg.data, Wrapper) and \
-             msg.data._reader.schema.node.id == File.schema.node.id:
+        elif isinstance(msg.data, Wrapper) \
+                and msg.data._reader.schema.node.id == File.schema.node.id:
             assert msg.data._streamdir == self.streamdir
             stat = os.stat(msg.data.path)
             mtime = int(stat.st_mtime * 1e9)
@@ -148,7 +149,7 @@ class PersistentStream(Stream):
 
     def commit_substream(self, substream):
         self.done.add(substream.handle.name)
-        if self.ended and self.done == self.streams.viewkeys():
+        if self.ended and self.done == self.streams.keys():
             self._commit(self)
 
     def make_file(self, name):

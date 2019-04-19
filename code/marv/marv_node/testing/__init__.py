@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 import functools
 import inspect
@@ -16,49 +12,46 @@ import warnings
 from collections import namedtuple
 from contextlib import contextmanager
 from logging import getLogger
+
 from marv_cli import create_loglevels
-
-create_loglevels()
-warnings.simplefilter('always', DeprecationWarning)
-
 from marv_node import run as marv_node_run
-marv_node_run.RAISE_IF_UNFINISHED
-marv_node_run.RAISE_IF_UNFINISHED = True
-
-#from . import marv
 from ..io import get_logger as marv_get_logger
 from ..io import get_stream as marv_get_stream
 from ..io import pull as marv_pull
 from ..node import node as marv_node
-from ..run import run_nodes  # export via testing
+from ..run import run_nodes  # pylint: disable=unused-import
 from ..setid import SetID
 
+create_loglevels()
+warnings.simplefilter('always', DeprecationWarning)
+
+marv_node_run.RAISE_IF_UNFINISHED = True
 
 StubDataset = namedtuple('StubDataset', 'setid name collection files time_added timestamp')
 StubFile = namedtuple('StubFile', 'idx path missing mtime size')
 
-
 KEEP = os.environ.get('KEEP')
-log = getLogger(__name__)
+LOG = getLogger(__name__)
 
 
 @contextmanager
 def temporary_directory(keep=KEEP):
     """Create and cleanup temporary directory"""
     tmpdir = tempfile.mkdtemp()
-    log.debug('created temporary directory %r', tmpdir)
+    LOG.debug('created temporary directory %r', tmpdir)
     try:
         yield tmpdir
     finally:
         if not keep:
             shutil.rmtree(tmpdir)
-            log.debug('cleaned up temporary directory %r', tmpdir)
+            LOG.debug('cleaned up temporary directory %r', tmpdir)
         else:
-            log.debug('keeping temporary directory %r by request', tmpdir)
+            LOG.debug('keeping temporary directory %r by request', tmpdir)
 
 
 def make_dataset(files=None, setid=None, name=None, collection=None,
                  time_added=None, timestamp=None):
+    # pylint: disable=too-many-arguments
     setid = SetID(42) if setid is None else setid
     name = 'NAME' if name is None else name
     collection = 'COL' if collection is None else collection
@@ -87,12 +80,12 @@ def make_sink(node):
                 return
             msgs.append(msg)
 
-    testsink._key = '{}-testsink'.format(node.abbrev)
+    testsink._key = f'{node.abbrev}-testsink'  # pylint: disable=protected-access
     testsink.stream = msgs
     return testsink
 
 
-class Spy(object):
+class Spy:  # pylint: disable=too-few-public-methods
     def __init__(self):
         self.requests = []
 
@@ -101,14 +94,23 @@ def make_spy(node):
     spy = Spy()
     requests = spy.requests
     real_invoke = node.invoke
+
     @functools.wraps(real_invoke)
     def invoke(inputs=None):
         gen = real_invoke(inputs)
-        req = gen.next()
+        try:
+            req = next(gen)
+        except StopIteration:
+            return
+
         while True:
             requests.append(req)
             send = yield req
-            req = gen.send(send)
+            try:
+                req = gen.send(send)
+            except StopIteration:
+                return
+
     node.invoke = invoke
     return spy
 
@@ -124,8 +126,8 @@ class TestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         scanroot = tempfile.mkdtemp()
-        @classmethod
-        def cleanup(cls):
+        @staticmethod
+        def cleanup():
             shutil.rmtree(scanroot)
         cls.cleanup_class = cleanup
 
@@ -133,7 +135,7 @@ class TestCase(unittest.TestCase):
     def tearDownClass(cls):
         cls.cleanup_class()
 
-    def assertNodeOutput(self, output, node):
+    def assertNodeOutput(self, output, node):  # pylint: disable=invalid-name
         name = node.name
         testfile = inspect.getmodule(type(self)).__file__
         dirpath = os.path.join(os.path.dirname(testfile), 'output')

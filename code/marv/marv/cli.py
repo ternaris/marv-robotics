@@ -1,16 +1,12 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-from __future__ import absolute_import, division, print_function
-
 import datetime
 import json
-import os
 import re
 import sys
 import warnings
+from functools import reduce
 from logging import getLogger
 
 import click
@@ -19,12 +15,12 @@ from sqlalchemy.orm.exc import NoResultFound
 
 import marv.app
 from marv.config import ConfigError
-from marv.model import Comment, Dataset, User, Group, dataset_tag, db
+from marv.model import Comment, Dataset, Group, User, dataset_tag, db
 from marv.model import STATUS_MISSING
 from marv.site import Site, UnknownNode, dump_database, make_config
 from marv.utils import find_obj
-from marv_cli import marv as marvcli
 from marv_cli import PDB
+from marv_cli import marv as marvcli
 from marv_node.setid import SetID
 from marv_node.stream import RequestedMessageTooOld
 from marv_store import DirectoryAlreadyExists
@@ -40,6 +36,7 @@ class NodeParamType(click.ParamType):
     def convert(self, value, param, ctx):
         return find_obj(value)
 
+
 NODE = NodeParamType()
 
 
@@ -54,7 +51,7 @@ def create_app(push=True, init=None):
     try:
         app = marv.app.create_app(site, init=init)
     except ConfigError as e:
-        click.echo('Error {}'.format(e.args[0]), err=True)
+        click.echo(f'Error {e.args[0]}', err=True)
         click.get_current_context().exit(1)
     except OSError as e:
         if e.errno == 13:
@@ -74,17 +71,17 @@ def parse_setids(datasets, discarded=False, dbids=False):
     for prefix in datasets:
         many = prefix.endswith('*')
         prefix = prefix[:-1] if many else prefix
+        # pylint: disable=no-member
         setid = db.session.query(Dataset.id if dbids else Dataset.setid)\
-                          .filter(Dataset.setid.like('{}%'.format(prefix)))\
+                          .filter(Dataset.setid.like(f'{prefix}%'))\
                           .filter(Dataset.discarded.is_(discarded))\
                           .all()
-        if len(setid) == 0:
-            fail('{} does not match any {}dataset'
-                 .format(prefix, 'discarded ' if discarded else ''))
+        # pylint: enable=no-member
+        if not setid:
+            fail(f"{prefix} does not match any {'discarded ' if discarded else ''}dataset")
         elif len(setid) > 1 and not many:
-            matches = '\n  '.join([x[0] for x in setid])
-            fail("{} matches multiple:\n  {}\nUse '{}*' to mean all these."
-                 .format(prefix, matches, prefix))
+            matches = '\n  '.join([f'{x[0]}' for x in setid])
+            fail(f"{prefix} matches multiple:\n  {matches}\nUse '{prefix}*' to mean all these.")
         setids.update(x[0] for x in setid)
         # TODO: complain about multiple
     return sorted(setids)
@@ -92,8 +89,7 @@ def parse_setids(datasets, discarded=False, dbids=False):
 
 @marvcli.command('cleanup')
 @click.option('--discarded/--no-discarded', help='Delete discarded datasets')
-@click.option('--unused-tags/--no-unused-tags',
-              help='Cleanup unused tags and other relations')
+@click.option('--unused-tags/--no-unused-tags', help='Cleanup unused tags and other relations')
 @click.pass_context
 def marvcli_cleanup(ctx, discarded, unused_tags):
     """Cleanup unused tags and discarded datasets."""
@@ -120,8 +116,7 @@ def marvcli_develop():
 
 @marvcli_develop.command('server')
 @click.option('--port', default=5000, help='Port to listen on')
-@click.option('--public/--no-public',
-              help='Listen on all IPs instead of only 127.0.0.1')
+@click.option('--public/--no-public', help='Listen on all IPs instead of only 127.0.0.1')
 def marvcli_develop_server(port, public):
     """Run development webserver.
 
@@ -135,7 +130,7 @@ def marvcli_develop_server(port, public):
     app.site.load_for_web()
     CORS(app)
 
-    class PDBMiddleware(object):
+    class PDBMiddleware:  # pylint: disable=too-few-public-methods
         def __init__(self, app):
             self.app = app
 
@@ -162,14 +157,20 @@ def marvcli_develop_server(port, public):
 
 
 @marvcli.command('discard')
-@click.option('--node', 'nodes', multiple=True, help='TODO: Discard output of selected nodes')
-@click.option('--all-nodes', help='TODO: Discard output of all nodes')
-@click.option('--comments/--no-comments', help='Delete comments')
-@click.option('--tags/--no-tags', help='Delete tags')
-@click.option('--confirm/--no-confirm', default=True, show_default=True,
-              help='Ask for confirmation before deleting tags and comments')
+@click.option(
+    '--comments/--no-comments',
+    help='Delete comments',
+)
+@click.option(
+    '--tags/--no-tags',
+    help='Delete tags',
+)
+@click.option(
+    '--confirm/--no-confirm', default=True, show_default=True,
+    help='Ask for confirmation before deleting tags and comments',
+)
 @click.argument('datasets', nargs=-1, required=True)
-def marvcli_discard(datasets, all_nodes, nodes, tags, comments, confirm):
+def marvcli_discard(datasets, tags, comments, confirm):
     """Mark DATASETS to be discarded or discard associated data.
 
     Without any options the specified datasets are marked to be
@@ -179,19 +180,20 @@ def marvcli_discard(datasets, all_nodes, nodes, tags, comments, confirm):
     Otherwise, selected data associated with the specified datasets is
     discarded right away.
     """
-    mark_discarded = not any([all_nodes, nodes, tags, comments])
+    mark_discarded = not any([tags, comments])
 
-    site = create_app().site
     setids = parse_setids(datasets)
 
     if tags or comments:
         if confirm:
             msg = ' and '.join(filter(None, ['tags' if tags else None,
                                              'comments' if comments else None]))
-            click.echo('About to delete {}'.format(msg))
+            click.echo(f'About to delete {msg}')
             click.confirm('This cannot be undone. Do you want to continue?', abort=True)
 
-        ids = [x[0] for x in db.session.query(Dataset.id).filter(Dataset.setid.in_(setids))]
+        query = db.session.query(Dataset.id)\
+                          .filter(Dataset.setid.in_(setids))  # pylint: disable=no-member
+        ids = [x[0] for x in query]
         if tags:
             where = dataset_tag.c.dataset_id.in_(ids)
             stmt = dataset_tag.delete().where(where)
@@ -202,12 +204,6 @@ def marvcli_discard(datasets, all_nodes, nodes, tags, comments, confirm):
             where = comment_table.c.dataset_id.in_(ids)
             stmt = comment_table.delete().where(where)
             db.session.execute(stmt)
-
-    if nodes or all_nodes:
-        storedir = site.config.marv.storedir
-        for setid in setids:
-            setdir = os.path.join(storedir, setid)
-        # TODO: see where we are getting with dep tree tables
 
     if mark_discarded:
         dataset = Dataset.__table__
@@ -270,22 +266,46 @@ def marvcli_init():
 
 
 @marvcli.command('query')
-@click.option('--list-tags', is_flag=True, help='List all tags')
-@click.option('--col', '--collection', 'collections', multiple=True,
-              help='Limit to one or more collections or force listing of all with --collection=*')
-@click.option('--discarded/--no-discarded', help='Dataset is discarded')
-@click.option('--missing', is_flag=True, help='Datasets with missing files')
-@click.option('--outdated', is_flag=True, help='Datasets with outdated node output')
-@click.option('--path', type=click.Path(resolve_path=True),
-              help='Dataset contains files whose path starts with PATH')
-@click.option('--tagged', 'tags', multiple=True, help='Match any given tag')
-@click.option('-0', '--null', is_flag=True, help='Use null byte to separate output instead of newlines')
+@click.option(
+    '--list-tags', is_flag=True,
+    help='List all tags',
+)
+@click.option(
+    '--col', '--collection', 'collections', multiple=True,
+    help='Limit to one or more collections or force listing of all with --collection=*',
+)
+@click.option(
+    '--discarded/--no-discarded',
+    help='Dataset is discarded',
+)
+@click.option(
+    '--missing', is_flag=True,
+    help='Datasets with missing files',
+)
+@click.option(
+    '--outdated', is_flag=True,
+    help='Datasets with outdated node output',
+)
+@click.option(
+    '--path', type=click.Path(resolve_path=True),
+    help='Dataset contains files whose path starts with PATH',
+)
+@click.option(
+    '--tagged', 'tags', multiple=True,
+    help='Match any given tag',
+)
+@click.option(
+    '-0', '--null', is_flag=True,
+    help='Use null byte to separate output instead of newlines',
+)
 @click.pass_context
 def marvcli_query(ctx, list_tags, collections, discarded, missing, outdated, path, tags, null):
     """Query datasets.
 
     Use --col=* to list all datasets across all collections.
     """
+    # pylint: disable=too-many-arguments
+
     if not any([collections, discarded, list_tags, missing, outdated, path, tags]):
         click.echo(ctx.get_help())
         ctx.exit(1)
@@ -299,7 +319,7 @@ def marvcli_query(ctx, list_tags, collections, discarded, missing, outdated, pat
     else:
         for col in collections:
             if col not in site.collections:
-                ctx.fail('Unknown collection: {}'.format(col))
+                ctx.fail(f'Unknown collection: {col}')
 
     if list_tags:
         tags = site.listtags(collections)
@@ -313,43 +333,74 @@ def marvcli_query(ctx, list_tags, collections, discarded, missing, outdated, pat
         click.echo(sep.join(setids), nl=not null)
 
 
-@marvcli.command('run', short_help='Run nodes for DATASETS')
-@click.option('--node', 'selected_nodes', multiple=True,
-              help='Run individual nodes instead of all nodes used by detail and listing'
-              ' Use --list-nodes for a list of known nodes. Beyond that any node can be run'
-              ' by referencing it with package.module:node')
-@click.option('--list-nodes', is_flag=True, help='List known nodes instead of running')
-@click.option('--list-dependent', is_flag=True, help='List nodes depending on selected nodes')
-@click.option('--deps/--no-deps', default=True, show_default=True,
-              help='Run dependencies of requested nodes')
-@click.option('--exclude', 'excluded_nodes', multiple=True,
-              help='Exclude individual nodes instead of running all nodes used by detail and listing')
-@click.option('-f', '--force/--no-force',
-              help='Force run of nodes whose output is already available from store')
+@marvcli.command('run', short_help='Run nodes for DATASETS')  # noqa: C901
+@click.option(
+    '--node', 'selected_nodes', multiple=True,
+    help=(
+        'Run individual nodes instead of all nodes used by detail and listing '
+        'Use --list-nodes for a list of known nodes. Beyond that any node can be run '
+        'by referencing it with package.module:node'
+    ),
+)
+@click.option(
+    '--list-nodes', is_flag=True,
+    help='List known nodes instead of running',
+)
+@click.option(
+    '--list-dependent', is_flag=True,
+    help='List nodes depending on selected nodes',
+)
+@click.option(
+    '--deps/--no-deps', default=True, show_default=True,
+    help='Run dependencies of requested nodes',
+)
+@click.option(
+    '--exclude', 'excluded_nodes', multiple=True,
+    help='Exclude individual nodes instead of running all nodes used by detail and listing',
+)
+@click.option(
+    '-f', '--force/--no-force',
+    help='Force run of nodes whose output is already available from store',
+)
 # TODO: force-deps is bad as it does not allow to resume
 # better: discard nodes selectively or discard --deps node
 # discarding does not delete, but simply registers the most recent generation to be empty
-@click.option('--force-deps/--no-force-deps',
-              help='Force run of dependencies whose output is already available from store')
-@click.option('--force-dependent/--no-force-dependent',
-              help='Force run of all nodes depending on selected nodes, directly or indirectly')
+@click.option(
+    '--force-deps/--no-force-deps',
+    help='Force run of dependencies whose output is already available from store',
+)
+@click.option(
+    '--force-dependent/--no-force-dependent',
+    help='Force run of all nodes depending on selected nodes, directly or indirectly',
+)
 @click.option('--keep/--no-keep', help='Keep uncommitted streams for debugging')
-@click.option('--keep-going/--no-keep-going',
-              help='In case of an exception keep going with remaining datasets')
-@click.option('--detail/--no-detail', 'update_detail',
-              help='Update detail view from stored node output')
-@click.option('--listing/--no-listing', 'update_listing',
-              help='Update listing view from stored node output')
-@click.option('--cachesize', default=50, show_default=True,
-              help='Number of messages to keep in memory for each stream')
-@click.option('--col', '--collection', 'collections', multiple=True,
-              help='Run nodes for all datasets of selected collections, use "*" for all')
+@click.option(
+    '--keep-going/--no-keep-going',
+    help='In case of an exception keep going with remaining datasets',
+)
+@click.option(
+    '--detail/--no-detail', 'update_detail',
+    help='Update detail view from stored node output',
+)
+@click.option(
+    '--listing/--no-listing', 'update_listing',
+    help='Update listing view from stored node output',
+)
+@click.option(
+    '--cachesize', default=50, show_default=True,
+    help='Number of messages to keep in memory for each stream',
+)
+@click.option(
+    '--col', '--collection', 'collections', multiple=True,
+    help='Run nodes for all datasets of selected collections, use "*" for all',
+)
 @click.argument('datasets', nargs=-1)
 @click.pass_context
-def marvcli_run(ctx, datasets, deps, excluded_nodes, force, force_dependent,
-                force_deps, keep, keep_going, list_nodes,
-                list_dependent, selected_nodes, update_detail,
-                update_listing, cachesize, collections):
+def marvcli_run(
+        ctx, datasets, deps, excluded_nodes, force, force_dependent, force_deps, keep, keep_going,
+        list_nodes, list_dependent, selected_nodes, update_detail, update_listing, cachesize,
+        collections,
+):
     """Run nodes for selected datasets.
 
     Datasets are specified by a list of set ids, or --collection
@@ -361,6 +412,8 @@ def marvcli_run(ctx, datasets, deps, excluded_nodes, force, force_dependent,
     prefix. Suffix a prefix by '+' to match multiple.
 
     """
+    # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
+
     if collections and datasets:
         ctx.fail('--collection and DATASETS are mutually exclusive')
 
@@ -390,24 +443,24 @@ def marvcli_run(ctx, datasets, deps, excluded_nodes, force, force_dependent,
     else:
         for col in collections:
             if col not in site.collections:
-                ctx.fail('Unknown collection: {}'.format(col))
+                ctx.fail(f'Unknown collection: {col}')
 
     if list_nodes:
         for col in (collections or sorted(site.collections.keys())):
-            click.echo('{}:'.format(col))
+            click.echo(f'{col}:')
             for name in sorted(site.collections[col].nodes):
                 if name == 'dataset':
                     continue
-                click.echo('    {}'.format(name))
+                click.echo(f'    {name}')
         return
 
     if list_dependent:
         for col in (collections or sorted(site.collections.keys())):
-            click.echo('{}:'.format(col))
+            click.echo(f'{col}:')
             dependent = {x for name in selected_nodes
                          for x in site.collections[col].nodes[name].dependent}
             for name in sorted(x.name for x in dependent):
-                click.echo('    {}'.format(name))
+                click.echo(f'    {name}')
         return
 
     errors = []
@@ -415,8 +468,8 @@ def marvcli_run(ctx, datasets, deps, excluded_nodes, force, force_dependent,
     setids = [SetID(x) for x in parse_setids(datasets)]
     if not setids:
         query = db.session.query(Dataset.setid)\
-                           .filter(Dataset.discarded.isnot(True))\
-                           .filter(Dataset.status.op('&')(STATUS_MISSING) == 0)
+                          .filter(Dataset.discarded.isnot(True))\
+                          .filter(Dataset.status.op('&')(STATUS_MISSING) == 0)
         if collections is not None:
             query = query.filter(Dataset.collection.in_(collections))
         setids = (SetID(x[0]) for x in query)
@@ -432,28 +485,31 @@ def marvcli_run(ctx, datasets, deps, excluded_nodes, force, force_dependent,
                          force_dependent, update_detail, update_listing,
                          excluded_nodes, cachesize=cachesize)
             except UnknownNode as e:
-                ctx.fail('Collection {} has no node {}'.format(*e.args))
+                ctx.fail(f'Collection {e.args[0]} has no node {e.args[1]}')
             except NoResultFound:
-                click.echo('ERROR: unknown {!r}'.format(setid), err=True)
+                click.echo(f'ERROR: unknown {setid!r}', err=True)
                 if not keep_going:
                     raise
             except RequestedMessageTooOld as e:
+                _req = e.args[0]._requestor.node.name  # pylint: disable=no-member,protected-access
+                _handle = e.args[0].handle.node.name  # pylint: disable=no-member
                 ctx.fail((
-                    "{} pulled {} message {} not being in memory anymore."
-                    "\nSee https://ternaris.com/marv-robotics/docs/patterns.html#reduce-separately"
-                ).format(e.args[0]._requestor.node.name, e.args[0].handle.node.name, e.args[1]))
-            except BaseException as e:
+                    f"{_req} pulled {_handle} message {e.args[1]} not being in memory anymore.\n"
+                    "See https://ternaris.com/marv-robotics/docs/patterns.html#reduce-separately"
+                ))
+            except BaseException as e:  # pylint: disable=broad-except
                 errors.append(setid)
                 if isinstance(e, KeyboardInterrupt):
-                    log.warn('KeyboardInterrupt: aborting')
+                    log.warning('KeyboardInterrupt: aborting')
                     raise
-                elif isinstance(e, DirectoryAlreadyExists):
-                    click.echo("""
+
+                if isinstance(e, DirectoryAlreadyExists):
+                    click.echo(f"""
 ERROR: Directory for node run already exists:
-{!r}
+{e.args[0]!r}
 In case no other node run is in progress, this is a bug which you are kindly
 asked to report, providing information regarding any previous, failed node runs.
-""".format(e.args[0]), err=True)
+""", err=True)
                     if not keep_going:
                         ctx.abort()
                 else:
@@ -501,9 +557,9 @@ def marvcli_comment_add(user, message, datasets):
     """Add comment as user for one or more datasets"""
     app = create_app()
     try:
-        db.session.query(User).filter(User.name==user).one()
+        db.session.query(User).filter(User.name == user).one()
     except NoResultFound:
-        click.echo("ERROR: No such user '{}'".format(user), err=True)
+        click.echo(f'ERROR: No such user {user!r}', err=True)
         sys.exit(1)
     ids = parse_setids(datasets, dbids=True)
     app.site.comment(user, message, ids)
@@ -516,15 +572,17 @@ def marvcli_comment_list(datasets):
 
     Output: setid comment_id date time author message
     """
-    app = create_app()
+    app = create_app()  # pylint: disable=unused-variable
     ids = parse_setids(datasets, dbids=True)
     comments = db.session.query(Comment)\
                          .options(db.joinedload(Comment.dataset))\
                          .filter(Comment.dataset_id.in_(ids))
+    # pylint: disable=protected-access
     for comment in sorted(comments, key=lambda x: (x.dataset._setid, x.id)):
         print(comment.dataset.setid, comment.id,
               datetime.datetime.fromtimestamp(int(comment.time_added / 1000)),
               comment.author, repr(comment.text))
+    # pylint: enable=protected-access
 
 
 SHOW_TEMPLATE = Template("""
@@ -544,8 +602,7 @@ SHOW_TEMPLATE = Template("""
 
 @marvcli.command('show')
 @click.argument('datasets', nargs=-1, required=True)
-@click.pass_context
-def marvcli_show(ctx, datasets):
+def marvcli_show(datasets):
     """Show information for one or more datasets in form of a yaml document.
 
     Set ids may be abbreviated as long as they are unique.
@@ -554,7 +611,7 @@ def marvcli_show(ctx, datasets):
       marv show setid  # show one dataset
       marv query --col=* | xargs marv show   # show all datasets
     """
-    app = create_app()
+    app = create_app()  # pylint: disable=unused-variable
     ids = parse_setids(datasets, dbids=True)
     datasets = db.session.query(Dataset)\
                          .options(db.joinedload(Dataset.files))\
@@ -571,7 +628,7 @@ def marvcli_comment_rm(ids):
 
     Remove comments by id as given in second column of: marv comment list
     """
-    app = create_app()
+    app = create_app()  # pylint: disable=unused-variable
     db.session.query(Comment)\
               .filter(Comment.id.in_(ids))\
               .delete(synchronize_session=False)
@@ -586,50 +643,53 @@ def marvcli_user():
 @marvcli_user.command('add')
 @click.option('--password', help='Password will be prompted')
 @click.argument('username')
-@click.pass_context
-def marvcli_user_add(ctx, username, password):
+def marvcli_user_add(username, password):
     """Add a user"""
     if not re.match(r'[0-9a-zA-Z\-_\.@+]+$', username):
-        click.echo('Invalid username: {}'.format(username), err=True)
+        click.echo(f'Invalid username: {username}', err=True)
         click.echo('Must only contain ASCII letters, numbers, dash, underscore and dot',
                    err=True)
         sys.exit(1)
     if password is None:
         password = click.prompt('Password', hide_input=True, confirmation_prompt=True)
-    app = create_app()
+    app = create_app()  # pylint: disable=unused-variable
     try:
-        app.um.user_add(username, password, 'marv', '')
+        app.um.user_add(username, password, 'marv', '')  # pylint: disable=no-member
     except ValueError as e:
-        click.echo('Error: {}'.format(e.args[0], err=True))
+        click.echo(f'Error: {e.args[0]}', err=True)
         sys.exit(1)
 
 
 @marvcli_user.command('list')
 def marvcli_user_list():
     """List existing users"""
-    app = create_app()
+    app = create_app()  # pylint: disable=unused-variable
     query = db.session.query(User).options(db.joinedload(User.groups))\
                                   .order_by(User.name)
     users = [(user.name, ', '.join(sorted(x.name for x in user.groups)))
              for user in query]
     users = [('User', 'Groups')] + users
-    uwidth, gwidth = reduce(lambda (xm, ym), (x, y): (max(x, xm), max(y, ym)),
-                            ((len(x), len(y)) for x, y in users))
+    uwidth, _ = reduce(
+        lambda xm_ym, x_y: (max(x_y[0], xm_ym[0]), max(x_y[1], xm_ym[1])),
+        ((len(x), len(y)) for x, y in users),
+    )
     fmt = '{:%ds} | {}' % uwidth
-    for x, y in users:
-        click.echo(fmt.format(x, y))
+    for user, groups in users:
+        click.echo(fmt.format(user, groups))
 
 
 @marvcli_user.command('pw')
-@click.option('--password', prompt=True, hide_input=True, confirmation_prompt=True,
-              help='Password will be prompted')
+@click.option(
+    '--password', prompt=True, hide_input=True, confirmation_prompt=True,
+    help='Password will be prompted',
+)
 @click.argument('username')
 @click.pass_context
 def marvcli_user_pw(ctx, username, password):
     """Change password"""
-    app = create_app()
+    app = create_app()  # pylint: disable=unused-variable
     try:
-        app.um.user_pw(username, password)
+        app.um.user_pw(username, password)  # pylint: disable=no-member
     except ValueError as e:
         ctx.fail(e.args[0])
 
@@ -639,9 +699,9 @@ def marvcli_user_pw(ctx, username, password):
 @click.pass_context
 def marvcli_user_rm(ctx, username):
     """Remove a user"""
-    app = create_app()
+    app = create_app()  # pylint: disable=unused-variable
     try:
-        app.um.user_rm(username)
+        app.um.user_rm(username)  # pylint: disable=no-member
     except ValueError as e:
         ctx.fail(e.args[0])
 
@@ -657,13 +717,12 @@ def marvcli_group():
 def marvcli_group_add(ctx, groupname):
     """Add a group"""
     if not re.match(r'[0-9a-zA-Z\-_\.@+]+$', groupname):
-        click.echo('Invalid groupname: {}'.format(groupname), err=True)
-        click.echo('Must only contain ASCII letters, numbers, dash, underscore and dot',
-                   err=True)
+        click.echo(f'Invalid groupname: {groupname}', err=True)
+        click.echo('Must only contain ASCII letters, numbers, dash, underscore and dot', err=True)
         sys.exit(1)
-    app = create_app()
+    app = create_app()  # pylint: disable=unused-variable
     try:
-        app.um.group_add(groupname)
+        app.um.group_add(groupname)  # pylint: disable=no-member
     except ValueError as e:
         ctx.fail(e.args[0])
 
@@ -671,7 +730,7 @@ def marvcli_group_add(ctx, groupname):
 @marvcli_group.command('list')
 def marvcli_group_list():
     """List existing groups"""
-    app = create_app()
+    app = create_app()  # pylint: disable=unused-variable
     query = db.session.query(Group.name).order_by(Group.name)
     for name in [x[0] for x in query]:
         click.echo(name)
@@ -683,9 +742,9 @@ def marvcli_group_list():
 @click.pass_context
 def marvcli_group_adduser(ctx, groupname, username):
     """Add an user to a group"""
-    app = create_app()
+    app = create_app()  # pylint: disable=unused-variable
     try:
-        app.um.group_adduser(groupname, username)
+        app.um.group_adduser(groupname, username)  # pylint: disable=no-member
     except ValueError as e:
         ctx.fail(e.args[0])
 
@@ -696,9 +755,9 @@ def marvcli_group_adduser(ctx, groupname, username):
 @click.pass_context
 def marvcli_group_rmuser(ctx, groupname, username):
     """Remove an user from a group"""
-    app = create_app()
+    app = create_app()  # pylint: disable=unused-variable
     try:
-        app.um.group_rmuser(groupname, username)
+        app.um.group_rmuser(groupname, username)  # pylint: disable=no-member
     except ValueError as e:
         ctx.fail(e.args[0])
 
@@ -708,8 +767,8 @@ def marvcli_group_rmuser(ctx, groupname, username):
 @click.pass_context
 def marvcli_group_rm(ctx, groupname):
     """Remove a group"""
-    app = create_app()
+    app = create_app()  # pylint: disable=unused-variable
     try:
-        app.um.group_rm(groupname)
+        app.um.group_rm(groupname)  # pylint: disable=no-member
     except ValueError as e:
         ctx.fail(e.args[0])

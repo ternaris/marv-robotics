@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 import marv
 from marv.types import Words
@@ -44,4 +40,4 @@ def fulltext(streams):
 
     msgs = yield marv.pull_all(*streams)
     words = {x for msg in msgs for x in msg.words}
-    yield marv.push({'words': list(words)})
+    yield marv.push({'words': sorted(list(words))})

@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 import inspect
 import os
@@ -24,12 +20,12 @@ KEEP = os.environ.get('KEEP')
 log = getLogger(__name__)
 
 
-def scan_foo(directory, subdirs, filenames):
+def scan_foo(directory, subdirs, filenames):  # pylint: disable=unused-argument
     return [(os.path.basename(x), [x]) for x in filenames
             if x.endswith('.foo')]
 
 
-def scan_bar(directory, subdirs, filenames):
+def scan_bar(directory, subdirs, filenames):  # pylint: disable=unused-argument
     return [(os.path.basename(x), [x]) for x in filenames
             if x.endswith('.bar')]
 
@@ -59,9 +55,8 @@ class TestCase(unittest.TestCase):
         with open(siteconf, 'w') as f:
             f.write(inspect.cleandoc(self.CONFIG))
 
-        prefix = 'test{}_'.format(self.counter.next())
-        marv.model._LISTING_PREFIX
-        marv.model._LISTING_PREFIX = prefix
+        prefix = f'test{next(self.counter)}_'
+        marv.model._LISTING_PREFIX = prefix  # pylint: disable=protected-access
         self.site = Site(siteconf)
 
         app = marv.app.create_app(self.site)
@@ -78,21 +73,21 @@ class TestCase(unittest.TestCase):
             if not KEEP:
                 shutil.rmtree(sitedir)
             else:
-                print('Keeping {}'.format(sitedir))
+                print(f'Keeping {sitedir}')
         self.cleanup = cleanup
 
     def tearDown(self):
         self.cleanup()
 
     def generate_foo(self, name):
-        filename = os.path.join(self.scanroot, 'foo', '{}.foo'.format(name))
+        filename = os.path.join(self.scanroot, 'foo', f'{name}.foo')
         with open(filename, 'w') as f:
             f.write('')
         log.verbose('wrote %s', filename)
         return filename
 
     def generate_bar(self, name):
-        filename = os.path.join(self.scanroot, 'bar', '{}.bar'.format(name))
+        filename = os.path.join(self.scanroot, 'bar', f'{name}.bar')
         with open(filename, 'w') as f:
             f.write('')
         log.verbose('wrote %s', filename)
@@ -171,3 +166,4 @@ class TestCase(unittest.TestCase):
         foo1 = self.generate_foo('foo1')
         site.scan()
         foo1id = site.query(path=foo1)[0]
+        assert foo1id

@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-from __future__ import absolute_import, division, print_function
+# pylint: disable=invalid-name,redefined-outer-name
 
 from datetime import datetime
 
@@ -13,6 +11,7 @@ import utm
 from matplotlib import cm
 from matplotlib import dates as md
 from matplotlib import pyplot as plt
+
 
 import marv
 from marv.types import File
@@ -85,7 +84,7 @@ def positions(stream):
                           np.sqrt(rosmsg.position_covariance[0])])
     if erroneous:
         log = yield marv.get_logger()
-        log.warn('skipped %d erroneous messages', erroneous)
+        log.warning('skipped %d erroneous messages', erroneous)
     if positions:
         yield marv.push({'values': positions})
 
@@ -111,7 +110,7 @@ def imus(stream):
         imus.append([rosmsg.header.stamp.to_sec(), yaw_angle(rosmsg.orientation)])
     if erroneous:
         log = yield marv.get_logger()
-        log.warn('skipped %d erroneous messages', erroneous)
+        log.warning('skipped %d erroneous messages', erroneous)
     yield marv.push({'values': imus})
 
 
@@ -137,7 +136,7 @@ def navsatorients(stream):
         # TODO: why do we accumulate?
         navsatorients.append([rosmsg.header.stamp.to_sec(), rosmsg.yaw])
     if erroneous:
-        log.warn('skipped %d erroneous messages', erroneous)
+        log.warning('skipped %d erroneous messages', erroneous)
     yield marv.push({'values': navsatorients})
 
 
@@ -158,11 +157,13 @@ def orientations(imus, navsatorients):
 
 
 @marv.node(File)
-#@marv.input('gps', foreach=positions)
-#@marv.input('orientation', foreach=orientations)
+# @marv.input('gps', foreach=positions)
+# @marv.input('orientation', foreach=orientations)
 @marv.input('gps', default=positions)
 @marv.input('orientation', default=orientations)
 def gnss_plots(gps, orientation):
+    # pylint: disable=too-many-locals,too-many-statements
+
     # TODO: framework does not yet support multiple foreach
     # pick only first combination for now
 
@@ -174,7 +175,7 @@ def gnss_plots(gps, orientation):
     gtitle = gps.title
 
     gps = yield marv.pull(gps)  # There is only one message
-    
+
     # Check whether there are any valid messages left
     if gps is None:
         log.error('No valid gps messages')
@@ -185,14 +186,14 @@ def gnss_plots(gps, orientation):
         otitle = orientation.title
         orientation = yield marv.pull(orientation)
     if orientation is None:
-        log.warn('No orientations found')
+        log.warning('No orientations found')
         otitle = 'none'
         orientation = []
     else:
         orientation = orientation['values']
 
     name = '__'.join(x.replace('/', ':')[1:] for x in [gtitle, otitle]) + '.jpg'
-    title = '{} with {}'.format(gtitle, otitle)
+    title = f'{gtitle} with {otitle}'
     yield marv.set_header(title=title)
     plotfile = yield marv.make_file(name)
 
@@ -210,7 +211,7 @@ def gnss_plots(gps, orientation):
     gps = gps[np.isfinite(gps[:, 1])]
 
     # precompute plot vars
-    c = cm.prism(gps[:, 7]/2)
+    c = cm.prism(gps[:, 7]/2)  # pylint: disable=no-member
 
     ax1.scatter(gps[:, 4], gps[:, 5], c=c, edgecolor='none', s=3,
                 label="green: RTK\nyellow: DGPS\nred: Single")
@@ -244,6 +245,6 @@ def gnss_plots(gps, orientation):
     fig.set_size_inches(16, 9)
     try:
         fig.savefig(plotfile.path)
-    except:
+    finally:
         plt.close()
     yield plotfile

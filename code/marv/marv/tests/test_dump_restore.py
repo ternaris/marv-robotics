@@ -1,19 +1,15 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 import json
 import os
 from itertools import count
+from pathlib import Path
 
 import mock
 import pytest
 import sqlalchemy as sqla
 from flask import current_app
-from pathlib2 import Path
 
 import marv
 import marv.app
@@ -29,7 +25,7 @@ SETIDS = [
     'l2vnfhfoe3z7ad7vclkd64tsqy',
     'vdls3sgw5yanuat4uepmhjwcpm',
     'e2oxlhpedjwked2llnnzir4tii',
-    'phjg4ncymwbrbl4yx35bciqazq'
+    'phjg4ncymwbrbl4yx35bciqazq',
 ]
 
 MARV_CONF = """
@@ -97,7 +93,7 @@ detail_sections =
 """
 
 
-def scanner(dirpath, dirnames, filenames):
+def scanner(dirpath, dirnames, filenames):  # pylint: disable=unused-argument
     return [DatasetInfo(x, [x]) for x in filenames]
 
 
@@ -110,12 +106,12 @@ def node_test(dataset):
 
 
 @marv.node(Section)
-@marv.input('node_test', default=node_test)
-def section_test(node_test):
-    value = yield marv.pull(node_test)
+@marv.input('node', default=node_test)
+def section_test(node):
+    value = yield marv.pull(node)
     value = value.value
     yield marv.push({'title': 'Test', 'widgets': [
-        {'keyval': {'items': [{'title': 'value', 'cell': {'uint64': value}}]}}
+        {'keyval': {'items': [{'title': 'value', 'cell': {'uint64': value}}]}},
     ]})
 
 
@@ -129,8 +125,8 @@ def site(tmpdir):
 
     # make scanroots
     for sitename in ('foo', 'bar'):
-        for idx, name in enumerate(['a', u'\u03a8'.encode('utf-8')]):
-            name = '{}_{}'.format(sitename, name)
+        for idx, name in enumerate(['a', '\u03a8']):
+            name = f'{sitename}_{name}'
             path = tmpdir / 'scanroots' / sitename / name
             path.write(str(idx), ensure=True)
 
@@ -138,16 +134,18 @@ def site(tmpdir):
 
 
 @pytest.fixture(scope='function')
-def app(site):
-    app = marv.app.create_app(site, init=True)
-    app.testing = True
-    with app.app_context():
-        app = app.test_client()
+def app(site):  # pylint: disable=redefined-outer-name
+    _app = marv.app.create_app(site, init=True)
+    _app.testing = True
+    with _app.app_context():
+        client = _app.test_client()
+
         def get_json(*args, **kw):
-            resp = app.get(*args, **kw)
+            resp = client.get(*args, **kw)
             return json.loads(resp.data)
-        app.get_json = get_json
-        yield app
+
+        client.get_json = get_json
+        yield client
 
 
 def recorded(data, filename):
@@ -159,13 +157,15 @@ def recorded(data, filename):
     """
     json_file = DATADIR / filename
     if RECORD:
-        json_file.write_bytes(json.dumps(data, sort_keys=True, indent=2))
-    recorded_data = json.loads(json_file.read_bytes())
+        json_file.write_text(json.dumps(data, sort_keys=True, indent=2))
+    recorded_data = json.loads(json_file.read_text())
     assert recorded_data == data, filename
     return True
 
 
-def test_dump(app, site):
+def test_dump(app, site):  # pylint: disable=redefined-outer-name  # noqa: C901
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+
     sitedir = os.path.dirname(site.config.filename)
 
     # Ensure all tables are empty / at factory defaults
@@ -179,8 +179,9 @@ def test_dump(app, site):
         if not k.startswith('listing_')
         if not k.startswith('sqlite_')
     }
-    assert tables.viewkeys() == \
-        {'dataset', 'dataset_tag', 'tag', 'file', 'comment', 'user', 'user_group', 'group'}
+    assert {
+        'dataset', 'dataset_tag', 'tag', 'file', 'comment', 'user', 'user_group', 'group',
+    } == tables.keys()
     for name, table in sorted(tables.items()):
         rows = list(con.execute(select([table])))
         if name == 'group':
@@ -195,18 +196,18 @@ def test_dump(app, site):
     listings = {}
     for colinfo in metadata['collections']['items']:
         name = colinfo['id']
-        listings[name] = app.get_json('/marv/api/collection/{}'.format(name))
+        listings[name] = app.get_json(f'/marv/api/collection/{name}')
     assert recorded(listings, 'empty_listings.json')
 
     # Populate database, asserting in multiple ways that it is populated
     with mock.patch('marv_node.setid.SetID.random', side_effect=SETIDS) as _, \
-         mock.patch('marv.utils.time', side_effect=count(2000)) as __, \
-         mock.patch('marv.utils.mtime', side_effect=count(1000)):
+            mock.patch('marv.utils.time', side_effect=count(2000)) as __, \
+            mock.patch('marv.utils.mtime', side_effect=count(1000)):
         site.scan()
-    um = current_app.um
 
-    with mock.patch('bcrypt.gensalt', return_value='$2b$12$k67acf6S32i3nW0c7ycwe.') as _, \
-         mock.patch('marv.utils.time', side_effect=count(2000)):
+    um = current_app.um  # pylint: disable=invalid-name
+    with mock.patch('bcrypt.gensalt', return_value=b'$2b$12$k67acf6S32i3nW0c7ycwe.') as _, \
+            mock.patch('marv.utils.time', side_effect=count(2000)):
         um.user_add('user1', 'pw1', 'marv', '')
         um.user_add('user2', 'pw2', 'marv', '')
     um.group_add('grp')
@@ -245,7 +246,7 @@ def test_dump(app, site):
     for colinfo in metadata['collections']['items']:
         name = colinfo['id']
         listings[name] = lst = []
-        data = app.get_json('/marv/api/collection/{}'.format(name))
+        data = app.get_json(f'/marv/api/collection/{name}')
         rows = data['listing']['widget']['data']['rows']
         for row in sorted(rows, key=lambda x: x['setid']):
             del row['id']
@@ -255,7 +256,7 @@ def test_dump(app, site):
     details = []
     for colname, rows in sorted(listings.items()):
         for row in rows:
-            detail = app.get_json('/marv/api/dataset/{}'.format(row['setid']))
+            detail = app.get_json(f'/marv/api/dataset/{row["setid"]}')
             del detail['id']
             assert detail['collection'] == colname
             details.append(detail)
@@ -264,13 +265,15 @@ def test_dump(app, site):
     # Dump database
     dump = dump_database(site.config.marv.dburi)
     for datasets in dump['datasets'].values():
-        for ds in datasets:
-            for file in ds['files']:
+        for dataset in datasets:
+            for file in dataset['files']:
                 file['path'] = file['path'].replace(sitedir, 'SITEDIR')
     assert recorded(dump, 'full_dump.json')
 
 
-def test_restore(app, site):
+def test_restore(app, site):  # pylint: disable=redefined-outer-name  # noqa: C901
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+
     sitedir = os.path.dirname(site.config.filename)
 
     # Ensure all tables are empty / at factory defaults
@@ -284,8 +287,9 @@ def test_restore(app, site):
         if not k.startswith('listing_')
         if not k.startswith('sqlite_')
     }
-    assert tables.viewkeys() == \
-        {'dataset', 'dataset_tag', 'tag', 'file', 'comment', 'user', 'user_group', 'group'}
+    assert {
+        'dataset', 'dataset_tag', 'tag', 'file', 'comment', 'user', 'user_group', 'group',
+    } == tables.keys()
     for name, table in sorted(tables.items()):
         rows = list(con.execute(select([table])))
         if name == 'group':
@@ -300,14 +304,14 @@ def test_restore(app, site):
     listings = {}
     for colinfo in metadata['collections']['items']:
         name = colinfo['id']
-        listings[name] = app.get_json('/marv/api/collection/{}'.format(name))
+        listings[name] = app.get_json(f'/marv/api/collection/{name}')
     assert recorded(listings, 'empty_listings.json')
 
     # Restore database
-    full_dump = json.loads((DATADIR / 'full_dump.json').read_bytes())
+    full_dump = json.loads((DATADIR / 'full_dump.json').read_text())
     for datasets in full_dump['datasets'].values():
-        for ds in datasets:
-            for file in ds['files']:
+        for dataset in datasets:
+            for file in dataset['files']:
                 file['path'] = file['path'].replace('SITEDIR', sitedir)
     site.restore_database(**full_dump)
 
@@ -334,7 +338,7 @@ def test_restore(app, site):
     for colinfo in metadata['collections']['items']:
         name = colinfo['id']
         listings[name] = lst = []
-        data = app.get_json('/marv/api/collection/{}'.format(name))
+        data = app.get_json(f'/marv/api/collection/{name}')
         rows = data['listing']['widget']['data']['rows']
         for row in sorted(rows, key=lambda x: x['setid']):
             del row['id']
@@ -345,7 +349,7 @@ def test_restore(app, site):
     details = []
     for colname, rows in sorted(listings.items()):
         for row in rows:
-            detail = app.get_json('/marv/api/dataset/{}'.format(row['setid']))
+            detail = app.get_json(f'/marv/api/dataset/{row["setid"]}')
             del detail['id']
             assert detail['collection'] == colname
             details.append(detail)
@@ -354,9 +358,9 @@ def test_restore(app, site):
     # Redump database and assert dumps are the same
     dump = dump_database(site.config.marv.dburi)
     dump = json.loads(json.dumps(dump))
-    full_dump = json.loads((DATADIR / 'full_dump.json').read_bytes())
+    full_dump = json.loads((DATADIR / 'full_dump.json').read_text())
     for datasets in full_dump['datasets'].values():
-        for ds in datasets:
-            for file in ds['files']:
+        for dataset in datasets:
+            for file in dataset['files']:
                 file['path'] = file['path'].replace('SITEDIR', sitedir)
     assert full_dump == dump

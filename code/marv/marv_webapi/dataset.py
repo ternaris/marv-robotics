@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 import json
 import mimetypes
@@ -18,7 +14,7 @@ from .tooling import api_group as marv_api_group
 
 
 @marv_api_group()
-def dataset(app):
+def dataset(_):
     pass
 
 
@@ -39,8 +35,7 @@ def file_list():
                       .filter(Dataset.id.in_(ids))\
                       .join(File)\
                       .order_by(Dataset.setid)
-    urls = ['dataset/{}/{}'.format(setid, idx)
-            for setid, idx in query]
+    urls = [f'dataset/{setid}/{idx}' for setid, idx in query]
 
     # TODO: complain about invalid/unknown ids?
 
@@ -50,7 +45,7 @@ def file_list():
 def _send_detail_json(setid, setdir):
     try:
         with open(os.path.join(setdir, 'detail.json')) as f:
-            detail = json.load(f)
+            detail = json.load(f)  # pylint: disable=redefined-outer-name
     except IOError:
         return flask.abort(404)
 

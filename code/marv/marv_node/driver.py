@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 from collections import OrderedDict, defaultdict
 from itertools import count
@@ -13,9 +9,9 @@ from capnp.lib.capnp import KjException
 
 from marv_pycapnp import Wrapper
 from .io import Abort
+from .io import CreateStream, Fork, GetRequested, GetStream, SetHeader
+from .io import GetLogger, MakeFile, MsgRequest, Task
 from .io import NEXT, PAUSED, RESUME, THEEND, TheEnd
-from .io import SetHeader, CreateStream, Fork, GetRequested, GetStream
-from .io import GetLogger, Task, MsgRequest, MakeFile
 from .io import Pull, PullAll, Push
 from .mixins import GenWrapperMixin, LoggerMixin
 from .node import Keyed
@@ -26,9 +22,8 @@ class MakeFileNotSupported(Exception):
     """Only persistent streams can make files."""
 
 
-class Driver(Keyed, GenWrapperMixin, LoggerMixin):
+class Driver(Keyed, GenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-instance-attributes
     """Drives a generator."""
-    key = None
     started = False
     stopped = False
     stream_creation = True  # False after first output Msg() TODO
@@ -61,14 +56,15 @@ class Driver(Keyed, GenWrapperMixin, LoggerMixin):
         self._gen = self._run()
 
     def start(self):
-        req = self.next()
+        req = next(self)
         assert req is None
         return NEXT
 
     def __repr__(self):
-        return '<{} {}>'.format(type(self).__name__, self.key_abbrev)
+        return f'<{type(self).__name__} {self.key_abbrev}>'
 
-    def _run(self):
+    def _run(self):  # noqa: C901
+        # pylint: disable=too-many-statements,too-many-branches,too-many-locals
         self.started = True
 
         gen = self.node.invoke(self.inputs)
@@ -85,16 +81,15 @@ class Driver(Keyed, GenWrapperMixin, LoggerMixin):
         while not finished:
             try:
                 request = gen.send(send)
+            except (Abort, StopIteration):
+                finished = True
+            else:
                 self.logdebug('got from node %s', type(request))
-                request_idx = request_counter.next()
-            except StopIteration:
-                finished = True
-            except Abort:
-                finished = True
+                request_idx = next(request_counter)
 
             if finished:
                 for stream in self.streams.values():
-                    if len(stream.cache) == 0:
+                    if not stream.cache:
                         yield stream.handle.msg(stream.handle)
                     if len(stream.cache) == 1:
                         self.logdebug('finishing empty stream')
@@ -116,7 +111,8 @@ class Driver(Keyed, GenWrapperMixin, LoggerMixin):
 
             # process
             if output:
-                if len(self.stream.cache) == 0:
+                # pylint: disable=protected-access
+                if not self.stream.cache:
                     yield self.stream.handle.msg(self.stream.handle)
 
                 # With first output, stream creation is done
@@ -154,7 +150,8 @@ class Driver(Keyed, GenWrapperMixin, LoggerMixin):
             elif isinstance(request, Pull):
                 handle = request.handle
                 # if request.skip is never used the two indices remain the same
-                msg_req_idx = msg_request_counter[handle].next()
+                # pylint: disable=stop-iteration-return
+                msg_req_idx = next(msg_request_counter[handle])
                 next_msg_idx = next_msg_index_counter[handle]  # + request.skip
                 next_msg_index_counter[handle] = next_msg_idx + 1
                 msg = yield MsgRequest(handle, next_msg_idx, self)
@@ -169,7 +166,7 @@ class Driver(Keyed, GenWrapperMixin, LoggerMixin):
             elif isinstance(request, PullAll):
                 send = []
                 for handle in request.handles:
-                    msg_req_idx = msg_request_counter[handle].next()
+                    msg_req_idx = next(msg_request_counter[handle])
                     next_msg_idx = next_msg_index_counter[handle]
                     next_msg_index_counter[handle] = next_msg_idx + 1
                     msg = yield MsgRequest(handle, next_msg_idx, self)
@@ -182,13 +179,13 @@ class Driver(Keyed, GenWrapperMixin, LoggerMixin):
             elif isinstance(request, SetHeader):
                 # TODO: should this be explicitly allowed/required?
                 # Handles for non-header streams would be created right away
-                assert len(self.stream.cache) == 0
+                assert not self.stream.cache
                 self.stream.handle.header = request.header.copy()
                 yield self.stream.handle.msg(self.stream.handle)
                 continue
 
             elif isinstance(request, MakeFile):
-                if len(self.stream.cache) == 0:
+                if not self.stream.cache:
                     yield self.stream.handle.msg(self.stream.handle)
                 stream = self.streams[request.handle or self.stream.handle]
                 try:
@@ -204,7 +201,7 @@ class Driver(Keyed, GenWrapperMixin, LoggerMixin):
                 stream = parent.create_stream(name=request.name,
                                               group=request.group)
                 fork = type(self)(stream, inputs=request.inputs)
-                if len(self.stream.cache) == 0:
+                if not self.stream.cache:
                     yield self.stream.handle.msg(self.stream.handle)
                 yield fork
                 send = None   # TODO: What should we send back?
@@ -226,9 +223,9 @@ class Driver(Keyed, GenWrapperMixin, LoggerMixin):
                 assert stream.name != 'default'
                 assert stream.handle not in self.streams, stream
                 self.streams[stream.handle] = stream
-                if len(parent.cache) == 0:
+                if not parent.cache:
                     yield parent.handle.msg(parent.handle)
-                if len(self.stream.cache) == 0:
+                if not self.stream.cache:
                     yield self.stream.handle.msg(self.stream.handle)
                 yield stream
                 yield stream.handle.msg(stream.handle)
@@ -244,12 +241,13 @@ class Driver(Keyed, GenWrapperMixin, LoggerMixin):
                 continue
 
             elif isinstance(request, GetLogger):
-                send = getLogger('marv.node.{}'.format(self.key_abbrev))
+                send = getLogger(f'marv.node.{self.key_abbrev}')
                 continue
 
             else:
-                raise RuntimeError('Unknown request number {}: {!r} from {!r}'
-                                   .format(request_idx + 1, request, self.node))
+                raise RuntimeError(
+                    f'Unknown request number {request_idx + 1}: {request!r} from {self.node!r}',
+                )
         self.stopped = True
 
     def add_stream_request(self, *handles):
@@ -263,5 +261,6 @@ class Driver(Keyed, GenWrapperMixin, LoggerMixin):
     def destroy(self):
         for stream in self.streams.values():
             stream.destroy()
+
 
 Task.register(Driver)

@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: CC0-1.0
-
-from __future__ import absolute_import, division, print_function
 
 from setuptools import setup
 

@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 import math
 import subprocess
@@ -11,9 +7,9 @@ from itertools import count
 
 import cv_bridge
 import cv2
-import marv
 import numpy
 
+import marv
 from marv.types import File
 from .bag import get_message_type, messages
 
@@ -42,10 +38,12 @@ def ros2cv(msg, scale=1, offset=0):
 @marv.input('speed', default=4)
 @marv.input('convert_32FC1_scale', default=1)
 @marv.input('convert_32FC1_offset', default=0)
-def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):
+def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):  # pylint: disable=invalid-name
     """Create video for each sensor_msgs/Image topic with ffmpeg"""
+    # pylint: disable=too-many-locals
+
     yield marv.set_header(title=stream.topic)
-    name = '{}.webm'.format(stream.topic.replace('/', '_')[1:])
+    name = f"{stream.topic.replace('/', '_')[1:]}.webm"
     video = yield marv.make_file(name)
     duration = (stream.end_time - stream.start_time) * 1e-9
     framerate = stream.msg_count / duration
@@ -106,6 +104,8 @@ def images(stream, image_width, max_frames, convert_32FC1_scale, convert_32FC1_o
         image_width (int): Scale to image_width, keeping aspect ratio.
         max_frames (int): Maximum number of frames to extract.
     """
+    # pylint: disable=invalid-name,too-many-locals
+
     yield marv.set_header(title=stream.topic)
     pytype = get_message_type(stream)
     rosmsg = pytype()
@@ -117,7 +117,7 @@ def images(stream, image_width, max_frames, convert_32FC1_scale, convert_32FC1_o
         msg = yield marv.pull(stream)
         if msg is None:
             break
-        idx = counter.next()
+        idx = next(counter)
         if idx % interval:
             continue
 

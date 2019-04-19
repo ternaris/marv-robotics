@@ -1,17 +1,13 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
-from __future__ import absolute_import, division, print_function
 
 import json
 import sys
 
-import capnp
+import capnp  # pylint: disable=unused-import
 
 from marv_pycapnp import Wrapper
-from .types_capnp import Detail, Widget
+from .types_capnp import Detail, Widget  # pylint: disable=import-error,unused-import
 
 
 FORMATTER_MAP = {
@@ -37,7 +33,7 @@ def detail_to_dict(obj):
     for widget in widgets:
         try:
             fixup_widget(widget)
-        except:
+        except Exception:
             from pprint import pformat
             print(pformat(dct), file=sys.stderr)
             print(pformat(widget), file=sys.stderr)
@@ -46,12 +42,15 @@ def detail_to_dict(obj):
 
 
 def make_map_dict(dct):
-    mapdct = Wrapper.from_dict(Widget.Map, dct)._reader.to_dict(verbose=True, which=True)
+    reader = Wrapper.from_dict(Widget.Map, dct)._reader  # pylint: disable=protected-access
+    mapdct = reader.to_dict(verbose=True, which=True)
     fixup_map(mapdct)
     return mapdct
 
 
-def fixup_widget(dct):
+def fixup_widget(dct):  # noqa: C901
+    # pylint: disable=too-many-branches
+
     which = dct['type'] = dct.pop('_which')
     data = dct['data'] = dct.pop(which)
     if which == 'custom':
@@ -104,7 +103,7 @@ def fixup_map(data):
             raise RuntimeError(layertype)
 
 
-def fixup_geojson(geojson):
+def fixup_geojson(geojson):  # noqa: C901
     geotype = geojson.pop('_which')
     geojson['type'] = geotype[0].upper() + geotype[1:]
     geojson.update(geojson.pop(geotype))

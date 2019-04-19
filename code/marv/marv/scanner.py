@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
@@ -25,8 +23,6 @@ empty list -- :py:func:`os.walk` is used behind the scenes::
   dirnames[:] = []
 
 """
-
-from __future__ import absolute_import, division, print_function
 
 from collections import namedtuple
 

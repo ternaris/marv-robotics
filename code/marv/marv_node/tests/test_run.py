@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
-#
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-from __future__ import absolute_import, division, print_function
+# pylint: disable=invalid-name
 
 import unittest
 
@@ -11,8 +9,8 @@ from ..run import run_nodes
 from ..testing import make_dataset, make_sink, marv
 
 
-dataset = make_dataset()
-SETID = dataset.setid
+DATASET = make_dataset()
+SETID = DATASET.setid
 
 
 class TestCase(unittest.TestCase):
@@ -46,7 +44,7 @@ class TestCase(unittest.TestCase):
                 yield marv.push(a+b+c)
 
         sinks = [make_sink(x) for x in [root, square, add]]
-        run_nodes(dataset, sinks, {})
+        run_nodes(DATASET, sinks, {})
         self.assertEqual([x.stream for x in sinks], [
             [10, 20],
             [100, 400],
@@ -81,7 +79,7 @@ class TestCase(unittest.TestCase):
                 yield marv.push(a+b+c)
 
         sinks = [make_sink(x) for x in [root, square, add]]
-        run_nodes(dataset, sinks, {})
+        run_nodes(DATASET, sinks, {})
         self.assertEqual([x.stream for x in sinks], [
             [10, 20],
             [100, 400],
@@ -102,5 +100,5 @@ class TestCase(unittest.TestCase):
             msgs.append(msg)
 
         sinks = [make_sink(x) for x in [consumer]]
-        run_nodes(dataset, sinks, {})
+        run_nodes(DATASET, sinks, {})
         self.assertEqual(msgs, [1])
