@@ -40,6 +40,7 @@ Changed
 - Upgrade Python tooling to latest versions
 - Upgrade Python dependencies to latest versions
 - Reformat changelog
+- Improve error message in ffmpeg node when conversion fails
 
 Deprecated
 ~~~~~~~~~~
