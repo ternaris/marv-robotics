@@ -13,6 +13,30 @@ documentation. Within GitLab please find the migration document
 `here <./docs/migrate/index.rst>`_.
 
 
+.. _upcoming_changes:
+
+Upcoming (unreleased)
+^^^^^^^^^^^^^^^^^^^^^
+
+Added
+~~~~~
+
+Changed
+~~~~~~~
+
+Deprecated
+~~~~~~~~~~
+
+Removed
+~~~~~~~
+
+Fixed
+~~~~~
+
+Security
+~~~~~~~~
+
+
 .. _v19_04_0:
 
 19.04.0 (2019-04-30)
