@@ -58,6 +58,7 @@ Fixed
 - Fix support for GeoJSON points in trajectory widget `#50 <https://gitlab.com/ternaris/marv-robotics/issues/50>`_
 - Let trajectory node produce correct GeoJSON for segments with only one coordinate
 - Fix filtering of date fields with greater than or equals operation
+- Only display successfully converted videos in video detail section
 
 Security
 ~~~~~~~~
