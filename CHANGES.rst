@@ -13,10 +13,10 @@ documentation. Within GitLab please find the migration document
 `here <./docs/migrate/index.rst>`_.
 
 
-.. _upcoming_changes:
+.. _v19_04_0:
 
-Upcoming (unreleased)
-^^^^^^^^^^^^^^^^^^^^^
+19.04.0 (2019-04-30)
+^^^^^^^^^^^^^^^^^^^^
 
 Added
 ~~~~~
@@ -42,12 +42,6 @@ Changed
 - Upgrade Python dependencies to latest versions
 - Reformat changelog
 - Improve error message in ffmpeg node when conversion fails
-
-Deprecated
-~~~~~~~~~~
-
-Removed
-~~~~~~~
 
 Fixed
 ~~~~~
