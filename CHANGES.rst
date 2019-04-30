@@ -28,6 +28,7 @@ Added
 - Documentation for adding custom static frontend files
 - Generation and validation of hashes for Python requirements
 - Tests for CE merge requests as part of internal CI runs
+- Filter types for float and int
 
 Changed
 ~~~~~~~
