@@ -33,7 +33,7 @@ with io.open('requirements.in', 'rt', encoding='utf8') as f:
         ) if req.startswith('-r') else req
         for req in [line.strip() for line in f.readlines() if not line.startswith('#')]
         if req
-    ]
+    ] + ['marv-ludwig=={}'.format(VERSION)]
 
 setup(name=NAME,
       version=VERSION,
