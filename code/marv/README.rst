@@ -1,8 +1,8 @@
-====
-marv
-====
+=============
+MARV Robotics
+=============
 
-*This package is part of MARV Robotics.*
+This package is part of the MARV Robotics Community Edition.
 
 MARV Robotics is a powerful and extensible data management platform,
 featuring a rich dynamic web interface, driven by your algorithms,
@@ -13,3 +13,4 @@ For more information please see:
 
 - MARV Robotics `website <https://ternaris.com/marv-robotics/>`_
 - MARV Robotics `documentation <https://ternaris.com/marv-robotics/docs/>`_
+- MARV Robotics `GitLab project <https://gitlab.com/ternaris/marv-robotics/>`_
