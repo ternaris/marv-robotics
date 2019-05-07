@@ -30,7 +30,6 @@ RUN apt-get update && \
         python2.7-dev \
         python-opencv \
         python-pip \
-        ros-kinetic-laser-geometry \
         rsync \
         sqlite3 \
         ssh \
