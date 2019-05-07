@@ -40,6 +40,11 @@ def test():
     assert isinstance(wrapper.data_list[0], str)
     assert repr(wrapper.dataList) == "['\\xce\\xa8']"
 
+    builder.textListInList = [[u'\u03a8'], [u'\u03a8']]
+    builder.dataListInList = [[u'\u03a8'.encode('utf-8')], [u'\u03a8'.encode('utf-8')]]
+    assert all(isinstance(x, unicode) for lst in wrapper.textListInList for x in lst)
+    assert all(isinstance(x, str) for lst in wrapper.dataListInList for x in lst)
+
     nested = Wrapper.from_dict(
         schema=TestStruct,
         data={
@@ -47,6 +52,8 @@ def test():
             'data': u'\u03a8'.encode('utf-8'),
             'textList': [u'\u03a8'],
             'dataList': [u'\u03a8'.encode('utf-8')],
+            'textListInList': [[u'\u03a8'], [u'\u03a8']],
+            'dataListInList': [[u'\u03a8'.encode('utf-8')], [u'\u03a8'.encode('utf-8')]],
         }
     )
     builder.nestedList = [nested._reader]
@@ -83,6 +90,7 @@ def test():
     assert dct == {
         'data': '\xce\xa8',
         'dataList': ['\xce\xa8'],
+        'dataListInList': [['\xce\xa8'], ['\xce\xa8']],
         'enum': 'bar',
         'group': {
             'data': '\xce\xa8',
@@ -92,6 +100,7 @@ def test():
             {
                 'data': '\xce\xa8',
                 'dataList': ['\xce\xa8'],
+                'dataListInList': [['\xce\xa8'], ['\xce\xa8']],
                 'enum': 'foo',
                 'group': {
                     'data': '',
@@ -100,6 +109,7 @@ def test():
                 'nestedList': [],
                 'text': u'\u03a8',
                 'textList': [u'\u03a8'],
+                'textListInList': [[u'\u03a8'], [u'\u03a8']],
                 'union': {
                     'text': u'',
                     '_which': 'text',
@@ -110,6 +120,7 @@ def test():
         ],
         'text': u'\u03a8',
         'textList': [u'\u03a8'],
+        'textListInList': [[u'\u03a8'], [u'\u03a8']],
         'union': {
             'text': u'\u03a8',
             '_which': 'text',

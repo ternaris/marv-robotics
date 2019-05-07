@@ -51,7 +51,10 @@ def _wrap(value, streamdir, setdir, field=None, field_type=None):
         return Wrapper(value, streamdir, setdir)
 
     elif isinstance(value, _DynamicListReader):
-        element_type = field.proto.slot.type.list.elementType
+        if field:
+            element_type = field.proto.slot.type.list.elementType
+        else:
+            element_type = field_type.list.elementType
         return ListWrapper(value, element_type, streamdir, setdir)
 
     elif isinstance(value, str) and (field_type or field.proto.slot.type).which.raw == 12L:  # :Text

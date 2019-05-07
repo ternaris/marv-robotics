@@ -15,6 +15,8 @@ struct TestStruct {
   data @1 :Data;
   textList @2 :List(Text);
   dataList @3 :List(Data);
+  textListInList @12 :List(List(Text));
+  dataListInList @13 :List(List(Data));
   nestedList @4 :List(TestStruct);
   union {
     unionText @5 :Text;
