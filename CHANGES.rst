@@ -32,6 +32,7 @@ Removed
 
 Fixed
 ~~~~~
+- Fix pycapnp wrapper to handle nested lists
 
 Security
 ~~~~~~~~
