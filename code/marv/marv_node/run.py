@@ -113,8 +113,8 @@ def run_nodes_async(dataset, nodes, store, queue, persistent=None,
                 def newmeth(msg, *args, **kw):
                     msg = self.prefix + msg
                     if msg % args == MARV_RUN_LOGBREAK:
-                        import ipdb
-                        ipdb.set_trace()
+                        import pdb
+                        pdb.set_trace()
                     return meth(msg, *args, **kw)
                 return newmeth
 
