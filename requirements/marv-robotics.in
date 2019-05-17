@@ -1,4 +1,9 @@
 -r marv.in
+gnupg
+lz4
 matplotlib
 pillow
+pycrypto
+pyyaml
+opencv-python-headless
 utm

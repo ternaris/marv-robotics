@@ -2,7 +2,7 @@
 Flask==0.12.4
 Flask-Cors
 Flask-SQLAlchemy
-sqlalchemy<1.3.0  # flask-sqlalchemy produces deprecation warnings
+sqlalchemy
 PyJWT
 bcrypt
 configparser
