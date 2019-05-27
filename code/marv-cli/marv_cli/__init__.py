@@ -62,13 +62,13 @@ def launch_pdb_on_exception(launch=True):
     with launch_pdb_on_exception(os.environ.get('PDB')):
         cli()
     """
-    # pylint: disable=bare-except,no-member
+    # pylint: disable=broad-except
     try:
         yield
-    except:  # noqa
+    except Exception:  # noqa
         if launch:
             import pdb
-            pdb.xpm()
+            pdb.xpm()  # pylint: disable=no-member
         else:
             raise
 
