@@ -1,36 +1,27 @@
-# Copyright 2016 - 2018  Ternaris.
+# Copyright 2016 - 2019  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import math
 import subprocess
 from itertools import count
 
-import cv_bridge
 import cv2
 import numpy
 
 import marv
 from marv.types import File
+from marv_ros.img_tools import ImageConversionError, ImageFormatError, imgmsg_to_cv2
 from .bag import get_message_type, messages
-
-imgmsg_to_cv2 = cv_bridge.CvBridge().imgmsg_to_cv2
 
 
 def ros2cv(msg, scale=1, offset=0):
-    mono = msg.encoding.endswith('1')
-
-    # Work around cv_bridge bug
-    if msg.encoding == '8UC1':
-        msg.encoding = 'mono8'
-    elif msg.encoding == '16UC1':
-        msg.encoding = 'mono16'
-
-    if msg.encoding[2:4] == 'FC':
-        passimg = numpy.nan_to_num(imgmsg_to_cv2(msg, 'passthrough'))
+    if 'FC' in msg.encoding:
+        passimg = numpy.nan_to_num(imgmsg_to_cv2(msg))
         valscaled = cv2.convertScaleAbs(passimg, None, scale, offset)
-        return (mono, valscaled)
+        return valscaled
 
-    return (mono, imgmsg_to_cv2(msg, 'mono8' if mono else 'bgr8'))
+    mono = msg.encoding.startswith('mono') or msg.encoding[-1] in ['1', 'U', 'S', 'F']
+    return imgmsg_to_cv2(msg, 'mono8' if mono else 'bgr8')
 
 
 @marv.node(File)
@@ -58,17 +49,17 @@ def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):  # pylint:
             break
         rosmsg.deserialize(msg.data)
         try:
-            mono, img = ros2cv(rosmsg, convert_32FC1_scale, convert_32FC1_offset)
-        except cv_bridge.CvBridgeError as e:
+            img = ros2cv(rosmsg, convert_32FC1_scale, convert_32FC1_offset)
+        except (ImageFormatError, ImageConversionError) as err:
             log = yield marv.get_logger()
-            log.error('could not convert image from topic %s: %s ', stream.topic, e)
+            log.error('could not convert image from topic %s: %s ', stream.topic, err)
             return
 
         if not encoder:
             ffargs = [
                 'ffmpeg',
                 '-f', 'rawvideo',
-                '-pixel_format', '%s' % 'gray' if mono else 'bgr24',
+                '-pixel_format', '%s' % 'gray' if len(img.shape) == 2 else 'bgr24',
                 '-video_size', '%dx%d' % (rosmsg.width, rosmsg.height),
                 '-framerate', '%s' % framerate,
                 '-i', '-',
@@ -123,10 +114,10 @@ def images(stream, image_width, max_frames, convert_32FC1_scale, convert_32FC1_o
 
         rosmsg.deserialize(msg.data)
         try:
-            mono, img = ros2cv(rosmsg, convert_32FC1_scale, convert_32FC1_offset)
-        except cv_bridge.CvBridgeError as e:
+            img = ros2cv(rosmsg, convert_32FC1_scale, convert_32FC1_offset)
+        except (ImageFormatError, ImageConversionError) as err:
             log = yield marv.get_logger()
-            log.error('could not convert image from topic %s: %s ', stream.topic, e)
+            log.error('could not convert image from topic %s: %s ', stream.topic, err)
             return
 
         height = int(round(image_width * img.shape[0] / img.shape[1]))

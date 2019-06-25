@@ -5,15 +5,14 @@ import json
 import os
 
 import cv2
-import cv_bridge
 import matplotlib.pyplot as plt
 import mpld3
-imgmsg_to_cv2 = cv_bridge.CvBridge().imgmsg_to_cv2
 
 import marv
 from marv_detail.types_capnp import Section, Widget  # pylint: disable=no-name-in-module
 from marv_nodes.types_capnp import File  # pylint: disable=no-name-in-module
 from marv_robotics.bag import get_message_type, raw_messages
+from marv_ros.img_tools import imgmsg_to_cv2
 
 TOPIC = '/wide_stereo/left/image_rect_throttle'
 

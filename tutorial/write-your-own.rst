@@ -74,7 +74,7 @@ For sake of simplicity, we are placing all code directly into the package's ``__
 **marv_tutorial/__init__.py**
 
 .. literalinclude:: code/marv_tutorial/__init__.py
-    :lines: 13-31
+    :lines: 7-18
 .. literalinclude:: code/marv_tutorial/__init__.py
     :pyobject: image
 
