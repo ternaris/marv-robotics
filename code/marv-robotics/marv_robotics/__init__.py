@@ -3,6 +3,4 @@
 
 import os
 
-from . import _monkeypatches
-
 os.environ.setdefault('MATPLOTLIBRC', os.path.dirname(__file__))

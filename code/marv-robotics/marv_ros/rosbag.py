@@ -791,7 +791,7 @@ class Bag(object):
         """
         
         if self._chunks:
-            start_stamp = self._chunks[0].start_time.to_sec()
+            start_stamp = min(x.start_time.to_sec() for x in self._chunks)
         else:
             if not self._connection_indexes:
                 raise ROSBagException('Bag contains no message')
@@ -808,7 +808,7 @@ class Bag(object):
         """
         
         if self._chunks:
-            end_stamp = self._chunks[-1].end_time.to_sec()
+            end_stamp = max(x.end_time.to_sec() for x in self._chunks)
         else:
             if not self._connection_indexes:
                 raise ROSBagException('Bag contains no message')
