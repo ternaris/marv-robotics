@@ -64,8 +64,6 @@ import genpy
 import genpy.dynamic
 import genpy.message
 
-import roslib.names # still needed for roslib.names.canonicalize_name()
-import rospy
 try:
     import roslz4
     found_lz4 = True
@@ -74,6 +72,23 @@ except ImportError:
         'Failed to load Python extension for LZ4 support. '
         'LZ4 compression will not be available.')
     found_lz4 = False
+# This is roslib.names.canonicalize_name()
+SEP = '/'
+def canonicalize_name(name):
+    """
+    Put name in canonical form. Extra slashes '//' are removed and
+    name is returned without any trailing slash, e.g. /foo/bar
+    @param name: ROS name
+    @type  name: str
+    """
+    if not name or name == SEP:
+        return name
+    elif name[0] == SEP:
+        return '/' + '/'.join([x for x in name.split(SEP) if x])
+    else:
+        return '/'.join([x for x in name.split(SEP) if x])
+
+
 
 class ROSBagException(Exception):
     """
@@ -1313,12 +1328,12 @@ class Bag(object):
         """
         if topics:
             if type(topics) is str:
-                topics = set([roslib.names.canonicalize_name(topics)])
+                topics = set([canonicalize_name(topics)])
             else:
-                topics = set([roslib.names.canonicalize_name(t) for t in topics])
+                topics = set([canonicalize_name(t) for t in topics])
 
         for c in self._connections.values():
-            if topics and c.topic not in topics and roslib.names.canonicalize_name(c.topic) not in topics:
+            if topics and c.topic not in topics and canonicalize_name(c.topic) not in topics:
                 continue
             if connection_filter and not connection_filter(c.topic, c.datatype, c.md5sum, c.msg_def, c.header):
                 continue
