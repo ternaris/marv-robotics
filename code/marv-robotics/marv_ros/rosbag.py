@@ -72,6 +72,8 @@ except ImportError:
         'Failed to load Python extension for LZ4 support. '
         'LZ4 compression will not be available.')
     found_lz4 = False
+
+
 # This is roslib.names.canonicalize_name()
 SEP = '/'
 def canonicalize_name(name):
@@ -88,6 +90,55 @@ def canonicalize_name(name):
     else:
         return '/'.join([x for x in name.split(SEP) if x])
 
+
+# Stripped-down rospy.Time
+class Time(genpy.Time):
+    """
+    Time represents the ROS 'time' primitive type, which consists of two
+    integers: seconds since epoch and nanoseconds since seconds. Time
+    instances are mutable.
+
+    The L{Time.now()} factory method can initialize Time to the
+    current ROS time and L{from_sec()} can be used to create a
+    Time instance from the Python's time.time() float seconds
+    representation.
+
+    The Time class allows you to subtract Time instances to compute
+    Durations, as well as add Durations to Time to create new Time
+    instances.
+
+    Usage::
+      now = rospy.Time.now()
+      zero_time = rospy.Time()
+
+      print 'Fields are', now.secs, now.nsecs
+
+      # Time arithmetic
+      five_secs_ago = now - rospy.Duration(5) # Time minus Duration is a Time
+      five_seconds  = now - five_secs_ago  # Time minus Time is a Duration
+      true_val = now > five_secs_ago
+
+      # NOTE: in general, you will want to avoid using time.time() in ROS code
+      import time
+      py_time = rospy.Time.from_sec(time.time())
+    """
+    __slots__ = []
+
+    def __init__(self, secs=0, nsecs=0):
+        """
+        Constructor: secs and nsecs are integers and correspond to the
+        ROS 'time' primitive type. You may prefer to use the static
+        L{from_sec()} and L{now()} factory methods instead.
+
+        @param secs: seconds since epoch
+        @type  secs: int
+        @param nsecs: nanoseconds since seconds (since epoch)
+        @type  nsecs: int
+        """
+        super(Time, self).__init__(secs, nsecs)
+
+    def __repr__(self):
+        return 'rospy.Time[%d]' % self.to_nsec()
 
 
 class ROSBagException(Exception):
@@ -1942,7 +1993,7 @@ def _decode_str(v):    return v if type(v) is str else v.decode()
 def _unpack_uint8(v):  return struct.unpack('<B', v)[0]
 def _unpack_uint32(v): return struct.unpack('<L', v)[0]
 def _unpack_uint64(v): return struct.unpack('<Q', v)[0]
-def _unpack_time(v):   return rospy.Time(*struct.unpack('<LL', v))
+def _unpack_time(v):   return Time(*struct.unpack('<LL', v))
 
 def _pack_uint8(v):  return struct.pack('<B', v)
 def _pack_uint32(v): return struct.pack('<L', v)
@@ -2631,7 +2682,7 @@ class _BagReader200(_BagReader):
 
                     # read_connection_index_record() requires _curr_chunk_info is set
                     if b._curr_chunk_info is None:
-                        b._curr_chunk_info = _ChunkInfo(0, rospy.Time(0, 1), rospy.Time(0, 1))
+                        b._curr_chunk_info = _ChunkInfo(0, Time(0, 1), Time(0, 1))
 
                     b._reader.read_connection_index_record()
                 else:
