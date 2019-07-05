@@ -55,13 +55,13 @@ import sys
 import traceback
 import struct
 
-import genmsg
-import genmsg.msgs
-import genmsg.msg_loader
-import genmsg.gentools
+from .. import genmsg
+from ..genmsg import msgs as genmsg_msgs
+from ..genmsg import msg_loader
+from ..genmsg import gentools
 
-from genmsg import InvalidMsgSpec, MsgContext, MsgSpec, MsgGenerationException
-from genmsg.base import log
+from ..genmsg import InvalidMsgSpec, MsgContext, MsgSpec, MsgGenerationException
+from ..genmsg.base import log
 
 from . base import is_simple, SIMPLE_TYPES, SIMPLE_TYPES_DICT
 from . generate_numpy import unpack_numpy, pack_numpy, NUMPY_DTYPE
@@ -110,8 +110,8 @@ class Special:
 
 _SPECIAL_TYPES = {
     genmsg.HEADER:   Special('std_msgs.msg._Header.Header()',     None, 'import std_msgs.msg'),
-    genmsg.TIME:     Special('genpy.Time()',     '%s.canon()', 'import genpy'),
-    genmsg.DURATION: Special('genpy.Duration()', '%s.canon()', 'import genpy'),
+    genmsg.TIME:     Special('genpy.Time()',     '%s.canon()', 'from marv_ros import genpy'),
+    genmsg.DURATION: Special('genpy.Duration()', '%s.canon()', 'from marv_ros import genpy'),
     }
 
 def is_special(type_):
@@ -148,7 +148,7 @@ def default_value(msg_context, field_type, default_package):
     elif field_type == 'bool':
         return 'False'
     elif field_type.endswith(']'): # array type
-        base_type, is_array, array_len = genmsg.msgs.parse_type(field_type)
+        base_type, is_array, array_len = genmsg_msgs.parse_type(field_type)
         if base_type in ['char', 'uint8']:
             # strings, char[], and uint8s are all optimized to be strings
             if array_len is not None:
@@ -183,7 +183,7 @@ def flatten(msg_context, msg):
     new_names = []
     for t, n in zip(msg.types, msg.names):
         # Parse type to make sure we don't flatten an array
-        msg_type, is_array, _ = genmsg.msgs.parse_type(t)
+        msg_type, is_array, _ = genmsg_msgs.parse_type(t)
         #flatten embedded types - note: bug #59
         if not is_array and msg_context.is_registered(t):
             msg_spec = flatten(msg_context, msg_context.get_registered(t))
@@ -247,7 +247,7 @@ def compute_constructor(msg_context, package, type_):
     """
     if is_special(type_):
         return get_special(type_).constructor
-    elif genmsg.msgs.bare_msg_type(type_) != type_:
+    elif genmsg_msgs.bare_msg_type(type_) != type_:
         # array or other weird type
         return None
     else:
@@ -279,7 +279,7 @@ def compute_import(msg_context, package, type_):
     :returns: list of import statements (no newline) required to use type_ from package, ``[str]``
     """
     # orig_base_type is the unresolved type
-    orig_base_type = genmsg.msgs.bare_msg_type(type_) # strip array-suffix
+    orig_base_type = genmsg_msgs.bare_msg_type(type_) # strip array-suffix
     # resolve orig_base_type based on the current package context.
     # base_type is the resolved type stripped of any package name.
     # pkg is the actual package of type_.
@@ -289,8 +289,8 @@ def compute_import(msg_context, package, type_):
     # against the unresolved type builtins/specials are never
     # relative. This requires some special handling for Header, which has
     # two names (Header and std_msgs/Header).
-    if genmsg.msgs.is_builtin(orig_base_type) or \
-           genmsg.msgs.is_header_type(orig_base_type):
+    if genmsg_msgs.is_builtin(orig_base_type) or \
+           genmsg_msgs.is_header_type(orig_base_type):
         # of the builtin types, only special types require import
         # handling. we switch to base_type as special types do not
         # include package names.
@@ -408,7 +408,7 @@ def string_serializer_generator(package, type_, name, serialize):
 
     # the length generator is a noop if serialize is True as we
     # optimize the serialization call.
-    base_type, is_array, array_len = genmsg.msgs.parse_type(type_)
+    base_type, is_array, array_len = genmsg_msgs.parse_type(type_)
     # - don't serialize length for fixed-length arrays of bytes
     if base_type not in ['uint8', 'char'] or array_len is None:
         for y in len_serializer_generator(var, True, serialize):
@@ -418,7 +418,7 @@ def string_serializer_generator(package, type_, name, serialize):
         #serialize length and string together
 
         #check to see if its a uint8/byte type, in which case we need to convert to string before serializing
-        base_type, is_array, array_len = genmsg.msgs.parse_type(type_)
+        base_type, is_array, array_len = genmsg_msgs.parse_type(type_)
         if base_type in ['uint8', 'char']:
             yield "# - if encoded as a list instead, serialize as bytes instead of string"
             if array_len is None:
@@ -460,7 +460,7 @@ def array_serializer_generator(msg_context, package, type_, name, serialize, is_
 
     :raises: :exc:`MsgGenerationException` If array spec is invalid
     """
-    base_type, is_array, array_len = genmsg.msgs.parse_type(type_)
+    base_type, is_array, array_len = genmsg_msgs.parse_type(type_)
     if not is_array:
         raise MsgGenerationException("Invalid array spec: %s"%type_)
     var_length = array_len is None
@@ -568,7 +568,7 @@ def complex_serializer_generator(msg_context, package, type_, name, serialize, i
     # brackets, then we check for the 'complex' builtin types (string,
     # time, duration, Header), then we canonicalize it to an embedded
     # message type.
-    _, is_array, _ = genmsg.msgs.parse_type(type_)
+    _, is_array, _ = genmsg_msgs.parse_type(type_)
 
     #Array
     if is_array:
@@ -601,7 +601,7 @@ def simple_serializer_generator(msg_context, spec, start, end, serialize): #prim
     """
     Generator (de)serialization code for multiple fields from spec
 
-    :param spec: :class:`genmsg.MsgSpec`
+    :param spec: :class:`genmsg_msgspec`
     :param start: first field to serialize, ``int``
     :param end: last field to serialize, ``int``
     """
@@ -729,9 +729,9 @@ def deserialize_fn_generator(msg_context, spec, is_numpy=False):
 def msg_generator(msg_context, spec, search_path):
     """
     Python code generator for .msg files. Generates a Python from a
-     :class:`genmsg.MsgSpec`.
+     :class:`genmsg_msgspec`.
 
-    :param spec: parsed .msg :class:`genmsg.MsgSpec` instance
+    :param spec: parsed .msg :class:`genmsg_msgspec` instance
     :param search_path: dictionary mapping message namespaces to a directory locations
     """
 
@@ -741,7 +741,7 @@ def msg_generator(msg_context, spec, search_path):
     # rely on in-memory MsgSpecs instead so that we can generate code
     # for older versions of msg files
     try:
-        genmsg.msg_loader.load_depends(msg_context, spec, search_path)
+        msg_loader.load_depends(msg_context, spec, search_path)
     except InvalidMsgSpec as e:
         raise MsgGenerationException("Cannot generate .msg for %s/%s: %s"%(package, name, str(e)))
     md5sum = genmsg.compute_md5(msg_context, spec)
@@ -758,7 +758,7 @@ def msg_generator(msg_context, spec, search_path):
     yield '"""autogenerated by genpy from %s.msg. Do not edit."""'%spec.full_name
     yield 'import sys'
     yield 'python3 = True if sys.hexversion > 0x03000000 else False'
-    yield 'import genpy\nimport struct\n'
+    yield 'from marv_ros import genpy\nimport struct\n'
     import_strs = []
     for t in spec.types:
         import_strs.extend(compute_import(msg_context, spec.package, t))
@@ -914,7 +914,7 @@ def srv_generator(msg_context, spec, search_path):
 
     fulltype = spec.full_name
 
-    genmsg.msg_loader.load_depends(msg_context, spec, search_path)
+    msg_loader.load_depends(msg_context, spec, search_path)
     md5 = genmsg.compute_md5(msg_context, spec)
 
     yield "class %s(object):"%name
@@ -985,10 +985,10 @@ class Generator(object):
             try:
                 f = os.path.abspath(f)
                 infile_name = os.path.basename(f)
-                full_type = genmsg.gentools.compute_full_type_name(package, infile_name);
+                full_type = gentools.compute_full_type_name(package, infile_name);
                 outfile = self.generate(msg_context, full_type, f, outdir, search_path) #actual generation
             except Exception as e:
-                if not isinstance(e, MsgGenerationException) and not isinstance(e, genmsg.msgs.InvalidMsgSpec):
+                if not isinstance(e, MsgGenerationException) and not isinstance(e, genmsg_msgs.InvalidMsgSpec):
                     traceback.print_exc()
                 print("\nERROR: Unable to generate %s for package '%s': while processing '%s': %s\n"%(self.what, package, f, e), file=sys.stderr)
                 retcode = 1 #flag error
@@ -998,7 +998,7 @@ class SrvGenerator(Generator):
 
     def __init__(self):
         super(SrvGenerator, self).__init__('services', genmsg.EXT_SRV,
-                                           genmsg.msg_loader.load_srv_from_file,
+                                           msg_loader.load_srv_from_file,
                                            srv_generator)
 
 class MsgGenerator(Generator):
@@ -1009,6 +1009,6 @@ class MsgGenerator(Generator):
     """
     def __init__(self):
         super(MsgGenerator, self).__init__('messages', genmsg.EXT_MSG,
-                                           genmsg.msg_loader.load_msg_from_file,
+                                           msg_loader.load_msg_from_file,
                                            msg_generator)
 

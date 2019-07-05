@@ -37,8 +37,8 @@ from optparse import OptionParser
 import os
 import sys
 import traceback
-import genmsg
-import genmsg.command_line
+from .. import genmsg
+from ..genmsg import command_line
 
 from genmsg import MsgGenerationException
 from . generate_initpy import write_modules
@@ -72,7 +72,7 @@ def genmain(argv, progname, gen):
                 except OSError as e:
                     if not os.path.exists(options.outdir):
                         raise
-            search_path = genmsg.command_line.includepath_to_dict(options.includepath)
+            search_path = command_line.includepath_to_dict(options.includepath)
             retcode = gen.generate_messages(options.package, args[1:], options.outdir, search_path)
     except genmsg.InvalidMsgSpec as e:
         print("ERROR: ", e, file=sys.stderr)

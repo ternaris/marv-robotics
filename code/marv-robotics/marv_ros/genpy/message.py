@@ -43,7 +43,7 @@ import struct
 import sys
 import yaml
 
-import genmsg
+from .. import genmsg
 
 from .base import is_simple
 from .rostime import Time, Duration, TVal

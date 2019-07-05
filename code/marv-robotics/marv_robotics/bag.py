@@ -8,13 +8,13 @@ from functools import reduce
 from itertools import groupby
 
 import capnp  # pylint: disable=unused-import
-import genpy
-import rosbag
-from rosbag.bag import _get_message_type
 
 import marv
 import marv_nodes
 from marv.scanner import DatasetInfo
+from marv_ros import genpy
+from marv_ros import rosbag
+from marv_ros.rosbag import _get_message_type
 from .bag_capnp import Bagmeta, Header, Message  # pylint: disable=import-error
 
 

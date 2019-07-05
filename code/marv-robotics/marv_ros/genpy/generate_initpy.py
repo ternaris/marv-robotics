@@ -34,7 +34,7 @@ from __future__ import print_function
 
 import os
 
-from genmsg import MsgGenerationException
+from ..genmsg import MsgGenerationException
 
 ## :param type_name str: Name of message type sans package,
 ## e.g. 'String'

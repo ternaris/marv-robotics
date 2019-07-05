@@ -31,8 +31,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import os
-import genmsg.msg_loader
-import genmsg
+import marv_ros.genmsg.msg_loader as msg_loader
+from marv_ros import genmsg
 
 # pkg_name - string
 # msg_file - string full path
@@ -40,12 +40,12 @@ import genmsg
 def find_msg_dependencies_with_type(pkg_name, msg_file, search_paths):
 
     # Read and parse the source msg file
-    msg_context = genmsg.msg_loader.MsgContext.create_default()
+    msg_context = msg_loader.MsgContext.create_default()
     full_type_name = genmsg.gentools.compute_full_type_name(pkg_name, os.path.basename(msg_file))
-    spec = genmsg.msg_loader.load_msg_from_file(msg_context, msg_file, full_type_name)
+    spec = msg_loader.load_msg_from_file(msg_context, msg_file, full_type_name)
 
     try:
-        genmsg.msg_loader.load_depends(msg_context, spec, search_paths)
+        msg_loader.load_depends(msg_context, spec, search_paths)
     except genmsg.InvalidMsgSpec as e:
         raise genmsg.MsgGenerationException("Cannot read .msg for %s: %s"%(full_type_name, str(e)))
 
@@ -64,13 +64,13 @@ def find_msg_dependencies(pkg_name, msg_file, search_paths):
 def find_srv_dependencies_with_type(pkg_name, msg_file, search_paths):
 
     # Read and parse the source msg file
-    msg_context = genmsg.msg_loader.MsgContext.create_default()
+    msg_context = msg_loader.MsgContext.create_default()
     full_type_name = genmsg.gentools.compute_full_type_name(pkg_name, os.path.basename(msg_file))
 
-    spec = genmsg.msg_loader.load_srv_from_file(msg_context, msg_file, full_type_name)
+    spec = msg_loader.load_srv_from_file(msg_context, msg_file, full_type_name)
 
     try:
-        genmsg.msg_loader.load_depends(msg_context, spec, search_paths)
+        msg_loader.load_depends(msg_context, spec, search_paths)
     except genmsg.InvalidMsgSpec as e:
         raise genmsg.MsgGenerationException("Cannot read .msg for %s: %s"%(full_type_name, str(e)))
 

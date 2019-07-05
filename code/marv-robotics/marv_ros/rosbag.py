@@ -1621,7 +1621,7 @@ class Bag(object):
         if len(version_line) == 0:
             raise ROSBagException('empty file')
         
-        matches = re.match("#ROS(.*) V(\d).(\d)", version_line)
+        matches = re.match(r"#ROS(.*) V(\d).(\d)", version_line)
         if matches is None or len(matches.groups()) != 3:
             raise ROSBagException('This does not appear to be a bag file')
         

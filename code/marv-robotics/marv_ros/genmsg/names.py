@@ -113,7 +113,7 @@ def package_resource_name(name):
 # NAME VALIDATORS
 
 #ascii char followed by (alphanumeric, _, /)
-RESOURCE_NAME_LEGAL_CHARS_P = re.compile('^[A-Za-z][\w_\/]*$') 
+RESOURCE_NAME_LEGAL_CHARS_P = re.compile(r'^[A-Za-z][\w_\/]*$')
 def is_legal_resource_name(name):
     """
     Check if name is a legal ROS name for filesystem resources
@@ -131,7 +131,7 @@ def is_legal_resource_name(name):
     # '//' check makes sure there isn't double-slashes
     return m is not None and m.group(0) == name and not '//' in name
 
-BASE_RESOURCE_NAME_LEGAL_CHARS_P = re.compile('^[A-Za-z][\w_]*$') #ascii char followed by (alphanumeric, _)
+BASE_RESOURCE_NAME_LEGAL_CHARS_P = re.compile(r'^[A-Za-z][\w_]*$') #ascii char followed by (alphanumeric, _)
 def is_legal_resource_base_name(name):
     """
     Validates that name is a legal resource base name. A base name has
