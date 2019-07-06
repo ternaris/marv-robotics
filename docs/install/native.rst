@@ -12,22 +12,23 @@ MARV Robotics is implemented in Python using the MARV framework. Most of its Pyt
 Prerequisites
 -------------
 
-- `Robot Operating System (ROS) <http://wiki.ros.org/ROS/Installation>`_
-- Checkout of MARV Robotics Enterprise Edition or `Community Edition <https://github.com/ternaris/marv-robotics>`_
+- Checkout of MARV Robotics Enterprise Edition or `Community Edition
+  <https://github.com/ternaris/marv-robotics>`_
 
 
-Robot Operating System
-----------------------
+System dependenices
+-------------------
 
-We assume you have working installation of ROS. MARV Robotics is meant to support all alive ROS releases (starting with kinetic). If you encounter difficulties with these, please report back!
+MARV Robotics needs Python 3.7 and ships all components to open bag
+files and process ROS messages. If you need any ROS libraries for your
+nodes, please let us know if we can assist making them available for
+Python 3.7.
 
-We dropped support for Indigo due to outdated system dependencies that cannot be easily upgraded. If you need indigo support please let us know.
+Ubuntu bionic
+^^^^^^^^^^^^^
 
-On an Ubuntu system the following are needed (as root). In case you succeeded installing ROS on anything else than Ubuntu, we trust you'll also succeed to transfer the following lines to the system you are installing to.
-
-
-Kinetic
-^^^^^^^
+In general, MARV Robotics works on any Linux system. For Ubuntu bionic
+the following will install the necessary system dependencies.
 
 .. code-block:: console
 
@@ -38,24 +39,13 @@ Kinetic
                      libffi-dev \
                      libfreetype6-dev \
                      libjpeg-dev \
+                     liblz4-dev \
                      libpng-dev \
 		     libssl-dev \
                      libz-dev \
-                     python-cv-bridge \
-                     python2.7-dev \
-                     python-opencv \
-                     python-virtualenv \
-                     ros-kinetic-laser-geometry \
-                     ros-kinetic-ros-base
-   ...
-   # rosdep init
-
-Make sure ROS is set-up correctly for your user (not as root):
-
-.. code-block:: console
-
-   $ rosdep update
-   $ source /opt/ros/kinetic/setup.bash
+                     python3.7 \
+                     python3.7-dev \
+                     python3.7-venv
 
 
 MARV Robotics
@@ -69,7 +59,7 @@ Setup MARV Robotics in Python virtual environment and activate it:
 
 .. code-block:: console
 
-  $ ./scripts/setup-venv requirements.txt venv
+  $ ./scripts/setup-venv requirements/marv-robotics.txt venv
   $ source venv/bin/activate
   (venv) $ marv --help
 
