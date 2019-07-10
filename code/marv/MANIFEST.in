@@ -1,5 +1,4 @@
 include *.in
 include *.rst
 include *.txt
-include version
 recursive-include * *.capnp

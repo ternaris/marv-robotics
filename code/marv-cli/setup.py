@@ -11,6 +11,7 @@ from collections import OrderedDict
 from setuptools import find_packages, setup
 
 NAME = 'marv-cli'
+VERSION = '19.04.0'
 DESCRIPTION = 'Core of the MARV command-line interface'
 ENTRY_POINTS = {
     'console_scripts': [
@@ -24,9 +25,6 @@ os.chdir(os.path.abspath(os.path.dirname(__file__)))
 
 with io.open(os.path.join('README.rst'), 'rt', encoding='utf8') as f:
     README = f.read()
-
-with io.open('version', encoding='utf8') as f:
-    VERSION = f.read().strip()
 
 with io.open('requirements.in', 'rt', encoding='utf8') as f:
     INSTALL_REQUIRES = [
