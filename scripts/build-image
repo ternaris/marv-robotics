@@ -7,7 +7,7 @@ set -e
 
 cd "$(dirname "$(realpath "$0")")"/..
 
-BASENAME="$(basename "$PWD")"
+BASENAME="$(basename "$PWD" |tr '[:upper:]' '[:lower:]')"
 
 if [[ -n "$MARV_IMAGE" ]]; then
     IMAGE="$MARV_IMAGE"

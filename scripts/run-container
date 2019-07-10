@@ -31,7 +31,7 @@ SCANROOT="$1"; shift || usage
 [[ -d "$SCANROOT" ]] || usage
 SCANROOT="$(realpath "$SCANROOT")"
 
-BASENAME="$(basename "$PWD")"
+BASENAME="$(basename "$PWD" |tr '[:upper:]' '[:lower:]')"
 NAME="${MARV_CONTAINER_NAME:-$BASENAME}"
 HOSTNAME="${NAME//./-}"
 HTTP="${MARV_HTTP:-127.0.0.1:8000}"
