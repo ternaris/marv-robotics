@@ -1,5 +1,6 @@
 stages:
   - Checks
+  - Image
 
 
 Sign-off check:
@@ -11,3 +12,15 @@ Sign-off check:
   artifacts:
     reports:
       junit: sign-off-report.xml
+
+
+Image:
+  stage: Image
+  image: docker:latest
+  script:
+    - chmod og-w . -R
+    - apk add --no-cache bash
+    - ./scripts/build-image
+  variables:
+    IMG: img-${CI_JOB_ID}-ce
+
