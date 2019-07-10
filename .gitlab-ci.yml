@@ -1,9 +1,9 @@
 stages:
-  - sign-off
+  - Checks
 
 
-sign-off check:
-  stage: sign-off
+Sign-off check:
+  stage: Checks
   image: python:3.7-alpine
   script:
     - apk add git
