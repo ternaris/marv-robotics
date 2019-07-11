@@ -20,6 +20,7 @@ Upcoming (unreleased)
 
 Added
 ~~~~~
+- Add marv show cli command to show basic information about datasets
 
 Changed
 ~~~~~~~
