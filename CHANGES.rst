@@ -33,6 +33,7 @@ Removed
 Fixed
 ~~~~~
 - Fix pycapnp wrapper to handle nested lists
+- Fix broken CE docker image builds
 
 Security
 ~~~~~~~~
