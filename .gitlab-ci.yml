@@ -17,10 +17,12 @@ Sign-off check:
 Image:
   stage: Image
   image: docker:latest
+  services:
+    - docker:dind
   script:
     - chmod og-w . -R
     - apk add --no-cache bash
     - ./scripts/build-image
-  variables:
-    IMG: img-${CI_JOB_ID}-ce
+  only:
+    - branches@ternaris/marv-robotics
 
