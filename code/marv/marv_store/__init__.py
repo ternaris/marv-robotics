@@ -5,9 +5,12 @@
 
 from __future__ import absolute_import, division, print_function
 
+import fcntl
 import json
 import os
+import shutil
 from collections import Mapping, defaultdict
+from pathlib2 import Path
 
 from marv_node.mixins import LoggerMixin
 from marv_pycapnp import Wrapper
@@ -81,8 +84,19 @@ class Store(Mapping, LoggerMixin):
         try:
             os.mkdir(tmpdir)
         except OSError:
+            pass
+        tmpdir_fd = os.open(tmpdir, os.O_RDONLY)
+        try:
+            fcntl.flock(tmpdir_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except IOError:
+            os.close(tmpdir_fd)
             self.logerror('directory exists %r', tmpdir)
             raise DirectoryAlreadyExists(tmpdir)
+        for path in Path(tmpdir).absolute().iterdir():
+            if path.is_dir():
+                shutil.rmtree(str(path))
+            else:
+                os.remove(str(path))
         self.logdebug('created directory %r', tmpdir)
 
         def commit(stream):
@@ -99,9 +113,11 @@ class Store(Mapping, LoggerMixin):
             os.symlink(next_name, newlink)
             os.rename(newlink, symlink)
             del self.pending[stream]
+            fcntl.flock(tmpdir_fd, fcntl.LOCK_UN)
+            os.close(tmpdir_fd)
 
         stream = PersistentStream(handle, tmpdir, setdir=setdir, commit=commit)
-        self.pending[stream] = tmpdir
+        self.pending[stream] = (tmpdir, tmpdir_fd)
         return stream
 
     def _streaminfo(self, stream):

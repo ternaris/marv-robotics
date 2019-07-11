@@ -5,6 +5,7 @@
 
 from __future__ import absolute_import, division, print_function
 
+import fcntl
 import json
 import os
 import shutil
@@ -393,9 +394,11 @@ class Site(object):
                 log.verbose('%s listing rendered', setid)
         finally:
             if not keep:
-                for tmpdir in store.pending.values():
+                for tmpdir, tmpdir_fd in store.pending.values():
                     store.logdebug('Cleaning up %r', tmpdir)
                     shutil.rmtree(tmpdir)
+                    fcntl.flock(tmpdir_fd, fcntl.LOCK_UN)
+                    os.close(tmpdir_fd)
                 store.pending.clear()
 
         return changed
