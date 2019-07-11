@@ -34,6 +34,7 @@ Fixed
 ~~~~~
 - Fix pycapnp wrapper to handle nested lists
 - Fix broken CE docker image builds
+- Fix pasting into multi-select input field
 
 Security
 ~~~~~~~~
