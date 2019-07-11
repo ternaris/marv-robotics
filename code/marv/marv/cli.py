@@ -14,6 +14,7 @@ import warnings
 from logging import getLogger
 
 import click
+from jinja2 import Template
 from sqlalchemy.orm.exc import NoResultFound
 
 import marv.app
@@ -524,6 +525,43 @@ def marvcli_comment_list(datasets):
         print(comment.dataset.setid, comment.id,
               datetime.datetime.fromtimestamp(int(comment.time_added / 1000)),
               comment.author, repr(comment.text))
+
+
+SHOW_TEMPLATE = Template("""
+{% for dataset in datasets %}
+- name: {{ dataset.name }}
+  collection: {{ dataset.collection }}
+  setid: {{ dataset.setid }}
+  files:
+  {% for file in dataset.files %}
+    - path: {{ file.path }}
+      size: {{ file.size }}
+  {% endfor %}
+
+{% endfor %}
+""".strip(), trim_blocks=True, lstrip_blocks=True)
+
+
+@marvcli.command('show')
+@click.argument('datasets', nargs=-1, required=True)
+@click.pass_context
+def marvcli_show(ctx, datasets):
+    """Show information for one or more datasets in form of a yaml document.
+
+    Set ids may be abbreviated as long as they are unique.
+    \b
+    Some examples
+      marv show setid  # show one dataset
+      marv query --col=* | xargs marv show   # show all datasets
+    """
+    app = create_app()
+    ids = parse_setids(datasets, dbids=True)
+    datasets = db.session.query(Dataset)\
+                         .options(db.joinedload(Dataset.files))\
+                         .filter(Dataset.id.in_(ids))\
+                         .all()
+    yamldoc = SHOW_TEMPLATE.render(datasets=datasets)
+    print(yamldoc, end='')
 
 
 @marvcli_comment.command('rm')
