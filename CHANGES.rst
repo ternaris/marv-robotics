@@ -37,6 +37,8 @@ Fixed
 - Fix broken CE docker image builds
 - Fix pasting into multi-select input field
 - Automatically cleanup node output from unsuccessful previous runs
+- Let gnss node gracefully handle bags without valid messages
+- Fix loading of raster tiles during window resize
 
 Security
 ~~~~~~~~
