@@ -6,6 +6,7 @@ sqlalchemy<1.3.0  # flask-sqlalchemy produces deprecation warnings
 PyJWT
 bcrypt
 configparser
+jinja2
 pathlib2
 pendulum
 pycapnp-for-marv==0.6.3
