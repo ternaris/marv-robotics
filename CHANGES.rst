@@ -46,15 +46,6 @@ Added
 ~~~~~
 - Add marv show cli command to show basic information about datasets
 
-Changed
-~~~~~~~
-
-Deprecated
-~~~~~~~~~~
-
-Removed
-~~~~~~~
-
 Fixed
 ~~~~~
 - Fix pycapnp wrapper to handle nested lists
@@ -63,9 +54,6 @@ Fixed
 - Automatically cleanup node output from unsuccessful previous runs
 - Let gnss node gracefully handle bags without valid messages
 - Fix loading of raster tiles during window resize
-
-Security
-~~~~~~~~
 
 
 .. _v19_04_0:
