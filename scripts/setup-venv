@@ -34,10 +34,6 @@ python3.7 -m venv "$TARGET"
 "$TARGET"/bin/pip install -Ur requirements/develop.txt
 "$TARGET"/bin/pip install -U --force-reinstall --no-binary :all: uwsgi
 
-# Set matplotlib backend to Agg
-sed -e "s|^backend .*|backend : Agg|" \
-    -i "$TARGET"/lib/python*/site-packages/matplotlib/mpl-data/matplotlibrc
-
 # Install all python distributions directly in code
 find code -maxdepth 2 -name setup.py -execdir "$TARGET"/bin/pip install --no-deps $PIP_ARGS . \;
 

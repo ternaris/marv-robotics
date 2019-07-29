@@ -72,8 +72,6 @@ if [[ -n "$MARV_VENV" ]]; then \
     $MARV_VENV/bin/pip install -U -r /requirements/marv-robotics.txt; \
     $MARV_VENV/bin/pip install -U -r /requirements/develop.txt; \
     $MARV_VENV/bin/pip install -U --force-reinstall --no-binary :all: uwsgi; \
-    sed -e "s|^backend .*|backend : Agg|" \
-        -i $MARV_VENV/lib/python*/site-packages/matplotlib/mpl-data/matplotlibrc; \
 fi'
 
 ARG code=code

@@ -6,7 +6,6 @@ import os
 
 import cv2
 import cv_bridge
-import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import mpld3
 imgmsg_to_cv2 = cv_bridge.CvBridge().imgmsg_to_cv2

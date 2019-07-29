@@ -5,7 +5,6 @@
 
 from datetime import datetime
 
-import matplotlib; matplotlib.use('Agg')
 import numpy as np
 import utm
 from matplotlib import cm
