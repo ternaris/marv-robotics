@@ -1,12 +1,14 @@
 *.py[co]
 *.sw[op]
 .*.sw[op]
-.coverage
+.coverage*
+.cache
 *.egg-info/
 .eggs/
 htmlcov/
 .*venv/
 .pytest_cache/
+pytest-report.xml
 __pycache__/
 /.image-name
 /dist/
