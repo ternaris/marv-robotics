@@ -20,21 +20,43 @@ Upcoming (unreleased)
 
 Added
 ~~~~~
+- Add linter and editorconfig
+- Add marv_ros Python package as new home of ROS specific code
+- Ship versions of genmsg, genpy, and rosbag to make MARV independent of a ROS
+  installation
+- Add support for sensor_msgs/CompressedImage
+  `#60 <https://gitlab.com/ternaris/marv-robotics/issues/60>`_
 
 Changed
 ~~~~~~~
+- Include default matplotlibrc in marv-robotics Python distribution
+- Replace cv_bridge with pure python conversions
+- **BREAKING** Switch to Ubuntu Bionic base image without ROS but Python 3.7
+- **BREAKING** Require Python 3.7
+- Migrate code to Python 3.7
+- Cleanup code according to linter feedback
+- Ignore internal tables of newer sqlite versions for dump and restore
+- Update Python requirements to latest versions
+- Clean older changelog entries and add links to issues and MRs
 
 Deprecated
 ~~~~~~~~~~
 
 Removed
 ~~~~~~~
+- Removed unneeded dependencies
 
 Fixed
 ~~~~~
+- Fix out of range video encoding bug by using newer ffmpeg version (3.4.6) in
+  docker image `#59 <https://gitlab.com/ternaris/marv-robotics/issues/59>`_
+- Correct handling of 16 bit single channel image types
+  `#29 <https://gitlab.com/ternaris/marv-robotics/issues/29>`_
 
 Security
 ~~~~~~~~
+- Images published on dockerhub for latest release and master branch are rebuilt
+  by GitLab CI nightly if a newer base image is available
 
 
 .. _v19_07_0:
@@ -45,15 +67,21 @@ Security
 Added
 ~~~~~
 - Add marv show cli command to show basic information about datasets
+  `#62 https://gitlab.com/ternaris/marv-robotics/issues/62>`_
 
 Fixed
 ~~~~~
 - Fix pycapnp wrapper to handle nested lists
 - Fix broken CE docker image builds
+  `#66 <https://gitlab.com/ternaris/marv-robotics/issues/66>`_
 - Fix pasting into multi-select input field
+  `#65 <https://gitlab.com/ternaris/marv-robotics/issues/65>`_
 - Automatically cleanup node output from unsuccessful previous runs
+  `#64 <https://gitlab.com/ternaris/marv-robotics/issues/64>`_
 - Let gnss node gracefully handle bags without valid messages
+  `!65 <https://gitlab.com/ternaris/marv-robotics/merge_requests/65>`_
 - Fix loading of raster tiles during window resize
+  `#63 <https://gitlab.com/ternaris/marv-robotics/issues/63>`_
 
 
 .. _v19_04_0:
