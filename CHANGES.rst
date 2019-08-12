@@ -38,6 +38,7 @@ Changed
 - Ignore internal tables of newer sqlite versions for dump and restore
 - Update Python requirements to latest versions
 - Clean older changelog entries and add links to issues and MRs
+- Speed up rendering and sorting of tables with large number of rows
 
 Deprecated
 ~~~~~~~~~~
