@@ -4,46 +4,46 @@
 import time
 from collections import OrderedDict
 
-import flask
 import jwt
-from flask import current_app, request
-
-from .model import User, db
+from aiohttp import web
 
 
-def check_authorization(acl, authorization):
+def check_authorization(request, acl, authorization):
+    from marv.model import User, scoped_session
+
     username = None
     groups = {'__unauthenticated__'}
     if authorization:
-        try:
-            token = authorization.replace('Bearer ', '')
-            session = jwt.decode(token, current_app.config['SECRET_KEY'])
-            user = db.session.query(User).filter_by(name=session['sub']).one()
-        except Exception:  # pylint: disable=broad-except
-            flask.abort(401)
-        if user.time_updated > session['iat']:
-            flask.abort(401)
-        username = user.name
-        groups = {g.name for g in user.groups}
-        groups.add('__authenticated__')
+        with scoped_session(request.app['site']) as session:
+            try:
+                token = authorization.replace('Bearer ', '')
+                usession = jwt.decode(token, request.app['config']['SECRET_KEY'])
+                user = session.query(User).filter_by(name=usession['sub']).one()
+            except Exception:  # pylint: disable=broad-except
+                raise web.HTTPUnauthorized()
+            if user.time_updated > usession['iat']:
+                raise web.HTTPUnauthorized()
+            username = user.name
+            groups = {g.name for g in user.groups}
+            groups.add('__authenticated__')
 
     elif '__unauthenticated__' not in acl:
-        flask.abort(401)
+        raise web.HTTPUnauthorized()
 
     if acl and not acl.intersection(groups):
-        flask.abort(403)
+        raise web.HTTPForbidden()
 
-    flask.request.username = username
-    flask.request.user_groups = groups
+    request['username'] = username
+    request['user_groups'] = groups
 
 
-def generate_token(username):
+def generate_token(username, key):
     now = int(time.time())
     return jwt.encode({
         'exp': now + 2419200,  # 4 weeks expiration
         'iat': now,
         'sub': username,
-    }, current_app.config['SECRET_KEY'])
+    }, key)
 
 
 class APIEndpoint:
@@ -61,15 +61,15 @@ class APIEndpoint:
         self.url_rules = [(url_rule, {'defaults': defaults, 'methods': methods})]
         self._force_acl = set(force_acl) if force_acl else None
 
-    def __call__(self, *args, **kw):
+    async def __call__(self, request):
         authorization = request.headers.get('Authorization')
         # TODO: can authorization be '' or is None test?
         if not authorization:
-            authorization = request.args.get('access_token')
-        check_authorization(self.acl, authorization)
+            authorization = request.query.get('access_token')
+        check_authorization(request, self.acl, authorization)
 
         try:
-            accepted = next(x[0] for x in flask.request.accept_mimetypes
+            accepted = next(x[0] for x in request.headers.getall('ACCEPT', [])
                             if x[0].startswith(self.HEADER_PREFIX))
             accepted_version = int(accepted[len(self.HEADER_PREFIX):])
         except (StopIteration, ValueError):
@@ -79,16 +79,22 @@ class APIEndpoint:
             func = next(func for version, func in self.funcs
                         if version <= accepted_version)
         except StopIteration:
-            flask.abort(406)
+            raise web.HTTPNotAcceptable()
 
-        return func(*args, **kw)
+        return await func(request)
 
-    def init_app(self, app, url_prefix=None, name_prefix=None):
-        self.acl = self._force_acl if self._force_acl else set(current_app.acl[self.name])
+    def init_app(self, app, url_prefix=None, name_prefix=None, app_root=None):
+        self.acl = self._force_acl if self._force_acl else set(app['acl'][self.name])
         name = '.'.join(filter(None, [name_prefix, self.name]))
         for url_rule, options in self.url_rules:
             url_rule = ''.join(filter(None, [url_prefix, url_rule]))
-            app.add_url_rule(url_rule, name, self, **options)
+            if options['methods'] is None:
+                options['methods'] = ['GET']
+            assert len(options['methods']) == 1
+            app['api_endpoints'][name] = self
+            app.add_routes([web.route(options['methods'][0],
+                                      f'{app_root}{url_rule}',
+                                      self.__call__, name=name)])
 
 
 class APIGroup:
@@ -106,12 +112,12 @@ class APIGroup:
     def endpoint(self, *args, **kw):
         return api_endpoint(*args, registry=self.endpoints, **kw)
 
-    def init_app(self, app, url_prefix=None, name_prefix=None):
+    def init_app(self, app, url_prefix=None, name_prefix=None, app_root=None):
         self.func(app)
         name_prefix = '.'.join(filter(None, [name_prefix, self.name]))
         url_prefix = '/'.join(filter(None, [url_prefix, self.url_prefix])) or None
         for ep in self.endpoints.values():
-            ep.init_app(app, url_prefix=url_prefix, name_prefix=name_prefix)
+            ep.init_app(app, url_prefix=url_prefix, name_prefix=name_prefix, app_root=app_root)
 
     def __repr__(self):
         return f'<APIGroup {self.name} url_prefix={self.url_prefix}>'

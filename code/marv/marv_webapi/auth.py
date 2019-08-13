@@ -1,8 +1,7 @@
 # Copyright 2016 - 2019  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-import flask
-from flask import current_app
+from aiohttp import web
 
 from .tooling import api_group as marv_api_group, generate_token
 
@@ -11,15 +10,17 @@ from .tooling import api_group as marv_api_group, generate_token
 def auth(_):
     pass
 
+
 @auth.endpoint('/auth', methods=['POST'], force_acl=['__unauthenticated__'])
-def auth_post():
-    req = flask.request.get_json()
+async def auth_post(request):
+    req = await request.json()
     if not req:
-        flask.abort(400)
+        raise web.HTTPBadRequest()
     username = req.get('username', '')
     password = req.get('password', '').encode('utf-8')
 
-    if not current_app.site.authenticate(username, password):
-        return flask.abort(422)
+    if not request.app['site'].authenticate(username, password):
+        raise web.HTTPUnprocessableEntity()
 
-    return flask.jsonify({'access_token': generate_token(username).decode('utf-8')})
+    key = request.app['config']['SECRET_KEY']
+    return web.json_response({'access_token': generate_token(username, key).decode('utf-8')})

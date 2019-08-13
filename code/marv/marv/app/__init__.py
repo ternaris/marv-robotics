@@ -1,43 +1,39 @@
-# Copyright 2016 - 2018  Ternaris.
+# Copyright 2016 - 2019  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import base64
 import os
 from logging import getLogger
 
-import flask
-import sqlalchemy.exc
+from aiohttp import web
 
 from marv_webapi import webapi
-from ..model import db
 
 
 log = getLogger(__name__)
 
 
-def create_app(site, config_obj=None, app_root=None, **kw):  # noqa: C901
-    # pylint: disable=too-many-statements
+def create_app(site, app_root='', middlewares=None):  # noqa: C901
+    app = web.Application(middlewares=middlewares or [])
+    app['acl'] = site.config.marv.acl()
+    app['api_endpoints'] = {}
+    app['config'] = {}
+    app['debug'] = False
+    app['site'] = site
 
-    app = flask.Flask(__name__)
-    app.site = site
+    app_root = app_root.rstrip('/')
 
-    # default config
-    app_root = app_root.rstrip('/') if app_root else None
-    app.config['APPLICATION_ROOT'] = app_root or None
-    app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
-    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-    app.config['SQLALCHEMY_DATABASE_URI'] = site.config.marv.dburi
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    # decorator for non api endpoint routes
+    def route(path):
+        def dec(func):
+            app.add_routes([web.route('GET', f'{app_root}{path}', func)])
+        return dec
+    app.route = route
 
-    if config_obj is not None:
-        app.config.from_object(config_obj)
-    app.config.update(kw)
-
-    app.acl = site.config.marv.acl()
-    webapi.init_app(app, url_prefix='/marv/api')
+    webapi.init_app(app, url_prefix='/marv/api', app_root=app_root)
 
     with open(site.config.marv.sessionkey_file) as f:
-        app.config['SECRET_KEY'] = f.read()
+        app['config']['SECRET_KEY'] = f.read()
 
     staticdir = site.config.marv.staticdir
     with open(os.path.join(staticdir, 'index.html')) as f:
@@ -78,31 +74,33 @@ def create_app(site, config_obj=None, app_root=None, **kw):  # noqa: C901
         )
 
     customdir = os.path.join(site.config.marv.frontenddir, 'custom')
-    @app.route('/custom/<path:path>')
-    def custom(path):  # pylint: disable=unused-variable
-        resp = flask.send_from_directory(customdir, path, conditional=True)
-        resp.headers['Cache-Control'] = 'no-cache'
-        return resp
+    @app.route('/custom/{path}')
+    async def custom(request):  # pylint: disable=unused-variable
+        path = request.match_info['path']
+        return web.FileResponse(os.path.join(customdir, path), headers={
+            'Cache-Control': 'no-cache',
+        })
 
-    @app.route('/', defaults={'path': ''})
-    @app.route('/<path:path>')
-    def assets(path):  # pylint: disable=unused-variable
+    @app.route('/{path:.*}')
+    async def assets(request):  # pylint: disable=unused-variable
+        path = request.match_info['path']
         if not path:
             path = 'index.html'
 
         if path == 'index.html':
-            resp = flask.make_response(index_html)
-            resp.headers['Cache-Control'] = 'no-cache'
-            return resp
+            return web.Response(text=index_html, headers={
+                'Content-Type': 'text/html',
+                'Cache-Control': 'no-cache',
+            })
 
         if path == 'docs':
-            return flask.redirect(flask.request.base_url + '/', 301)
+            raise web.HTTPMovedPermanently(f'{request.base_url}/')
 
         if path == 'docs/':
             path = 'docs/index.html'
 
-        resp = flask.send_from_directory(staticdir, path, conditional=True)
-        resp.headers['Cache-Control'] = 'no-cache'
-        return resp
+        return web.FileResponse(os.path.join(staticdir, path), headers={
+            'Cache-Control': 'no-cache',
+        })
 
     return app

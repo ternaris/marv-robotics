@@ -1,24 +1,20 @@
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-import os
+import pathlib
 
-import flask
+from aiohttp import web
 from pkg_resources import resource_filename
 
 from marv_webapi.tooling import api_group as marv_api_group
 
 
-DOCS = os.path.join(resource_filename('marv_robotics', 'docs'))
+DOCS = pathlib.Path(resource_filename('marv_robotics', 'docs'))
 
 
 @marv_api_group()
 def robotics(app):
-
-    @app.route('/docs', defaults={'path': 'index.html'})
-    @app.route('/docs/', defaults={'path': 'index.html'})
-    @app.route('/docs/<path:path>')
-    def docs(path):  # pylint: disable=unused-variable
-        resp = flask.send_from_directory(DOCS, path, conditional=True)
-        resp.headers['Cache-Control'] = 'no-cache'
-        return resp
+    @app.route(r'/docs{_:/?}{path:((?<=/).*)?}')
+    async def docs(request):  # pylint: disable=unused-variable
+        path = request.match_info['path'] or 'index.html'
+        return web.FileResponse(DOCS / path, headers={'Cache-Control': 'no-cache'})

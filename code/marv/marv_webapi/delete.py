@@ -1,21 +1,21 @@
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-import flask
+from aiohttp import web
 
-from marv.model import Dataset, db
+from marv.model import Dataset, scoped_session
 from .tooling import api_endpoint as marv_api_endpoint
 
 
 @marv_api_endpoint('/dataset', methods=['DELETE'])
-def delete():
+async def delete(request):
     datasets = Dataset.__table__
-    ids = flask.request.get_json()
+    ids = await request.json()
     if not ids:
-        flask.abort(400)
+        raise web.HTTPBadRequest()
     stmt = datasets.update()\
                    .where(datasets.c.id.in_(ids))\
                    .values(discarded=True)
-    db.session.execute(stmt)
-    db.session.commit()
-    return flask.jsonify({})
+    with scoped_session(request.app['site']) as session:
+        session.execute(stmt)
+    return web.json_response({})

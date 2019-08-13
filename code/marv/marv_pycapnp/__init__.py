@@ -7,7 +7,6 @@ from collections.abc import Mapping, Sequence
 from capnp.lib.capnp import _DynamicEnum
 from capnp.lib.capnp import _DynamicListReader
 from capnp.lib.capnp import _DynamicStructReader
-from flask import current_app
 
 from marv_node.setid import SetID
 
@@ -88,6 +87,7 @@ class Wrapper:
         self._reader = struct_reader
         self._streamdir = streamdir  # HACK: overloaded
         self._setdir = setdir
+        self._storedir = None  # HACK: patched by compare
 
     # @property
     # def path(self):  # HACK: overload
@@ -112,8 +112,7 @@ class Wrapper:
 
     def load(self, node):
         from marv_store import Store
-        storedir = current_app.site.config.marv.storedir
-        store = Store(storedir, {node.name: node})
+        store = Store(self._storedir, {node.name: node})
         return store.load(self._setdir, node, default=None)
 
     @classmethod

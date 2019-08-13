@@ -3,12 +3,11 @@
 
 import json
 import mimetypes
-import os
+import pathlib
 
-import flask
-from flask import current_app
+from aiohttp import web
 
-from marv.model import Comment, Dataset, File, Tag, dataset_tag, db
+from marv.model import Comment, Dataset, File, Tag, dataset_tag, scoped_session
 from marv_node.setid import SetID
 from .tooling import api_group as marv_api_group
 
@@ -19,110 +18,113 @@ def dataset(_):
 
 
 @dataset.endpoint('/file-list', methods=['POST'])
-def file_list():
-    ids = flask.request.get_json()
+async def file_list(request):
+    ids = await request.json()
     if not ids:
-        flask.abort(400)
+        raise web.HTTPBadRequest()
 
     # TODO: remove scanroot prefix?
 
-    query = db.session.query(File.path)\
-                      .filter(File.dataset_id.in_(ids))\
-                      .order_by(File.path)
-    paths = [x[0] for x in query]
+    with scoped_session(request.app['site']) as session:
+        query = session.query(File.path)\
+                       .filter(File.dataset_id.in_(ids))\
+                       .order_by(File.path)
+        paths = [x[0] for x in query]
 
-    query = db.session.query(Dataset.setid, File.idx)\
-                      .filter(Dataset.id.in_(ids))\
-                      .join(File)\
-                      .order_by(Dataset.setid)
+        query = session.query(Dataset.setid, File.idx)\
+                       .filter(Dataset.id.in_(ids))\
+                       .join(File)\
+                       .order_by(Dataset.setid)
     urls = [f'dataset/{setid}/{idx}' for setid, idx in query]
 
     # TODO: complain about invalid/unknown ids?
 
-    return flask.jsonify({'paths': paths, 'urls': urls})
+    return web.json_response({'paths': paths, 'urls': urls})
 
 
-def _send_detail_json(setid, setdir):
+def _send_detail_json(request, setid, setdir):
     try:
-        with open(os.path.join(setdir, 'detail.json')) as f:
+        with (setdir / 'detail.json').open() as f:
             detail = json.load(f)  # pylint: disable=redefined-outer-name
     except IOError:
-        return flask.abort(404)
+        raise web.HTTPNotFound()
 
     # TODO: investigate merge into one
-    dataset_id, collection = db.session.query(Dataset.id, Dataset.collection)\
-                                       .filter(Dataset.setid == setid)\
-                                       .one()
-    comments = db.session.query(Comment.author, Comment.time_added, Comment.text)\
-                         .filter(Comment.dataset_id == dataset_id)\
-                         .order_by(Comment.time_added)
-    detail['comments'] = [{'author': x[0],
-                           'timeAdded': x[1],
-                           'text': x[2]} for x in comments]
+    with scoped_session(request.app['site']) as session:
+        dataset_id, collection = session.query(Dataset.id, Dataset.collection)\
+                                        .filter(Dataset.setid == setid)\
+                                        .one()
+        comments = session.query(Comment.author, Comment.time_added, Comment.text)\
+                          .filter(Comment.dataset_id == dataset_id)\
+                          .order_by(Comment.time_added)
+        detail['comments'] = [{'author': x[0],
+                               'timeAdded': x[1],
+                               'text': x[2]} for x in comments]
 
-    collection = current_app.site.collections[collection]
-    alltags = db.session.query(Tag.value)\
-                        .filter(Tag.collection == collection.name)\
-                        .order_by(Tag.value)
-    detail['all_known_tags'] = [x[0] for x in alltags]
+        collection = request.app['site'].collections[collection]
+        alltags = session.query(Tag.value)\
+                         .filter(Tag.collection == collection.name)\
+                         .order_by(Tag.value)
+        detail['all_known_tags'] = [x[0] for x in alltags]
 
-    tags = db.session.query(Tag.value)\
-                     .join(dataset_tag)\
-                     .filter(dataset_tag.c.dataset_id == dataset_id)\
-                     .order_by(Tag.value)
+        tags = session.query(Tag.value)\
+                      .join(dataset_tag)\
+                      .filter(dataset_tag.c.dataset_id == dataset_id)\
+                      .order_by(Tag.value)
     detail['tags'] = [x[0] for x in tags]
     detail['collection'] = collection.name
     detail['id'] = dataset_id
     detail['setid'] = setid
-    resp = flask.jsonify(detail)
+    resp = web.json_response(detail)
     resp.headers['Cache-Control'] = 'no-cache'
     return resp
 
 
-@dataset.endpoint('/dataset/<setid>', defaults={'path': 'detail.json'})
-@dataset.endpoint('/dataset/<setid>/<path:path>')
-def detail(setid, path):
+@dataset.endpoint('/dataset/{setid:[^/]+}{_:/?}{path:((?<=/).*)?}')
+async def detail(request):
+    setid = request.match_info['setid']
+    path = request.match_info['path'] or 'detail.json'
     try:
         setid = str(SetID(setid))
     except TypeError:
-        flask.abort(404)
+        raise web.HTTPNotFound()
 
-    setdir = os.path.join(current_app.site.config.marv.storedir, setid)
+    setdir = pathlib.Path(request.app['site'].config.marv.storedir) / setid
 
     if path == 'detail.json':
-        return _send_detail_json(setid, setdir)
+        return _send_detail_json(request, setid, setdir)
 
     if path.isdigit():
-        path = db.session.query(File.path)\
-                         .join(Dataset)\
-                         .filter(Dataset.setid == setid)\
-                         .filter(File.idx == int(path))\
-                         .scalar()
+        with scoped_session(request.app['site']) as session:
+            path = pathlib.Path(session.query(File.path)
+                                .join(Dataset)
+                                .filter(Dataset.setid == setid)
+                                .filter(File.idx == int(path))
+                                .scalar())
     else:
-        path = flask.safe_join(setdir, path)
+        path = setdir / path
+        if '..' in path.parts:
+            raise web.HTTPBadRequest()
 
     # Make sure path exists and is safe
-    if not os.path.isabs(path) \
-       or path != os.path.normpath(path) \
-       or not os.path.isfile(path):
-        return flask.abort(404)
+    if not path.is_absolute() \
+       or not path.is_file():
+        raise web.HTTPNotFound()
 
-    if current_app.site.config.marv.reverse_proxy == 'nginx':
-        resp = flask.make_response()
+    if request.app['site'].config.marv.reverse_proxy == 'nginx':
         mime = mimetypes.guess_type(path)
-        resp.headers['content-type'] = \
-            mime[0] if mime[0] else 'application/octet-stream'
-        resp.headers['cache-control'] = 'no-cache'
-        resp.headers['x-accel-buffering'] = 'no'
-        resp.headers['x-accel-redirect'] = \
-            (current_app.config['APPLICATION_ROOT'] or '') + path
-        resp.headers.add('Content-Disposition', 'attachment',
-                         filename=os.path.basename(path))
-        return resp
+        return web.Response(headers={
+            'content-type': mime[0] if mime[0] else 'application/octet-stream',
+            'cache-control': 'no-cache',
+            'x-accel-buffering': 'no',
+            'x-accel-redirect': request.url,
+            'Content-Disposition': f'attachment; filename={path.name}',
+        })
 
     try:
-        resp = flask.send_file(path, as_attachment=True, conditional=True)
-        resp.headers['Cache-Control'] = 'no-cache'
-        return resp
+        return web.FileResponse(path, headers={
+            'Cache-Control': 'no-cache',
+            'Content-Disposition': f'attachment; filename={path.name}',
+        })
     except ValueError:
-        flask.abort(404)
+        raise web.HTTPNotFound()

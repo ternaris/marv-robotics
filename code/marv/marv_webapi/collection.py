@@ -4,13 +4,12 @@
 import json
 from json import dumps as jsondumps
 
-import flask
 import pendulum
-from flask import current_app, request
+from aiohttp import web
 from sqlalchemy.sql import select
 
 from marv.collection import Filter, UnknownOperator
-from marv.model import STATUS, Tag, db
+from marv.model import STATUS, Tag, scoped_session
 from marv.utils import parse_datetime, parse_filesize, parse_timedelta
 from .tooling import APIEndpoint, api_endpoint as marv_api_endpoint
 
@@ -74,89 +73,90 @@ def parse_filters(specs, filters):
 
 
 @marv_api_endpoint('/meta', force_acl=['__unauthenticated__', '__authenticated__'])
-def meta():
-    groups = request.user_groups
+async def meta(request):
+    groups = request['user_groups']
 
-    collection_acl = current_app.acl['collection']
-    if '__unauthenticated__' not in collection_acl and not request.username:
-        return flask.jsonify({
-            'realms': list(current_app.site.config.marv.oauth),
+    collection_acl = request.app['acl']['collection']
+    if '__unauthenticated__' not in collection_acl and not request['username']:
+        return web.json_response({
+            'realms': list(request.app['site'].config.marv.oauth),
         })
 
     # TODO: avoid clashes, forbid routes with same name / different name generation
     acl = sorted([
         name.split('.')[-1]
-        for name, view in current_app.view_functions.items()
+        for name, view in request.app['api_endpoints'].items()
         if isinstance(view, APIEndpoint)
         if view.acl.intersection(groups)
     ])
 
     # TODO: id probably numeric, title = name or title
-    collections = current_app.site.collections
+    collections = request.app['site'].collections
     collection_id = collections.default_id
-    resp = flask.jsonify({
+    resp = web.json_response({
         'collections': {
             'default': collection_id,
             'items': [{'id': x, 'title': x} for x in collections],
         },
         'acl': acl,
-        'realms': list(current_app.site.config.marv.oauth),
+        'realms': list(request.app['site'].config.marv.oauth),
         'timezone': TIMEZONE,
     })
     resp.headers['Cache-Control'] = 'no-cache'
     return resp
 
 
-@marv_api_endpoint('/collection', defaults={'collection_id': None})
-@marv_api_endpoint('/collection/<collection_id>')
-def collection(collection_id):
-    collections = current_app.site.collections
+@marv_api_endpoint('/collection{_:/?}{collection_id:((?<=/).*)?}')
+async def collection(request):  # pylint: disable=too-many-locals
+    collection_id = request.match_info['collection_id'] or None
+    collections = request.app['site'].collections
     collection_id = collections.default_id if collection_id is None else collection_id
     try:
         collection = collections[collection_id]  # pylint: disable=redefined-outer-name
     except KeyError:
-        flask.abort(404)
+        raise web.HTTPNotFound()
 
     try:
         filters = parse_filters(collection.filter_specs,
-                                request.args.get('filter', '{}'))
+                                request.query.get('filter', '{}'))
     except (KeyError, ValueError):
-        current_app.logger.warning('Bad request', exc_info=True)
-        return flask.abort(400)
+        request.app['logger'].warning('Bad request', exc_info=True)
+        raise web.HTTPBadRequest()
 
     try:
         stmt = collection.filtered_listing(filters)
     except UnknownOperator:
-        current_app.logger.warning('Bad request', exc_info=True)
-        flask.abort(400)
+        request.app['logger'].warning('Bad request', exc_info=True)
+        raise web.HTTPBadRequest()
 
     fspecs = collection.filter_specs
 
-    all_known = {
-        name: [x[0] for x in
-               db.session.execute(select([rel.value])
-                                  .order_by(rel.value)).fetchall()]
-        for name, rel in collection.model.relations.items()
-        if {'any', 'all'}.intersection(fspecs[name].operators)
-    }
-    all_known['status'] = list(STATUS)
-    all_known['tags'] = [x[0] for x in
-                         db.session.execute(select([Tag.value])
-                                            .where(Tag.collection == collection.name)
-                                            .order_by(Tag.value)).fetchall()]
-    filters = [{'key': x.name,
-                'constraints': all_known.get(x.name),
-                'title': x.title,
-                'operators': x.operators,
-                'value_type': VALUE_TYPE_MAP.get(x.value_type, x.value_type)}
-               for x in fspecs.values()]
+    with scoped_session(request.app['site']) as session:
+        all_known = {
+            name: [x[0] for x in
+                   session.execute(select([rel.value])
+                                   .order_by(rel.value)).fetchall()]
+            for name, rel in collection.model.relations.items()
+            if {'any', 'all'}.intersection(fspecs[name].operators)
+        }
+        all_known['status'] = list(STATUS)
+        all_known['tags'] = [x[0] for x in
+                             session.execute(select([Tag.value])
+                                             .where(Tag.collection == collection.name)
+                                             .order_by(Tag.value)).fetchall()]
+        filters = [{'key': x.name,
+                    'constraints': all_known.get(x.name),
+                    'title': x.title,
+                    'operators': x.operators,
+                    'value_type': VALUE_TYPE_MAP.get(x.value_type, x.value_type)}
+                   for x in fspecs.values()]
 
-    rows = db.session.execute(stmt).fetchall()
-    rowdata = ',\n'.join([x.replace('["#TAGS#"]', tags if tags != '[null]' else '[]')
-                          .replace('"#TAGS#"', tags[1:-1] if tags != '[null]' else '')
-                          .replace('[,', '[')
-                          .replace('"#STATUS#"', STATUS_STRS[status])
-                          for x, status, tags in rows])
+        rows = session.execute(stmt).fetchall()
+        rowdata = ',\n'.join([x.replace('["#TAGS#"]', tags if tags != '[null]' else '[]')
+                              .replace('"#TAGS#"', tags[1:-1] if tags != '[null]' else '')
+                              .replace('[,', '[')
+                              .replace('"#STATUS#"', STATUS_STRS[status])
+                              for x, status, tags in rows])
     dct = {
         'all_known': all_known,
         'compare': bool(collection.compare),
@@ -182,12 +182,11 @@ def collection(collection_id):
     }
     indent = None
     separators = (',', ':')
-    if current_app.config['JSONIFY_PRETTYPRINT_REGULAR'] or current_app.debug:
+    if request.app['debug']:
         indent = 2
         separators = (', ', ': ')
     jsondata = jsondumps(dct, indent=indent, separators=separators, sort_keys=True)
     jsondata = jsondata.replace('"#ROWS#"', rowdata)
-    resp = current_app.response_class(
-        (jsondata, '\n'), mimetype=current_app.config['JSONIFY_MIMETYPE'])
+    resp = web.Response(text=jsondata, headers={'Content-Type': 'application/json'})
     resp.headers['Cache-Control'] = 'no-cache'
     return resp

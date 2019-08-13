@@ -3,26 +3,26 @@
 
 import time
 
-import flask
+from aiohttp import web
 
-from marv.model import Comment, db
+from marv.model import Comment, scoped_session
 from .tooling import api_endpoint as marv_api_endpoint
 
 
 @marv_api_endpoint('/comment', methods=['POST'])
-def comment():
-    username = flask.request.username
-    changes = flask.request.get_json()
+async def comment(request):
+    username = request['username']
+    changes = await request.json()
     if not changes:
-        flask.abort(400)
+        raise web.HTTPBadRequest()
 
-    for id, ops in changes.items():
-        now = int(time.time() * 1000)
-        comments = [Comment(dataset_id=id, author=username, time_added=now, text=text)
-                    for text in ops.get('add', [])]
-        db.session.add_all(comments)
-    db.session.commit()
+    with scoped_session(request.app['site']) as session:
+        for id, ops in changes.items():
+            now = int(time.time() * 1000)
+            comments = [Comment(dataset_id=id, author=username, time_added=now, text=text)
+                        for text in ops.get('add', [])]
+            session.add_all(comments)
 
     # TODO: inform about unknown setids?
 
-    return flask.jsonify({})
+    return web.json_response({})

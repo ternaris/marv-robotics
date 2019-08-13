@@ -4,55 +4,54 @@
 from functools import reduce
 from itertools import cycle
 
-import flask
+from aiohttp import web
 
-from marv.model import Tag, dataset_tag, db
+from marv.model import Tag, dataset_tag, scoped_session
 from .tooling import api_endpoint as marv_api_endpoint
 
 
 @marv_api_endpoint('/tag', methods=['POST'])
-def tag():
+async def tag(request):
     # TODO: very similar to cli marv_tag
-    changes = flask.request.get_json()
+    changes = await request.json()
     if not changes:
-        flask.abort(400)
+        raise web.HTTPBadRequest()
 
-    for collection, ops in changes.items():
-        if collection not in flask.current_app.site.collections:
-            flask.abort(400)
+    with scoped_session(request.app['site']) as session:
+        for collection, ops in changes.items():
+            if collection not in request.app['site'].collections:
+                raise web.HTTPBadRequest()
 
-        addop = ops.get('add', {})
-        removeop = ops.get('remove', {})
+            addop = ops.get('add', {})
+            removeop = ops.get('remove', {})
 
-        add = addop.keys()
-        remove = removeop.keys()
+            add = addop.keys()
+            remove = removeop.keys()
 
-        if add:
-            stmt = Tag.__table__.insert().prefix_with('OR IGNORE')
-            db.session.execute(stmt, [{'collection': collection,
-                                       'value': x} for x in add])
+            if add:
+                stmt = Tag.__table__.insert().prefix_with('OR IGNORE')
+                session.execute(stmt, [{'collection': collection,
+                                        'value': x} for x in add])
 
-        if add or remove:
-            tags = {value: id for id, value in (db.session.query(Tag.id, Tag.value)
-                                                .filter(Tag.collection == collection)
-                                                .filter(Tag.value.in_(add | remove)))}
+            if add or remove:
+                tags = {value: id for id, value in (session.query(Tag.id, Tag.value)
+                                                    .filter(Tag.collection == collection)
+                                                    .filter(Tag.value.in_(add | remove)))}
 
-        if add:
-            stmt = dataset_tag.insert().prefix_with('OR IGNORE')
-            values = [{'tag_id': x, 'dataset_id': y} for tag, ids in addop.items()
-                      for x, y in zip(cycle([tags[tag]]), ids)]
-            db.session.execute(stmt, values)
+            if add:
+                stmt = dataset_tag.insert().prefix_with('OR IGNORE')  # pylint: disable=no-value-for-parameter
+                values = [{'tag_id': x, 'dataset_id': y} for tag, ids in addop.items()
+                          for x, y in zip(cycle([tags[tag]]), ids)]
+                session.execute(stmt, values)
 
-        if remove:
-            where = reduce(lambda acc, x: acc | x, (
-                ((dataset_tag.c.tag_id == x) & (dataset_tag.c.dataset_id == y))
-                for tag, ids in removeop.items()
-                for x, y in zip(cycle([tags[tag]]), ids)
-            ))
-            stmt = dataset_tag.delete().where(where)
-            db.session.execute(stmt)
-
-    db.session.commit()
+            if remove:
+                where = reduce(lambda acc, x: acc | x, (
+                    ((dataset_tag.c.tag_id == x) & (dataset_tag.c.dataset_id == y))
+                    for tag, ids in removeop.items()
+                    for x, y in zip(cycle([tags[tag]]), ids)
+                ))
+                stmt = dataset_tag.delete().where(where)  # pylint: disable=no-value-for-parameter
+                session.execute(stmt)
 
     # TODO: report about unprocessed "setids"
-    return flask.jsonify({})
+    return web.json_response({})

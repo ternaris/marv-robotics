@@ -10,6 +10,7 @@ from functools import reduce
 from logging import getLogger
 
 import click
+from aiohttp import web
 from jinja2 import Template
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm.exc import NoResultFound
@@ -51,16 +52,10 @@ def create_site(init=None):
     return Site(siteconf, init=init)
 
 
-def create_app(push=True, init=None):
-    ctx = click.get_current_context()
-    siteconf = ctx.obj
-    if siteconf is None:
-        ctx.fail('Could not find config file: ./marv.conf or /etc/marv/marv.conf.\n'
-                 'Change working directory or specify explicitly:\n\n'
-                 '  marv --config /path/to/marv.conf\n')
-    site = Site(siteconf)
+def create_app(init=None, middlewares=None):
+    site = create_site(init=init)
     try:
-        app = marv.app.create_app(site)
+        app = marv.app.create_app(site, middlewares=middlewares)
     except ConfigError as e:
         click.echo(f'Error {e.args[0]}', err=True)
         click.get_current_context().exit(1)
@@ -69,10 +64,6 @@ def create_app(push=True, init=None):
             print(e, file=sys.stderr)
             sys.exit(13)
         raise
-    if push:
-        appctx = app.app_context()
-        appctx.push()
-        ctx.call_on_close(appctx.pop)
     return app
 
 
@@ -137,35 +128,25 @@ def marvcli_develop_server(port, public):
     forward the port and tell it to listen on all IPs instead of only
     localhost.
     """
-    from flask_cors import CORS
-    app = create_app(push=False)
-    app.site.load_for_web()
-    CORS(app)
-
-    class PDBMiddleware:  # pylint: disable=too-few-public-methods
-        def __init__(self, app):
-            self.app = app
-
-        def __call__(self, environ, start_response):
-            from marv_cli import launch_pdb_on_exception
-            with launch_pdb_on_exception():
-                appiter = self.app(environ, start_response)
-                for item in appiter:
-                    yield item
-
-    app.debug = True
+    middlewares = []
     if PDB:
-        app.wsgi_app = PDBMiddleware(app.wsgi_app)
-        app.run(use_debugger=False,
-                use_reloader=False,
+        @web.middleware
+        async def pdb_middleware(request, handler):
+            try:
+                return await handler(request)
+            except Exception:  # pylint: disable=broad-except
+                import pdb
+                pdb.xpm()  # pylint: disable=no-member
+
+        middlewares.append(pdb_middleware)
+
+    app = create_app(middlewares=middlewares)
+    app['site'].load_for_web()
+    app['debug'] = True
+
+    web.run_app(app,
                 host=('0.0.0.0' if public else '127.0.0.1'),
-                port=port,
-                threaded=False)
-    else:
-        app.run(host=('0.0.0.0' if public else '127.0.0.1'),
-                port=port,
-                reloader_type='watchdog',
-                threaded=False)
+                port=port)
 
 
 @marvcli.command('discard')

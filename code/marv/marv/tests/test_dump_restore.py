@@ -9,7 +9,6 @@ from pathlib import Path
 import mock
 import pytest
 import sqlalchemy as sqla
-from flask import current_app
 
 import marv
 import marv.app
@@ -135,17 +134,19 @@ def site(tmpdir):
 
 @pytest.fixture(scope='function')
 def app(site):  # pylint: disable=redefined-outer-name
-    _app = marv.app.create_app(site)
-    _app.testing = True
-    with _app.app_context():
-        client = _app.test_client()
+    yield marv.app.create_app(site)
 
-        def get_json(*args, **kw):
-            resp = client.get(*args, **kw)
-            return json.loads(resp.data)
 
-        client.get_json = get_json
-        yield client
+@pytest.fixture(scope='function')
+async def client(aiohttp_client, app):  # pylint: disable=redefined-outer-name
+    clt = await aiohttp_client(app)
+
+    async def get_json(*args, **kw):
+        resp = await clt.get(*args, **kw)
+        return await resp.json()
+
+    clt.get_json = get_json
+    yield clt
 
 
 def recorded(data, filename):
@@ -163,7 +164,7 @@ def recorded(data, filename):
     return True
 
 
-def test_dump(app, site):  # pylint: disable=redefined-outer-name  # noqa: C901
+async def test_dump(site, client):  # pylint: disable=redefined-outer-name  # noqa: C901
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements
 
     sitedir = os.path.dirname(site.config.filename)
@@ -192,11 +193,11 @@ def test_dump(app, site):  # pylint: disable=redefined-outer-name  # noqa: C901
     dump = dump_database(site.config.marv.dburi)
     assert recorded(dump, 'empty_dump.json')
 
-    metadata = app.get_json('/marv/api/meta')
+    metadata = await client.get_json('/marv/api/meta')
     listings = {}
     for colinfo in metadata['collections']['items']:
         name = colinfo['id']
-        listings[name] = app.get_json(f'/marv/api/collection/{name}')
+        listings[name] = await client.get_json(f'/marv/api/collection/{name}')
     assert recorded(listings, 'empty_listings.json')
 
     # Populate database, asserting in multiple ways that it is populated
@@ -205,14 +206,13 @@ def test_dump(app, site):  # pylint: disable=redefined-outer-name  # noqa: C901
             mock.patch('marv.utils.mtime', side_effect=count(1000)):
         site.scan()
 
-    um = current_app.site  # pylint: disable=invalid-name
     with mock.patch('bcrypt.gensalt', return_value=b'$2b$12$k67acf6S32i3nW0c7ycwe.') as _, \
             mock.patch('marv.utils.time', side_effect=count(2000)):
-        um.user_add('user1', 'pw1', 'marv', '')
-        um.user_add('user2', 'pw2', 'marv', '')
-    um.group_add('grp')
-    um.group_adduser('admin', 'user1')
-    um.group_adduser('grp', 'user2')
+        site.user_add('user1', 'pw1', 'marv', '')
+        site.user_add('user2', 'pw2', 'marv', '')
+    site.group_add('grp')
+    site.group_adduser('admin', 'user1')
+    site.group_adduser('grp', 'user2')
 
     fooids = site.query(['foo'])
     barids = site.query(['bar'])
@@ -246,7 +246,7 @@ def test_dump(app, site):  # pylint: disable=redefined-outer-name  # noqa: C901
     for colinfo in metadata['collections']['items']:
         name = colinfo['id']
         listings[name] = lst = []
-        data = app.get_json(f'/marv/api/collection/{name}')
+        data = await client.get_json(f'/marv/api/collection/{name}')
         rows = data['listing']['widget']['data']['rows']
         for row in sorted(rows, key=lambda x: x['setid']):
             del row['id']
@@ -256,7 +256,7 @@ def test_dump(app, site):  # pylint: disable=redefined-outer-name  # noqa: C901
     details = []
     for colname, rows in sorted(listings.items()):
         for row in rows:
-            detail = app.get_json(f'/marv/api/dataset/{row["setid"]}')
+            detail = await client.get_json(f'/marv/api/dataset/{row["setid"]}')
             del detail['id']
             assert detail['collection'] == colname
             details.append(detail)
@@ -271,7 +271,7 @@ def test_dump(app, site):  # pylint: disable=redefined-outer-name  # noqa: C901
     assert recorded(dump, 'full_dump.json')
 
 
-def test_restore(app, site):  # pylint: disable=redefined-outer-name  # noqa: C901
+async def test_restore(client, site):  # pylint: disable=redefined-outer-name  # noqa: C901
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements
 
     sitedir = os.path.dirname(site.config.filename)
@@ -300,11 +300,11 @@ def test_restore(app, site):  # pylint: disable=redefined-outer-name  # noqa: C9
     dump = dump_database(site.config.marv.dburi)
     assert recorded(dump, 'empty_dump.json')
 
-    metadata = app.get_json('/marv/api/meta')
+    metadata = await client.get_json('/marv/api/meta')
     listings = {}
     for colinfo in metadata['collections']['items']:
         name = colinfo['id']
-        listings[name] = app.get_json(f'/marv/api/collection/{name}')
+        listings[name] = await client.get_json(f'/marv/api/collection/{name}')
     assert recorded(listings, 'empty_listings.json')
 
     # Restore database
@@ -338,7 +338,7 @@ def test_restore(app, site):  # pylint: disable=redefined-outer-name  # noqa: C9
     for colinfo in metadata['collections']['items']:
         name = colinfo['id']
         listings[name] = lst = []
-        data = app.get_json(f'/marv/api/collection/{name}')
+        data = await client.get_json(f'/marv/api/collection/{name}')
         rows = data['listing']['widget']['data']['rows']
         for row in sorted(rows, key=lambda x: x['setid']):
             del row['id']
@@ -349,7 +349,7 @@ def test_restore(app, site):  # pylint: disable=redefined-outer-name  # noqa: C9
     details = []
     for colname, rows in sorted(listings.items()):
         for row in rows:
-            detail = app.get_json(f'/marv/api/dataset/{row["setid"]}')
+            detail = await client.get_json(f'/marv/api/dataset/{row["setid"]}')
             del detail['id']
             assert detail['collection'] == colname
             details.append(detail)
