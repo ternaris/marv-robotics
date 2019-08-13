@@ -34,8 +34,7 @@ check-str-concat-over-line-jumps=yes
 
 
 [TYPECHECK]
-ignored-classes=flask_sqlalchemy.SQLAlchemy,
-                sqlalchemy.orm.scoping.scoped_session
+ignored-classes=sqlalchemy.orm.scoping.scoped_session
 
 ignored-modules=capnp.lib.capnp,
                 cv2,
