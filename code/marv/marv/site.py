@@ -1,4 +1,4 @@
-# Copyright 2016 - 2018  Ternaris.
+# Copyright 2016 - 2019  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import fcntl
@@ -9,9 +9,12 @@ from itertools import count, groupby, product
 from logging import getLogger
 from uuid import uuid4
 
+import bcrypt
 import sqlalchemy as sqla
 from flask import current_app as app
 from pkg_resources import resource_filename
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm.exc import NoResultFound
 
 from marv_node.run import run_nodes
 from marv_store import Store
@@ -288,13 +291,13 @@ class Site:
             user.setdefault('realm', 'marv')
             user.setdefault('realmuid', '')
             groups = user.pop('groups', [])
-            app.um.user_add(_restore=True, **user)
+            app.site.user_add(_restore=True, **user)
             for grp in groups:
                 try:
-                    app.um.group_adduser(grp, user['name'])
+                    app.site.group_adduser(grp, user['name'])
                 except ValueError:
-                    app.um.group_add(grp)
-                    app.um.group_adduser(grp, user['name'])
+                    app.site.group_add(grp)
+                    app.site.group_adduser(grp, user['name'])
 
         for key, sets in (datasets or {}).items():
             key = self.collections.keys()[0] if key == 'DEFAULT_COLLECTION' else key
@@ -460,6 +463,102 @@ class Site:
                 stmt = dataset_tag.delete().where(where)
                 db.session.execute(stmt)
 
+        db.session.commit()
+
+    @staticmethod
+    def authenticate(username, password):
+        if not username or not password:
+            return False
+        try:
+            user = db.session.query(User).filter_by(name=username, realm='marv').one()
+        except NoResultFound:
+            return False
+        hashed = user.password.encode('utf-8')
+        return bcrypt.hashpw(password, hashed) == hashed
+
+    @staticmethod
+    def user_add(name, password, realm, realmuid, given_name=None, family_name=None,
+                 email=None, time_created=None, time_updated=None, _restore=None):
+        # pylint: disable=too-many-arguments
+        try:
+            if not _restore:
+                password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            now = int(utils.now())
+            if not time_created:
+                time_created = now
+            if not time_updated:
+                time_updated = now
+            user = User(name=name, password=password, realm=realm, given_name=given_name,
+                        family_name=family_name, email=email, realmuid=realmuid,
+                        time_created=time_created, time_updated=time_updated)
+            db.session.add(user)
+            db.session.commit()
+        except IntegrityError:
+            raise ValueError(f'User {name} exists already')
+
+    @staticmethod
+    def user_rm(username):
+        try:
+            user = db.session.query(User).filter_by(name=username).one()
+            db.session.delete(user)
+            db.session.commit()
+        except NoResultFound:
+            raise ValueError(f'User {username} does not exist')
+
+    @staticmethod
+    def user_pw(username, password):
+        try:
+            user = db.session.query(User).filter_by(name=username).one()
+        except NoResultFound:
+            raise ValueError(f'User {username} does not exist')
+
+        user.password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        user.time_updated = int(utils.now())
+        db.session.commit()
+
+    @staticmethod
+    def group_add(groupname):
+        try:
+            group = Group(name=groupname)
+            db.session.add(group)
+            db.session.commit()
+        except IntegrityError:
+            raise ValueError(f'Group {groupname} exists already')
+
+    @staticmethod
+    def group_rm(groupname):
+        try:
+            group = db.session.query(Group).filter_by(name=groupname).one()
+            db.session.delete(group)
+            db.session.commit()
+        except NoResultFound:
+            raise ValueError(f'Group {groupname} does not exist')
+
+    @staticmethod
+    def group_adduser(groupname, username):
+        try:
+            group = db.session.query(Group).filter_by(name=groupname).one()
+        except NoResultFound:
+            raise ValueError(f'Group {groupname} does not exist')
+        try:
+            user = db.session.query(User).filter_by(name=username).one()
+        except NoResultFound:
+            raise ValueError(f'User {username} does not exist')
+        group.users.append(user)
+        db.session.commit()
+
+    @staticmethod
+    def group_rmuser(groupname, username):
+        try:
+            group = db.session.query(Group).filter_by(name=groupname).one()
+        except NoResultFound:
+            raise ValueError(f'Group {groupname} does not exist')
+        try:
+            user = db.session.query(User).filter_by(name=username).one()
+        except NoResultFound:
+            raise ValueError(f'User {username} does not exist')
+        if user in group.users:
+            group.users.remove(user)
         db.session.commit()
 
 

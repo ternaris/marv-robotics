@@ -1,4 +1,4 @@
-# Copyright 2016 - 2018  Ternaris.
+# Copyright 2016 - 2019  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import json
@@ -205,7 +205,7 @@ def test_dump(app, site):  # pylint: disable=redefined-outer-name  # noqa: C901
             mock.patch('marv.utils.mtime', side_effect=count(1000)):
         site.scan()
 
-    um = current_app.um  # pylint: disable=invalid-name
+    um = current_app.site  # pylint: disable=invalid-name
     with mock.patch('bcrypt.gensalt', return_value=b'$2b$12$k67acf6S32i3nW0c7ycwe.') as _, \
             mock.patch('marv.utils.time', side_effect=count(2000)):
         um.user_add('user1', 'pw1', 'marv', '')

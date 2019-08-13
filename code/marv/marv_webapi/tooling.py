@@ -1,10 +1,49 @@
-# Copyright 2016 - 2018  Ternaris.
+# Copyright 2016 - 2019  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+import time
 from collections import OrderedDict
 
 import flask
+import jwt
 from flask import current_app, request
+
+from .model import User, db
+
+
+def check_authorization(acl, authorization):
+    username = None
+    groups = {'__unauthenticated__'}
+    if authorization:
+        try:
+            token = authorization.replace('Bearer ', '')
+            session = jwt.decode(token, current_app.config['SECRET_KEY'])
+            user = db.session.query(User).filter_by(name=session['sub']).one()
+        except Exception:  # pylint: disable=broad-except
+            flask.abort(401)
+        if user.time_updated > session['iat']:
+            flask.abort(401)
+        username = user.name
+        groups = {g.name for g in user.groups}
+        groups.add('__authenticated__')
+
+    elif '__unauthenticated__' not in acl:
+        flask.abort(401)
+
+    if acl and not acl.intersection(groups):
+        flask.abort(403)
+
+    flask.request.username = username
+    flask.request.user_groups = groups
+
+
+def generate_token(username):
+    now = int(time.time())
+    return jwt.encode({
+        'exp': now + 2419200,  # 4 weeks expiration
+        'iat': now,
+        'sub': username,
+    }, current_app.config['SECRET_KEY'])
 
 
 class APIEndpoint:
@@ -27,7 +66,7 @@ class APIEndpoint:
         # TODO: can authorization be '' or is None test?
         if not authorization:
             authorization = request.args.get('access_token')
-        current_app.um.check_authorization(self.acl, authorization)
+        check_authorization(self.acl, authorization)
 
         try:
             accepted = next(x[0] for x in flask.request.accept_mimetypes

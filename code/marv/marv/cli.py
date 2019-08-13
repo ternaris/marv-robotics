@@ -1,4 +1,4 @@
-# Copyright 2016 - 2018  Ternaris.
+# Copyright 2016 - 2019  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import datetime
@@ -654,7 +654,7 @@ def marvcli_user_add(username, password):
         password = click.prompt('Password', hide_input=True, confirmation_prompt=True)
     app = create_app()  # pylint: disable=unused-variable
     try:
-        app.um.user_add(username, password, 'marv', '')  # pylint: disable=no-member
+        app.site.user_add(username, password, 'marv', '')  # pylint: disable=no-member
     except ValueError as e:
         click.echo(f'Error: {e.args[0]}', err=True)
         sys.exit(1)
@@ -689,7 +689,7 @@ def marvcli_user_pw(ctx, username, password):
     """Change password"""
     app = create_app()  # pylint: disable=unused-variable
     try:
-        app.um.user_pw(username, password)  # pylint: disable=no-member
+        app.site.user_pw(username, password)  # pylint: disable=no-member
     except ValueError as e:
         ctx.fail(e.args[0])
 
@@ -701,7 +701,7 @@ def marvcli_user_rm(ctx, username):
     """Remove a user"""
     app = create_app()  # pylint: disable=unused-variable
     try:
-        app.um.user_rm(username)  # pylint: disable=no-member
+        app.site.user_rm(username)  # pylint: disable=no-member
     except ValueError as e:
         ctx.fail(e.args[0])
 
@@ -722,7 +722,7 @@ def marvcli_group_add(ctx, groupname):
         sys.exit(1)
     app = create_app()  # pylint: disable=unused-variable
     try:
-        app.um.group_add(groupname)  # pylint: disable=no-member
+        app.site.group_add(groupname)  # pylint: disable=no-member
     except ValueError as e:
         ctx.fail(e.args[0])
 
@@ -744,7 +744,7 @@ def marvcli_group_adduser(ctx, groupname, username):
     """Add an user to a group"""
     app = create_app()  # pylint: disable=unused-variable
     try:
-        app.um.group_adduser(groupname, username)  # pylint: disable=no-member
+        app.site.group_adduser(groupname, username)  # pylint: disable=no-member
     except ValueError as e:
         ctx.fail(e.args[0])
 
@@ -757,7 +757,7 @@ def marvcli_group_rmuser(ctx, groupname, username):
     """Remove an user from a group"""
     app = create_app()  # pylint: disable=unused-variable
     try:
-        app.um.group_rmuser(groupname, username)  # pylint: disable=no-member
+        app.site.group_rmuser(groupname, username)  # pylint: disable=no-member
     except ValueError as e:
         ctx.fail(e.args[0])
 
@@ -769,6 +769,6 @@ def marvcli_group_rm(ctx, groupname):
     """Remove a group"""
     app = create_app()  # pylint: disable=unused-variable
     try:
-        app.um.group_rm(groupname)  # pylint: disable=no-member
+        app.site.group_rm(groupname)  # pylint: disable=no-member
     except ValueError as e:
         ctx.fail(e.args[0])
