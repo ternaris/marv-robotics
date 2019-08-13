@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import fcntl
-import json
 import os
 import shutil
 from itertools import count, groupby, product
@@ -11,9 +10,11 @@ from uuid import uuid4
 
 import bcrypt
 import sqlalchemy as sqla
-from flask import current_app as app
+import sqlalchemy.exc
 from pkg_resources import resource_filename
+from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import joinedload, sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 
 from marv_node.run import run_nodes
@@ -22,7 +23,7 @@ from . import utils
 from .collection import Collections
 from .collection import esc
 from .config import Config
-from .model import Comment, Dataset, File, Group, Tag, User, dataset_tag, db
+from .model import Comment, Dataset, File, Group, Model, Tag, User, dataset_tag, scoped_session
 from .model import STATUS_OUTDATED
 
 
@@ -128,15 +129,33 @@ def make_config(siteconf):
                             required=required, schema=schema)
 
 
+class DBNotInitialized(Exception):
+    pass
+
+
 class Site:
-    def __init__(self, siteconf):
+    def __init__(self, siteconf, init=None):
         self.config = make_config(siteconf)
         # TODO: maybe ordereddict for meta, or generate multiple keys
         self.config.marv.oauth = {
             line.split(' ', 1)[0]: [field.strip() for field in line.split('|')]
             for line in self.config.marv.oauth
         }
-        self.collections = Collections(config=self.config)
+        self.engine = create_engine(self.config.marv.dburi)
+        self.session = sessionmaker(bind=self.engine)
+        self.collections = Collections(config=self.config, site=self)
+
+        with scoped_session(self) as session:
+            if init:
+                self.init()
+            try:
+                session.execute('SELECT name FROM sqlite_master WHERE type="table";')
+            except sqlalchemy.exc.OperationalError:
+                if init is None:  # auto-init
+                    self.init()
+                    session.execute('SELECT name FROM sqlite_master WHERE type="table";')
+                else:
+                    raise DBNotInitialized()
 
     def load_for_web(self):
         _ = [getattr(x, y) and None for x, y, in product(
@@ -176,180 +195,169 @@ class Site:
         # load models
         _ = [x.model for x in self.collections.values()]
 
-        prefixes = [f'listing_{col}' for col in self.collections.keys()]
-        result = db.session.execute('SELECT name FROM sqlite_master WHERE type="table";')
-        tables = {name for name in [x[0] for x in result]
-                  if any(name.startswith(prefix) for prefix in prefixes)}
-        for table in [x for x in tables if x.endswith('_sec')]:
-            db.session.execute(f'DROP TABLE {table};')
-            tables.discard(table)
-        for table in [x for x in tables if x not in prefixes]:
-            db.session.execute(f'DROP TABLE {table};')
-            tables.discard(table)
-        for table in tables:
-            db.session.execute(f'DROP TABLE {table};')
+        with scoped_session(self) as session:
+            prefixes = [f'listing_{col}' for col in self.collections.keys()]
+            result = session.execute('SELECT name FROM sqlite_master WHERE type="table";')
+            tables = {name for name in [x[0] for x in result]
+                      if any(name.startswith(prefix) for prefix in prefixes)}
+            for table in [x for x in tables if x.endswith('_sec')]:
+                session.execute(f'DROP TABLE {table};')
+                tables.discard(table)
+            for table in [x for x in tables if x not in prefixes]:
+                session.execute(f'DROP TABLE {table};')
+                tables.discard(table)
+            for table in tables:
+                session.execute(f'DROP TABLE {table};')
 
-        db.create_all()
-        for name in ('admin', ):
-            if not Group.query.filter(Group.name == name).count():
-                db.session.add(Group(name=name))
-                db.session.commit()
+            Model.metadata.create_all(self.engine)
+            for name in ('admin', ):
+                if not session.query(Group).filter(Group.name == name).count():
+                    session.add(Group(name=name))
+                    session.commit()
 
-        try:
-            with open('users', 'r') as usersfile:
-                users = json.load(usersfile)
-                for name, password in users.items():
-                    if not User.query.filter(User.name == name).count():
-                        db.session.add(User(name=name, password=password))
-                        db.session.commit()
-            os.rename('users', 'users.imported')
-        except IOError:
-            pass
-
-        log.verbose('Initialized database %s', app.config['SQLALCHEMY_DATABASE_URI'])
-        for col in self.collections.keys():
-            collection = self.collections[col]
-            loop = count()
-            batchsize = 50
-            # TODO: increase verbosity and probably introduce --reinit
-            while True:
-                batch = db.session.query(Dataset)\
-                                  .filter(Dataset.collection == col)\
-                                  .options(db.joinedload(Dataset.files))\
-                                  .limit(batchsize)\
-                                  .offset(batchsize*next(loop))\
-                                  .all()
-                for dataset in batch:
-                    collection.render_detail(dataset)
-                if batch:
-                    collection.update_listings(batch)
-                if len(batch) < batchsize:
-                    break
+            log.verbose('Initialized database %s', self.config.marv.dburi)
+            for col in self.collections.keys():
+                collection = self.collections[col]
+                loop = count()
+                batchsize = 50
+                # TODO: increase verbosity and probably introduce --reinit
+                while True:
+                    batch = session.query(Dataset)\
+                                   .filter(Dataset.collection == col)\
+                                   .options(joinedload(Dataset.files))\
+                                   .limit(batchsize)\
+                                   .offset(batchsize*next(loop))\
+                                   .all()
+                    for dataset in batch:
+                        collection.render_detail(dataset)
+                    if batch:
+                        collection.update_listings(batch)
+                    if len(batch) < batchsize:
+                        break
         log.info('Initialized from %s', self.config.filename)
 
     def cleanup_discarded(self):
         collections = self.collections
-        query = db.session.query(Dataset.collection, Dataset.id)\
-                          .filter(Dataset.discarded.is_(True))\
-                          .order_by(Dataset.collection)
-        datasets = [(col, [x[1] for x in ids])
-                    for col, ids in groupby(query, lambda x: x[0])]
-        if not datasets:
-            return
+        with scoped_session(self) as session:
+            query = session.query(Dataset.collection, Dataset.id)\
+                           .filter(Dataset.discarded.is_(True))\
+                           .order_by(Dataset.collection)
+            datasets = [(col, [x[1] for x in ids])
+                        for col, ids in groupby(query, lambda x: x[0])]
+            if not datasets:
+                return
 
-        for col, ids in datasets:
-            collection = collections[col]
-            model = collection.model
-            listing = model.Listing.__table__
-            for secondary in model.secondaries.values():
-                stmt = secondary.delete()\
-                                .where(secondary.c.listing_id.in_(ids))
-                db.session.execute(stmt)
+            for col, ids in datasets:
+                collection = collections[col]
+                model = collection.model
+                listing = model.Listing.__table__
+                for secondary in model.secondaries.values():
+                    stmt = secondary.delete()\
+                                    .where(secondary.c.listing_id.in_(ids))
+                    session.execute(stmt)
 
-            stmt = listing.delete()\
-                          .where(listing.c.id.in_(ids))
-            db.session.execute(stmt)
+                stmt = listing.delete()\
+                              .where(listing.c.id.in_(ids))
+                session.execute(stmt)
 
-            stmt = dataset_tag.delete()\
-                              .where(dataset_tag.c.dataset_id.in_(ids))
-            db.session.execute(stmt)
+                stmt = (dataset_tag.delete()  # pylint: disable=no-value-for-parameter
+                        .where(dataset_tag.c.dataset_id.in_(ids)))
+                session.execute(stmt)
 
-            db.session.query(Comment)\
-                      .filter(Comment.dataset_id.in_(ids))\
-                      .delete(synchronize_session=False)
+                session.query(Comment)\
+                       .filter(Comment.dataset_id.in_(ids))\
+                       .delete(synchronize_session=False)
 
-            db.session.query(File)\
-                      .filter(File.dataset_id.in_(ids))\
-                      .delete(synchronize_session=False)
+                session.query(File)\
+                       .filter(File.dataset_id.in_(ids))\
+                       .delete(synchronize_session=False)
 
-            db.session.query(Dataset)\
-                      .filter(Dataset.id.in_(ids))\
-                      .delete(synchronize_session=False)
+                session.query(Dataset)\
+                       .filter(Dataset.id.in_(ids))\
+                       .delete(synchronize_session=False)
 
-        db.session.commit()
-        # TODO: Cleanup corresponding store paths
+            # TODO: Cleanup corresponding store paths
 
     def cleanup_relations(self):
         """Cleanup listing relations"""
         collections = self.collections
-        for relation in [x for col in collections.values()
-                         for x in col.model.relations.values()]:
-            db.session.query(relation)\
+        with scoped_session(self) as session:
+            for relation in [x for col in collections.values()
+                             for x in col.model.relations.values()]:
+                session.query(relation)\
                        .filter(~relation.listing.any())\
                        .delete(synchronize_session=False)
-        db.session.commit()
 
-    @staticmethod
-    def cleanup_tags():
-        db.session.query(Tag)\
-                  .filter(~Tag.datasets.any())\
-                  .delete(synchronize_session=False)
-        db.session.commit()
+    def cleanup_tags(self):
+        with scoped_session(self) as session:
+            session.query(Tag)\
+                      .filter(~Tag.datasets.any())\
+                      .delete(synchronize_session=False)
 
     def restore_database(self, datasets=None, users=None):
         for user in users or []:
             user.setdefault('realm', 'marv')
             user.setdefault('realmuid', '')
             groups = user.pop('groups', [])
-            app.site.user_add(_restore=True, **user)
+            self.user_add(_restore=True, **user)
             for grp in groups:
                 try:
-                    app.site.group_adduser(grp, user['name'])
+                    self.group_adduser(grp, user['name'])
                 except ValueError:
-                    app.site.group_add(grp)
-                    app.site.group_adduser(grp, user['name'])
+                    self.group_add(grp)
+                    self.group_adduser(grp, user['name'])
 
         for key, sets in (datasets or {}).items():
             key = self.collections.keys()[0] if key == 'DEFAULT_COLLECTION' else key
             self.collections[key].restore_datasets(sets)
 
-    @staticmethod
-    def listtags(collections=None):
-        query = db.session.query(Tag.value)
-        if collections:
-            query = query.filter(Tag.collection.in_(collections))
-        query = query.group_by(Tag.value)\
-                     .order_by(Tag.value)
+    def listtags(self, collections=None):
+        with scoped_session(self) as session:
+            query = session.query(Tag.value)
+            if collections:
+                query = query.filter(Tag.collection.in_(collections))
+            query = query.group_by(Tag.value)\
+                         .order_by(Tag.value)
         tags = [x[0] for x in query]
         return tags
 
-    @staticmethod
-    def query(collections=None, discarded=None, outdated=None, path=None, tags=None, abbrev=None,
-              missing=None):
+    def query(self, collections=None, discarded=None, outdated=None, path=None, tags=None,
+              abbrev=None, missing=None):
         # pylint: disable=too-many-arguments
 
         abbrev = 10 if abbrev is True else abbrev
         discarded = bool(discarded)
-        query = db.session.query(Dataset.setid)
+        with scoped_session(self) as session:
+            query = session.query(Dataset.setid)
 
-        if collections:
-            query = query.filter(Dataset.collection.in_(collections))
+            if collections:
+                query = query.filter(Dataset.collection.in_(collections))
 
-        if outdated:
-            query = query.filter(Dataset.status.op('&')(STATUS_OUTDATED) == STATUS_OUTDATED)
+            if outdated:
+                query = query.filter(Dataset.status.op('&')(STATUS_OUTDATED) == STATUS_OUTDATED)
 
-        query = query.filter(Dataset.discarded.is_(discarded))
+            query = query.filter(Dataset.discarded.is_(discarded))
 
-        if path:
-            relquery = db.session.query(File.dataset_id)\
-                                 .filter(File.path.like(f'{esc(path)}%', escape='$'))\
-                                 .group_by(File.dataset_id)
-            query = query.filter(Dataset.id.in_(relquery.subquery()))
+            if path:
+                relquery = session.query(File.dataset_id)\
+                                     .filter(File.path.like(f'{esc(path)}%', escape='$'))\
+                                     .group_by(File.dataset_id)
+                query = query.filter(Dataset.id.in_(relquery.subquery()))
 
-        if missing:
-            relquery = db.session.query(File.dataset_id)\
-                                 .filter(File.missing.is_(True))\
-                                 .group_by(File.dataset_id)
-            query = query.filter(Dataset.id.in_(relquery.subquery()))
+            if missing:
+                relquery = session.query(File.dataset_id)\
+                                     .filter(File.missing.is_(True))\
+                                     .group_by(File.dataset_id)
+                query = query.filter(Dataset.id.in_(relquery.subquery()))
 
-        if tags:
-            relquery = db.session.query(dataset_tag.c.dataset_id)\
-                                 .join(Tag)\
-                                 .filter(Tag.value.in_(tags))
-            query = query.filter(Dataset.id.in_(relquery.subquery()))
+            if tags:
+                relquery = session.query(dataset_tag.c.dataset_id)\
+                                     .join(Tag)\
+                                     .filter(Tag.value.in_(tags))
+                query = query.filter(Dataset.id.in_(relquery.subquery()))
 
-        setids = [x[0][:abbrev] if abbrev else x[0]
-                  for x in query.order_by(Dataset.setid)]
+            setids = [x[0][:abbrev] if abbrev else x[0]
+                      for x in query.order_by(Dataset.setid)]
         return setids
 
     def run(self, setid, selected_nodes=None, deps=None, force=None, keep=None,
@@ -360,52 +368,53 @@ class Site:
         assert not force_dependent or selected_nodes
 
         excluded_nodes = set(excluded_nodes or [])
-        dataset = Dataset.query.filter(Dataset.setid == str(setid))\
-                               .options(db.joinedload(Dataset.files))\
-                               .one()
-        collection = self.collections[dataset.collection]
-        selected_nodes = set(selected_nodes or [])
-        if not (selected_nodes or update_listing or update_detail):
-            selected_nodes.update(collection.listing_deps)
-            selected_nodes.update(collection.detail_deps)
-        persistent = collection.nodes
-        try:
-            nodes = {persistent[name] if ':' not in name else utils.find_obj(name)
-                     for name in selected_nodes
-                     if name not in excluded_nodes
-                     if name != 'dataset'}
-        except KeyError as e:
-            raise UnknownNode(dataset.collection, e.args[0])
+        with scoped_session(self) as session:
+            dataset = session.query(Dataset).filter(Dataset.setid == str(setid))\
+                             .options(joinedload(Dataset.files))\
+                             .one()
+            collection = self.collections[dataset.collection]
+            selected_nodes = set(selected_nodes or [])
+            if not (selected_nodes or update_listing or update_detail):
+                selected_nodes.update(collection.listing_deps)
+                selected_nodes.update(collection.detail_deps)
+            persistent = collection.nodes
+            try:
+                nodes = {persistent[name] if ':' not in name else utils.find_obj(name)
+                         for name in selected_nodes
+                         if name not in excluded_nodes
+                         if name != 'dataset'}
+            except KeyError as e:
+                raise UnknownNode(dataset.collection, e.args[0])
 
-        if force_dependent:
-            nodes.update(x for name in selected_nodes
-                         for x in persistent[name].dependent)
-        nodes = sorted(nodes)
+            if force_dependent:
+                nodes.update(x for name in selected_nodes
+                             for x in persistent[name].dependent)
+            nodes = sorted(nodes)
 
-        storedir = app.site.config.marv.storedir
-        store = Store(storedir, persistent)
+            storedir = self.config.marv.storedir
+            store = Store(storedir, persistent)
 
-        changed = False
-        try:
-            if nodes:
-                changed = run_nodes(dataset, nodes, store, force=force,
-                                    persistent=persistent,
-                                    deps=deps, cachesize=cachesize)
-        finally:
-            if not keep:
-                for tmpdir, tmpdir_fd in store.pending.values():
-                    store.logdebug('Cleaning up %r', tmpdir)
-                    shutil.rmtree(tmpdir)
-                    fcntl.flock(tmpdir_fd, fcntl.LOCK_UN)
-                    os.close(tmpdir_fd)
-                store.pending.clear()
+            changed = False
+            try:
+                if nodes:
+                    changed = run_nodes(dataset, nodes, store, force=force,
+                                        persistent=persistent,
+                                        deps=deps, cachesize=cachesize)
+            finally:
+                if not keep:
+                    for tmpdir, tmpdir_fd in store.pending.values():
+                        store.logdebug('Cleaning up %r', tmpdir)
+                        shutil.rmtree(tmpdir)
+                        fcntl.flock(tmpdir_fd, fcntl.LOCK_UN)
+                        os.close(tmpdir_fd)
+                    store.pending.clear()
 
-        if changed or update_detail:
-            collection.render_detail(dataset)
-            log.verbose('%s detail rendered', setid)
-        if changed or update_listing:
-            collection.update_listings([dataset])
-            log.verbose('%s listing rendered', setid)
+            if changed or update_detail:
+                collection.render_detail(dataset)
+                log.verbose('%s detail rendered', setid)
+            if changed or update_listing:
+                collection.update_listings([dataset])
+                log.verbose('%s listing rendered', setid)
 
         return changed
 
@@ -414,17 +423,15 @@ class Site:
             for scanroot in collection.scanroots:
                 collection.scan(scanroot, dry_run)
 
-    @staticmethod
-    def comment(username, message, ids):
+    def comment(self, username, message, ids):
         now = int(utils.now() * 1000)
         comments = [Comment(dataset_id=id, author=username, time_added=now,
                             text=message)
                     for id in ids]
-        db.session.add_all(comments)
-        db.session.commit()
+        with scoped_session(self) as session:
+            session.add_all(comments)
 
-    @staticmethod
-    def tag(setids, add=None, remove=None):
+    def tag(self, setids, add=None, remove=None):
         assert setids
         assert add or remove, (add, remove)
         add = sorted(add or [])
@@ -432,52 +439,50 @@ class Site:
         addremove = set(add) | set(remove)
         assert len(addremove) == len(add) + len(remove), (add, remove)
 
-        # pylint: disable=no-member
-        query = db.session.query(Dataset.collection, Dataset.id, Dataset.setid)\
-                          .filter(Dataset.setid.in_(setids))\
-                          .order_by(Dataset.collection)
-        # pylint: enable=no-member
-        for collection, group in groupby(query, key=lambda x: x[0]):
-            setidmap = {setid: id for _, id, setid in group}
-            dataset_ids = setidmap.values()
+        with scoped_session(self) as session:
+            # pylint: disable=no-member
+            query = session.query(Dataset.collection, Dataset.id, Dataset.setid)\
+                           .filter(Dataset.setid.in_(setids))\
+                           .order_by(Dataset.collection)
+            # pylint: enable=no-member
+            for collection, group in groupby(query, key=lambda x: x[0]):
+                setidmap = {setid: id for _, id, setid in group}
+                dataset_ids = setidmap.values()
 
-            if add:
-                stmt = Tag.__table__.insert().prefix_with('OR IGNORE')
-                db.session.execute(stmt, [{'collection': collection,
-                                           'value': x} for x in add])
+                if add:
+                    stmt = Tag.__table__.insert().prefix_with('OR IGNORE')
+                    session.execute(stmt, [{'collection': collection,
+                                            'value': x} for x in add])
 
-            tags = {value: id for id, value in (
-                db.session.query(Tag.id, Tag.value)
-                .filter(Tag.collection == collection)
-                .filter(Tag.value.in_(addremove)))}
+                tags = {value: id for id, value in (
+                    session.query(Tag.id, Tag.value)
+                    .filter(Tag.collection == collection)
+                    .filter(Tag.value.in_(addremove)))}
 
-            if add:
-                stmt = dataset_tag.insert().prefix_with('OR IGNORE')
-                db.session.execute(stmt,
-                                   [{'dataset_id': x, 'tag_id': y} for x, y in
-                                    product(dataset_ids, (tags[x] for x in add))])
+                if add:
+                    stmt = dataset_tag.insert().prefix_with('OR IGNORE')  # pylint: disable=no-value-for-parameter
+                    session.execute(stmt,
+                                    [{'dataset_id': x, 'tag_id': y} for x, y in
+                                     product(dataset_ids, (tags[x] for x in add))])
 
-            if remove:
-                where = (dataset_tag.c.tag_id.in_(tags[x] for x in remove)
-                         & dataset_tag.c.dataset_id.in_(dataset_ids))
-                stmt = dataset_tag.delete().where(where)
-                db.session.execute(stmt)
+                if remove:
+                    where = (dataset_tag.c.tag_id.in_(tags[x] for x in remove)
+                             & dataset_tag.c.dataset_id.in_(dataset_ids))
+                    stmt = dataset_tag.delete().where(where)  # pylint: disable=no-value-for-parameter
+                    session.execute(stmt)
 
-        db.session.commit()
-
-    @staticmethod
-    def authenticate(username, password):
+    def authenticate(self, username, password):
         if not username or not password:
             return False
-        try:
-            user = db.session.query(User).filter_by(name=username, realm='marv').one()
-        except NoResultFound:
-            return False
-        hashed = user.password.encode('utf-8')
+        with scoped_session(self) as session:
+            try:
+                user = session.query(User).filter_by(name=username, realm='marv').one()
+            except NoResultFound:
+                return False
+            hashed = user.password.encode('utf-8')
         return bcrypt.hashpw(password, hashed) == hashed
 
-    @staticmethod
-    def user_add(name, password, realm, realmuid, given_name=None, family_name=None,
+    def user_add(self, name, password, realm, realmuid, given_name=None, family_name=None,
                  email=None, time_created=None, time_updated=None, _restore=None):
         # pylint: disable=too-many-arguments
         try:
@@ -491,75 +496,69 @@ class Site:
             user = User(name=name, password=password, realm=realm, given_name=given_name,
                         family_name=family_name, email=email, realmuid=realmuid,
                         time_created=time_created, time_updated=time_updated)
-            db.session.add(user)
-            db.session.commit()
+            with scoped_session(self) as session:
+                session.add(user)
         except IntegrityError:
             raise ValueError(f'User {name} exists already')
 
-    @staticmethod
-    def user_rm(username):
+    def user_rm(self, username):
         try:
-            user = db.session.query(User).filter_by(name=username).one()
-            db.session.delete(user)
-            db.session.commit()
+            with scoped_session(self) as session:
+                user = session.query(User).filter_by(name=username).one()
+                session.delete(user)
         except NoResultFound:
             raise ValueError(f'User {username} does not exist')
 
-    @staticmethod
-    def user_pw(username, password):
-        try:
-            user = db.session.query(User).filter_by(name=username).one()
-        except NoResultFound:
-            raise ValueError(f'User {username} does not exist')
+    def user_pw(self, username, password):
+        with scoped_session(self) as session:
+            try:
+                user = session.query(User).filter_by(name=username).one()
+            except NoResultFound:
+                raise ValueError(f'User {username} does not exist')
 
-        user.password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-        user.time_updated = int(utils.now())
-        db.session.commit()
+            user.password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+            user.time_updated = int(utils.now())
 
-    @staticmethod
-    def group_add(groupname):
+    def group_add(self, groupname):
         try:
-            group = Group(name=groupname)
-            db.session.add(group)
-            db.session.commit()
+            with scoped_session(self) as session:
+                group = Group(name=groupname)
+                session.add(group)
         except IntegrityError:
             raise ValueError(f'Group {groupname} exists already')
 
-    @staticmethod
-    def group_rm(groupname):
+    def group_rm(self, groupname):
         try:
-            group = db.session.query(Group).filter_by(name=groupname).one()
-            db.session.delete(group)
-            db.session.commit()
+            with scoped_session(self) as session:
+                group = session.query(Group).filter_by(name=groupname).one()
+                session.delete(group)
         except NoResultFound:
             raise ValueError(f'Group {groupname} does not exist')
 
-    @staticmethod
-    def group_adduser(groupname, username):
-        try:
-            group = db.session.query(Group).filter_by(name=groupname).one()
-        except NoResultFound:
-            raise ValueError(f'Group {groupname} does not exist')
-        try:
-            user = db.session.query(User).filter_by(name=username).one()
-        except NoResultFound:
-            raise ValueError(f'User {username} does not exist')
-        group.users.append(user)
-        db.session.commit()
+    def group_adduser(self, groupname, username):
+        with scoped_session(self) as session:
+            try:
+                group = session.query(Group).filter_by(name=groupname).one()
+            except NoResultFound:
+                raise ValueError(f'Group {groupname} does not exist')
+            try:
+                user = session.query(User).filter_by(name=username).one()
+            except NoResultFound:
+                raise ValueError(f'User {username} does not exist')
+            group.users.append(user)
 
-    @staticmethod
-    def group_rmuser(groupname, username):
-        try:
-            group = db.session.query(Group).filter_by(name=groupname).one()
-        except NoResultFound:
-            raise ValueError(f'Group {groupname} does not exist')
-        try:
-            user = db.session.query(User).filter_by(name=username).one()
-        except NoResultFound:
-            raise ValueError(f'User {username} does not exist')
-        if user in group.users:
-            group.users.remove(user)
-        db.session.commit()
+    def group_rmuser(self, groupname, username):
+        with scoped_session(self) as session:
+            try:
+                group = session.query(Group).filter_by(name=groupname).one()
+            except NoResultFound:
+                raise ValueError(f'Group {groupname} does not exist')
+            try:
+                user = session.query(User).filter_by(name=username).one()
+            except NoResultFound:
+                raise ValueError(f'User {username} does not exist')
+            if user in group.users:
+                group.users.remove(user)
 
 
 def dump_database(dburi):  # noqa: C901

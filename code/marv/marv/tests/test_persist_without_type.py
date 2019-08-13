@@ -1,14 +1,12 @@
-# Copyright 2016 - 2018  Ternaris.
+# Copyright 2016 - 2019  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-import json
 import os
 from pathlib import Path
 
 import pytest
 
 import marv
-import marv.app
 from marv.config import ConfigError
 from marv.scanner import DatasetInfo
 from marv.site import Site
@@ -72,24 +70,9 @@ def site(tmpdir):
             path = tmpdir / 'scanroots' / sitename / name
             path.write(str(idx), ensure=True)
 
-    yield Site(marv_conf.strpath)
+    yield Site(marv_conf.strpath, init=True)
 
 
-@pytest.fixture(scope='function')
-def app(site):  # pylint: disable=redefined-outer-name
-    _app = marv.app.create_app(site, init=True)
-    _app.testing = True
-    with _app.app_context():
-        client = _app.test_client()
-
-        def get_json(*args, **kw):
-            resp = client.get(*args, **kw)
-            return json.loads(resp.data)
-
-        client.get_json = get_json
-        yield client
-
-
-def test_fail_notype(app, site):  # pylint: disable=redefined-outer-name,unused-argument
+def test_fail_notype(site):  # pylint: disable=redefined-outer-name
     with pytest.raises(ConfigError):
         site.scan()

@@ -1,4 +1,4 @@
-# Copyright 2016 - 2018  Ternaris.
+# Copyright 2016 - 2019  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import functools
@@ -13,11 +13,11 @@ from inspect import getmembers
 from itertools import cycle, groupby
 from logging import getLogger
 
-from sqlalchemy import sql
+from sqlalchemy import func as sqlfunc, sql
 
 from marv import utils
 from marv.config import ConfigError, calltree, getdeps, make_funcs, parse_function
-from marv.model import Comment, Dataset, File, STATUS, Tag, dataset_tag, db
+from marv.model import Comment, Dataset, File, STATUS, Tag, dataset_tag, scoped_session
 from marv.model import make_listing_model
 from marv_detail import FORMATTER_MAP, detail_to_dict
 from marv_detail.types_capnp import Detail  # pylint: disable=no-name-in-module
@@ -116,13 +116,13 @@ class Collections(Mapping):
     def _dct(self):
         if self._collections:
             return self._collections
-        self._collections = self.loadconfig(self.config)
+        self._collections = self.loadconfig(self.config, self.site)
         return self._collections
 
     @staticmethod
-    def loadconfig(config):
+    def loadconfig(config, site):
         names = config.marv.collections
-        collections = OrderedDict((x, Collection(config, x)) for x in names)
+        collections = OrderedDict((x, Collection(config, x, site)) for x in names)
         assert not collections.keys() ^ names, (names, collections.keys())
         scanroots = [
             x for collection in collections.values()
@@ -132,8 +132,9 @@ class Collections(Mapping):
             "Scanroots must not be shared between collections"
         return collections
 
-    def __init__(self, config):
+    def __init__(self, config, site):
         self.config = config
+        self.site = site
 
     def __dir__(self):
         return list(self._dct.keys()
@@ -303,158 +304,161 @@ class Collection:
     def section(self):
         return self.config[f'collection {self.name}']
 
-    def __init__(self, config, name):
+    def __init__(self, config, name, site):
         self.config = config
         self.name = name
+        self.site = site
 
     def filtered_listing(self, filters):  # noqa: C901
         # pylint: disable=too-many-locals,too-many-branches,too-many-statements
 
-        model = self.model
-        Listing = model.Listing  # pylint: disable=invalid-name
-        listing = Listing.__table__
-        relations = model.relations
-        secondaries = model.secondaries
-        stmt = sql.select([Listing.id.label('id'),
-                           Listing.row.label('row'),
-                           Dataset.status.label('status'),
-                           Tag.value.label('tag_value')])\
-                  .select_from(listing.outerjoin(Dataset)
-                               .outerjoin(dataset_tag)
-                               .outerjoin(Tag))\
-                  .where(Dataset.discarded.isnot(True))
+        with scoped_session(self.site) as session:
+            model = self.model
+            Listing = model.Listing  # pylint: disable=invalid-name
+            listing = Listing.__table__
+            relations = model.relations
+            secondaries = model.secondaries
+            stmt = sql.select([Listing.id.label('id'),
+                               Listing.row.label('row'),
+                               Dataset.status.label('status'),
+                               Tag.value.label('tag_value')])\
+                      .select_from(listing.outerjoin(Dataset)
+                                   .outerjoin(dataset_tag)
+                                   .outerjoin(Tag))\
+                      .where(Dataset.discarded.isnot(True))
 
-        for name, value, operator, val_type in filters:
-            if isinstance(value, int):
-                value = min([value, sys.maxsize])
+            for name, value, operator, val_type in filters:
+                if isinstance(value, int):
+                    value = min([value, sys.maxsize])
 
-            if name == 'comments':
-                containstext = Comment.text.like(f'%{esc(value)}%', escape='$')
-                commentquery = db.session.query(Comment.dataset_id)\
-                                         .filter(containstext)\
-                                         .group_by(Comment.dataset_id)
-                stmt = stmt.where(Listing.id.in_(commentquery.subquery()))
-                continue
-
-            elif name == 'status':
-                status_ids = STATUS.keys()
-                bitmasks = [2**status_ids.index(x) for x in value]
-                if operator == 'any':
-                    stmt = stmt.where(reduce(
-                        lambda x, y: x | y,
-                        (Dataset.status.op('&')(x) for x in bitmasks),
-                    ))
-
-                elif operator == 'all':
-                    bitmask = sum(bitmasks)
-                    stmt = stmt.where(Dataset.status.op('&')(bitmask) == bitmask)
-
-                else:
-                    raise UnknownOperator(operator)
-
-                continue
-
-            elif name == 'tags':
-                if operator == 'any':
-                    relquery = db.session.query(dataset_tag.c.dataset_id)\
-                                         .join(Tag)\
-                                         .filter(Tag.value.in_(value))
-                    stmt = stmt.where(Listing.id.in_(relquery.subquery()))
-
-                elif operator == 'all':
-                    relquery = Tag.query\
-                                  .join(dataset_tag)\
-                                  .filter(reduce(
-                                      lambda x, y: x | y,
-                                      (Tag.value == x for x in value),
-                                  ))\
-                                  .group_by(dataset_tag.c.dataset_id)\
-                                  .having(db.func.count('*') == len(value))\
-                                  .with_entities(dataset_tag.c.dataset_id)
-                    stmt = stmt.where(Listing.id.in_(relquery.subquery()))
-
-                else:
-                    raise UnknownOperator(operator)
-
-                continue
-
-            elif val_type == 'datetime':
-                if operator == 'eq':
-                    col = getattr(Listing, name)
-                    stmt = stmt.where(col.between(value, value + 24 * 3600 * 1000))
+                if name == 'comments':
+                    containstext = Comment.text.like(f'%{esc(value)}%', escape='$')
+                    commentquery = session.query(Comment.dataset_id)\
+                                          .filter(containstext)\
+                                          .group_by(Comment.dataset_id)
+                    stmt = stmt.where(Listing.id.in_(commentquery.subquery()))
                     continue
+
+                elif name == 'status':
+                    status_ids = STATUS.keys()
+                    bitmasks = [2**status_ids.index(x) for x in value]
+                    if operator == 'any':
+                        stmt = stmt.where(reduce(
+                            lambda x, y: x | y,
+                            (Dataset.status.op('&')(x) for x in bitmasks),
+                        ))
+
+                    elif operator == 'all':
+                        bitmask = sum(bitmasks)
+                        stmt = stmt.where(Dataset.status.op('&')(bitmask) == bitmask)
+
+                    else:
+                        raise UnknownOperator(operator)
+
+                    continue
+
+                elif name == 'tags':
+                    if operator == 'any':
+                        relquery = session.query(dataset_tag.c.dataset_id)\
+                                          .join(Tag)\
+                                          .filter(Tag.value.in_(value))
+                        stmt = stmt.where(Listing.id.in_(relquery.subquery()))
+
+                    elif operator == 'all':
+                        relquery = session.query(Tag)\
+                                          .join(dataset_tag)\
+                                          .filter(reduce(
+                                              lambda x, y: x | y,
+                                              (Tag.value == x for x in value),
+                                          ))\
+                                          .group_by(dataset_tag.c.dataset_id)\
+                                          .having(sqlfunc.count('*') == len(value))\
+                                          .with_entities(dataset_tag.c.dataset_id)
+                        stmt = stmt.where(Listing.id.in_(relquery.subquery()))
+
+                    else:
+                        raise UnknownOperator(operator)
+
+                    continue
+
+                elif val_type == 'datetime':
+                    if operator == 'eq':
+                        col = getattr(Listing, name)
+                        stmt = stmt.where(col.between(value, value + 24 * 3600 * 1000))
+                        continue
+
+                    elif operator == 'ne':
+                        col = getattr(Listing, name)
+                        stmt = stmt.where(~col.between(value, value + 24 * 3600 * 1000))
+                        continue
+
+                    elif operator in ['le', 'gt']:
+                        value = value + 24 * 3600 * 1000
+
+                col = getattr(Listing, name)
+                if operator == 'lt':
+                    stmt = stmt.where(col < value)
+
+                elif operator == 'le':
+                    stmt = stmt.where(col <= value)
+
+                elif operator == 'eq':
+                    stmt = stmt.where(col == value)
 
                 elif operator == 'ne':
-                    col = getattr(Listing, name)
-                    stmt = stmt.where(~col.between(value, value + 24 * 3600 * 1000))
-                    continue
+                    stmt = stmt.where(col != value)
 
-                elif operator in ['le', 'gt']:
-                    value = value + 24 * 3600 * 1000
+                elif operator == 'ge':
+                    stmt = stmt.where(col >= value)
 
-            col = getattr(Listing, name)
-            if operator == 'lt':
-                stmt = stmt.where(col < value)
+                elif operator == 'gt':
+                    stmt = stmt.where(col > value)
 
-            elif operator == 'le':
-                stmt = stmt.where(col <= value)
+                elif operator == 'substring':
+                    stmt = stmt.where(col.like(f'%{esc(value)}%', escape='$'))
 
-            elif operator == 'eq':
-                stmt = stmt.where(col == value)
+                elif operator == 'startswith':
+                    stmt = stmt.where(col.like(f'{esc(value)}%', escape='$'))
 
-            elif operator == 'ne':
-                stmt = stmt.where(col != value)
+                elif operator == 'any':
+                    rel = relations[name]
+                    sec = secondaries[name]
+                    relquery = session.query(rel)\
+                                      .join(sec)\
+                                      .filter(rel.value.in_(value))\
+                                      .with_entities(sec.c.listing_id)
+                    stmt = stmt.where(Listing.id.in_(relquery.subquery()))
 
-            elif operator == 'ge':
-                stmt = stmt.where(col >= value)
+                elif operator == 'all':
+                    rel = relations[name]
+                    sec = secondaries[name]
+                    relquery = session.query(rel)\
+                                      .join(sec)\
+                                      .filter(reduce(lambda x, y: x | y,
+                                                     (rel.value == x for x in value)))\
+                                      .group_by(sec.c.listing_id)\
+                                      .having(sqlfunc.count('*') == len(value))\
+                                      .with_entities(sec.c.listing_id)
+                    stmt = stmt.where(Listing.id.in_(relquery.subquery()))
 
-            elif operator == 'gt':
-                stmt = stmt.where(col > value)
+                elif operator == 'substring_any':
+                    rel = relations[name]
+                    stmt = stmt.where(col.any(rel.value.like(f'%{esc(value)}%', escape='$')))
 
-            elif operator == 'substring':
-                stmt = stmt.where(col.like(f'%{esc(value)}%', escape='$'))
-
-            elif operator == 'startswith':
-                stmt = stmt.where(col.like(f'{esc(value)}%', escape='$'))
-
-            elif operator == 'any':
-                rel = relations[name]
-                sec = secondaries[name]
-                relquery = rel.query\
-                              .join(sec)\
-                              .filter(rel.value.in_(value))\
-                              .with_entities(sec.c.listing_id)
-                stmt = stmt.where(Listing.id.in_(relquery.subquery()))
-
-            elif operator == 'all':
-                rel = relations[name]
-                sec = secondaries[name]
-                relquery = rel.query\
-                              .join(sec)\
-                              .filter(reduce(lambda x, y: x | y, (rel.value == x for x in value)))\
-                              .group_by(sec.c.listing_id)\
-                              .having(db.func.count('*') == len(value))\
-                              .with_entities(sec.c.listing_id)
-                stmt = stmt.where(Listing.id.in_(relquery.subquery()))
-
-            elif operator == 'substring_any':
-                rel = relations[name]
-                stmt = stmt.where(col.any(rel.value.like(f'%{esc(value)}%', escape='$')))
-
-            elif operator == 'words':
-                stmt = reduce(
-                    lambda stmt, x, col=col: stmt.where(col.like(f'%{esc(x)}%', escape='$')),
-                    value,
-                    stmt,
-                )
-            else:
-                raise UnknownOperator(operator)
-        stmt = sql.select([sql.column('row'),
-                           sql.column('status'),
-                           sql.func.json_group_array(sql.column('tag_value'))])\
-                  .select_from(stmt.order_by(sql.column('tag_value')))\
-                  .group_by('id')
-        return stmt
+                elif operator == 'words':
+                    stmt = reduce(
+                        lambda stmt, x, col=col: stmt.where(col.like(f'%{esc(x)}%', escape='$')),
+                        value,
+                        stmt,
+                    )
+                else:
+                    raise UnknownOperator(operator)
+            stmt = sql.select([sql.column('row'),
+                               sql.column('status'),
+                               sql.func.json_group_array(sql.column('tag_value'))])\
+                      .select_from(stmt.order_by(sql.column('tag_value')))\
+                      .group_by('id')
+            return stmt
 
     def scan(self, scanpath, dry_run=False):  # noqa: C901
         # pylint: disable=too-many-locals,too-many-branches,too-many-statements
@@ -467,75 +471,76 @@ class Collection:
 
         # missing/changed flag for known files
         startswith = File.path.like(f'{esc(scanpath)}%', escape='$')
-        known_files = File.query.filter(startswith)\
-                                .join(Dataset)\
-                                .filter(Dataset.discarded.isnot(True))
-        known_filenames = defaultdict(set)
-        changes = defaultdict(list)  # all mtime/missing changes in one transaction
-        for file in known_files:
-            path = file.path
-            known_filenames[os.path.dirname(path)].add(os.path.basename(path))
-            try:
-                mtime = utils.mtime(path)
-                missing = False
-            except OSError:
-                mtime = None
-                missing = True
-            if missing ^ bool(file.missing):
-                log.info("%s '%s'", 'lost' if missing else 'recovered', path)
-                changes[file.dataset_id].append((file, missing))
-            if mtime and int(mtime * 1000) > file.mtime:
-                log.info("mtime newer '%s'", path)
-                changes[file.dataset_id].append((file, mtime))
+        with scoped_session(self.site) as session:
+            known_files = session.query(File).filter(startswith)\
+                                 .join(Dataset)\
+                                 .filter(Dataset.discarded.isnot(True))
+            known_filenames = defaultdict(set)
+            changes = defaultdict(list)  # all mtime/missing changes in one transaction
+            for file in known_files:
+                path = file.path
+                known_filenames[os.path.dirname(path)].add(os.path.basename(path))
+                try:
+                    mtime = utils.mtime(path)
+                    missing = False
+                except OSError:
+                    mtime = None
+                    missing = True
+                if missing ^ bool(file.missing):
+                    log.info("%s '%s'", 'lost' if missing else 'recovered', path)
+                    changes[file.dataset_id].append((file, missing))
+                if mtime and int(mtime * 1000) > file.mtime:
+                    log.info("mtime newer '%s'", path)
+                    changes[file.dataset_id].append((file, mtime))
 
-        # Apply missing/mtime changes
-        if not dry_run and changes:
-            ids = changes.keys()
-            for dataset in Dataset.query.filter(Dataset.id.in_(ids)):
-                for file, change in changes.pop(dataset.id):
-                    check_outdated = False
-                    if isinstance(change, bool):
-                        file.missing = change
-                        dataset.missing = change
+            # Apply missing/mtime changes
+            if not dry_run and changes:
+                ids = changes.keys()
+                for dataset in session.query(Dataset).filter(Dataset.id.in_(ids)):
+                    for file, change in changes.pop(dataset.id):
+                        check_outdated = False
+                        if isinstance(change, bool):
+                            file.missing = change
+                            dataset.missing = change
+                        else:
+                            file.mtime = int(change * 1000)
+                            check_outdated = True
+                    if check_outdated:
+                        self._check_outdated(dataset)
+                    dataset.time_updated = int(utils.now())
+                assert not changes
+            session.commit()
+
+            # Scan for new files
+            batch = []
+            for directory, subdirs, filenames in os.walk(scanpath):
+                # Ignore directories containing a .marvignore file
+                if os.path.exists(os.path.join(directory, '.marvignore')):
+                    subdirs[:] = []
+                    continue
+
+                # Ignore hidden directories and traverse subdirs alphabetically
+                subdirs[:] = sorted([x for x in subdirs if x[0] != '.'])
+
+                # Ignore hidden and known files
+                known = known_filenames[directory]
+                filenames = {x for x in filenames if x[0] != '.'}
+                filenames = sorted(filenames - known)
+
+                for name, files in self.scanner(directory, subdirs, filenames):
+                    files = [x if os.path.isabs(x) else os.path.join(directory, x)
+                             for x in files]
+                    assert all(x.startswith(directory) for x in files), files
+                    if dry_run:
+                        log.info("would add '%s': '%s'", directory, name)
                     else:
-                        file.mtime = int(change * 1000)
-                        check_outdated = True
-                if check_outdated:
-                    self._check_outdated(dataset)
-                dataset.time_updated = int(utils.now())
-            assert not changes
-            db.session.commit()
+                        dataset = self.make_dataset(files, name)
+                        batch.append(dataset)
+                        if len(batch) > 50:
+                            self._add_batch(session, log, batch)
 
-        # Scan for new files
-        batch = []
-        for directory, subdirs, filenames in os.walk(scanpath):
-            # Ignore directories containing a .marvignore file
-            if os.path.exists(os.path.join(directory, '.marvignore')):
-                subdirs[:] = []
-                continue
-
-            # Ignore hidden directories and traverse subdirs alphabetically
-            subdirs[:] = sorted([x for x in subdirs if x[0] != '.'])
-
-            # Ignore hidden and known files
-            known = known_filenames[directory]
-            filenames = {x for x in filenames if x[0] != '.'}
-            filenames = sorted(filenames - known)
-
-            for name, files in self.scanner(directory, subdirs, filenames):
-                files = [x if os.path.isabs(x) else os.path.join(directory, x)
-                         for x in files]
-                assert all(x.startswith(directory) for x in files), files
-                if dry_run:
-                    log.info("would add '%s': '%s'", directory, name)
-                else:
-                    dataset = self.make_dataset(files, name)
-                    batch.append(dataset)
-                    if len(batch) > 50:
-                        self._add_batch(log, batch)
-
-        if not dry_run and batch:
-            self._add_batch(log, batch)
+            if not dry_run and batch:
+                self._add_batch(session, log, batch)
 
         log.verbose("finished %s'%s'", 'dry_run ' if dry_run else '', scanpath)
 
@@ -559,42 +564,43 @@ class Collection:
         batch = []
         comments = []
         tags = []
-        for dataset in data:
-            _comments = dataset.pop('comments')
-            _tags = dataset.pop('tags')
-            dataset = self.make_dataset(_restore=True, **dataset)
-            comments.extend(Comment(dataset=dataset, **x) for x in _comments)
-            tags.append((dataset, _tags))
-            batch.append(dataset)
-            if len(batch) > 50:
-                db.session.add_all(comments)
-                comments[:] = []
-                self._add_batch(log, batch)
-                self._add_tags(tags)
-        db.session.add_all(comments)
-        comments[:] = []
-        self._add_batch(log, batch)
-        self._add_tags(tags)
+        with scoped_session(self.site) as session:
+            for dataset in data:
+                _comments = dataset.pop('comments')
+                _tags = dataset.pop('tags')
+                dataset = self.make_dataset(_restore=True, **dataset)
+                comments.extend(Comment(dataset=dataset, **x) for x in _comments)
+                tags.append((dataset, _tags))
+                batch.append(dataset)
+                if len(batch) > 50:
+                    session.add_all(comments)
+                    comments[:] = []
+                    self._add_batch(session, log, batch)
+                    self._add_tags(session, tags)
+            session.add_all(comments)
+            comments[:] = []
+            self._add_batch(session, log, batch)
+            self._add_tags(session, tags)
 
-    def _add_tags(self, data):
+    def _add_tags(self, session, data):
         tags = {tag for _, tags in data for tag in tags}
         stmt = Tag.__table__.insert().prefix_with('OR IGNORE')
-        db.session.execute(stmt, [{'collection': self.name,
-                                   'value': x} for x in tags])
+        session.execute(stmt, [{'collection': self.name,
+                                'value': x} for x in tags])
 
-        mapping = {value: id for id, value in (db.session.query(Tag.id, Tag.value)
+        mapping = {value: id for id, value in (session.query(Tag.id, Tag.value)
                                                .filter(Tag.collection == self.name)
                                                .filter(Tag.value.in_(tags)))}
 
-        stmt = dataset_tag.insert()
+        stmt = dataset_tag.insert()  # pylint: disable=no-value-for-parameter
         values = [{'tag_id': mapping[x], 'dataset_id': y}
                   for tags, id in [(tags, dataset.id) for dataset, tags in data]
                   for x, y in zip(tags, cycle([id]))]
-        db.session.execute(stmt, values)
-        db.session.commit()
+        session.execute(stmt, values)
+        session.commit()
         data[:] = []
 
-    def _add_batch(self, log, batch):
+    def _add_batch(self, session, log, batch):
         # pylint: disable=too-many-locals
 
         Listing = self.model.Listing  # pylint: disable=invalid-name
@@ -602,8 +608,8 @@ class Collection:
 
         # We need ids to render the listings; flush would result in
         # longer write transaction.
-        db.session.add_all(batch)
-        db.session.commit()
+        session.add_all(batch)
+        session.commit()
         for dataset in batch:
             log.info('added %r', dataset)
 
@@ -627,16 +633,16 @@ class Collection:
                 continue
             Rel = relations[key]  # pylint: disable=invalid-name
             insert = Rel.__table__.insert().prefix_with('OR IGNORE')
-            db.session.execute(insert, [{'value': x} for x in values])
-            query = db.session.query(Rel)\
-                              .filter(Rel.value.in_(values))
+            session.execute(insert, [{'value': x} for x in values])
+            query = session.query(Rel)\
+                           .filter(Rel.value.in_(values))
             relmap[key] = {rel.value: rel for rel in query}
 
         for listing, key, values in queue:
             rels = relmap[key]
             setattr(listing, key, [rels[x] for x in values])
-        db.session.add_all(listings)
-        db.session.commit()
+        session.add_all(listings)
+        session.commit()
         batch[:] = []
 
     def make_dataset(self, files, name, time_added=None, discarded=None, setid=None, status=None,
@@ -760,44 +766,43 @@ class Collection:
 
         # Update new relation values in bulk per relation and generate
         # relation map from value to id
-        relmap = {}
-        for key, values in relvalues.items():
-            if not values:
-                relmap[key] = {}
-                continue
-            relation = relations[key].__table__
-            stmt = relation.insert()\
-                           .prefix_with('OR IGNORE')
-            db.session.execute(stmt, [{'value': x} for x in values])
-            query = db.session.query(relation.c.value, relation.c.id)\
-                              .filter(relation.c.value.in_(values))
-            relmap[key] = {value: id for value, id in query}
+        with scoped_session(self.site) as session:
+            relmap = {}
+            for key, values in relvalues.items():
+                if not values:
+                    relmap[key] = {}
+                    continue
+                relation = relations[key].__table__
+                stmt = relation.insert()\
+                               .prefix_with('OR IGNORE')
+                session.execute(stmt, [{'value': x} for x in values])
+                query = session.query(relation.c.value, relation.c.id)\
+                               .filter(relation.c.value.in_(values))
+                relmap[key] = {value: id for value, id in query}
 
-        # bulk delete associations per relation
-        for key, listing_ids in [
-                (key, [x[0] for x in group])
-                for key, group in groupby(queue, lambda x: x[1])
-        ]:
-            secondary = secondaries[key]
-            stmt = secondary.delete()\
-                            .where(secondary.c.listing_id.in_(listing_ids))
-            db.session.execute(stmt)
+            # bulk delete associations per relation
+            for key, listing_ids in [
+                    (key, [x[0] for x in group])
+                    for key, group in groupby(queue, lambda x: x[1])
+            ]:
+                secondary = secondaries[key]
+                stmt = secondary.delete()\
+                                .where(secondary.c.listing_id.in_(listing_ids))
+                session.execute(stmt)
 
-        # bulk insert/replace listings
-        stmt = self.model.Listing.__table__.insert()\
-                                           .prefix_with('OR REPLACE')
-        db.session.execute(stmt, listings)
+            # bulk insert/replace listings
+            stmt = self.model.Listing.__table__.insert()\
+                                               .prefix_with('OR REPLACE')
+            session.execute(stmt, listings)
 
-        # bulk insert associations per relation
-        for listing_id, key, values in queue:
-            if not values:
-                continue
-            assert isinstance(values, list), (listing_id, key, values)
-            relids = relmap[key]
-            secondary = secondaries[key]
-            stmt = secondary.insert()\
-                            .prefix_with('OR IGNORE')
-            db.session.execute(stmt, [{'listing_id': listing_id,
-                                       'relation_id': relids[x]} for x in values])
-
-        db.session.commit()
+            # bulk insert associations per relation
+            for listing_id, key, values in queue:
+                if not values:
+                    continue
+                assert isinstance(values, list), (listing_id, key, values)
+                relids = relmap[key]
+                secondary = secondaries[key]
+                stmt = secondary.insert()\
+                                .prefix_with('OR IGNORE')
+                session.execute(stmt, [{'listing_id': listing_id,
+                                        'relation_id': relids[x]} for x in values])

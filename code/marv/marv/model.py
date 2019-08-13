@@ -1,13 +1,16 @@
-# Copyright 2016 - 2018  Ternaris.
+# Copyright 2016 - 2019  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 from collections import OrderedDict, namedtuple
+from contextlib import contextmanager
 
-import flask_sqlalchemy
-from sqlalchemy import Index, event, schema
+from sqlalchemy import Boolean, Column, Float, ForeignKey, Index, Integer, String, Table
+from sqlalchemy import event, schema
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import relationship
 
 from marv_node.setid import SetID
 from .utils import underscore_to_camelCase
@@ -26,18 +29,21 @@ STATUS_OUTDATED = 4
 STATUS_PENDING = 8
 
 
-# pylint: disable=invalid-name
-db = flask_sqlalchemy.SQLAlchemy()
-Boolean = db.Boolean
-Column = db.Column
-Float = db.Float
-ForeignKey = db.ForeignKey
-Integer = db.Integer
-Model = db.Model
-String = db.String
-Table = db.Table
-relationship = db.relationship
-# pylint: enable=invalid-name
+Model = declarative_base(name='Model')
+
+
+@contextmanager
+def scoped_session(site):
+    """Transaction scope for database operations."""
+    session = site.session()
+    try:
+        yield session
+        session.commit()
+    except BaseException:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 @event.listens_for(Engine, "connect")
@@ -87,6 +93,7 @@ def make_status_property(bitmask, doc=None):
 
 dataset_tag = Table(  # pylint: disable=invalid-name
     'dataset_tag',
+    Model.metadata,
     Column('dataset_id', Integer, ForeignKey('dataset.id'), primary_key=True),
     Column('tag_id', Integer, ForeignKey('tag.id'), primary_key=True),
     info={'without_rowid': True},
@@ -94,6 +101,7 @@ dataset_tag = Table(  # pylint: disable=invalid-name
 
 
 class Dataset(Model):
+    __tablename__ = 'dataset'
     id = Column(Integer, primary_key=True)
 
     # TODO: consider Collection model
@@ -135,6 +143,7 @@ class Dataset(Model):
 class File(Model):
     # pylint: disable=too-few-public-methods
 
+    __tablename__ = 'file'
     __table_args__ = (
         {'info': {'without_rowid': True}},
     )
@@ -155,6 +164,7 @@ class File(Model):
 class Comment(Model):
     # pylint: disable=too-few-public-methods
 
+    __tablename__ = 'comment'
     id = Column(Integer, primary_key=True)
     dataset_id = Column(Integer, ForeignKey('dataset.id'))
 
@@ -168,6 +178,7 @@ class Comment(Model):
 class Tag(Model):
     # pylint: disable=too-few-public-methods
 
+    __tablename__ = 'tag'
     __table_args__ = (
         Index('idx_tag_collection_value', 'collection', 'value', unique=True),
     )
@@ -180,6 +191,7 @@ class Tag(Model):
 
 user_group = Table(  # pylint: disable=invalid-name
     'user_group',
+    Model.metadata,
     Column('user_id', Integer, ForeignKey('user.id'), primary_key=True),
     Column('group_id', Integer, ForeignKey('group.id'), primary_key=True),
     info={'without_rowid': True},
@@ -189,6 +201,7 @@ user_group = Table(  # pylint: disable=invalid-name
 class User(Model):
     # pylint: disable=too-few-public-methods
 
+    __tablename__ = 'user'
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False, unique=True)
     password = Column(String)
@@ -204,6 +217,7 @@ class User(Model):
 class Group(Model):
     # pylint: disable=too-few-public-methods
 
+    __tablename__ = 'group'
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False, unique=True)
     # TODO: switch to lazy raise
@@ -219,7 +233,7 @@ user = User.__table__
 group = Group.__table__
 # pylint: enable=invalid-name
 
-ListingModel = namedtuple('ListingModel', 'db Listing relations secondaries')
+ListingModel = namedtuple('ListingModel', 'Listing relations secondaries')
 
 
 def make_listing_model(name, filter_specs):
@@ -237,12 +251,14 @@ def make_listing_model(name, filter_specs):
         assert '_' not in rel_model_name, rel_model_name
         secondary = Table(
             sec_name,
+            Model.metadata,
             Column('listing_id', Integer, ForeignKey(listingid), primary_key=True),
             Column('relation_id', Integer, ForeignKey(relid), primary_key=True),
             info={'without_rowid': True},
         )
         secondaries[fname] = secondary
         relations[fname] = type(rel_model_name, (Model,), {
+            '__tablename__': rel_name,
             'id': Column(Integer, primary_key=True),
             'value': Column(String, index=True, unique=True),
             'listing': relationship(listing_model_name,
@@ -268,6 +284,7 @@ def make_listing_model(name, filter_specs):
     }
 
     dct = {
+        '__tablename__': listing_name,
         '__table_args__': (
             {'info': {'without_rowid': True}}
         ),
@@ -282,4 +299,4 @@ def make_listing_model(name, filter_specs):
                if fspec.name not in ('comments', 'status', 'tags'))
 
     Listing = type(listing_model_name, (Model,), dct)
-    return ListingModel(db, Listing, relations, secondaries)
+    return ListingModel(Listing, relations, secondaries)

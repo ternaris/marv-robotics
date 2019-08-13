@@ -130,12 +130,12 @@ def site(tmpdir):
             path = tmpdir / 'scanroots' / sitename / name
             path.write(str(idx), ensure=True)
 
-    yield Site(marv_conf.strpath)
+    yield Site(marv_conf.strpath, init=True)
 
 
 @pytest.fixture(scope='function')
 def app(site):  # pylint: disable=redefined-outer-name
-    _app = marv.app.create_app(site, init=True)
+    _app = marv.app.create_app(site)
     _app.testing = True
     with _app.app_context():
         client = _app.test_client()

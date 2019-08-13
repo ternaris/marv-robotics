@@ -1,4 +1,4 @@
-# Copyright 2016 - 2018  Ternaris.
+# Copyright 2016 - 2019  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import inspect
@@ -10,9 +10,8 @@ import unittest
 from itertools import count
 from logging import getLogger
 
-import marv.app
 import marv.model
-from marv.model import db
+from marv.model import Model, scoped_session
 from marv.site import Site
 
 
@@ -59,21 +58,16 @@ class TestCase(unittest.TestCase):
         marv.model._LISTING_PREFIX = prefix  # pylint: disable=protected-access
         self.site = Site(siteconf)
 
-        app = marv.app.create_app(self.site)
-        appctx = app.app_context()
-        appctx.push()
-
         def cleanup():
-            appctx.pop()
-            db.session.remove()
-            del self.site
-            for table in [v for k, v in db.metadata.tables.items()
-                          if k.startswith(prefix)]:
-                db.metadata.remove(table)
-            if not KEEP:
-                shutil.rmtree(sitedir)
-            else:
-                print(f'Keeping {sitedir}')
+            with scoped_session(self.site):
+                del self.site
+                for table in [v for k, v in Model.metadata.tables.items()
+                              if k.startswith(prefix)]:
+                    Model.metadata.remove(table)
+                if not KEEP:
+                    shutil.rmtree(sitedir)
+                else:
+                    print(f'Keeping {sitedir}')
         self.cleanup = cleanup
 
     def tearDown(self):

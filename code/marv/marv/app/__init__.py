@@ -15,11 +15,7 @@ from ..model import db
 log = getLogger(__name__)
 
 
-class DBNotInitialized(Exception):
-    pass
-
-
-def create_app(site, config_obj=None, app_root=None, init=None, **kw):  # noqa: C901
+def create_app(site, config_obj=None, app_root=None, **kw):  # noqa: C901
     # pylint: disable=too-many-statements
 
     app = flask.Flask(__name__)
@@ -37,21 +33,8 @@ def create_app(site, config_obj=None, app_root=None, init=None, **kw):  # noqa: 
         app.config.from_object(config_obj)
     app.config.update(kw)
 
-    db.init_app(app)
-    with app.app_context():
-        if init:
-            site.init()
-        try:
-            db.session.execute('SELECT name FROM sqlite_master WHERE type="table";')
-        except sqlalchemy.exc.OperationalError:
-            if init is None:  # auto-init
-                site.init()
-                db.session.execute('SELECT name FROM sqlite_master WHERE type="table";')
-            else:
-                raise DBNotInitialized()
-
-        app.acl = site.config.marv.acl()
-        webapi.init_app(app, url_prefix='/marv/api')
+    app.acl = site.config.marv.acl()
+    webapi.init_app(app, url_prefix='/marv/api')
 
     with open(site.config.marv.sessionkey_file) as f:
         app.config['SECRET_KEY'] = f.read()

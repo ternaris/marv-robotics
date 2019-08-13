@@ -11,11 +11,12 @@ from logging import getLogger
 
 import click
 from jinja2 import Template
+from sqlalchemy.orm import joinedload
 from sqlalchemy.orm.exc import NoResultFound
 
 import marv.app
 from marv.config import ConfigError
-from marv.model import Comment, Dataset, Group, User, dataset_tag, db
+from marv.model import Comment, Dataset, Group, User, dataset_tag, scoped_session
 from marv.model import STATUS_MISSING
 from marv.site import Site, UnknownNode, dump_database, make_config
 from marv.utils import find_obj
@@ -40,6 +41,16 @@ class NodeParamType(click.ParamType):
 NODE = NodeParamType()
 
 
+def create_site(init=None):
+    ctx = click.get_current_context()
+    siteconf = ctx.obj
+    if siteconf is None:
+        ctx.fail('Could not find config file: ./marv.conf or /etc/marv/marv.conf.\n'
+                 'Change working directory or specify explicitly:\n\n'
+                 '  marv --config /path/to/marv.conf\n')
+    return Site(siteconf, init=init)
+
+
 def create_app(push=True, init=None):
     ctx = click.get_current_context()
     siteconf = ctx.obj
@@ -49,7 +60,7 @@ def create_app(push=True, init=None):
                  '  marv --config /path/to/marv.conf\n')
     site = Site(siteconf)
     try:
-        app = marv.app.create_app(site, init=init)
+        app = marv.app.create_app(site)
     except ConfigError as e:
         click.echo(f'Error {e.args[0]}', err=True)
         click.get_current_context().exit(1)
@@ -65,17 +76,18 @@ def create_app(push=True, init=None):
     return app
 
 
-def parse_setids(datasets, discarded=False, dbids=False):
+def parse_setids(site, datasets, discarded=False, dbids=False):
     fail = click.get_current_context().fail
     setids = set()
     for prefix in datasets:
         many = prefix.endswith('*')
         prefix = prefix[:-1] if many else prefix
         # pylint: disable=no-member
-        setid = db.session.query(Dataset.id if dbids else Dataset.setid)\
-                          .filter(Dataset.setid.like(f'{prefix}%'))\
-                          .filter(Dataset.discarded.is_(discarded))\
-                          .all()
+        with scoped_session(site) as session:
+            setid = session.query(Dataset.id if dbids else Dataset.setid)\
+                           .filter(Dataset.setid.like(f'{prefix}%'))\
+                           .filter(Dataset.discarded.is_(discarded))\
+                           .all()
         # pylint: enable=no-member
         if not setid:
             fail(f"{prefix} does not match any {'discarded ' if discarded else ''}dataset")
@@ -97,7 +109,7 @@ def marvcli_cleanup(ctx, discarded, unused_tags):
         click.echo(ctx.get_help())
         ctx.exit(1)
 
-    site = create_app().site
+    site = create_site()
 
     if discarded:
         site.cleanup_discarded()
@@ -182,52 +194,53 @@ def marvcli_discard(datasets, tags, comments, confirm):
     """
     mark_discarded = not any([tags, comments])
 
-    setids = parse_setids(datasets)
+    site = create_site()
+    setids = parse_setids(site, datasets)
 
-    if tags or comments:
-        if confirm:
-            msg = ' and '.join(filter(None, ['tags' if tags else None,
-                                             'comments' if comments else None]))
-            click.echo(f'About to delete {msg}')
-            click.confirm('This cannot be undone. Do you want to continue?', abort=True)
+    with scoped_session(site) as session:
+        if tags or comments:
+            if confirm:
+                msg = ' and '.join(filter(None, ['tags' if tags else None,
+                                                 'comments' if comments else None]))
+                click.echo(f'About to delete {msg}')
+                click.confirm('This cannot be undone. Do you want to continue?', abort=True)
 
-        query = db.session.query(Dataset.id)\
-                          .filter(Dataset.setid.in_(setids))  # pylint: disable=no-member
-        ids = [x[0] for x in query]
-        if tags:
-            where = dataset_tag.c.dataset_id.in_(ids)
-            stmt = dataset_tag.delete().where(where)
-            db.session.execute(stmt)
+            query = session.query(Dataset.id)\
+                           .filter(Dataset.setid.in_(setids))  # pylint: disable=no-member
+            ids = [x[0] for x in query]
+            if tags:
+                where = dataset_tag.c.dataset_id.in_(ids)
+                stmt = dataset_tag.delete().where(where)  # pylint: disable=no-value-for-parameter
+                session.execute(stmt)
 
-        if comments:
-            comment_table = Comment.__table__
-            where = comment_table.c.dataset_id.in_(ids)
-            stmt = comment_table.delete().where(where)
-            db.session.execute(stmt)
+            if comments:
+                comment_table = Comment.__table__
+                where = comment_table.c.dataset_id.in_(ids)
+                stmt = comment_table.delete().where(where)
+                session.execute(stmt)
 
-    if mark_discarded:
-        dataset = Dataset.__table__
-        stmt = dataset.update()\
-                      .where(dataset.c.setid.in_(setids))\
-                      .values(discarded=True)
-        db.session.execute(stmt)
-
-    db.session.commit()
+        if mark_discarded:
+            dataset = Dataset.__table__
+            stmt = dataset.update()\
+                          .where(dataset.c.setid.in_(setids))\
+                          .values(discarded=True)
+            session.execute(stmt)
 
 
 @marvcli.command('undiscard')
 @click.argument('datasets', nargs=-1, required=True)
 def marvcli_undiscard(datasets):
     """Undiscard DATASETS previously discarded."""
-    create_app()
 
-    setids = parse_setids(datasets, discarded=True)
+    site = create_site()
+
+    setids = parse_setids(site, datasets, discarded=True)
     dataset = Dataset.__table__
     stmt = dataset.update()\
                   .where(dataset.c.setid.in_(setids))\
                   .values(discarded=False)
-    db.session.execute(stmt)
-    db.session.commit()
+    with scoped_session(site) as session:
+        session.execute(stmt)
 
 
 @marvcli.command('dump')
@@ -255,14 +268,15 @@ def marvcli_restore(dump_file):
     Use '-' to read from stdin.
     """
     data = json.load(dump_file)
-    site = create_app().site
+
+    site = create_site()
     site.restore_database(**data)
 
 
 @marvcli.command('init')
 def marvcli_init():
     """(Re-)initialize marv site according to config"""
-    create_app(init=True)
+    create_site(init=True)
 
 
 @marvcli.command('query')
@@ -312,7 +326,7 @@ def marvcli_query(ctx, list_tags, collections, discarded, missing, outdated, pat
 
     sep = '\x00' if null else '\n'
 
-    site = create_app().site
+    site = create_site()
 
     if '*' in collections:
         collections = None
@@ -430,7 +444,7 @@ def marvcli_run(
     deps = 'force' if force_deps else deps
     force = force_deps or force
 
-    site = create_app().site
+    site = create_site()
 
     if '*' in collections:
         if selected_nodes:
@@ -465,14 +479,15 @@ def marvcli_run(
 
     errors = []
 
-    setids = [SetID(x) for x in parse_setids(datasets)]
+    setids = [SetID(x) for x in parse_setids(site, datasets)]
     if not setids:
-        query = db.session.query(Dataset.setid)\
-                          .filter(Dataset.discarded.isnot(True))\
-                          .filter(Dataset.status.op('&')(STATUS_MISSING) == 0)
-        if collections is not None:
-            query = query.filter(Dataset.collection.in_(collections))
-        setids = (SetID(x[0]) for x in query)
+        with scoped_session(site) as session:
+            query = session.query(Dataset.setid)\
+                           .filter(Dataset.discarded.isnot(True))\
+                           .filter(Dataset.status.op('&')(STATUS_MISSING) == 0)
+            if collections is not None:
+                query = query.filter(Dataset.collection.in_(collections))
+            setids = [SetID(x[0]) for x in query]
 
     for setid in setids:
         if PDB:
@@ -525,12 +540,12 @@ asked to report, providing information regarding any previous, failed node runs.
 @click.option('-n', '--dry-run', is_flag=True)
 def marvcli_scan(dry_run):
     """Scan for new and changed files"""
-    create_app().site.scan(dry_run)
+    create_site().scan(dry_run)
 
 
 @marvcli.command('tag')
 @click.option('--add', multiple=True, help='Tags to add')
-@click.option('--rm', '--remove', multiple=True, help='Tags to remove')
+@click.option('--rm', '--remove', 'remove', multiple=True, help='Tags to remove')
 @click.argument('datasets', nargs=-1)
 @click.pass_context
 def marvcli_tag(ctx, add, remove, datasets):
@@ -539,9 +554,9 @@ def marvcli_tag(ctx, add, remove, datasets):
         click.echo(ctx.get_help())
         ctx.exit(1)
 
-    app = create_app()
-    setids = parse_setids(datasets)
-    app.site.tag(setids, add, remove)
+    site = create_site()
+    setids = parse_setids(site, datasets)
+    site.tag(setids, add, remove)
 
 
 @marvcli.group('comment')
@@ -555,14 +570,15 @@ def marvcli_comment():
 @click.argument('datasets', nargs=-1)
 def marvcli_comment_add(user, message, datasets):
     """Add comment as user for one or more datasets"""
-    app = create_app()
+    site = create_site()
     try:
-        db.session.query(User).filter(User.name == user).one()
+        with scoped_session(site) as session:
+            session.query(User).filter(User.name == user).one()
     except NoResultFound:
         click.echo(f'ERROR: No such user {user!r}', err=True)
         sys.exit(1)
-    ids = parse_setids(datasets, dbids=True)
-    app.site.comment(user, message, ids)
+    ids = parse_setids(site, datasets, dbids=True)
+    site.comment(user, message, ids)
 
 
 @marvcli_comment.command('list')
@@ -572,11 +588,12 @@ def marvcli_comment_list(datasets):
 
     Output: setid comment_id date time author message
     """
-    app = create_app()  # pylint: disable=unused-variable
-    ids = parse_setids(datasets, dbids=True)
-    comments = db.session.query(Comment)\
-                         .options(db.joinedload(Comment.dataset))\
-                         .filter(Comment.dataset_id.in_(ids))
+    site = create_site()
+    ids = parse_setids(site, datasets, dbids=True)
+    with scoped_session(site) as session:
+        comments = session.query(Comment)\
+                          .options(joinedload(Comment.dataset))\
+                          .filter(Comment.dataset_id.in_(ids))
     # pylint: disable=protected-access
     for comment in sorted(comments, key=lambda x: (x.dataset._setid, x.id)):
         print(comment.dataset.setid, comment.id,
@@ -611,13 +628,14 @@ def marvcli_show(datasets):
       marv show setid  # show one dataset
       marv query --col=* | xargs marv show   # show all datasets
     """
-    app = create_app()  # pylint: disable=unused-variable
-    ids = parse_setids(datasets, dbids=True)
-    datasets = db.session.query(Dataset)\
-                         .options(db.joinedload(Dataset.files))\
-                         .filter(Dataset.id.in_(ids))\
-                         .all()
-    yamldoc = SHOW_TEMPLATE.render(datasets=datasets)
+    site = create_site()
+    ids = parse_setids(site, datasets, dbids=True)
+    with scoped_session(site) as session:
+        datasets = session.query(Dataset)\
+                             .options(joinedload(Dataset.files))\
+                             .filter(Dataset.id.in_(ids))\
+                             .all()
+        yamldoc = SHOW_TEMPLATE.render(datasets=datasets)
     print(yamldoc, end='')
 
 
@@ -628,11 +646,11 @@ def marvcli_comment_rm(ids):
 
     Remove comments by id as given in second column of: marv comment list
     """
-    app = create_app()  # pylint: disable=unused-variable
-    db.session.query(Comment)\
-              .filter(Comment.id.in_(ids))\
-              .delete(synchronize_session=False)
-    db.session.commit()
+    site = create_site()
+    with scoped_session(site) as session:
+        session.query(Comment)\
+               .filter(Comment.id.in_(ids))\
+               .delete(synchronize_session=False)
 
 
 @marvcli.group('user')
@@ -652,9 +670,9 @@ def marvcli_user_add(username, password):
         sys.exit(1)
     if password is None:
         password = click.prompt('Password', hide_input=True, confirmation_prompt=True)
-    app = create_app()  # pylint: disable=unused-variable
+    site = create_site()
     try:
-        app.site.user_add(username, password, 'marv', '')  # pylint: disable=no-member
+        site.user_add(username, password, 'marv', '')
     except ValueError as e:
         click.echo(f'Error: {e.args[0]}', err=True)
         sys.exit(1)
@@ -663,9 +681,10 @@ def marvcli_user_add(username, password):
 @marvcli_user.command('list')
 def marvcli_user_list():
     """List existing users"""
-    app = create_app()  # pylint: disable=unused-variable
-    query = db.session.query(User).options(db.joinedload(User.groups))\
-                                  .order_by(User.name)
+    site = create_site()
+    with scoped_session(site) as session:
+        query = session.query(User).options(joinedload(User.groups))\
+                                   .order_by(User.name)
     users = [(user.name, ', '.join(sorted(x.name for x in user.groups)))
              for user in query]
     users = [('User', 'Groups')] + users
@@ -687,9 +706,9 @@ def marvcli_user_list():
 @click.pass_context
 def marvcli_user_pw(ctx, username, password):
     """Change password"""
-    app = create_app()  # pylint: disable=unused-variable
+    site = create_site()
     try:
-        app.site.user_pw(username, password)  # pylint: disable=no-member
+        site.user_pw(username, password)
     except ValueError as e:
         ctx.fail(e.args[0])
 
@@ -699,9 +718,9 @@ def marvcli_user_pw(ctx, username, password):
 @click.pass_context
 def marvcli_user_rm(ctx, username):
     """Remove a user"""
-    app = create_app()  # pylint: disable=unused-variable
+    site = create_site()
     try:
-        app.site.user_rm(username)  # pylint: disable=no-member
+        site.user_rm(username)
     except ValueError as e:
         ctx.fail(e.args[0])
 
@@ -720,9 +739,9 @@ def marvcli_group_add(ctx, groupname):
         click.echo(f'Invalid groupname: {groupname}', err=True)
         click.echo('Must only contain ASCII letters, numbers, dash, underscore and dot', err=True)
         sys.exit(1)
-    app = create_app()  # pylint: disable=unused-variable
+    site = create_site()
     try:
-        app.site.group_add(groupname)  # pylint: disable=no-member
+        site.group_add(groupname)
     except ValueError as e:
         ctx.fail(e.args[0])
 
@@ -730,8 +749,9 @@ def marvcli_group_add(ctx, groupname):
 @marvcli_group.command('list')
 def marvcli_group_list():
     """List existing groups"""
-    app = create_app()  # pylint: disable=unused-variable
-    query = db.session.query(Group.name).order_by(Group.name)
+    site = create_site()
+    with scoped_session(site) as session:
+        query = session.query(Group.name).order_by(Group.name)
     for name in [x[0] for x in query]:
         click.echo(name)
 
@@ -742,9 +762,9 @@ def marvcli_group_list():
 @click.pass_context
 def marvcli_group_adduser(ctx, groupname, username):
     """Add an user to a group"""
-    app = create_app()  # pylint: disable=unused-variable
+    site = create_site()
     try:
-        app.site.group_adduser(groupname, username)  # pylint: disable=no-member
+        site.group_adduser(groupname, username)
     except ValueError as e:
         ctx.fail(e.args[0])
 
@@ -755,9 +775,9 @@ def marvcli_group_adduser(ctx, groupname, username):
 @click.pass_context
 def marvcli_group_rmuser(ctx, groupname, username):
     """Remove an user from a group"""
-    app = create_app()  # pylint: disable=unused-variable
+    site = create_site()
     try:
-        app.site.group_rmuser(groupname, username)  # pylint: disable=no-member
+        site.group_rmuser(groupname, username)
     except ValueError as e:
         ctx.fail(e.args[0])
 
@@ -767,8 +787,8 @@ def marvcli_group_rmuser(ctx, groupname, username):
 @click.pass_context
 def marvcli_group_rm(ctx, groupname):
     """Remove a group"""
-    app = create_app()  # pylint: disable=unused-variable
+    site = create_site()
     try:
-        app.site.group_rm(groupname)  # pylint: disable=no-member
+        site.group_rm(groupname)
     except ValueError as e:
         ctx.fail(e.args[0])
