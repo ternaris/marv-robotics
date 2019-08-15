@@ -46,7 +46,7 @@ By default, all data related to a marv site is stored in a site directory. It ho
 - ``marv.conf`` the marv configuration file
 - ``sessionkey`` if it changes, users will have to relogin
 - ``store`` of all node output, theoretically possible to recreate by running all nodes, which might not be feasible
-- ``uwsgi.conf`` configuration for uwsgi serving the marv application
+- ``gunicorn_cfg.py`` configuration for gunicorn serving the marv application
 
 Make sure to create regular backups of this site directory or the individual components in case you placed them elsewhere. It is not necessary to stop marv to create backups.
 
@@ -64,7 +64,7 @@ The dump contains:
 Apart from the dump, you need to copy from old site:
 
   - marv.conf
-  - uwsgi.conf
+  - gunicorn_cfg.py
   - sessionkey (if it changes, users will have to relogin)
   - store (if you don't copy the store, all nodes will have to rerun)
 
@@ -75,7 +75,7 @@ Apart from the dump, you need to copy from old site:
 
    cd ../new-site
    cp -a ../old-site/marv.conf ./
-   cp -a ../old-site/uwsgi.conf ./
+   cp -a ../old-site/gunicorn_cfg.py ./
    cp -a ../old-site/sessionkey ./
    cp -a ../old-site/store ./
    marv restore ../dump.json

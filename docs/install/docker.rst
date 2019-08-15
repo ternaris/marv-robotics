@@ -69,7 +69,7 @@ Run container provides instructions for the basic use case.
 
    Usage: run-container SITE SCANROOT [EXTRA_OPTS ...]
 
-   The site is expected to contain marv.conf and uwsgi.conf.
+   The site is expected to contain marv.conf and gunicorn_cfg.py.
    It is mounted inside the container at /home/marv/site.
 
    The scanroot contains the log files for one or more collections.
@@ -86,7 +86,7 @@ Without further arguments it will run the container in the foreground, which is 
 Use ``--detach`` to start the container in the background.
 
 ::
-   
+
    $ ./scripts/run-container sites/example path/to/scanroot --detach
 
 Either way, you can enter the running container.

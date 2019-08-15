@@ -44,7 +44,8 @@ There is one collection that uses marv robotics' default bag scanner :func:`marv
 
 .. note::
 
-   Whenever you change your configuration, remember to stop ``uwsgi`` (see below), rerun ``marv init``, and then start ``uwsgi`` again.
+   Whenever you change your configuration, remember to stop ``gunicorn`` (see
+   below), rerun ``marv init``, and then start ``gunicorn`` again.
 
 **docker**:
 
@@ -58,32 +59,41 @@ Tell container to run ``marv init`` and install all code in development mode.
 Serve the site
 --------------
 
-MARV is implemented using the Web Server Gateway Interface (`WSGI <https://www.python.org/dev/peps/pep-3333/>`_) and we are using the `uwsgi <https://uwsgi-docs.readthedocs.io/en/latest/>`_ application server with a simple configuration file ``site/uwsgi-dev.conf`` suitable to serve it for development:
+The MARV backend is implemented using the asynchronous HTTP client/server
+framework `aiohttp <https://github.com/aio-libs/aiohttp>`_ and can be
+efficiently served using the Python WSGI HTTP Server `Gunicorn
+<https://gunicorn.org>`_. Gunicorn can be configured with a simple configuration
+file ``site/gunicorn_cfg.py`` to serve MARV for development or production:
 
-.. literalinclude:: setup-basic-site0/uwsgi-dev.conf
-    :language: cfg
+.. literalinclude:: setup-basic-site0/gunicorn_cfg.py
+    :language: python
 
-uwsgi got installed into the virtual environment during installation and you used it already to serve the documentation you are looking at. Let's stop that and restart with the configuration we just created. The new one will continue to serve the documentation:
+Gunicorn got installed into the virtual environment during installation and you
+used it already to serve the documentation you are looking at. Let's stop that
+and restart with the configuration we just created. The new one will continue to
+serve the documentation:
 
 .. code-block:: console
 
   CTRL-C
-  (venv) $ uwsgi --ini site/uwsgi-dev.conf
+  (venv) $ gunicorn -c site/gunicorn_cfg.py marv.app.wsgi:create_app
   ...
-  mounting marv.app.wsgi:application on /
-  WSGI app 0 (mountpoint='/') ready in 0 seconds on interpreter 0x207e9a0 pid: 3806 (default app)
-  *** uWSGI is running in multiple interpreter mode ***
-  spawned uWSGI worker 1 (pid: 3806, cores: 1)
-  spawned uWSGI worker 2 (pid: 3812, cores: 1)
-  spawned uWSGI worker 3 (pid: 3813, cores: 1)
-  spawned uWSGI worker 4 (pid: 3814, cores: 1)
+  [2019-08-15 14:48:03 +0200] [8255] [INFO] Starting gunicorn 19.9.0
+  [2019-08-15 14:48:03 +0200] [8255] [INFO] Listening at: http://0.0.0.0:8000 (8255)
+  [2019-08-15 14:48:03 +0200] [8255] [INFO] Using worker: aiohttp.GunicornUVLoopWebWorker
+  [2019-08-15 14:48:03 +0200] [8258] [INFO] Booting worker with pid: 8258
+  [2019-08-15 14:48:03 +0200] [8259] [INFO] Booting worker with pid: 8259
+  [2019-08-15 14:48:03 +0200] [8260] [INFO] Booting worker with pid: 8260
+  [2019-08-15 14:48:03 +0200] [8261] [INFO] Booting worker with pid: 8261
 
 You should see something like the above lines and MARV should be accessible via http://localhost:8000. In case you are running inside a container, make sure you forwarded the correct port.
 
 
 .. note::
 
-   In the course of this tutorial we'll keep changing the configuration. For these changes to take effect, uwsgi has to be stopped (CTRL-C) and the site reinitialized with ``marv init``.
+   In the course of this tutorial we'll keep changing the configuration. For
+   these changes to take effect, gunicorn has to be stopped (CTRL-C) and the
+   site reinitialized with ``marv init``.
 
 
 **docker**:
@@ -202,8 +212,13 @@ Reload your browser and check the result.
 Summary
 -------
 
-You initialized a marv site with one collection that looks for bag files in a scanroot directory. You setup uwsgi to serve your site for development purposes, created a user account for sign-in to the web application, populated the scanroot with some bag files and configured and ran nodes to display meta information about these bag files.
+You initialized a marv site with one collection that looks for bag files in a
+scanroot directory. You setup Gunicorn to serve your site for development
+purposes, created a user account for sign-in to the web application, populated
+the scanroot with some bag files and configured and ran nodes to display meta
+information about these bag files.
 
-Familiarize yourself a bit with the web frontend (http://localhost:8000). We intend it to be self-explanatory. Please let us know if you have questions.
+Familiarize yourself a bit with the web frontend (http://localhost:8000). We
+intend it to be self-explanatory. Please let us know if you have questions.
 
 Now your are ready to write your first nodes :ref:`write-your-own`.

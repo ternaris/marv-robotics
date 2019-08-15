@@ -156,7 +156,8 @@ Config
 
 .. note::
 
-   Remember to stop ``uwsgi``, run ``marv init``, and start ``uwsgi`` again.
+   Remember to stop ``gunicorn``, run ``marv init``, and start ``gunicorn``
+   again.
 
 
 Run nodes
@@ -207,7 +208,8 @@ Config
 
 .. note::
 
-   Remember to stop ``uwsgi``, run ``marv init``, and start ``uwsgi`` again.
+   Remember to stop ``gunicorn``, run ``marv init``, and start ``gunicorn``
+   again.
 
 .. code-block:: console
 
@@ -253,7 +255,8 @@ New is the ``table`` widget here, defined by ``rows`` and ``columns``. The colum
 
 .. note::
 
-   Remember to stop ``uwsgi``, run ``marv init``, and start ``uwsgi`` again.
+   Remember to stop ``gunicorn``, run ``marv init``, and start ``gunicorn``
+   again.
 
 .. code-block:: console
 
@@ -273,7 +276,8 @@ For nodes to be able to make files, they need to be persistent. We forgot to add
 
 .. note::
 
-   Remember to stop ``uwsgi``, run ``marv init``, and start ``uwsgi`` again.
+   Remember to stop ``gunicorn``, run ``marv init``, and start ``gunicorn``
+   again.
 
 .. code-block:: console
 

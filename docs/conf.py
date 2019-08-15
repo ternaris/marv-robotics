@@ -40,7 +40,7 @@ extensions = ['sphinx.ext.autodoc',
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
-intersphinx_mapping = {'python': ('https://docs.python.org/2.7', None)}
+intersphinx_mapping = {'python': ('https://docs.python.org/3.7', None)}
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:

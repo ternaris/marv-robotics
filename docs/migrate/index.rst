@@ -9,6 +9,45 @@ Migration
 Before doing any migration you might want to check the :ref:`config` and :ref:`deploy` sections.
 
 
+.. _migrate_19_07_to_19_10_0:
+
+19.07 -> 19.09.0
+----------------
+
+Uwsgi was replaced in favour of Gunicorn. In your site directory, replace
+``uwsgi.conf`` with a ``gunicorn_cfg.py``:
+
+.. code-block:: python
+
+   """Gunicorn configuration for MARV."""
+
+   import multiprocessing
+   import pathlib
+
+   # pylint: disable=invalid-name
+
+   bind = ':8000'
+   proc_name = 'marvweb'
+   raw_env = {
+       f'MARV_CONFIG={pathlib.Path(__file__).parent.resolve() / "marv.conf"}',
+   }
+   workers = multiprocessing.cpu_count() * 2 + 1
+   worker_class = 'aiohttp.GunicornUVLoopWebWorker'
+
+If you made any changes to your old ``uwsgi.conf`` please adjust the above
+config accordingly. If you are using an nginx reverse proxy you also have to
+adjust its configuration. Replace any ``uwsgi_pass`` directives with a
+``proxy_pass``:
+
+.. code-block:: diff
+
+   -       uwsgi_pass 127.0.0.1:8000;
+   -       include uwsgi_params;
+   +       proxy_set_header Host $host;
+   +       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+   +       proxy_pass 127.0.0.1:8000;
+
+
 .. _migrate_18_07_to_19_02_0:
 
 18.07 -> 19.02.0

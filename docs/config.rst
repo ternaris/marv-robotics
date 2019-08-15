@@ -8,7 +8,8 @@ Configuration
 
 The configuration file ``marv.conf`` is in Python config parser / ini-syntax and consists of at least one :ref:`cfg_section_marv` and one or more :ref:`cfg_section_collection`. See some :ref:`cfg_examples` below.
 
-If you make changes to your configuration, keep in mind that you have to stop ``uwsgi``, run ``marv init``, and start ``uwsgi`` again.
+If you make changes to your configuration, keep in mind that you have to stop
+``gunicorn``, run ``marv init``, and start ``gunicorn`` again.
 
 
 Relative paths
