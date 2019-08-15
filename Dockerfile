@@ -71,7 +71,6 @@ if [[ -n "$MARV_VENV" ]]; then \
     $MARV_VENV/bin/pip install -U pip==19.2.2 setuptools==41.1.0 wheel==0.33.4; \
     $MARV_VENV/bin/pip install -U -r /requirements/marv-robotics.txt; \
     $MARV_VENV/bin/pip install -U -r /requirements/develop.txt; \
-    $MARV_VENV/bin/pip install -U --force-reinstall --no-binary :all: uwsgi; \
 fi'
 
 ARG code=code
@@ -123,4 +122,5 @@ RUN echo 'source /etc/profile.d/marv_env.sh' >> /etc/bash.bashrc
 
 ENV ACTIVATE_VENV=1
 ENTRYPOINT ["/marv_entrypoint.sh"]
-CMD ["/opt/marv/bin/uwsgi", "--die-on-term", "--strict", "--uid", "marv", "--gid", "marv", "--ini", "uwsgi.conf"]
+CMD ["/opt/marv/bin/gunicorn", "--user", "marv", "--group", "marv", "--config", "gunicorn_cfg.py" \
+     "marv.app.wsgi:create_app"]

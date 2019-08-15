@@ -32,7 +32,6 @@ python3.7 -m venv "$TARGET"
 "$TARGET"/bin/pip install -U pip==19.2.2 setuptools==41.1.0 wheel==0.33.4
 "$TARGET"/bin/pip install -Ur "$REQUIREMENTS"
 "$TARGET"/bin/pip install -Ur requirements/develop.txt
-"$TARGET"/bin/pip install -U --force-reinstall --no-binary :all: uwsgi
 
 # Install all python distributions directly in code
 find code -maxdepth 2 -name setup.py -execdir "$TARGET"/bin/pip install --no-deps $PIP_ARGS . \;
