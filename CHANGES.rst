@@ -39,13 +39,15 @@ Changed
 - Update Python requirements to latest versions
 - Clean older changelog entries and add links to issues and MRs
 - Speed up rendering and sorting of tables with large number of rows
+- Drop flask-sqlalchemy in favour of plain sqlalchemy
+- **BREAKING** Switch from flask to aiohttp powered by gunicorn (see migration)
 
 Deprecated
 ~~~~~~~~~~
 
 Removed
 ~~~~~~~
-- Removed unneeded dependencies
+- Remove unneeded dependencies
 
 Fixed
 ~~~~~
@@ -56,8 +58,8 @@ Fixed
 
 Security
 ~~~~~~~~
-- Images published on dockerhub for latest release and master branch are rebuilt
-  by GitLab CI nightly if a newer base image is available
+- Rebuild images published on dockerhub for latest release and master branch by
+  GitLab CI nightly if a newer base image is available
 
 
 .. _v19_07_0:
@@ -68,7 +70,7 @@ Security
 Added
 ~~~~~
 - Add marv show cli command to show basic information about datasets
-  `#62 https://gitlab.com/ternaris/marv-robotics/issues/62>`_
+  `#62 <https://gitlab.com/ternaris/marv-robotics/issues/62>`_
 
 Fixed
 ~~~~~
