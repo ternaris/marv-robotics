@@ -30,6 +30,11 @@ def create_app(site, app_root='', middlewares=None):  # noqa: C901
         return dec
     app.route = route
 
+    site.load_for_web()
+
+    async def shutdown(app):  # pylint: disable=unused-argument
+        await site.destroy()
+    app.on_shutdown.append(shutdown)
     webapi.init_app(app, url_prefix='/marv/api', app_root=app_root)
 
     with open(site.config.marv.sessionkey_file) as f:

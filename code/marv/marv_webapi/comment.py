@@ -5,7 +5,6 @@ import time
 
 from aiohttp import web
 
-from marv.model import Comment, scoped_session
 from .tooling import api_endpoint as marv_api_endpoint
 
 
@@ -16,13 +15,13 @@ async def comment(request):
     if not changes:
         raise web.HTTPBadRequest()
 
-    with scoped_session(request.app['site']) as session:
-        for id, ops in changes.items():
-            now = int(time.time() * 1000)
-            comments = [Comment(dataset_id=id, author=username, time_added=now, text=text)
-                        for text in ops.get('add', [])]
-            session.add_all(comments)
-
+    now = int(time.time() * 1000)
+    comments = [
+        {'dataset_id': id, 'author': username, 'time_added': now, 'text': text}
+        for id, ops in changes.items()
+        for text in ops.get('add', [])
+    ]
+    await request.app['site'].db.bulk_comment(comments)
     # TODO: inform about unknown setids?
 
     return web.json_response({})

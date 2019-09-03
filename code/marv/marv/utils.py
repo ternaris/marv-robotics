@@ -12,6 +12,9 @@ from itertools import islice
 from marv_node.setid import decode_setid, encode_setid  # pylint: disable=unused-import
 
 
+NOTSET = type('NOTSET', (tuple,), {})()
+
+
 def chunked(iterable, chunk_size):
     itr = iter(iterable)
     return iter(lambda: tuple(islice(itr, chunk_size)), ())
@@ -24,9 +27,30 @@ def find_obj(objpath, name=False):
     return (objname, obj) if name else obj
 
 
+def findfirst(predicate, iterable, default=NOTSET):
+    try:
+        return next(x for x in iterable if predicate(x))
+    except StopIteration:
+        if default is not NOTSET:
+            return default
+        raise ValueError('No item matched predicate!')
+
+
 def mtime(path):
     """Wrap os.stat() st_mtime for ease of mocking."""
     return os.stat(path).st_mtime
+
+
+def stat(path):
+    """Wrap os.stat() for ease of mocking."""  # noqa: D402
+    # TODO: https://github.com/PyCQA/pydocstyle/issues/284
+    return os.stat(path)
+
+
+def walk(path):
+    """Wrap os.walk() for ease of mocking."""  # noqa: D402
+    # TODO: https://github.com/PyCQA/pydocstyle/issues/284
+    return os.walk(path)
 
 
 def now():

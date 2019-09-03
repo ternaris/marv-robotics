@@ -1,12 +1,12 @@
 [
   {
-    "title": "Position and Orientation", 
+    "title": "Position and Orientation",
     "widgets": [
       {
-        "_which": "image", 
+        "_which": "image",
         "image": {
           "src": "gnss_plots-1/gps:fix__gps:orientation.jpg"
-        }, 
+        },
         "title": "/gps/fix with /gps/orientation"
       }
     ]

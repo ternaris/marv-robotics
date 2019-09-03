@@ -43,6 +43,12 @@ ignored-modules=capnp.lib.capnp,
                 marv_pycapnp.types_capnp
 
 
+[CLASSES]
+exclude-protected=_asdict,
+                  _meta,
+                  _table_name
+
+
 [IMPORTS]
 known-third-party=cv2,
                   enchant

@@ -28,6 +28,7 @@ def authenticated():
         'file_list': ['__authenticated__'],
         'get_partial_url': ['__authenticated__'],
         'get_stream_url': ['__authenticated__'],
+        'rpcs': ['__authenticated__'],
         'stream': ['__authenticated__'],
         'tag': ['__authenticated__'],
     }
@@ -49,6 +50,7 @@ def public():
         'file_list': ['__unauthenticated__', '__authenticated__'],
         'get_partial_url': ['__unauthenticated__', '__authenticated__'],
         'get_stream_url': ['__unauthenticated__', '__authenticated__'],
+        'rpcs': ['__authenticated__'],
         'stream': ['__unauthenticated__'],
         'tag': ['__authenticated__'],
     }

@@ -2,134 +2,134 @@
   "datasets": {
     "bar": [
       {
-        "comments": [], 
-        "discarded": false, 
+        "comments": [],
+        "discarded": 0,
         "files": [
           {
-            "missing": false, 
-            "mtime": 1004000, 
-            "path": "SITEDIR/scanroots/bar/bar_a", 
+            "missing": 0,
+            "mtime": 1004000,
+            "path": "SITEDIR/scanroots/bar/bar_a",
             "size": 1
           }
-        ], 
-        "name": "bar_a", 
-        "setid": "e2oxlhpedjwked2llnnzir4tii", 
-        "status": 0, 
-        "tags": [], 
-        "time_added": 1, 
+        ],
+        "name": "bar_a",
+        "setid": "e2oxlhpedjwked2llnnzir4tii",
+        "status": 0,
+        "tags": [],
+        "time_added": 3000,
         "timestamp": 1004000
-      }, 
+      },
       {
         "comments": [
           {
-            "author": "user2", 
-            "text": "more\ncomment", 
+            "author": "user2",
+            "text": "more\ncomment",
             "time_added": 100001000
           }
-        ], 
-        "discarded": false, 
+        ],
+        "discarded": 0,
         "files": [
           {
-            "missing": false, 
-            "mtime": 1006000, 
-            "path": "SITEDIR/scanroots/bar/bar_Ψ", 
+            "missing": 0,
+            "mtime": 1006000,
+            "path": "SITEDIR/scanroots/bar/bar_\u03a8",
             "size": 1
           }
-        ], 
-        "name": "bar_Ψ", 
-        "setid": "phjg4ncymwbrbl4yx35bciqazq", 
-        "status": 0, 
+        ],
+        "name": "bar_\u03a8",
+        "setid": "phjg4ncymwbrbl4yx35bciqazq",
+        "status": 0,
         "tags": [
           "TAG2"
-        ], 
-        "time_added": 1, 
+        ],
+        "time_added": 4000,
         "timestamp": 1006000
       }
-    ], 
+    ],
     "foo": [
       {
         "comments": [
           {
-            "author": "user1", 
-            "text": "comment\ntext", 
+            "author": "user1",
+            "text": "comment\ntext",
             "time_added": 100000000
           }
-        ], 
-        "discarded": false, 
+        ],
+        "discarded": 0,
         "files": [
           {
-            "missing": false, 
-            "mtime": 1000000, 
-            "path": "SITEDIR/scanroots/foo/foo_a", 
+            "missing": 0,
+            "mtime": 1000000,
+            "path": "SITEDIR/scanroots/foo/foo_a",
             "size": 1
           }
-        ], 
-        "name": "foo_a", 
-        "setid": "l2vnfhfoe3z7ad7vclkd64tsqy", 
-        "status": 0, 
+        ],
+        "name": "foo_a",
+        "setid": "l2vnfhfoe3z7ad7vclkd64tsqy",
+        "status": 0,
         "tags": [
           "TAG1"
-        ], 
-        "time_added": 1, 
+        ],
+        "time_added": 1000,
         "timestamp": 1000000
-      }, 
+      },
       {
         "comments": [
           {
-            "author": "user2", 
-            "text": "more\ncomment", 
+            "author": "user2",
+            "text": "more\ncomment",
             "time_added": 100001000
           }
-        ], 
-        "discarded": false, 
+        ],
+        "discarded": 0,
         "files": [
           {
-            "missing": false, 
-            "mtime": 1002000, 
-            "path": "SITEDIR/scanroots/foo/foo_Ψ", 
+            "missing": 0,
+            "mtime": 1002000,
+            "path": "SITEDIR/scanroots/foo/foo_\u03a8",
             "size": 1
           }
-        ], 
-        "name": "foo_Ψ", 
-        "setid": "vdls3sgw5yanuat4uepmhjwcpm", 
-        "status": 0, 
+        ],
+        "name": "foo_\u03a8",
+        "setid": "vdls3sgw5yanuat4uepmhjwcpm",
+        "status": 0,
         "tags": [
-          "TAG1", 
+          "TAG1",
           "TAG2"
-        ], 
-        "time_added": 1, 
+        ],
+        "time_added": 2000,
         "timestamp": 1002000
       }
     ]
-  }, 
+  },
   "users": [
     {
-      "email": null, 
-      "family_name": null, 
-      "given_name": null, 
+      "email": null,
+      "family_name": null,
+      "given_name": null,
       "groups": [
         "admin"
-      ], 
-      "name": "user1", 
-      "password": "$2b$12$k67acf6S32i3nW0c7ycwe.Kxe3/ouYNNayzZ0BPo1hj5qODOYiZnm", 
-      "realm": "marv", 
-      "realmuid": "", 
-      "time_created": 1, 
-      "time_updated": 1
-    }, 
+      ],
+      "name": "user1",
+      "password": "$2b$12$k67acf6S32i3nW0c7ycwe.Kxe3/ouYNNayzZ0BPo1hj5qODOYiZnm",
+      "realm": "marv",
+      "realmuid": "",
+      "time_created": 4201,
+      "time_updated": 6000
+    },
     {
-      "email": null, 
-      "family_name": null, 
-      "given_name": null, 
+      "email": null,
+      "family_name": null,
+      "given_name": null,
       "groups": [
         "grp"
-      ], 
-      "name": "user2", 
-      "password": "$2b$12$k67acf6S32i3nW0c7ycwe.vQFvgywJmuRy2VNx580IzY8pELu7Oxy", 
-      "realm": "marv", 
-      "realmuid": "", 
-      "time_created": 1, 
-      "time_updated": 1
+      ],
+      "name": "user2",
+      "password": "$2b$12$k67acf6S32i3nW0c7ycwe.vQFvgywJmuRy2VNx580IzY8pELu7Oxy",
+      "realm": "marv",
+      "realmuid": "",
+      "time_created": 4203,
+      "time_updated": 6001
     }
   ]
 }

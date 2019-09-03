@@ -1,6 +1,7 @@
 # Copyright 2016 - 2019  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+import math
 import time
 from collections import OrderedDict
 
@@ -8,24 +9,23 @@ import jwt
 from aiohttp import web
 
 
-def check_authorization(request, acl, authorization):
-    from marv.model import User, scoped_session
-
+async def check_authorization(request, acl, authorization):
     username = None
     groups = {'__unauthenticated__'}
     if authorization:
-        with scoped_session(request.app['site']) as session:
-            try:
-                token = authorization.replace('Bearer ', '')
-                usession = jwt.decode(token, request.app['config']['SECRET_KEY'])
-                user = session.query(User).filter_by(name=usession['sub']).one()
-            except Exception:  # pylint: disable=broad-except
-                raise web.HTTPUnauthorized()
-            if user.time_updated > usession['iat']:
-                raise web.HTTPUnauthorized()
-            username = user.name
-            groups = {g.name for g in user.groups}
-            groups.add('__authenticated__')
+        token = authorization.replace('Bearer ', '')
+        try:
+            session = jwt.decode(token, request.app['config']['SECRET_KEY'], algorithm='HS256')
+        except BaseException:
+            raise web.HTTPUnauthorized()
+
+        user = await request.app['site'].db.get_user_by_name(session['sub'], deep=True)
+        if not user or user.time_updated.timestamp() > session['iat']:
+            raise web.HTTPUnauthorized()
+
+        username = user.name
+        groups = {g.name for g in user.groups}
+        groups.add('__authenticated__')
 
     elif '__unauthenticated__' not in acl:
         raise web.HTTPUnauthorized()
@@ -38,12 +38,12 @@ def check_authorization(request, acl, authorization):
 
 
 def generate_token(username, key):
-    now = int(time.time())
+    now = math.ceil(time.time())
     return jwt.encode({
         'exp': now + 2419200,  # 4 weeks expiration
         'iat': now,
         'sub': username,
-    }, key)
+    }, key, algorithm='HS256')
 
 
 class APIEndpoint:
@@ -66,7 +66,7 @@ class APIEndpoint:
         # TODO: can authorization be '' or is None test?
         if not authorization:
             authorization = request.query.get('access_token')
-        check_authorization(request, self.acl, authorization)
+        await check_authorization(request, self.acl, authorization)
 
         try:
             accepted = next(x[0] for x in request.headers.getall('ACCEPT', [])

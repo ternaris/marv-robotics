@@ -1,6 +1,7 @@
 # Copyright 2016 - 2019  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+import datetime
 import json
 import os
 from itertools import count
@@ -8,12 +9,13 @@ from pathlib import Path
 
 import mock
 import pytest
-import sqlalchemy as sqla
+from tortoise.transactions import in_transaction
 
 import marv
 import marv.app
+from marv.db import dump_database
 from marv.scanner import DatasetInfo
-from marv.site import Site, dump_database
+from marv.site import Site
 from marv.types import Int8Value, Section
 from marv_nodes import dataset as dataset_node
 
@@ -92,6 +94,24 @@ detail_sections =
 """
 
 
+def create_datemock():
+    vanilla_datetime = datetime.datetime
+    side_effect = count(6000)
+
+    class DatetimeMeta(type):
+        @classmethod
+        def __instancecheck__(cls, obj):
+            return isinstance(obj, vanilla_datetime)
+
+    class DatetimeBase(vanilla_datetime):
+        @classmethod
+        def utcnow(cls):
+            ret = vanilla_datetime.fromtimestamp(next(side_effect))
+            return ret
+
+    return DatetimeMeta('datetime', (DatetimeBase,), {})
+
+
 def scanner(dirpath, dirnames, filenames):  # pylint: disable=unused-argument
     return [DatasetInfo(x, [x]) for x in filenames]
 
@@ -115,7 +135,7 @@ def section_test(node):
 
 
 @pytest.fixture(scope='function')
-def site(tmpdir):
+async def site(tmpdir):
     flag = (tmpdir / 'TEST_SITE')
     flag.write('')
 
@@ -129,7 +149,7 @@ def site(tmpdir):
             path = tmpdir / 'scanroots' / sitename / name
             path.write(str(idx), ensure=True)
 
-    yield Site(marv_conf.strpath, init=True)
+    yield await Site.create(marv_conf.strpath, init=True)
 
 
 @pytest.fixture(scope='function')
@@ -170,27 +190,24 @@ async def test_dump(site, client):  # pylint: disable=redefined-outer-name  # no
     sitedir = os.path.dirname(site.config.filename)
 
     # Ensure all tables are empty / at factory defaults
-    select = sqla.sql.select
-    engine = sqla.create_engine(site.config.marv.dburi)
-    meta = sqla.MetaData(engine)
-    meta.reflect()
-    con = engine.connect()
-    tables = {
-        k: v for k, v in meta.tables.items()
-        if not k.startswith('listing_')
-        if not k.startswith('sqlite_')
-    }
-    assert {
-        'dataset', 'dataset_tag', 'tag', 'file', 'comment', 'user', 'user_group', 'group',
-    } == tables.keys()
-    for name, table in sorted(tables.items()):
-        rows = list(con.execute(select([table])))
-        if name == 'group':
-            assert rows == [(1, 'admin')]
-        else:
-            assert not rows, name
+    async with in_transaction() as connection:
+        query = 'SELECT name FROM sqlite_master WHERE type="table"'
+        tables = [
+            x['name'] for x in await connection.execute_query(query)
+            if not x['name'].startswith('l_')
+            if not x['name'].startswith('sqlite_')
+        ]
+        assert {
+            'dataset', 'dataset_tag', 'tag', 'file', 'comment', 'user', 'user_group', 'group',
+        } == set(tables)
+        for name in sorted(tables):
+            rows = list(await connection.execute_query(f'SELECT * FROM "{name}";'))
+            if name == 'group':
+                assert rows == [{'id': 1, 'name': 'admin'}]
+            else:
+                assert not rows, name
 
-    dump = dump_database(site.config.marv.dburi)
+    dump = await dump_database(site.config.marv.dburi)
     assert recorded(dump, 'empty_dump.json')
 
     metadata = await client.get_json('/marv/api/meta')
@@ -202,44 +219,46 @@ async def test_dump(site, client):  # pylint: disable=redefined-outer-name  # no
 
     # Populate database, asserting in multiple ways that it is populated
     with mock.patch('marv_node.setid.SetID.random', side_effect=SETIDS) as _, \
-            mock.patch('marv.utils.time', side_effect=count(2000)) as __, \
-            mock.patch('marv.utils.mtime', side_effect=count(1000)):
-        site.scan()
+            mock.patch('marv.utils.mtime', side_effect=count(1000)) as __, \
+            mock.patch('marv.utils.now', side_effect=count(1)):
+        await site.scan()
 
     with mock.patch('bcrypt.gensalt', return_value=b'$2b$12$k67acf6S32i3nW0c7ycwe.') as _, \
-            mock.patch('marv.utils.time', side_effect=count(2000)):
-        site.user_add('user1', 'pw1', 'marv', '')
-        site.user_add('user2', 'pw2', 'marv', '')
-    site.group_add('grp')
-    site.group_adduser('admin', 'user1')
-    site.group_adduser('grp', 'user2')
+            mock.patch.object(datetime, 'datetime', create_datemock()):
+        await site.db.user_add('user1', 'pw1', 'marv', '', time_created=4201, time_updated=4202)
+        await site.db.user_add('user2', 'pw2', 'marv', '', time_created=4203, time_updated=4204)
+    await site.db.group_add('grp')
+    await site.db.group_adduser('admin', 'user1')
+    await site.db.group_adduser('grp', 'user2')
 
-    fooids = site.query(['foo'])
-    barids = site.query(['bar'])
-    site.tag(fooids, add=['TAG1'])
-    site.tag([fooids[1], barids[1]], add=['TAG2'])
+    fooids = await site.db.query(['foo'])
+    barids = await site.db.query(['bar'])
+    await site.db.update_tags_for_setids(fooids, add=['TAG1'], remove=[])
+    await site.db.update_tags_for_setids([fooids[1], barids[1]], add=['TAG2'], remove=[])
 
-    fooid0 = con.execute('SELECT id FROM dataset WHERE setid = $1', fooids[0]).scalar()
-    fooid1 = con.execute('SELECT id FROM dataset WHERE setid = $1', fooids[1]).scalar()
-    barid1 = con.execute('SELECT id FROM dataset WHERE setid = $1', barids[1]).scalar()
     with mock.patch('marv.utils.now', side_effect=count(100000)):
-        site.comment('user1', 'comment\ntext', [fooid0])
-        site.comment('user2', 'more\ncomment', [fooid1, barid1])
+        await site.db.comment_multiple([fooids[0]], 'user1', 'comment\ntext')
+        await site.db.comment_multiple([fooids[1], barids[1]], 'user2', 'more\ncomment')
 
-    # Ensure all tables have been populated
-    tables = {k: v for k, v in meta.tables.items() if not k.startswith('listing_')}
-    for name, table in sorted(tables.items()):
-        rows = list(con.execute(select([table])))
-        if name == 'group':
-            assert len(rows) > 1
-        else:
-            assert rows, name
+    async with in_transaction() as connection:
+        # Ensure all tables have been populated
+        query = 'SELECT name FROM sqlite_master WHERE type="table"'
+        tables = [
+            x['name'] for x in (await connection.execute_query(query))
+            if not x['name'].startswith('l_')
+        ]
+        for name in sorted(tables):
+            rows = list(await connection.execute_query(f'SELECT * FROM "{name}"'))
+            if name == 'group':
+                assert len(rows) > 1
+            else:
+                assert rows, name
 
     # Run nodes
     for setid in fooids + barids:
-        changed = site.run(setid)
+        changed = await site.run(setid)
         assert len(changed) == 5
-        changed = site.run(setid)
+        changed = await site.run(setid)
         assert not changed
 
     listings = {}
@@ -263,7 +282,7 @@ async def test_dump(site, client):  # pylint: disable=redefined-outer-name  # no
     assert recorded(details, 'full_details.json')
 
     # Dump database
-    dump = dump_database(site.config.marv.dburi)
+    dump = await dump_database(site.config.marv.dburi)
     for datasets in dump['datasets'].values():
         for dataset in datasets:
             for file in dataset['files']:
@@ -277,27 +296,24 @@ async def test_restore(client, site):  # pylint: disable=redefined-outer-name  #
     sitedir = os.path.dirname(site.config.filename)
 
     # Ensure all tables are empty / at factory defaults
-    select = sqla.sql.select
-    engine = sqla.create_engine(site.config.marv.dburi)
-    meta = sqla.MetaData(engine)
-    meta.reflect()
-    con = engine.connect()
-    tables = {
-        k: v for k, v in meta.tables.items()
-        if not k.startswith('listing_')
-        if not k.startswith('sqlite_')
-    }
-    assert {
-        'dataset', 'dataset_tag', 'tag', 'file', 'comment', 'user', 'user_group', 'group',
-    } == tables.keys()
-    for name, table in sorted(tables.items()):
-        rows = list(con.execute(select([table])))
-        if name == 'group':
-            assert rows == [(1, 'admin')]
-        else:
-            assert not rows, name
+    async with in_transaction() as connection:
+        query = 'SELECT name FROM sqlite_master WHERE type="table"'
+        tables = [
+            x['name'] for x in await connection.execute_query(query)
+            if not x['name'].startswith('l_')
+            if not x['name'].startswith('sqlite_')
+        ]
+        assert {
+            'dataset', 'dataset_tag', 'tag', 'file', 'comment', 'user', 'user_group', 'group',
+        } == set(tables)
+        for name in sorted(tables):
+            rows = list(await connection.execute_query(f'SELECT * FROM "{name}";'))
+            if name == 'group':
+                assert rows == [{'id': 1, 'name': 'admin'}]
+            else:
+                assert not rows, name
 
-    dump = dump_database(site.config.marv.dburi)
+    dump = await dump_database(site.config.marv.dburi)
     assert recorded(dump, 'empty_dump.json')
 
     metadata = await client.get_json('/marv/api/meta')
@@ -313,24 +329,29 @@ async def test_restore(client, site):  # pylint: disable=redefined-outer-name  #
         for dataset in datasets:
             for file in dataset['files']:
                 file['path'] = file['path'].replace('SITEDIR', sitedir)
-    site.restore_database(**full_dump)
+    await site.restore_database(**full_dump)
 
     # Ensure all tables have been populated
-    tables = {k: v for k, v in meta.tables.items() if not k.startswith('listing_')}
-    for name, table in sorted(tables.items()):
-        rows = list(con.execute(select([table])))
-        if name == 'group':
-            assert len(rows) > 1
-        else:
-            assert rows, name
+    async with in_transaction() as connection:
+        query = 'SELECT name FROM sqlite_master WHERE type="table"'
+        tables = [
+            x['name'] for x in (await connection.execute_query(query))
+            if not x['name'].startswith('l_')
+        ]
+        for name in sorted(tables):
+            rows = list(await connection.execute_query(f'SELECT * FROM "{name}"'))
+            if name == 'group':
+                assert len(rows) > 1
+            else:
+                assert rows, name
 
     # Run nodes
-    fooids = site.query(['foo'])
-    barids = site.query(['bar'])
+    fooids = await site.db.query(['foo'])
+    barids = await site.db.query(['bar'])
     for setid in fooids + barids:
-        changed = site.run(setid)
+        changed = await site.run(setid)
         assert len(changed) == 5
-        changed = site.run(setid)
+        changed = await site.run(setid)
         assert not changed
 
     # Assert listing is still the same
@@ -356,7 +377,7 @@ async def test_restore(client, site):  # pylint: disable=redefined-outer-name  #
     assert recorded(details, 'full_details.json')
 
     # Redump database and assert dumps are the same
-    dump = dump_database(site.config.marv.dburi)
+    dump = await dump_database(site.config.marv.dburi)
     dump = json.loads(json.dumps(dump))
     full_dump = json.loads((DATADIR / 'full_dump.json').read_text())
     for datasets in full_dump['datasets'].values():

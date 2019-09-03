@@ -56,7 +56,7 @@ def notype(dataset):
 
 
 @pytest.fixture(scope='function')
-def site(tmpdir):
+async def site(loop, tmpdir):  # pylint: disable=unused-argument
     flag = (tmpdir / 'TEST_SITE')
     flag.write('')
 
@@ -70,9 +70,11 @@ def site(tmpdir):
             path = tmpdir / 'scanroots' / sitename / name
             path.write(str(idx), ensure=True)
 
-    yield Site(marv_conf.strpath, init=True)
+    site_ = await Site.create(marv_conf.strpath, init=True)
+    yield site_
+    await site_.destroy()
 
 
-def test_fail_notype(site):  # pylint: disable=redefined-outer-name
+async def test_fail_notype(site):  # pylint: disable=redefined-outer-name
     with pytest.raises(ConfigError):
-        site.scan()
+        await site.scan()

@@ -1,18 +1,16 @@
 # Copyright 2016 - 2019  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+import logging
+import sqlite3
 from collections import OrderedDict, namedtuple
-from contextlib import contextmanager
 
-from sqlalchemy import Boolean, Column, Float, ForeignKey, Index, Integer, String, Table
-from sqlalchemy import event, schema
-from sqlalchemy.engine import Engine
-from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship
+import tortoise
+from tortoise.fields import BooleanField, DatetimeField, FloatField, ForeignKeyField, IntField
+from tortoise.fields import ManyToManyField, TextField
+from tortoise.models import Model
 
-from marv_node.setid import SetID
+from . import model_fields as custom
 from .utils import underscore_to_camelCase
 
 _LISTING_PREFIX = ''  # Only for testing
@@ -29,49 +27,23 @@ STATUS_OUTDATED = 4
 STATUS_PENDING = 8
 
 
-Model = declarative_base(name='Model')
+tortoise.logger.setLevel(logging.WARN)
 
 
-@contextmanager
-def scoped_session(site):
-    """Transaction scope for database operations."""
-    session = site.session()
-    try:
-        yield session
-        session.commit()
-    except BaseException:
-        session.rollback()
-        raise
-    finally:
-        session.close()
+def patch_pypika_boolean_for_old_sqlite():
+    from pypika.terms import ValueWrapper
+
+    _original = ValueWrapper.get_value_sql
+
+    def get_value_sql(self, **kwargs):
+        value = _original(self, **kwargs)
+        return {'true': 1, 'false': 0}.get(value, value)
+
+    ValueWrapper.get_value_sql = get_value_sql
 
 
-@event.listens_for(Engine, 'connect')
-def set_sqlite_pragma_connect(dbapi_connection, _):
-    cursor = dbapi_connection.cursor()
-    # page_size must be before journal_mode
-    cursor.execute('PRAGMA foreign_keys=ON;')
-    cursor.execute('PRAGMA page_size=4096;')
-    cursor.execute('PRAGMA journal_mode=WAL')
-    cursor.execute('PRAGMA synchronous=NORMAL;')
-    # TODO: we don't want the websever to checkpoint,
-    # ever. Checkpointing should happen via cli.
-    cursor.close()
-
-
-@event.listens_for(Engine, 'close')
-def set_sqlite_pragma_close(dbapi_connection, _):
-    cursor = dbapi_connection.cursor()
-    cursor.execute('PRAGMA optimize;')  # ignored prior to 3.18.0
-    cursor.close()
-
-
-@compiles(schema.CreateTable)
-def compile(element, compiler, **kw):
-    text = compiler.visit_create_table(element, **kw)
-    if element.element.info.get('without_rowid'):
-        text = text.rstrip() + ' WITHOUT ROWID\n\n'
-    return text
+if sqlite3.sqlite_version_info < (3, 23, 0):
+    patch_pypika_boolean_for_old_sqlite()
 
 
 def make_status_property(bitmask, doc=None):
@@ -91,45 +63,20 @@ def make_status_property(bitmask, doc=None):
     return property(fget, fset, fdel, doc)
 
 
-dataset_tag = Table(  # pylint: disable=invalid-name
-    'dataset_tag',
-    Model.metadata,
-    Column('dataset_id', Integer, ForeignKey('dataset.id'), primary_key=True),
-    Column('tag_id', Integer, ForeignKey('tag.id'), primary_key=True),
-    info={'without_rowid': True},
-)
-
-
 class Dataset(Model):
-    __tablename__ = 'dataset'
-    id = Column(Integer, primary_key=True)
+    id = IntField(pk=True)
 
-    # TODO: consider Collection model
-    collection = Column(String)
-    discarded = Column(Boolean, default=False)
-    name = Column(String)
-    status = Column(Integer, default=0)
-    time_added = Column(Integer, nullable=False)  # ms since epoch
-    timestamp = Column(Integer, nullable=False)  # ms since epoch
+    collection = TextField()
+    discarded = BooleanField(default=False)
+    name = TextField()
+    status = IntField(default=0)
+    time_added = IntField()  # ms since epoch
+    timestamp = IntField()  # ms since epoch
 
-    _setid = Column('setid', String, unique=True, nullable=False)
-    @hybrid_property
-    def setid(self):
-        return SetID(self._setid)
+    setid = custom.SetIDField(unique=True)
+    tags = ManyToManyField('models.Tag', related_name='datasets')
 
-    @setid.setter
-    def setid(self, value):
-        self._setid = str(value)
-
-    @setid.expression
-    def setid(self):
-        return self._setid
-
-    comments = relationship('Comment', back_populates='dataset', lazy='raise')
-    files = relationship('File', back_populates='dataset', lazy='joined')
-    # Handled via backref on Tag
-    # tags = relationship('Tag', secondary=dataset_tag, lazy='raise',
-    #                        back_populates='datasets'),
+    # Populated by backreferences: comments, files
 
     error = make_status_property(1)
     missing = make_status_property(2)
@@ -141,162 +88,122 @@ class Dataset(Model):
 
 
 class File(Model):
-    # pylint: disable=too-few-public-methods
+    id = IntField(pk=True)
+    dataset = ForeignKeyField('models.Dataset', related_name='files')
+    idx = IntField()  # files are counted per dataset
 
-    __tablename__ = 'file'
-    __table_args__ = (
-        {'info': {'without_rowid': True}},
-    )
-    dataset_id = Column(Integer, ForeignKey('dataset.id'), primary_key=True)
-    idx = Column(Integer, primary_key=True)  # files are counted per dataset
-
-    missing = Column(Boolean, default=False)
-    mtime = Column(Integer, nullable=False)  # ms since epoch
-    path = Column(String, nullable=False)
-    size = Column(Integer, nullable=False)
-
-    dataset = relationship('Dataset', back_populates='files', lazy='raise')
+    missing = BooleanField(default=False)
+    mtime = IntField()  # ms since epoch
+    path = TextField()
+    size = IntField()
 
     def __repr__(self):
         return f"<{type(self).__name__} '{self.path}'>"
 
 
 class Comment(Model):
-    # pylint: disable=too-few-public-methods
+    id = IntField(pk=True)
+    dataset = ForeignKeyField('models.Dataset', related_name='comments')
 
-    __tablename__ = 'comment'
-    id = Column(Integer, primary_key=True)
-    dataset_id = Column(Integer, ForeignKey('dataset.id'))
-
-    author = Column(String, nullable=False)
-    time_added = Column(Integer, nullable=False)  # ms since epoch
-    text = Column(String, nullable=False)
-
-    dataset = relationship('Dataset', back_populates='comments', lazy='raise')
+    author = TextField()
+    time_added = IntField()  # ms since epoch
+    text = TextField()
 
 
 class Tag(Model):
-    # pylint: disable=too-few-public-methods
+    class Meta:  # pylint: disable=too-few-public-methods
+        unique_together = (
+            ('collection', 'value'),
+        )
 
-    __tablename__ = 'tag'
-    __table_args__ = (
-        Index('idx_tag_collection_value', 'collection', 'value', unique=True),
-    )
-    id = Column(Integer, primary_key=True)
-    collection = Column(String, nullable=False)
-    value = Column(String)
-    datasets = relationship('Dataset', secondary=dataset_tag, lazy='raise',
-                            backref='tags')
-
-
-user_group = Table(  # pylint: disable=invalid-name
-    'user_group',
-    Model.metadata,
-    Column('user_id', Integer, ForeignKey('user.id'), primary_key=True),
-    Column('group_id', Integer, ForeignKey('group.id'), primary_key=True),
-    info={'without_rowid': True},
-)
+    id = IntField(pk=True)
+    collection = TextField()
+    value = TextField()
 
 
 class User(Model):
-    # pylint: disable=too-few-public-methods
-
-    __tablename__ = 'user'
-    id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False, unique=True)
-    password = Column(String)
-    given_name = Column(String)
-    family_name = Column(String)
-    email = Column(String)
-    realm = Column(String, nullable=False)
-    realmuid = Column(String)
-    time_created = Column(Integer, nullable=False)
-    time_updated = Column(Integer, nullable=False)
+    id = IntField(pk=True)
+    name = TextField(unique=True)
+    password = TextField(null=True)
+    given_name = TextField(null=True)
+    family_name = TextField(null=True)
+    email = TextField(null=True)
+    realm = TextField()
+    realmuid = TextField(null=True)
+    time_created = DatetimeField(auto_now_add=True)
+    time_updated = DatetimeField(auto_now=True)
+    groups = ManyToManyField('models.Group', related_name='users')
 
 
 class Group(Model):
-    # pylint: disable=too-few-public-methods
-
-    __tablename__ = 'group'
-    id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False, unique=True)
-    # TODO: switch to lazy raise
-    users = relationship('User', secondary=user_group, backref='groups')
+    id = IntField(pk=True)
+    name = TextField(unique=True)
 
 
-# pylint: disable=invalid-name
-dataset = Dataset.__table__
-file = File.__table__
-comment = Comment.__table__
-tag = Tag.__table__
-user = User.__table__
-group = Group.__table__
-# pylint: enable=invalid-name
+__models__ = [Dataset, File, Comment, Tag, User, Group]
+
 
 ListingModel = namedtuple('ListingModel', 'Listing relations secondaries')
+ListingDescriptor = namedtuple('ListingDescriptor', 'table key through rel_id listing_id')
 
 
 def make_listing_model(name, filter_specs):
-    relations = {}
-    secondaries = {}
-    listing_name = f'{_LISTING_PREFIX}listing_{name}'
+    models = []
+    listing_name = f'{_LISTING_PREFIX}l_{name}'
     listing_model_name = underscore_to_camelCase(listing_name)
-    listingid = f'{listing_name}.id'
 
     def generate_relation(fname):
-        sec_name = f'{listing_name}_{fname}_sec'
         rel_name = f'{listing_name}_{fname}'
         rel_model_name = underscore_to_camelCase(rel_name)
-        relid = f'{rel_name}.id'
         assert '_' not in rel_model_name, rel_model_name
-        secondary = Table(
-            sec_name,
-            Model.metadata,
-            Column('listing_id', Integer, ForeignKey(listingid), primary_key=True),
-            Column('relation_id', Integer, ForeignKey(relid), primary_key=True),
-            info={'without_rowid': True},
-        )
-        secondaries[fname] = secondary
-        relations[fname] = type(rel_model_name, (Model,), {
-            '__tablename__': rel_name,
-            'id': Column(Integer, primary_key=True),
-            'value': Column(String, index=True, unique=True),
-            'listing': relationship(listing_model_name,
-                                    secondary=secondary,
-                                    lazy='raise',
-                                    back_populates=fname),
+
+        model = type(rel_model_name, (Model,), {
+            'Meta': type('Meta', (), {'table': rel_name}),
+            'id': IntField(pk=True),
+            'value': TextField(index=True, unique=True),
             '__repr__': lambda self: f'<{type(self).__name__} {self.id} {self.value!r}>',
         })
-        return relationship(rel_model_name, secondary=secondary,
-                            lazy='raise', back_populates='listing')
+
+        models.append(model)
+        return ManyToManyField(f'models.{rel_model_name}', related_name='listing')
 
     coltype_factories = {
         # All dates and times in ms (since epoch)
-        'datetime': lambda name: Column(Integer),
-        'filesize': lambda name: Column(Integer),
-        'float': lambda name: Column(Float),
-        'int': lambda name: Column(Integer),
-        'string': lambda name: Column(String),
+        'datetime': lambda name: IntField(null=True),
+        'filesize': lambda name: IntField(null=True),
+        'float': lambda name: FloatField(null=True),
+        'int': lambda name: IntField(null=True),
+        'string': lambda name: TextField(null=True),
         'string[]': generate_relation,
         'subset': generate_relation,
-        'timedelta': lambda name: Column(Integer),
-        'words': lambda name: Column(String),
+        'timedelta': lambda name: IntField(null=True),
+        'words': lambda name: TextField(null=True),
     }
 
     dct = {
-        '__tablename__': listing_name,
-        '__table_args__': (
-            {'info': {'without_rowid': True}}
-        ),
-        'id': Column(Integer, ForeignKey('dataset.id'), primary_key=True),
-        'row': Column(String),
-        'dataset': relationship('Dataset'),
-        '__repr__': lambda self: f'<{type(self).__name__} {self.id}>',
+        'Meta': type('Meta', (), {'table': listing_name}),
+        'id': IntField(pk=True),
+        'row': TextField(null=True),
+        '__repr__': lambda self: f'<{type(self).__name__} {self.dataset_id}>',
     }
-    assert not filter_specs.keys() & dct.keys()
+
     dct.update((fspec.name, coltype_factories[fspec.value_type](fspec.name))
                for fspec in filter_specs.values()
-               if fspec.name not in ('comments', 'status', 'tags'))
+               if fspec.name not in ('dataset', 'row', 'comments', 'status', 'tags'))
 
-    Listing = type(listing_model_name, (Model,), dct)
-    return ListingModel(Listing, relations, secondaries)
+    models.append(type(listing_model_name, (Model,), dct))
+    return models
+
+
+def make_table_descriptors(models):
+    listing = models[-1]
+    meta = listing._meta
+
+    result = [ListingDescriptor(meta.table, '', '', '', '')]
+    for key in meta.m2m_fields:
+        field = meta.fields_map[key]
+        table = field.type._meta.table
+        result.append(
+            ListingDescriptor(table, key, field.through, field.forward_key, field.backward_key))
+
+    return result

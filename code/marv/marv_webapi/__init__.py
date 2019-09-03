@@ -8,6 +8,7 @@ from .collection import collection, meta
 from .comment import comment
 from .dataset import dataset
 from .delete import delete
+from .rpcs import rpcs
 from .tag import tag
 from .tooling import api_group as marv_api_group
 
@@ -24,6 +25,7 @@ webapi.add_endpoint(dataset)
 webapi.add_endpoint(delete)
 webapi.add_endpoint(collection)
 webapi.add_endpoint(meta)
+webapi.add_endpoint(rpcs)
 webapi.add_endpoint(tag)
 
 

@@ -92,8 +92,8 @@ def setup_logging(loglevel, verbosity=0, logfilter=None):
     level = levels[min(levels.index(loglevel) + verbosity, len(levels) - 1)]
     root.setLevel(LOGLEVEL[level])
 
-    if os.environ.get('MARV_ECHO_SQL'):
-        logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+    logging.getLogger('tortoise').setLevel(logging.INFO if os.environ.get('MARV_ECHO_SQL') else
+                                           logging.WARN)
 
 
 @click.group()

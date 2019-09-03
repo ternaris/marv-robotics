@@ -6,10 +6,10 @@ from json import dumps as jsondumps
 
 import pendulum
 from aiohttp import web
-from sqlalchemy.sql import select
 
-from marv.collection import Filter, UnknownOperator
-from marv.model import STATUS, Tag, scoped_session
+from marv.collection import Filter
+from marv.db import UnknownOperator
+from marv.model import STATUS
 from marv.utils import parse_datetime, parse_filesize, parse_timedelta
 from .tooling import APIEndpoint, api_endpoint as marv_api_endpoint
 
@@ -60,16 +60,14 @@ STATUS_STRS = {
 }
 
 
-class FilterParseError(Exception):
-    pass
-
-
 def parse_filters(specs, filters):
-    filters = json.loads(filters)
-    filters = [Filter(k, FILTER_PARSER[specs[k].value_type](v['val']), v['op'],
-                      specs[k].value_type)
-               for k, v in filters.items()]
-    return filters
+    return [
+        Filter(k,
+               FILTER_PARSER[specs[k].value_type](v['val']),
+               v['op'],
+               specs[k].value_type)
+        for k, v in filters.items()
+    ]
 
 
 @marv_api_endpoint('/meta', force_acl=['__unauthenticated__', '__authenticated__'])
@@ -91,15 +89,15 @@ async def meta(request):
     )
 
     # TODO: id probably numeric, title = name or title
-    collections = request.app['site'].collections
-    collection_id = collections.default_id
+    site = request.app['site']
+    collection_id = site.collections.default_id
     resp = web.json_response({
         'collections': {
             'default': collection_id,
-            'items': [{'id': x, 'title': x} for x in collections],
+            'items': [{'id': x, 'title': x} for x in site.collections],
         },
         'acl': acl,
-        'realms': list(request.app['site'].config.marv.oauth),
+        'realms': list(site.config.marv.oauth),
         'timezone': TIMEZONE,
     })
     resp.headers['Cache-Control'] = 'no-cache'
@@ -108,55 +106,46 @@ async def meta(request):
 
 @marv_api_endpoint('/collection{_:/?}{collection_id:((?<=/).*)?}')
 async def collection(request):  # pylint: disable=too-many-locals
-    collection_id = request.match_info['collection_id'] or None
-    collections = request.app['site'].collections
-    collection_id = collections.default_id if collection_id is None else collection_id
+    site = request.app['site']
+    collection_id = request.match_info.get('collection_id', site.collections.default_id)
     try:
-        collection = collections[collection_id]  # pylint: disable=redefined-outer-name
+        collection = site.collections[collection_id]  # pylint: disable=redefined-outer-name
     except KeyError:
         raise web.HTTPNotFound()
 
     try:
-        filters = parse_filters(collection.filter_specs,
-                                request.query.get('filter', '{}'))
+        filters_dct = json.loads(request.query.get('filter', '{}'))
+        filters = parse_filters(collection.filter_specs, filters_dct)
     except (KeyError, ValueError):
-        request.app['logger'].warning('Bad request', exc_info=True)
         raise web.HTTPBadRequest()
 
     try:
-        stmt = collection.filtered_listing(filters)
-    except UnknownOperator:
-        request.app['logger'].warning('Bad request', exc_info=True)
+        rows = await site.db.get_filtered_listing(collection.table_descriptors, filters)
+    except (KeyError, ValueError, UnknownOperator):
         raise web.HTTPBadRequest()
 
-    fspecs = collection.filter_specs
-
-    with scoped_session(request.app['site']) as session:
-        all_known = {
-            name: [x[0] for x in
-                   session.execute(select([rel.value])
-                                   .order_by(rel.value)).fetchall()]
-            for name, rel in collection.model.relations.items()
-            if {'any', 'all'}.intersection(fspecs[name].operators)
+    all_known = await site.db.get_all_known_for_collection(collection)
+    filters = [
+        {
+            'key': x.name,
+            'constraints': all_known.get(x.name),
+            'title': x.title,
+            'operators': x.operators,
+            'value_type': VALUE_TYPE_MAP.get(x.value_type, x.value_type),
         }
-        all_known['status'] = list(STATUS)
-        all_known['tags'] = [x[0] for x in
-                             session.execute(select([Tag.value])
-                                             .where(Tag.collection == collection.name)
-                                             .order_by(Tag.value)).fetchall()]
-        filters = [{'key': x.name,
-                    'constraints': all_known.get(x.name),
-                    'title': x.title,
-                    'operators': x.operators,
-                    'value_type': VALUE_TYPE_MAP.get(x.value_type, x.value_type)}
-                   for x in fspecs.values()]
+        for x in collection.filter_specs.values()
+    ]
 
-        rows = session.execute(stmt).fetchall()
-        rowdata = ',\n'.join([x.replace('["#TAGS#"]', tags if tags != '[null]' else '[]')
-                              .replace('"#TAGS#"', tags[1:-1] if tags != '[null]' else '')
-                              .replace('[,', '[')
-                              .replace('"#STATUS#"', STATUS_STRS[status])
-                              for x, status, tags in rows])
+    def fmt(row):
+        if not row['tag_value']:
+            return '[]'
+        return json.dumps(sorted(row['tag_value'].split(',')))
+
+    rowdata = ',\n'.join([row['row'].replace('["#TAGS#"]', fmt(row))
+                          .replace('"#TAGS#"', fmt(row)[1:-1] if fmt(row) != '[]' else '')
+                          .replace('[,', '[')
+                          .replace('"#STATUS#"', STATUS_STRS[row['status']])
+                          for row in rows])
     dct = {
         'all_known': all_known,
         'compare': bool(collection.compare),
@@ -187,6 +176,7 @@ async def collection(request):  # pylint: disable=too-many-locals
         separators = (', ', ': ')
     jsondata = jsondumps(dct, indent=indent, separators=separators, sort_keys=True)
     jsondata = jsondata.replace('"#ROWS#"', rowdata)
-    resp = web.Response(text=jsondata, headers={'Content-Type': 'application/json'})
-    resp.headers['Cache-Control'] = 'no-cache'
-    return resp
+    return web.Response(text=jsondata, headers={
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+    })

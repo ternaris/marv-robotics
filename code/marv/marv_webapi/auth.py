@@ -17,9 +17,9 @@ async def auth_post(request):
     if not req:
         raise web.HTTPBadRequest()
     username = req.get('username', '')
-    password = req.get('password', '').encode('utf-8')
+    password = req.get('password', '')
 
-    if not request.app['site'].authenticate(username, password):
+    if not await request.app['site'].db.authenticate(username, password):
         raise web.HTTPUnprocessableEntity()
 
     key = request.app['config']['SECRET_KEY']
