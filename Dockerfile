@@ -68,7 +68,7 @@ COPY requirements/* /requirements/
 RUN bash -c '\
 if [[ -n "$MARV_VENV" ]]; then \
     ${PYTHON} -m venv $MARV_VENV; \
-    $MARV_VENV/bin/pip install -U pip==19.2.2 setuptools==41.1.0 wheel==0.33.4; \
+    $MARV_VENV/bin/pip install -U pip==19.2.3 setuptools==41.2.0 wheel==0.33.6; \
     $MARV_VENV/bin/pip install -U -r /requirements/marv-robotics.txt; \
     $MARV_VENV/bin/pip install -U -r /requirements/develop.txt; \
 fi'

@@ -6,7 +6,12 @@ sphinx_paramlinks
 flake8
 flake8-bugbear
 flake8-commas
+flake8-comprehensions
+flake8-datetimez
+flake8-docstrings
 flake8-import-order
+flake8-quotes
+flake8-tuple
 ipython
 mock
 pdbpp
@@ -17,7 +22,7 @@ pytest-aiohttp
 pytest-cov
 pytest-flake8
 pytest-mock
-pytest-pylint==0.13.0  # https://github.com/carsongee/pytest-pylint/issues/89
+pytest-pylint
 pytest-runner
 pytest-xdist
 termcolor
