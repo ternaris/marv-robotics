@@ -24,7 +24,6 @@ pytest-flake8
 pytest-mock
 pytest-pylint
 pytest-runner
-pytest-xdist
 termcolor
 testfixtures
 watchdog

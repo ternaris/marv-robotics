@@ -17,10 +17,6 @@ alabaster==0.7.12 \
     --hash=sha256:446438bdcca0e05bd45ea2de1668c1d9b032e1a9154c2c259092d77031ddd359 \
     --hash=sha256:a661d72d58e6ea8a57f7a86e37d86716863ee5e92788398526d58b26a4e4dc02 \
     # via sphinx
-apipkg==1.5 \
-    --hash=sha256:37228cda29411948b422fae072f57e31d3396d2ee1c9783775980ee9c9990af6 \
-    --hash=sha256:58587dd4dc3daefad0487f6d9ae32b4542b185e1c36db6993290e7c41ca2b47c \
-    # via execnet
 argh==0.26.2 \
     --hash=sha256:a9b3aaa1904eeb78e32394cd46c6f37ac0fb4af6dc488daa58971bdc7d7fcaf3 \
     --hash=sha256:e9535b8c84dc9571a48999094fda7f33e63c3f1b74f3e5f3ac0105a58405bb65 \
@@ -108,10 +104,6 @@ entrypoints==0.3 \
     --hash=sha256:589f874b313739ad35be6e0cd7efde2a4e9b6fea91edcc34e58ecbb8dbe56d19 \
     --hash=sha256:c70dd71abe5a8c85e55e12c19bd91ccfeec11a6e99044204511f9ed547d48451 \
     # via flake8
-execnet==1.7.1 \
-    --hash=sha256:cacb9df31c9680ec5f95553976c4da484d407e85e41c83cb812aa014f0eddc50 \
-    --hash=sha256:d4efd397930c46415f62f8a31388d6be4f27a91d7550eb79bc64a756e0056547 \
-    # via pytest-xdist
 fancycompleter==0.8 \
     --hash=sha256:d2522f1f3512371f295379c4c0d1962de06762eb586c199620a2a5d423539b12 \
     # via pdbpp
@@ -335,10 +327,6 @@ pytest-cov==2.7.1 \
 pytest-flake8==1.0.4 \
     --hash=sha256:4d225c13e787471502ff94409dcf6f7927049b2ec251c63b764a4b17447b60c0 \
     --hash=sha256:d7e2b6b274a255b7ae35e9224c85294b471a83b76ecb6bd53c337ae977a499af
-pytest-forked==1.0.2 \
-    --hash=sha256:5fe33fbd07d7b1302c95310803a5e5726a4ff7f19d5a542b7ce57c76fed8135f \
-    --hash=sha256:d352aaced2ebd54d42a65825722cb433004b4446ab5d2044851d9cc7a00c9e38 \
-    # via pytest-xdist
 pytest-mock==1.10.4 \
     --hash=sha256:43ce4e9dd5074993e7c021bb1c22cbb5363e612a2b5a76bc6d956775b10758b7 \
     --hash=sha256:5bf5771b1db93beac965a7347dc81c675ec4090cb841e49d9d34637a25c30568
@@ -349,9 +337,6 @@ pytest-pylint==0.14.1 \
 pytest-runner==5.1 \
     --hash=sha256:25a013c8d84f0ca60bb01bd11913a3bcab420f601f0f236de4423074af656e7a \
     --hash=sha256:d04243fbf29a3b574f18f1bcff2a07f505db5daede82f706f2e32728f77d3f4d
-pytest-xdist==1.29.0 \
-    --hash=sha256:3489d91516d7847db5eaecff7a2e623dba68984835dbe6cedb05ae126c4fb17f \
-    --hash=sha256:501795cb99e567746f30fe78850533d4cd500c93794128e6ab9988e92a17b1f8
 pytest==5.1.3 \
     --hash=sha256:813b99704b22c7d377bbd756ebe56c35252bb710937b46f207100e843440b3c2 \
     --hash=sha256:cc6620b96bc667a0c8d4fa592a8c9c94178a1bd6cc799dbb057dfd9286d31a31
@@ -381,7 +366,7 @@ requests==2.22.0 \
 six==1.12.0 \
     --hash=sha256:3350809f0555b11f552448330d0b52d5f24c91a322ea4a15ef22629740f3761c \
     --hash=sha256:d16a0141ec1a18405cd4ce8b4613101da75da0e9a7aec5bdd4fa804d0e0eba73 \
-    # via astroid, flake8-tuple, mock, packaging, pip-tools, prompt-toolkit, pytest-pylint, pytest-xdist, traitlets
+    # via astroid, flake8-tuple, mock, packaging, pip-tools, prompt-toolkit, pytest-pylint, traitlets
 snowballstemmer==1.9.1 \
     --hash=sha256:713e53b79cbcf97bc5245a06080a33d54a77e7cce2f789c835a143bcdb5c033e \
     # via pydocstyle, sphinx
