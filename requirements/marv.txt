@@ -18,10 +18,6 @@ async-timeout==3.0.1 \
     --hash=sha256:0c3c816a028d47f659d6ff5c745cb2acf1f966da1fe5c19c77a70282b25f4c5f \
     --hash=sha256:4291ca197d287d274d0b6cb5d6f8f8f82d434ed288f962539ff18cc9012f9ea3 \
     # via aiohttp
-atlastk==0.10.7 \
-    --hash=sha256:b9a846b9911a0bfa6b8f504620672c03cb90804b5f4f36450d17b4d672c682ff \
-    --hash=sha256:f9a035ac909fe8b6ae76d296f6ec586fadc37453ec44de35fae699bb956bb87e \
-    # via tortoise
 attrs==19.1.0 \
     --hash=sha256:69c0dbf2ed392de1cb5ec704444b08a5ef81680a61cb899dc08127123af36a79 \
     --hash=sha256:f0b870f674851ecbfbbbd364d6b5cbdff9dcedbc7f3f5e18a6891057f21fe399 \
@@ -77,6 +73,9 @@ chardet==3.0.4 \
     --hash=sha256:84ab92ed1c4d4f16916e05906b6b75a6c0fb5db821cc65e70cbd64a3e2a5eaae \
     --hash=sha256:fc323ffcaeaed0e0a02bf4d117757b98aed530d9ed4531e3e15460124c106691 \
     # via aiohttp
+ciso8601==2.1.1 \
+    --hash=sha256:01c44f93addee3cfd599ba6ae8d1b772ed642b89132e504c629feb57cc63a177 \
+    # via tortoise-orm
 click==7.0 \
     --hash=sha256:2335065e6395b9e67ca716de5f7526736bfa6ceead690adf616d925bdc622b13 \
     --hash=sha256:5b94b49521f6456670fdb30cd82a4eca9412788a93fa6dd6df72c94d5a8ff2d7
@@ -199,6 +198,8 @@ pycparser==2.19 \
 pyjwt==1.7.1 \
     --hash=sha256:5c6eca3c2940464d106b99ba83b00c6add741c9becaec087fb7ccdefea71350e \
     --hash=sha256:8d59a976fb773f3e6a39c85636357c4f0e242707394cadadd9814f5cbaa20e96
+pypika==0.35.8 \
+    --hash=sha256:e7a1d1055b8ca85f22642170bcd399b1120a70f3185e802faf233a15b284a56b
 python-dateutil==2.8.0 \
     --hash=sha256:7e6584c74aeed623791615e26efd690f29817a27c73085b78e4bad02493df2fb \
     --hash=sha256:c89805f6f4d64db21ed966fda138f8a5ed7a4fdbc1a8ee329ce1b74e3c74da9e \
@@ -214,11 +215,8 @@ six==1.12.0 \
     --hash=sha256:3350809f0555b11f552448330d0b52d5f24c91a322ea4a15ef22629740f3761c \
     --hash=sha256:d16a0141ec1a18405cd4ce8b4613101da75da0e9a7aec5bdd4fa804d0e0eba73 \
     # via bcrypt, python-dateutil
-sqlalchemy==1.3.8 \
-    --hash=sha256:2f8ff566a4d3a92246d367f2e9cd6ed3edeef670dcd6dda6dfdc9efed88bcd80
-tortoise==0.1.1 \
-    --hash=sha256:a4ebd69b152d266174b3b0f2a22e3fb8995101eb749d3114813a98f405ab10bb \
-    --hash=sha256:bcb58a56d6796cad0db330104450df2caf2ea9e98d844bb2906274bd15c12804
+tortoise-orm==0.13.8 \
+    --hash=sha256:4df8a7dd5d108d2c7f14f012a17141dca14afdf2f20cdc41aaffe506a865b394
 uvloop==0.13.0 \
     --hash=sha256:0deb6c97c5807c792dd9024bab90e6ca49e981862103cb2ea37b430c1ca0a267 \
     --hash=sha256:155b34d513655e753d07f499a7e811970e2d397f240dfcbec0b32a9587159c99 \
