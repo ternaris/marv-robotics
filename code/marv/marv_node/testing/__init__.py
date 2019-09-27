@@ -36,7 +36,7 @@ LOG = getLogger(__name__)
 
 @contextmanager
 def temporary_directory(keep=KEEP):
-    """Create and cleanup temporary directory"""
+    """Create and cleanup temporary directory."""
     tmpdir = tempfile.mkdtemp()
     LOG.debug('created temporary directory %r', tmpdir)
     try:

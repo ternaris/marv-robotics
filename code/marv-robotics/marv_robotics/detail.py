@@ -89,7 +89,7 @@ def gnss_section(plots, title):
         if plotfile:
             widgets.append({'title': plot.title,
                             'image': {'src': plotfile.relpath}})
-    assert len(set(x['title'] for x in widgets)) == len(widgets)
+    assert len({x['title'] for x in widgets}) == len(widgets)
     if widgets:
         yield marv.push({'title': title, 'widgets': widgets})
 
@@ -174,8 +174,13 @@ def trajectory_section(geojson, title, minzoom, maxzoom, tile_server_protocol):
     """Section displaying trajectory on a map.
 
     Args:
+        title (str): Detail section title.
+        geojson: Stream with one GeoJson message.
+        minzoom (int): Minimum zoom level.
+        maxzoom (int): Maximum zoom level.
         tile_server_protocol (str): Set to ``https:`` if you host marv
             behind http and prefer the tile requests to be secured.
+
     """
     geojson = yield marv.pull(geojson)
     if not geojson:
@@ -243,6 +248,6 @@ def video_section(videos, title):
         for video, videofile in zip(videos, videofiles)
         if videofile is not None
     ]
-    assert len(set(x['title'] for x in widgets)) == len(widgets)
+    assert len({x['title'] for x in widgets}) == len(widgets)
     if widgets:
         yield marv.push({'title': title, 'widgets': widgets})

@@ -279,7 +279,7 @@ class Site:
             # TODO: Cleanup corresponding store paths
 
     def cleanup_relations(self):
-        """Cleanup listing relations"""
+        """Cleanup listing relations."""
         collections = self.collections
         with scoped_session(self) as session:
             for relation in [x for col in collections.values()
@@ -584,7 +584,7 @@ def dump_database(dburi):  # noqa: C901
     def rows2dcts(stmt):
         result = con.execute(stmt)
         keys = result.keys()
-        return [{k: v for k, v in zip(keys, row)} for row in result]
+        return [dict(zip(keys, row)) for row in result]
 
     comments = {}
     comment_t = tables.pop('comment')

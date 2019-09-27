@@ -52,7 +52,7 @@ class Baginfo(namedtuple('Baginfo', 'filename basename name timestamp idx')):
 
 
 def scan(dirpath, dirnames, filenames):  # pylint: disable=unused-argument
-    """Default scanner for ROS bag files
+    """Scan for sets of ROS bag files.
 
     Bags suffixed with a consecutive index are grouped into sets::
 

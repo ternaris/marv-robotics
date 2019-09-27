@@ -14,7 +14,7 @@ from .streams import PersistentStream, ReadStream
 
 
 class DirectoryAlreadyExists(Exception):
-    """Temporary directory for next generation of stream already exists
+    """Temporary directory for next generation of stream already exists.
 
     This might mean another node run is in progress or aborted without
     proper cleanup.

@@ -12,14 +12,14 @@ SETID = DATASET.setid
 
 @marv.node()
 def meta():
-    """Meta information about a dataset"""
+    """Meta information about a dataset."""
     yield marv.push({'topics': ['b', 'c']})
 
 
 @marv.node(group='ondemand')
 @marv.input('meta', default=meta)
 def messages(meta):
-    """Produce streams for requested topics if they exist"""
+    """Produce streams for requested topics if they exist."""
     meta = yield marv.pull(meta)
     requested = yield marv.get_requested()
     all_msgs = {'a': list(range(1)),

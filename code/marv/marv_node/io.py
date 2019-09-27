@@ -50,7 +50,7 @@ def make_file(name):
 
 
 def pull(handle, enumerate=False):
-    """Pulls next message for handle.
+    """Pull next message for handle.
 
     Args:
         handle: A :class:`.stream.Handle` or GroupHandle.
@@ -80,7 +80,7 @@ def pull(handle, enumerate=False):
 
 
 def pull_all(*handles):
-    """Pulls next message of all handles."""
+    """Pull next message of all handles."""
     return PullAll(handles)
 
 
@@ -90,16 +90,15 @@ def push(msg):
 
 def set_header(**header):
     """Set the header of a stream or group."""
-
     # If a node is configured to have a header, the header needs to be
     # set before yielding any messages or creating group members. Once a
     # header is set, a handle is created and dependent nodes can be
     # instantiated. For streams without headers this happens right away.
-
+    #
     #     @marv.node(header=True)
     #     def node():
     #         yield marv.set_header(title='Title')
-
+    #
     # """
     return SetHeader(header)
 
@@ -141,21 +140,25 @@ class Signal(Task):  # pylint: disable=too-few-public-methods
 
 class Next(Signal):  # pylint: disable=too-few-public-methods
     """Instruct to send next pending task."""
+
     __slots__ = ()
 
 
 class Paused(Signal):  # pylint: disable=too-few-public-methods
     """Indicate a generator has paused."""
+
     __slots__ = ()
 
 
 class Resume(Signal):  # pylint: disable=too-few-public-methods
     """Instruct a generator to resume."""
+
     __slots__ = ()
 
 
 class TheEnd(Signal):  # pylint: disable=too-few-public-methods
     """Indicate the end of a stream, resulting in None being sent into consumers."""
+
     __slots__ = ()
 
 

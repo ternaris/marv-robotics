@@ -9,7 +9,7 @@ from random import getrandbits
 
 
 def decode_setid(encoded):
-    """Decode setid as uint128"""
+    """Decode setid as uint128."""
     try:
         lo, hi = struct.unpack('<QQ', b32decode(encoded.upper() + '======'))
     except struct.error:
@@ -18,7 +18,7 @@ def decode_setid(encoded):
 
 
 def encode_setid(uint128):
-    """Encode uint128 setid as stripped b32encoded string"""
+    """Encode uint128 setid as stripped b32encoded string."""
     hi, lo = divmod(uint128, 2**64)
     return b32encode(struct.pack('<QQ', lo, hi))[:-6].decode('ascii').lower()
 

@@ -30,7 +30,7 @@ def ros2cv(msg, scale=1, offset=0):
 @marv.input('convert_32FC1_scale', default=1)
 @marv.input('convert_32FC1_offset', default=0)
 def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):  # pylint: disable=invalid-name
-    """Create video for each sensor_msgs/Image topic with ffmpeg"""
+    """Create video for each sensor_msgs/Image topic with ffmpeg."""
     # pylint: disable=too-many-locals
 
     yield marv.set_header(title=stream.topic)
@@ -87,13 +87,15 @@ def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):  # pylint:
 @marv.input('convert_32FC1_scale', default=1)
 @marv.input('convert_32FC1_offset', default=0)
 def images(stream, image_width, max_frames, convert_32FC1_scale, convert_32FC1_offset):
-    """
-    Extract max_frames equidistantly spread images from each sensor_msgs/Image stream.
+    """Extract max_frames equidistantly spread images from each sensor_msgs/Image stream.
 
     Args:
         stream: sensor_msgs/Image stream
         image_width (int): Scale to image_width, keeping aspect ratio.
         max_frames (int): Maximum number of frames to extract.
+        convert_32FC1_scale (float): Scale factor for FC image values.
+        convert_32FC1_offset (float): Offset for FC image values.
+
     """
     # pylint: disable=invalid-name,too-many-locals
 

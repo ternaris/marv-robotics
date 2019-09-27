@@ -4,6 +4,7 @@
 # pylint: disable=too-many-locals,pointless-statement,unused-variable,too-many-statements
 # pylint: disable=too-few-public-methods,no-member
 # pylint: disable=too-many-return-statements,too-many-branches,no-else-return,protected-access
+# flake8: noqa
 
 import functools
 import os
@@ -34,7 +35,7 @@ def run_nodes(dataset, nodes, store, persistent=None, force=None, deps=None, cac
     # pylint: disable=too-many-arguments
 
     if cachesize is not None:
-        import marv_node
+        import marv_node  # pylint: disable=import-outside-toplevel
         marv_node.stream.CACHESIZE
         marv_node.stream.CACHESIZE = cachesize
 
@@ -112,7 +113,7 @@ def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=None, d
                 def newmeth(msg, *args, **kw):
                     msg = self.prefix + msg
                     if msg % args == MARV_RUN_LOGBREAK:
-                        import pdb
+                        import pdb  # pylint: disable=import-outside-toplevel
                         pdb.set_trace()
                     return meth(msg, *args, **kw)
                 return newmeth

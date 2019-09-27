@@ -62,7 +62,7 @@ def launch_pdb_on_exception(launch=True):
         yield
     except Exception:  # pylint: disable=broad-except
         if launch:
-            import pdb
+            import pdb  # pylint: disable=import-outside-toplevel
             pdb.xpm()  # pylint: disable=no-member
         else:
             raise
@@ -110,7 +110,7 @@ def setup_logging(loglevel, verbosity=0, logfilter=None):
               help='Increase verbosity beyond --loglevel')
 @click.pass_context
 def marv(ctx, config, loglevel, logfilter, verbosity):
-    """Manage a Marv site"""
+    """Manage a Marv site."""
     if config is None:
         cwd = os.path.abspath(os.path.curdir)
         while cwd != os.path.sep:
@@ -127,7 +127,7 @@ def marv(ctx, config, loglevel, logfilter, verbosity):
 
 
 def cli():
-    """setuptools entry_point"""
+    """Setuptools entry_point."""
     global PDB  # pylint: disable=global-statement
     PDB = bool(os.environ.get('PDB'))
     with launch_pdb_on_exception(PDB):

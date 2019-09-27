@@ -25,12 +25,12 @@ def find_obj(objpath, name=False):
 
 
 def mtime(path):
-    """Wrapper for st_mtime for ease of mocking"""
+    """Wrap os.stat() st_mtime for ease of mocking."""
     return os.stat(path).st_mtime
 
 
 def now():
-    """Wrapper for time.time for ease of mocking"""
+    """Wrap time.time() for ease of mocking."""
     return time.time()
 
 
@@ -78,6 +78,7 @@ def parse_timedelta(delta):
 
 
 def profile(func, sort='cumtime'):
+    # pylint: disable=import-outside-toplevel
     import functools
     import pstats
     from cProfile import Profile

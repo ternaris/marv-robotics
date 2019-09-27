@@ -37,7 +37,7 @@ def create_app(site, app_root='', middlewares=None):  # noqa: C901
 
     staticdir = site.config.marv.staticdir
     with open(os.path.join(staticdir, 'index.html')) as f:
-        index_html = f.read().replace('MARV_APP_ROOT', app_root or "")
+        index_html = f.read().replace('MARV_APP_ROOT', app_root or '')
 
     customjs = os.path.join(site.config.marv.frontenddir, 'custom.js')
     try:

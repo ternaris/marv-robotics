@@ -1,7 +1,8 @@
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-"""
+"""Dataset scanner.
+
 Datasets are created based on information provided by scanners.  A
 scanner is responsible to group files into named datasets::
 

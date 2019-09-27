@@ -13,5 +13,6 @@ def select(node, name):
 
     Returns:
         Node outputting selected stream.
+
     """
     return _StreamSpec(node, name)

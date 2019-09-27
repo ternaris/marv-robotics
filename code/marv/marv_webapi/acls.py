@@ -1,7 +1,7 @@
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-"""Access control lists
+"""Access control lists.
 
 Use access control lists (ACLs) to control who can perform which
 actions. An ACL is a function that returns a dictionary mapping route
@@ -14,7 +14,7 @@ authenticated, resp. unauthenticated sessions.
 
 
 def authenticated():
-    """Require authentication
+    """Require authentication.
 
     - require authentication for everything
     - only admins may delete datasets
@@ -34,7 +34,7 @@ def authenticated():
 
 
 def public():
-    """Allow public access
+    """Allow public access.
 
     - anyone can read anything
     - authenticated users can comment, tag and compare

@@ -13,7 +13,7 @@ CACHESIZE = 50
 
 
 class RequestedMessageTooOld(Exception):
-    """Indicate a message requested from a stream is not in memory anymore"""
+    """Indicate a message requested from a stream is not in memory anymore."""
 
 
 class Handle(Keyed):
@@ -108,7 +108,8 @@ Request.register(Msg)
 
 class Stream(Keyed, LoggerMixin):
     # TODO: limit cache size
-    CACHESIZE = CACHESIZE
+    # TODO: The following disable should not be needed https://github.com/PyCQA/pylint/issues/2930
+    CACHESIZE = CACHESIZE  # pylint: disable=self-assigning-variable
     cache = None
     ended = None
     handle = None

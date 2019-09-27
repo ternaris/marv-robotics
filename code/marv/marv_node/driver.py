@@ -23,7 +23,8 @@ class MakeFileNotSupported(Exception):
 
 
 class Driver(Keyed, GenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-instance-attributes
-    """Drives a generator."""
+    """Drive a generator."""
+
     started = False
     stopped = False
     stream_creation = True  # False after first output Msg() TODO
@@ -147,7 +148,7 @@ class Driver(Keyed, GenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-i
                 assert signal in (NEXT, RESUME), signal
                 continue
 
-            elif isinstance(request, Pull):
+            if isinstance(request, Pull):
                 handle = request.handle
                 # if request.skip is never used the two indices remain the same
                 # pylint: disable=stop-iteration-return
@@ -163,9 +164,10 @@ class Driver(Keyed, GenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-i
                     send = (msg_req_idx, send)
                 continue
 
-            elif isinstance(request, PullAll):
+            if isinstance(request, PullAll):
                 send = []
                 for handle in request.handles:
+                    # pylint: disable=stop-iteration-return
                     msg_req_idx = next(msg_request_counter[handle])
                     next_msg_idx = next_msg_index_counter[handle]
                     next_msg_index_counter[handle] = next_msg_idx + 1
@@ -176,7 +178,7 @@ class Driver(Keyed, GenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-i
                     send.append(None if msg.data is THEEND else msg.data)
                 continue
 
-            elif isinstance(request, SetHeader):
+            if isinstance(request, SetHeader):
                 # TODO: should this be explicitly allowed/required?
                 # Handles for non-header streams would be created right away
                 assert not self.stream.cache
@@ -184,7 +186,7 @@ class Driver(Keyed, GenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-i
                 yield self.stream.handle.msg(self.stream.handle)
                 continue
 
-            elif isinstance(request, MakeFile):
+            if isinstance(request, MakeFile):
                 if not self.stream.cache:
                     yield self.stream.handle.msg(self.stream.handle)
                 stream = self.streams[request.handle or self.stream.handle]
@@ -195,7 +197,7 @@ class Driver(Keyed, GenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-i
                 send = make_file(request.name)
                 continue
 
-            elif isinstance(request, Fork):
+            if isinstance(request, Fork):
                 parent_handle = self.stream.handle
                 parent = self.streams[parent_handle]
                 stream = parent.create_stream(name=request.name,
@@ -207,7 +209,7 @@ class Driver(Keyed, GenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-i
                 send = None   # TODO: What should we send back?
                 continue
 
-            elif isinstance(request, GetStream):
+            if isinstance(request, GetStream):
                 handle = Handle(request.setid or self.setid,
                                 request.node, request.name)
                 msg = yield MsgRequest(handle, -1, self)
@@ -215,7 +217,7 @@ class Driver(Keyed, GenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-i
                 assert send == handle, (send, handle)
                 continue  # TODO: why is this not covered?
 
-            elif isinstance(request, CreateStream):
+            if isinstance(request, CreateStream):
                 kw = request._asdict()
                 parent_handle = kw.pop('parent', None) or self.stream.handle
                 parent = self.streams[parent_handle]
@@ -232,7 +234,7 @@ class Driver(Keyed, GenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-i
                 send = stream.handle
                 continue
 
-            elif isinstance(request, GetRequested):
+            if isinstance(request, GetRequested):
                 assert self.stream.group, (self, request)
                 signal = yield PAUSED  # increase chances for completeness
                 assert signal is RESUME
@@ -240,14 +242,13 @@ class Driver(Keyed, GenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-i
                 self.stream_creation = False
                 continue
 
-            elif isinstance(request, GetLogger):
+            if isinstance(request, GetLogger):
                 send = getLogger(f'marv.node.{self.key_abbrev}')
                 continue
 
-            else:
-                raise RuntimeError(
-                    f'Unknown request number {request_idx + 1}: {request!r} from {self.node!r}',
-                )
+            raise RuntimeError(
+                f'Unknown request number {request_idx + 1}: {request!r} from {self.node!r}',
+            )
         self.stopped = True
 
     def add_stream_request(self, *handles):

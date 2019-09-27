@@ -10,7 +10,7 @@ from contextlib import contextmanager
 
 @contextmanager
 def chdir(directory):
-    """Change working directory - NOT THREAD SAFE"""
+    """Change working directory - NOT THREAD SAFE."""
     cwd = os.getcwd()
     os.chdir(directory)
     try:
@@ -29,7 +29,7 @@ def make_scanroot(scanroot, names):
 
 @contextmanager
 def temporary_directory(keep=None):
-    """Create, change into, and cleanup temporary directory"""
+    """Create, change into, and cleanup temporary directory."""
     tmpdir = tempfile.mkdtemp()
     with chdir(tmpdir):
         try:
@@ -52,7 +52,8 @@ def decode(data, encoding='utf-8'):
 
 
 class TestCase(unittest.TestCase):
-    """Basic marv test case"""
+    """Basic marv test case."""
+
     KEEP_TEST_DIR = None
     test_dir = None
 

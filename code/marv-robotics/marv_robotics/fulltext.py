@@ -27,7 +27,7 @@ def fulltext_per_topic(stream):
 @marv.node(Words)
 @marv.input('streams', default=fulltext_per_topic)
 def fulltext(streams):
-    """Extract all text from bag file and store for fulltext search"""
+    """Extract all text from bag file and store for fulltext search."""
     tmp = []
     while True:
         stream = yield marv.pull(streams)

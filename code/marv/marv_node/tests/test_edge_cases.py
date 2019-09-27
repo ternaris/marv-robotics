@@ -15,7 +15,7 @@ class TestCase(unittest.TestCase):
         @marv.node()
         @marv.input('stream', foreach=[0, 10])
         def images(stream):
-            """Produce 2 streams each with two messages"""
+            """Produce 2 streams each with two messages."""
             yield marv.set_header(title=stream)
             yield marv.push(1+stream)
             yield marv.push(2+stream)
@@ -26,7 +26,7 @@ class TestCase(unittest.TestCase):
         @marv.node()
         @marv.input('stream', foreach=images)
         def galleries(stream):
-            """Consume each stream into a list"""
+            """Consume each stream into a list."""
             yield marv.set_header(title=stream.title)  # TODO: This is currently needed
             images = []
             while True:
@@ -39,7 +39,7 @@ class TestCase(unittest.TestCase):
         @marv.node()
         @marv.input('galleries', default=galleries)
         def images_section(galleries):
-            """Consume both galleries into a list"""
+            """Consume both galleries into a list."""
             tmp = []
             while True:
                 msg = yield marv.pull(galleries)

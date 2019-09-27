@@ -46,7 +46,7 @@ def scoped_session(site):
         session.close()
 
 
-@event.listens_for(Engine, "connect")
+@event.listens_for(Engine, 'connect')
 def set_sqlite_pragma_connect(dbapi_connection, _):
     cursor = dbapi_connection.cursor()
     # page_size must be before journal_mode
@@ -59,7 +59,7 @@ def set_sqlite_pragma_connect(dbapi_connection, _):
     cursor.close()
 
 
-@event.listens_for(Engine, "close")
+@event.listens_for(Engine, 'close')
 def set_sqlite_pragma_close(dbapi_connection, _):
     cursor = dbapi_connection.cursor()
     cursor.execute('PRAGMA optimize;')  # ignored prior to 3.18.0

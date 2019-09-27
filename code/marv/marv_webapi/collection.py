@@ -83,12 +83,12 @@ async def meta(request):
         })
 
     # TODO: avoid clashes, forbid routes with same name / different name generation
-    acl = sorted([
+    acl = sorted(
         name.split('.')[-1]
         for name, view in request.app['api_endpoints'].items()
         if isinstance(view, APIEndpoint)
         if view.acl.intersection(groups)
-    ])
+    )
 
     # TODO: id probably numeric, title = name or title
     collections = request.app['site'].collections

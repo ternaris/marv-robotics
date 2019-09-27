@@ -14,7 +14,6 @@ class TestCase(unittest.TestCase):
         #     """foo"""
         #     schema = pythonic_capnp.Pythonic
 
-        import capnp  # pylint: disable=unused-import
         builder = pythonic_capnp.Pythonic.new_message()
         reader = builder.as_reader()
         assert reader

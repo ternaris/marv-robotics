@@ -129,7 +129,7 @@ class Collections(Mapping):
             for x in collection.scanroots
         ]
         assert len(set(scanroots)) == len(scanroots),\
-            "Scanroots must not be shared between collections"
+            'Scanroots must not be shared between collections'
         return collections
 
     def __init__(self, config, site):
@@ -155,7 +155,7 @@ class Collections(Mapping):
 
 
 def cached_property(func):
-    """Create read-only property that caches its function's value"""
+    """Create read-only property that caches its function's value."""
     @functools.wraps(func)
     def cached_func(self):
         cacheattr = f'_{func.__name__}'
@@ -339,7 +339,7 @@ class Collection:
                     stmt = stmt.where(Listing.id.in_(commentquery.subquery()))
                     continue
 
-                elif name == 'status':
+                if name == 'status':
                     status_ids = STATUS.keys()
                     bitmasks = [2**status_ids.index(x) for x in value]
                     if operator == 'any':
@@ -357,7 +357,7 @@ class Collection:
 
                     continue
 
-                elif name == 'tags':
+                if name == 'tags':
                     if operator == 'any':
                         relquery = session.query(dataset_tag.c.dataset_id)\
                                           .join(Tag)\
@@ -381,18 +381,18 @@ class Collection:
 
                     continue
 
-                elif val_type == 'datetime':
+                if val_type == 'datetime':
                     if operator == 'eq':
                         col = getattr(Listing, name)
                         stmt = stmt.where(col.between(value, value + 24 * 3600 * 1000))
                         continue
 
-                    elif operator == 'ne':
+                    if operator == 'ne':
                         col = getattr(Listing, name)
                         stmt = stmt.where(~col.between(value, value + 24 * 3600 * 1000))
                         continue
 
-                    elif operator in ['le', 'gt']:
+                    if operator in ['le', 'gt']:
                         value = value + 24 * 3600 * 1000
 
                 col = getattr(Listing, name)
@@ -520,7 +520,7 @@ class Collection:
                     continue
 
                 # Ignore hidden directories and traverse subdirs alphabetically
-                subdirs[:] = sorted([x for x in subdirs if x[0] != '.'])
+                subdirs[:] = sorted(x for x in subdirs if x[0] != '.')
 
                 # Ignore hidden and known files
                 known = known_filenames[directory]
@@ -776,9 +776,8 @@ class Collection:
                 stmt = relation.insert()\
                                .prefix_with('OR IGNORE')
                 session.execute(stmt, [{'value': x} for x in values])
-                query = session.query(relation.c.value, relation.c.id)\
-                               .filter(relation.c.value.in_(values))
-                relmap[key] = {value: id for value, id in query}
+                relmap[key] = dict(session.query(relation.c.value, relation.c.id)
+                                   .filter(relation.c.value.in_(values)))
 
             # bulk delete associations per relation
             for key, listing_ids in [

@@ -20,6 +20,7 @@ class ImageConversionError(TypeError):
 
 class Format(enum.IntEnum):
     """Supported Image Formats."""
+
     GENERIC = -1
     GRAY = 0
     RGB = 1

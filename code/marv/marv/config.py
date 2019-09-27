@@ -36,8 +36,8 @@ def make_funcs(dataset, setdir, store):
         'join': lambda sep, *args: sep.join([x for x in args if x]),
         'len': len,
         'link': (lambda href, title, target=None:
-                 {'href': href or "",
-                  'title': title or "",
+                 {'href': href or '',
+                  'title': title or '',
                   'target': '_blank' if target is None else target}),
         'list': lambda *x: filter(None, list(x)),
         'max': max,
@@ -165,7 +165,7 @@ def parse_lookup(name, default=None):
 
 
 def print_trace(args):
-    print("TRACE", args)
+    print('TRACE', args)
     return args
 
 

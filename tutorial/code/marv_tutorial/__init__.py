@@ -29,6 +29,7 @@ def image(cam):
 
     Returns:
         File instance for first image of input stream.
+
     """
     # Set output stream title and pull first message
     yield marv.set_header(title=cam.topic)
@@ -44,7 +45,7 @@ def image(cam):
     # Write image to jpeg and push it to output stream
     name = f"{cam.topic.replace('/', ':')[1:]}.jpg"
     imgfile = yield marv.make_file(name)
-    img = imgmsg_to_cv2(rosmsg, "rgb8")
+    img = imgmsg_to_cv2(rosmsg, 'rgb8')
     cv2.imwrite(imgfile.path, img, (cv2.IMWRITE_JPEG_QUALITY, 60))
     yield marv.push(imgfile)
 
@@ -59,8 +60,9 @@ def image_section(image, title):
         title (str): Title to be displayed for detail section.
         image: marv image file.
 
-    Returns
+    Returns:
         One detail section.
+
     """
     # pull first image
     img = yield marv.pull(image)
@@ -83,6 +85,7 @@ def images(cam):
 
     Returns:
         File instances for images of input stream.
+
     """
     # Set output stream title and pull first message
     yield marv.set_header(title=cam.topic)
@@ -100,7 +103,7 @@ def images(cam):
         rosmsg.deserialize(msg.data)
 
         # Write image to jpeg and push it to output stream
-        img = imgmsg_to_cv2(rosmsg, "rgb8")
+        img = imgmsg_to_cv2(rosmsg, 'rgb8')
         name = name_template.format(idx)
         imgfile = yield marv.make_file(name)
         cv2.imwrite(imgfile.path, img)
@@ -117,8 +120,9 @@ def gallery_section(images, title):
         title (str): Title to be displayed for detail section.
         images: stream of marv image files
 
-    Returns
+    Returns:
         One detail section.
+
     """
     # pull all images
     imgs = []
@@ -146,6 +150,7 @@ def filesizes(images):
 
     Returns:
         Stream of filesizes
+
     """
     # Pull each image and push its filesize
     while True:

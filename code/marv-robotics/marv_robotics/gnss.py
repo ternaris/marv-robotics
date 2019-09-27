@@ -213,7 +213,7 @@ def gnss_plots(gps, orientation):
     c = cm.prism(gps[:, 7]/2)  # pylint: disable=no-member
 
     ax1.scatter(gps[:, 4], gps[:, 5], c=c, edgecolor='none', s=3,
-                label="green: RTK\nyellow: DGPS\nred: Single")
+                label='green: RTK\nyellow: DGPS\nred: Single')
 
     xfmt = md.DateFormatter('%H:%M:%S')
     ax3.xaxis.set_major_formatter(xfmt)
@@ -223,12 +223,12 @@ def gnss_plots(gps, orientation):
     if orientation:
         ax2.xaxis.set_major_formatter(xfmt)
         orientation = np.array(orientation)
-        ax2.plot([datetime.fromtimestamp(x) for x in orientation[:, 0]],
+        ax2.plot([datetime.fromtimestamp(x) for x in orientation[:, 0]],  # noqa: DTZ
                  orientation[:, 1])
 
-    ax3.plot([datetime.fromtimestamp(x) for x in gps[:, 0]], gps[:, 4])
-    ax4.plot([datetime.fromtimestamp(x) for x in gps[:, 0]], gps[:, 6])
-    ax5.plot([datetime.fromtimestamp(x) for x in gps[:, 0]], gps[:, 5])
+    ax3.plot([datetime.fromtimestamp(x) for x in gps[:, 0]], gps[:, 4])  # noqa: DTZ
+    ax4.plot([datetime.fromtimestamp(x) for x in gps[:, 0]], gps[:, 6])  # noqa: DTZ
+    ax5.plot([datetime.fromtimestamp(x) for x in gps[:, 0]], gps[:, 5])  # noqa: DTZ
 
     fig.autofmt_xdate()
 

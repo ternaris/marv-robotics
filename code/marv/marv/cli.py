@@ -135,7 +135,7 @@ def marvcli_develop_server(port, public):
             try:
                 return await handler(request)
             except Exception:  # pylint: disable=broad-except
-                import pdb
+                import pdb  # pylint: disable=import-outside-toplevel
                 pdb.xpm()  # pylint: disable=no-member
 
         middlewares.append(pdb_middleware)
@@ -212,7 +212,6 @@ def marvcli_discard(datasets, tags, comments, confirm):
 @click.argument('datasets', nargs=-1, required=True)
 def marvcli_undiscard(datasets):
     """Undiscard DATASETS previously discarded."""
-
     site = create_site()
 
     setids = parse_setids(site, datasets, discarded=True)
@@ -256,7 +255,7 @@ def marvcli_restore(dump_file):
 
 @marvcli.command('init')
 def marvcli_init():
-    """(Re-)initialize marv site according to config"""
+    """(Re-)initialize marv site according to config."""
     create_site(init=True)
 
 
@@ -490,8 +489,8 @@ def marvcli_run(
                 _req = e.args[0]._requestor.node.name  # pylint: disable=no-member,protected-access
                 _handle = e.args[0].handle.node.name  # pylint: disable=no-member
                 ctx.fail((
-                    f"{_req} pulled {_handle} message {e.args[1]} not being in memory anymore.\n"
-                    "See https://ternaris.com/marv-robotics/docs/patterns.html#reduce-separately"
+                    f'{_req} pulled {_handle} message {e.args[1]} not being in memory anymore.\n'
+                    'See https://ternaris.com/marv-robotics/docs/patterns.html#reduce-separately'
                 ))
             except BaseException as e:  # pylint: disable=broad-except
                 errors.append(setid)
@@ -520,7 +519,7 @@ asked to report, providing information regarding any previous, failed node runs.
 @marvcli.command('scan')
 @click.option('-n', '--dry-run', is_flag=True)
 def marvcli_scan(dry_run):
-    """Scan for new and changed files"""
+    """Scan for new and changed files."""
     create_site().scan(dry_run)
 
 
@@ -530,7 +529,7 @@ def marvcli_scan(dry_run):
 @click.argument('datasets', nargs=-1)
 @click.pass_context
 def marvcli_tag(ctx, add, remove, datasets):
-    """Add or remove tags to datasets"""
+    """Add or remove tags to datasets."""
     if not any([add, remove]) or not datasets:
         click.echo(ctx.get_help())
         ctx.exit(1)
@@ -542,7 +541,7 @@ def marvcli_tag(ctx, add, remove, datasets):
 
 @marvcli.group('comment')
 def marvcli_comment():
-    """Add or remove comments"""
+    """Add or remove comments."""
 
 
 @marvcli_comment.command('add')
@@ -550,7 +549,7 @@ def marvcli_comment():
 @click.option('-m', '--message', required=True, help='Message for the comment')
 @click.argument('datasets', nargs=-1)
 def marvcli_comment_add(user, message, datasets):
-    """Add comment as user for one or more datasets"""
+    """Add comment as user for one or more datasets."""
     site = create_site()
     try:
         with scoped_session(site) as session:
@@ -565,7 +564,7 @@ def marvcli_comment_add(user, message, datasets):
 @marvcli_comment.command('list')
 @click.argument('datasets', nargs=-1)
 def marvcli_comment_list(datasets):
-    """Lists comments for datasets.
+    """List comments for datasets.
 
     Output: setid comment_id date time author message
     """
@@ -578,7 +577,7 @@ def marvcli_comment_list(datasets):
     # pylint: disable=protected-access
     for comment in sorted(comments, key=lambda x: (x.dataset._setid, x.id)):
         print(comment.dataset.setid, comment.id,
-              datetime.datetime.fromtimestamp(int(comment.time_added / 1000)),
+              datetime.datetime.fromtimestamp(int(comment.time_added / 1000)),  # noqa: DTZ
               comment.author, repr(comment.text))
     # pylint: enable=protected-access
 
@@ -636,14 +635,14 @@ def marvcli_comment_rm(ids):
 
 @marvcli.group('user')
 def marvcli_user():
-    """Manage user accounts"""
+    """Manage user accounts."""
 
 
 @marvcli_user.command('add')
 @click.option('--password', help='Password will be prompted')
 @click.argument('username')
 def marvcli_user_add(username, password):
-    """Add a user"""
+    """Add a user."""
     if not re.match(r'[0-9a-zA-Z\-_\.@+]+$', username):
         click.echo(f'Invalid username: {username}', err=True)
         click.echo('Must only contain ASCII letters, numbers, dash, underscore and dot',
@@ -661,7 +660,7 @@ def marvcli_user_add(username, password):
 
 @marvcli_user.command('list')
 def marvcli_user_list():
-    """List existing users"""
+    """List existing users."""
     site = create_site()
     with scoped_session(site) as session:
         query = session.query(User).options(joinedload(User.groups))\
@@ -686,7 +685,7 @@ def marvcli_user_list():
 @click.argument('username')
 @click.pass_context
 def marvcli_user_pw(ctx, username, password):
-    """Change password"""
+    """Change password."""
     site = create_site()
     try:
         site.user_pw(username, password)
@@ -698,7 +697,7 @@ def marvcli_user_pw(ctx, username, password):
 @click.argument('username')
 @click.pass_context
 def marvcli_user_rm(ctx, username):
-    """Remove a user"""
+    """Remove a user."""
     site = create_site()
     try:
         site.user_rm(username)
@@ -708,14 +707,14 @@ def marvcli_user_rm(ctx, username):
 
 @marvcli.group('group')
 def marvcli_group():
-    """Manage user groups"""
+    """Manage user groups."""
 
 
 @marvcli_group.command('add')
 @click.argument('groupname')
 @click.pass_context
 def marvcli_group_add(ctx, groupname):
-    """Add a group"""
+    """Add a group."""
     if not re.match(r'[0-9a-zA-Z\-_\.@+]+$', groupname):
         click.echo(f'Invalid groupname: {groupname}', err=True)
         click.echo('Must only contain ASCII letters, numbers, dash, underscore and dot', err=True)
@@ -729,7 +728,7 @@ def marvcli_group_add(ctx, groupname):
 
 @marvcli_group.command('list')
 def marvcli_group_list():
-    """List existing groups"""
+    """List existing groups."""
     site = create_site()
     with scoped_session(site) as session:
         query = session.query(Group.name).order_by(Group.name)
@@ -742,7 +741,7 @@ def marvcli_group_list():
 @click.argument('groupname')
 @click.pass_context
 def marvcli_group_adduser(ctx, groupname, username):
-    """Add an user to a group"""
+    """Add an user to a group."""
     site = create_site()
     try:
         site.group_adduser(groupname, username)
@@ -755,7 +754,7 @@ def marvcli_group_adduser(ctx, groupname, username):
 @click.argument('groupname')
 @click.pass_context
 def marvcli_group_rmuser(ctx, groupname, username):
-    """Remove an user from a group"""
+    """Remove an user from a group."""
     site = create_site()
     try:
         site.group_rmuser(groupname, username)
@@ -767,7 +766,7 @@ def marvcli_group_rmuser(ctx, groupname, username):
 @click.argument('groupname')
 @click.pass_context
 def marvcli_group_rm(ctx, groupname):
-    """Remove a group"""
+    """Remove a group."""
     site = create_site()
     try:
         site.group_rm(groupname)

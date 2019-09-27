@@ -49,7 +49,7 @@ def generate_token(username, key):
 class APIEndpoint:
     MIN_API_VERSION = 3
     LATEST_API_VERSION = 3
-    HEADER_PREFIX = "application/vnd.marv.v"
+    HEADER_PREFIX = 'application/vnd.marv.v'
     acl = None
 
     def __init__(self, name, func, url_rule, defaults=None, methods=None, version=None,
@@ -105,7 +105,7 @@ class APIGroup:
         self.endpoints = OrderedDict()
 
     def add_endpoint(self, ep):
-        """endpoints and groups are all the same (for now)"""
+        """Endpoints and groups are all the same (for now)."""
         assert ep.name not in self.endpoints, ep
         self.endpoints[ep.name] = ep
 
