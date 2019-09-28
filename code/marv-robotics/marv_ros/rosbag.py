@@ -52,7 +52,11 @@ import yaml
 
 from Crypto import Random
 from Crypto.Cipher import AES
-import gnupg
+
+import logging
+logging.getLogger('gnupg').propagate = False
+from pretty_bad_protocol import gnupg
+logging.getLogger('gnupg').propagate = True
 
 try:
     from cStringIO import StringIO  # Python 2.x
