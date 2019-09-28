@@ -116,8 +116,6 @@ cython==0.29.13 \
     --hash=sha256:f07822248110fd6213db8bc2745fdbbccef6f2b3d18ac91a7fba29c6bc575da5 \
     --hash=sha256:ff69854f123b959d4ae14bd5330714bb9ee4360052992dc0fbd0a3dee4261f95 \
     # via pycapnp-for-marv
-gnupg==2.3.1 \
-    --hash=sha256:8db5a05c369dbc231dab4c98515ce828f2dffdc14f1534441a6c59b71c6d2031
 gunicorn==19.9.0 \
     --hash=sha256:aa8e0b40b4157b36a5df5e599f45c9c76d6af43845ba3b3b0efe2c70473c2471 \
     --hash=sha256:fa2662097c66f920f53f70621c6c58ca4a3c4d3434205e608e121b5b3b71f4f3
@@ -338,6 +336,8 @@ pillow==6.1.0 \
     --hash=sha256:e9046e559c299b395b39ac7dbf16005308821c2f24a63cae2ab173bd6aa11616 \
     --hash=sha256:ef6be704ae2bc8ad0ebc5cb850ee9139493b0fc4e81abcc240fb392a63ebc808 \
     --hash=sha256:f8dc19d92896558f9c4317ee365729ead9d7bbcf2052a9a19a3ef17abbb8ac5b
+pretty-bad-protocol==3.1.1 \
+    --hash=sha256:fb73797eb6344e3680c919e2af367f9a019ee7c189d3ed7f5d843edde911f73b
 psutil==5.6.3 \
     --hash=sha256:028a1ec3c6197eadd11e7b46e8cc2f0720dc18ac6d7aabdb8e8c0d6c9704f000 \
     --hash=sha256:503e4b20fa9d3342bcf58191bbc20a4a5ef79ca7df8972e6197cc14c5513e73d \
@@ -348,7 +348,7 @@ psutil==5.6.3 \
     --hash=sha256:cf49178021075d47c61c03c0229ac0c60d5e2830f8cab19e2d88e579b18cdb76 \
     --hash=sha256:d5350cb66690915d60f8b233180f1e49938756fb2d501c93c44f8fb5b970cc63 \
     --hash=sha256:eba238cf1989dfff7d483c029acb0ac4fcbfc15de295d682901f0e2497e6781a \
-    # via gnupg
+    # via pretty-bad-protocol
 pycapnp-for-marv==0.6.3 \
     --hash=sha256:4df5b460d86a9d8cb5a7ca17609b12a2a9701fb2e15ed393dbf0aa656ae2bb66
 pycparser==2.19 \

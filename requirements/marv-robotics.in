@@ -1,9 +1,9 @@
 -r marv.in
-gnupg
 lz4
 matplotlib
+opencv-python-headless
 pillow
+pretty-bad-protocol  # aka: gnupg
 pycrypto
 pyyaml
-opencv-python-headless
 utm
