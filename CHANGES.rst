@@ -13,10 +13,10 @@ documentation. Within GitLab please find the migration document
 `here <./docs/migrate/index.rst>`_.
 
 
-.. _upcoming_changes:
+.. _v19_09_0:
 
-Upcoming (unreleased)
-^^^^^^^^^^^^^^^^^^^^^
+19.09.0 (2019-09-09)
+^^^^^^^^^^^^^^^^^^^^
 
 Added
 ~~~~~
@@ -41,9 +41,6 @@ Changed
 - Speed up rendering and sorting of tables with large number of rows
 - Drop flask-sqlalchemy in favour of plain sqlalchemy
 - **BREAKING** Switch from flask to aiohttp powered by gunicorn (see migration)
-
-Deprecated
-~~~~~~~~~~
 
 Removed
 ~~~~~~~
