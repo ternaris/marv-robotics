@@ -122,5 +122,4 @@ RUN echo 'source /etc/profile.d/marv_env.sh' >> /etc/bash.bashrc
 
 ENV ACTIVATE_VENV=1
 ENTRYPOINT ["/marv_entrypoint.sh"]
-CMD ["/opt/marv/bin/gunicorn", "--user", "marv", "--group", "marv", "--config", "gunicorn_cfg.py" \
-     "marv.app.wsgi:create_app"]
+CMD ["/bin/sh", "-c", "trap 'exit 147' TERM; tail -f /dev/null & while wait ${!}; [ $? -ge 128 ]; do true; done"]

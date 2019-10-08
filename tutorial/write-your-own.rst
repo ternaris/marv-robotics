@@ -156,7 +156,7 @@ Config
 
 .. note::
 
-   Remember to stop ``gunicorn``, run ``marv init``, and start ``gunicorn``
+   Remember to stop ``marv serve``, run ``marv init``, and start ``marv serve``
    again.
 
 
@@ -208,7 +208,7 @@ Config
 
 .. note::
 
-   Remember to stop ``gunicorn``, run ``marv init``, and start ``gunicorn``
+   Remember to stop ``marv serve``, run ``marv init``, and start ``marv serve``
    again.
 
 .. code-block:: console
@@ -255,7 +255,7 @@ New is the ``table`` widget here, defined by ``rows`` and ``columns``. The colum
 
 .. note::
 
-   Remember to stop ``gunicorn``, run ``marv init``, and start ``gunicorn``
+   Remember to stop ``marv serve``, run ``marv init``, and start ``marv serve``
    again.
 
 .. code-block:: console
@@ -276,7 +276,7 @@ For nodes to be able to make files, they need to be persistent. We forgot to add
 
 .. note::
 
-   Remember to stop ``gunicorn``, run ``marv init``, and start ``gunicorn``
+   Remember to stop ``marv serve``, run ``marv init``, and start ``marv serve``
    again.
 
 .. code-block:: console

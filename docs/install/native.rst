@@ -80,7 +80,7 @@ Let's dedicate a terminal to build the documentation and to start a small webser
 .. code-block:: console
 
    (venv) $ ./scripts/build-docs
-   (venv) $ gunicorn -c tutorial/docs-only-site/gunicorn_cfg.py marv.app.wsgi:create_app
+   (venv) $ marv serve --config tutorial/docs-only-site/marv.conf
 
 Now you have an instance of MARV running at: http://localhost:8000.
 

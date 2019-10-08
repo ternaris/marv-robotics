@@ -44,8 +44,8 @@ There is one collection that uses marv robotics' default bag scanner :func:`marv
 
 .. note::
 
-   Whenever you change your configuration, remember to stop ``gunicorn`` (see
-   below), rerun ``marv init``, and then start ``gunicorn`` again.
+   Whenever you change your configuration, remember to stop ``marv serve`` (see
+   below), rerun ``marv init``, and then start ``marv serve`` again.
 
 **docker**:
 
@@ -60,23 +60,18 @@ Serve the site
 --------------
 
 The MARV backend is implemented using the asynchronous HTTP client/server
-framework `aiohttp <https://github.com/aio-libs/aiohttp>`_ and can be
-efficiently served using the Python WSGI HTTP Server `Gunicorn
-<https://gunicorn.org>`_. Gunicorn can be configured with a simple configuration
-file ``site/gunicorn_cfg.py`` to serve MARV for development or production:
-
-.. literalinclude:: setup-basic-site0/gunicorn_cfg.py
-    :language: python
-
-Gunicorn got installed into the virtual environment during installation and you
-used it already to serve the documentation you are looking at. Let's stop that
-and restart with the configuration we just created. The new one will continue to
-serve the documentation:
+framework `aiohttp <https://github.com/aio-libs/aiohttp>`_ and is by default
+served using the Python WSGI HTTP Server `Gunicorn <https://gunicorn.org>`_.
+MARV internally wraps Gunicorn through the MARV cli ``server`` subcommand. If
+you followed the installation instructions, the page you are looking at is
+already being served by MARV. When run without any options MARV will try to find
+a ``marv.conf`` in the current directory. You can also point MARV to serve a
+specific site using:
 
 .. code-block:: console
 
   CTRL-C
-  (venv) $ gunicorn -c site/gunicorn_cfg.py marv.app.wsgi:create_app
+  (venv) $ marv serve --config site/marv.conf
   ...
   [2019-08-15 14:48:03 +0200] [8255] [INFO] Starting gunicorn 19.9.0
   [2019-08-15 14:48:03 +0200] [8255] [INFO] Listening at: http://0.0.0.0:8000 (8255)
@@ -92,7 +87,7 @@ You should see something like the above lines and MARV should be accessible via 
 .. note::
 
    In the course of this tutorial we'll keep changing the configuration. For
-   these changes to take effect, gunicorn has to be stopped (CTRL-C) and the
+   these changes to take effect, ``marv serve`` has to be stopped (CTRL-C) and the
    site reinitialized with ``marv init``.
 
 

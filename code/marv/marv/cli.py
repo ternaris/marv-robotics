@@ -6,14 +6,17 @@ import datetime
 import functools
 import json
 import re
+import sqlite3
 import sys
 import warnings
 from contextlib import asynccontextmanager
 from functools import reduce
 from logging import getLogger
+from pathlib import Path
 
 import click
 from aiohttp import web
+from gunicorn.app.base import BaseApplication
 from jinja2 import Template
 from tortoise.exceptions import DoesNotExist
 
@@ -142,6 +145,46 @@ def marvcli_develop_server(port, public):
     web.run_app(app,
                 host=('0.0.0.0' if public else '127.0.0.1'),
                 port=port)
+
+
+@marvcli.command('serve')
+@click.option('--host', default='0.0.0.0', help='Host to bind to')
+@click.option('--port', default=8000, help='Port to listen on')
+@click.option('--certfile', default=None, help='SSL certificate')
+@click.option('--keyfile', default=None, help='SSL keyfile')
+@click.option('--approot', default='/', help='Application root to serve', show_default=True)
+def marvcli_serve(host, port, certfile, keyfile, approot):
+    """Run webserver through gunicorn."""
+    config = get_site_config()
+
+    async def app_factory():
+        try:
+            site = await marv.site.Site.create(config)
+            application = marv.app.create_app(site, app_root=approot)
+        except sqlite3.OperationalError as e:
+            print(e, file=sys.stderr)
+            print('Did you run marv init?', file=sys.stderr)
+            sys.exit(4)
+        except OSError as e:
+            if e.errno == 13:
+                print(e, file=sys.stderr)
+                sys.exit(4)
+            raise
+        return application
+
+    class GunicornApplication(BaseApplication):  # pylint: disable=abstract-method
+        def load_config(self):
+            self.cfg.set('proc_name', 'marvweb')
+            self.cfg.set('worker_class', 'aiohttp.GunicornUVLoopWebWorker')
+            self.cfg.set('bind', f'{host}:{port}')
+            self.cfg.set('certfile', certfile)
+            self.cfg.set('keyfile', keyfile)
+            self.cfg.set('workers', 1)
+
+        def load(self):
+            return app_factory
+
+    GunicornApplication().run()
 
 
 @marvcli.command('discard')

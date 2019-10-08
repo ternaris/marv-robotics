@@ -9,10 +9,40 @@ Migration
 Before doing any migration you might want to check the :ref:`config` and :ref:`deploy` sections.
 
 
-.. _migrate_19_07_to_19_10_0:
+.. _migrate_19_09_0_to_19_11_0:
 
-19.07 -> 19.09.0
-----------------
+19.09.0 -> 19.11.0
+------------------
+
+The gunicorn configuration was simplified. Instead of providing
+``gunicorn_cfg.py`` and running gunicorn manually, the ``marv serve`` cli was
+added. Check it out with ``marv serve --help``.
+
+If you were overriding the dburi path in your marv.conf, there is no need for
+the odd sqlalchemy URIs with four slashes anymore. If your custom dburi starts
+with ``sqlite:////`` please remove one slash.
+
+This version makes the switch from sqlalchemy to tortoise as the underlying ORM,
+which makes a migration of the MARV database necessary. Export the database with
+your current version of MARV:
+
+.. code-block:: console
+
+   marv dump dump-1909.json
+   mv db/db.sqlite db/db.sqlite.1909
+
+After updating MARV run:
+
+.. code-block:: console
+
+   marv init
+   marv restore dump-1909.json
+
+
+.. _migrate_19_07_0_to_19_09_0:
+
+19.07.0 -> 19.09.0
+------------------
 
 Uwsgi was replaced in favour of Gunicorn. In your site directory, replace
 ``uwsgi.conf`` with a ``gunicorn_cfg.py``:

@@ -19,10 +19,12 @@ if [[ -n "$DEVELOP" ]]; then
     find "$DEVELOP" -maxdepth 2 -name setup.py -execdir su -c "$MARV_VENV/bin/pip install -e ." marv \;
 fi
 
-( cd "$MARV_SITE" && "$@" ) &
-PID="$!"
-trap "kill -INT $PID" INT
-trap "kill -TERM $PID" TERM
-trap "kill -KILL $PID" KILL
-echo "Container startup complete."
-wait
+export HOME=/home/marv
+cd $MARV_SITE
+if [[ -n "$MARV_INIT" ]] || [[ ! -e db ]]; then
+    su - marv -p -c '/opt/marv/bin/marv --config "$MARV_CONFIG" init'
+fi
+su - marv -p -c '/opt/marv/bin/marv --config "$MARV_CONFIG" serve --approot "${MARV_APPLICATION_ROOT:-/}"' &
+
+echo 'Container startup complete.'
+exec "$@"
