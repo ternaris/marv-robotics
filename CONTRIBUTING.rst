@@ -2,11 +2,8 @@
 Contribution guide
 ==================
 
-Thank you for considering to contribute to MARV.
-
-By contributing to MARV you accept and agree to the terms and
-conditions laid out in this document, if applicable on behalf of your
-employer.
+Thank you for considering to contribute to MARV. Below is information on how to
+report issues and submit your contributions to MARV.
 
 
 Rights to and license of contributions
@@ -17,19 +14,25 @@ The MARV Community Edition is licensed under `AGPL-3.0`_ and
 under the proprietary `MARV-License`_.
 
 For one, we want to ensure that you have the rights to your
-contributions, for another we'd like to be able to use contributions
+contributions, for another we'd like to be able to use your contributions
 to either edition in both editions.
 
-To this end, beyond what is required by the license of the MARV edition you are
-contributing to, we require you to:
+To this end, beyond what is required by the license of the MARV
+edition you are contributing to, your submission of an issue, merge
+request, comment, or code to us is:
 
-1. Certify the origin of your contribution in the sense of the
-   `Developer Certificate of Origin`_ (see also below)
+1. If your employer has rights in your contributions, your representation that
+   your employer has authorized you to enter into this agreement on its behalf;
 
-2. Place your contributions under:
+2. Your agreement, or your employer's agreement, with the terms and conditions
+   in this document;
+
+3. Your signature of the `Developer Certificate of Origin`_ (details below); and
+
+4. Your grant of a license to your contributions under:
 
    - `Apache-2.0`_ license for code,
-   - `CC BY-SA 4.0`_ license for documentation
+   - `CC BY 4.0`_ license for documentation
 
 
 Reporting issues / minimal working example
@@ -44,7 +47,8 @@ are seeing, please:
 
 3. If there is custom code involved, please add a minimal working
    example based on it to a python package in `<./code>`_. We don't
-   need to see your real code, but we cannot help without code.
+   need to see your real code, but we cannot help without code. This
+   will require a *sign-off*, which is explained below.
 
 4. Create a ``scanroot`` folder within your site folder and add
    minimal bags or other files as needed.
@@ -79,9 +83,9 @@ In order to contribute code there are a few noteworthy things:
 5. As part of your merge request, please **update the changelog**
    accordingly in one dedicated final commit.
 
-6. We require you to **sign-off your commits** (see below) to indicate
-   on your commit that you agreed to the terms and conditions laid out
-   in this document, if applicable on behalf of your employer.
+6. We require you to **sign-off your commits** (see below). Your
+   sign-off indicates that you agreed to the terms and conditions laid
+   out in this document, if applicable on behalf of your employer.
 
 .. _allow collaboration: https://docs.gitlab.com/ee/user/project/merge_requests/allow_collaboration.html
 
@@ -145,15 +149,11 @@ Inspiration taken from `How to write a changelog and why it matters`_.
    https://www.itsupportguides.com/blog/how-to-write-changelog-and-why-it-matters/
 
 
-Signed-off-by lines
--------------------
+Signing off a commit
+--------------------
 
-By signing-off your commits you indicate on your commit that you
-agreed to the terms and conditions laid out in this document, if
-applicable on behalf of your employer.
-
-You sign-off a commit by adding a line like the following to the
-bottom of its commit message, separated by an empty line..
+You sign off a commit by adding a line like the following to the
+bottom of its commit message, separated by an empty line.
 
 ::
 
@@ -162,8 +162,7 @@ bottom of its commit message, separated by an empty line..
 Make sure it reflects your real name and email address. Git does this
 automatically when using ``git commit -s``.
 
-Except for the license granted herein to `Ternaris`_ and recipients of
-software distributed by `Ternaris`_, you reserve all right, title, and
+Except for the licenses granted herein, you reserve all right, title, and
 interest in and to your contributions.
 
 
@@ -213,7 +212,7 @@ By making a contribution to this project, I certify that:
 
 .. _AGPL-3.0: https://www.gnu.org/licenses/agpl-3.0.html
 .. _Apache-2.0: ./LICENSES/Apache-2.0
-.. _CC BY-SA 4.0: https://creativecommons.org/licenses/by-sa/4.0/
+.. _CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
 .. _Developer Certificate of Origin: https://developercertificate.org/
 .. _MARV-License: ./LICENSES/MARV-License
 .. _Ternaris: https://ternaris.com
