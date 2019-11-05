@@ -2390,7 +2390,12 @@ class _BagReader200(_BagReader):
     def read_messages(self, topics, start_time, end_time, connection_filter, raw, return_connection_header=False):
         connections = self.bag._get_connections(topics, connection_filter)
         for entry in self.bag._get_entries(connections, start_time, end_time):
-            yield self.seek_and_read_message_data_record((entry.chunk_pos, entry.offset), raw, return_connection_header)
+            yield (
+                entry.time,
+                self.seek_and_read_message_data_record((entry.chunk_pos, entry.offset),
+                                                       raw,
+                                                       return_connection_header),
+            )
 
     ###
 
