@@ -218,11 +218,12 @@ def bagmeta(dataset):
 def read_messages(paths, topics=None, start_time=None, end_time=None):
     """Iterate chronologically raw BagMessage for topic from paths."""
     bags = {path: rosbag.Bag(path) for path in paths}
-    gens = {path: bag.read_messages(topics=topics, start_time=start_time,
-                                    end_time=end_time, raw=True)
-            for path, bag in bags.items()}
+    gens = {
+        path: bag.read_messages(topics=topics, start_time=start_time, end_time=end_time, raw=True)
+        for path, bag in bags.items()
+    }
     msgs = {}
-    prev_timestamp = genpy.Time(0)
+    prev_time = genpy.Time(0)
     while True:
         for key in gens.keys() - msgs.keys():
             try:
@@ -233,12 +234,11 @@ def read_messages(paths, topics=None, start_time=None, end_time=None):
                 del gens[key]
         if not msgs:
             break
-        next_key = reduce(lambda x, y: x if x[1].timestamp < y[1].timestamp else y,
-                          msgs.items())[0]
-        next_msg = msgs.pop(next_key)
-        assert next_msg.timestamp >= prev_timestamp
+        next_key = reduce(lambda x, y: x if x[0] < y[0] else y, msgs.items())[0]
+        next_time, next_msg = msgs.pop(next_key)
+        assert next_time >= prev_time
         yield next_msg
-        prev_timestamp = next_msg.timestamp
+        prev_time = next_time
 
 
 @marv.node(Message, Header, group='ondemand')
