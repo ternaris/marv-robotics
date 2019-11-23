@@ -5,6 +5,7 @@ import logging
 import os
 from collections import OrderedDict
 from contextlib import contextmanager
+from pathlib import Path
 
 import click
 from pkg_resources import iter_entry_points
@@ -12,6 +13,7 @@ from pkg_resources import iter_entry_points
 
 FORMAT = os.environ.get('MARV_LOG_FORMAT', '%(asctime)s %(levelname).4s %(name)s %(message)s')
 PDB = None
+STATICX_PROG_PATH = os.environ.get('STATICX_PROG_PATH')
 
 # needs to be in line with logging
 LOGLEVEL = OrderedDict((
@@ -128,13 +130,22 @@ def marv(ctx, config, loglevel, logfilter, verbosity):
 
 def cli():
     """Setuptools entry_point."""
+    ldpath = os.environ.get('LD_LIBRARY_PATH')
+    if ldpath:
+        os.environ['LD_LIBRARY_PATH'] = ':'.join(
+            x
+            for x in ldpath.split(':')
+            if not x.startswith('/tmp/_MEI')
+        )
+
     global PDB  # pylint: disable=global-statement
     PDB = bool(os.environ.get('PDB'))
     with launch_pdb_on_exception(PDB):
         for entry_point in iter_entry_points(group='marv_cli'):
             entry_point.load()
+        prog_name = STATICX_PROG_PATH and Path(STATICX_PROG_PATH).name
         # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
-        marv(auto_envvar_prefix='MARV')
+        marv(auto_envvar_prefix='MARV', prog_name=prog_name)
 
 
 if __name__ == '__main__':
