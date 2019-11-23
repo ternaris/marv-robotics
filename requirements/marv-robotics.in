@@ -1,7 +1,6 @@
 -r marv.in
 lz4
 matplotlib
-opencv-python-headless
 pillow
 pretty-bad-protocol  # aka: gnupg
 pycrypto

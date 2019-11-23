@@ -31,6 +31,7 @@ cd "$(dirname "$(realpath "$0")")"/..
 python3.7 -m venv "$TARGET"
 "$TARGET"/bin/pip install -U pip==19.2.3 setuptools==41.2.0 wheel==0.33.6
 "$TARGET"/bin/pip install -Ur "$REQUIREMENTS"
+"$TARGET"/bin/pip install opencv-python-headless==4.1.1.26
 "$TARGET"/bin/pip install -Ur requirements/develop.txt
 
 # Install all python distributions directly in code
