@@ -15,7 +15,7 @@ async def check_authorization(request, acl, authorization):
     if authorization:
         token = authorization.replace('Bearer ', '')
         try:
-            session = jwt.decode(token, request.app['config']['SECRET_KEY'], algorithm='HS256')
+            session = jwt.decode(token, request.app['config']['SECRET_KEY'], algorithms=['HS256'])
         except BaseException:
             raise web.HTTPUnauthorized()
 
