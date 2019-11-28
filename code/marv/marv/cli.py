@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import asyncio
+import code
 import datetime
 import functools
 import json
@@ -18,6 +19,7 @@ import click
 from aiohttp import web
 from gunicorn.app.base import BaseApplication
 from jinja2 import Template
+from pip import _internal as pip
 from tortoise.exceptions import DoesNotExist
 
 import marv.app
@@ -776,3 +778,39 @@ async def marvcli_group_rm(ctx, groupname):
             await site.db.group_rm(groupname)
         except ValueError as e:
             ctx.fail(e.args[0])
+
+
+@marvcli.group('pip')
+def marvcli_pip():
+    """Integrate pip commands (EE)."""
+
+
+@marvcli_pip.command('install', context_settings={'ignore_unknown_options': True})
+@click.argument('pipargs', nargs=-1, type=click.UNPROCESSED)
+@click_async
+async def marvcli_pip_install(pipargs):
+    """Execute a pip command (EE)."""
+    pyexe = Path(code.__file__).parent / 'python'
+    with pyexe.open('w') as f:
+        f.write(f'#!/bin/sh\nexec {sys.executable} python "$@"')
+    pyexe.chmod(0o700)
+    sys.executable = str(pyexe)
+    async with create_site() as site:
+        venv = site.config.marv.venv
+    sys.argv = [str(pyexe), 'install', '--prefix', venv, *pipargs]
+    sys.exit(pip.main())
+
+
+@marvcli.command('python', context_settings={'ignore_unknown_options': True})
+@click.option('-u', '--unbuffered', is_flag=True, help='Python -u equivalent (ignored)')
+@click.option('-E', 'ignore', is_flag=True, help='Python -E equivalent (ignored)')
+@click.option('-c', '--command', help='Python -c equivalent')
+@click.argument('args', nargs=-1, type=click.UNPROCESSED)
+def marvcli_python(unbuffered, ignore, command, args):  # pylint: disable=unused-argument
+    """Drop into interactive python (EE)."""
+    if command:
+        sys.argv = ['-c', *args]
+        sys.path.append('.')
+        exec(compile(command, 'python_wrapper', 'exec'))  # pylint: disable=exec-used
+    else:
+        code.interact(local=locals())

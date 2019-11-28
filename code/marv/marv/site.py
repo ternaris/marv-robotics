@@ -4,8 +4,10 @@
 import fcntl
 import os
 import shutil
+import sys
 from itertools import count, product
 from logging import getLogger
+from pathlib import Path
 from uuid import uuid4
 
 import tortoise
@@ -63,17 +65,18 @@ class UnknownNode(Exception):
 
 
 def make_config(siteconf):
-    sitedir = os.path.dirname(siteconf)
+    sitedir = Path(siteconf).parent
     defaults = {
         'marv': {
             'acl': 'marv_webapi.acls:authenticated',
-            'dburi': 'sqlite://' + os.path.join(sitedir, 'db', 'db.sqlite'),
-            'frontenddir': os.path.join(sitedir, 'frontend'),
+            'dburi': 'sqlite://' + str(sitedir / 'db' / 'db.sqlite'),
+            'frontenddir': str(sitedir / 'frontend'),
             'oauth': '',
             'reverse_proxy': None,
-            'sessionkey_file': os.path.join(sitedir, 'sessionkey'),
-            'staticdir': os.path.join(resource_filename('marv_ludwig', 'static')),
-            'storedir': os.path.join(sitedir, 'store'),
+            'sessionkey_file': str(sitedir / 'sessionkey'),
+            'staticdir': str(sitedir / resource_filename('marv_ludwig', 'static')),
+            'storedir': str(sitedir / 'store'),
+            'venv': str(sitedir / 'venv'),
             'window_title': '',
         },
         'collection': {
@@ -140,6 +143,7 @@ class Site:
     @classmethod
     async def create(cls, siteconf, init=None):
         site = cls(siteconf)
+        sys.path.append(f'{site.config.marv.venv}/lib/python3.7/site-packages')
 
         if init:
             site.init_directory()
