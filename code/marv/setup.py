@@ -8,7 +8,7 @@ from collections import OrderedDict
 from setuptools import find_packages, setup
 
 NAME = 'marv'
-VERSION = '19.09.0'
+VERSION = '19.11.0'
 DESCRIPTION = 'MARV framework'
 ENTRY_POINTS = {
     'marv_cli': ['marv = marv.cli'],

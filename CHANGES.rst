@@ -13,6 +13,42 @@ documentation. Within GitLab please find the migration document
 `here <./docs/migrate/index.rst>`_.
 
 
+.. _v19_11_0:
+
+19.11.0 (2019-12-01)
+^^^^^^^^^^^^^^^^^^^^
+
+Added
+~~~~~
+- Add query API
+
+Changed
+~~~~~~~
+- Provide marv serve cli to replace gunicorn (see migration)
+- Speedup database queries
+- **BREAKING** Switch from sqlalchemy to tortoise-orm (see migration)
+- Remove need for four slashes for absolute database URI
+  `#68 <https://gitlab.com/ternaris/marv-robotics/issues/68>`_
+- Contribution guide to require contributions to documentation be licensed under
+  CC-BY-4.0 instead of CC-BY-SA-4.0
+- Upgrade python gnupg library and silence log message upon import
+- Make opencv an optional dependency
+
+Removed
+~~~~~~~
+- Remove unneeded dependencies
+- Drop support for ancient rosbag formats
+- Drop support to reference multiple datasets by common prefix
+
+Fixed
+~~~~~
+- Support non-ascii characters in API filters
+  `#70 <https://gitlab.com/ternaris/marv-robotics/issues/70>`_
+- Use correct timestamp to playback messages from multiple bags
+  `#72 <https://gitlab.com/ternaris/marv-robotics/issues/72>`_
+- Explicitly set algorithm for json web tokens
+
+
 .. _v19_09_0:
 
 19.09.0 (2019-09-09)
