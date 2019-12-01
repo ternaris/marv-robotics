@@ -71,6 +71,7 @@ docker run \
        -p "$HTTP:8000" \
        -v "$PWD/code:/home/marv/code" \
        -v "$PWD/docs:/home/marv/docs" \
+       -v "$PWD/requirements:/home/marv/requirements" \
        -v "$PWD/scripts:/home/marv/scripts" \
        -v "$PWD/tutorial:/home/marv/tutorial" \
        -v "$PWD/CHANGES.rst:/home/marv/CHANGES.rst" \

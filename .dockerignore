@@ -1,6 +1,7 @@
 *
 !.docker
 !CHANGES.rst
+!CONTRIBUTING.rst
 !code
 !docs
 !requirements

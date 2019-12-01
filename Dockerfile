@@ -58,7 +58,7 @@ ARG venv=/opt/marv
 ENV MARV_VENV=$venv
 RUN bash -c '\
 if [[ -n "$MARV_VENV" ]]; then \
-    mkdir $MARV_VENV; \
+    mkdir $MARV_VENV && \
     chown marv:marv $MARV_VENV; \
 fi'
 
@@ -67,10 +67,10 @@ USER marv
 COPY requirements/* /requirements/
 RUN bash -c '\
 if [[ -n "$MARV_VENV" ]]; then \
-    ${PYTHON} -m venv $MARV_VENV; \
-    $MARV_VENV/bin/pip install -U pip==19.2.3 setuptools==41.2.0 wheel==0.33.6; \
-    $MARV_VENV/bin/pip install -U -r /requirements/marv-robotics.txt; \
-    $MARV_VENV/bin/pip install opencv-python-headless==4.1.1.26; \
+    ${PYTHON} -m venv $MARV_VENV && \
+    $MARV_VENV/bin/pip install -U pip==19.2.3 setuptools==41.2.0 wheel==0.33.6 && \
+    $MARV_VENV/bin/pip install -U -r /requirements/marv-robotics.txt && \
+    $MARV_VENV/bin/pip install opencv-python-headless==4.1.1.26 && \
     $MARV_VENV/bin/pip install -U -r /requirements/develop.txt; \
 fi'
 
@@ -85,11 +85,12 @@ fi'
 ARG docs=docs
 
 COPY --chown=marv:marv CHANGES.rst /home/marv/CHANGES.rst
+COPY --chown=marv:marv CONTRIBUTING.rst /home/marv/CONTRIBUTING.rst
 COPY --chown=marv:marv tutorial /home/marv/tutorial
 COPY --chown=marv:marv ${docs:-CHANGES.rst} /home/marv/docs
 RUN bash -c '\
 if [[ -z "$docs" ]]; then \
-    rm -r /home/marv/docs /home/marv/CHANGES.rst /home/marv/tutorial; \
+    rm -r /home/marv/{docs,CHANGES.rst,CONTRIBUTING.rst,tutorial}; \
 fi'
 
 ARG scripts=scripts
@@ -108,9 +109,9 @@ if [[ -n "$MARV_VENV" ]]; then \
     if [[ -z "$code" ]]; then \
         ${MARV_VENV}/bin/pip install ${pypi_install_args} marv-robotics${version:+==${version}}; \
     else \
-        find /home/marv/code -maxdepth 2 -name setup.py -execdir ${MARV_VENV}/bin/pip install --no-deps . \; ;\
-        ${MARV_VENV}/bin/pip install /home/marv/code/marv-robotics; \
-        (source "/opt/ros/$ROS_DISTRO/setup.bash"; source $MARV_VENV/bin/activate; /home/marv/scripts/build-docs); \
+        find /home/marv/code -maxdepth 2 -name setup.py -execdir ${MARV_VENV}/bin/pip install --no-deps . \; && \
+        ${MARV_VENV}/bin/pip install ${pypi_install_args} /home/marv/code/marv-robotics && \
+        (source $MARV_VENV/bin/activate && /home/marv/scripts/build-docs) && \
         ${MARV_VENV}/bin/pip install -U --no-deps /home/marv/code/marv-robotics; \
     fi \
 fi'
