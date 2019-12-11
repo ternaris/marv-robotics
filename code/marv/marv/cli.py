@@ -785,19 +785,24 @@ def marvcli_pip():
     """Integrate pip commands (EE)."""
 
 
+def ensure_python():
+    pyexe = Path(code.__file__).parent / 'python'
+    if not pyexe.exists():
+        with pyexe.open('w') as f:
+            f.write(f'#!/bin/sh\nexec {sys.executable} python "$@"')
+        pyexe.chmod(0o700)
+    sys.executable = str(pyexe)
+
+
 @marvcli_pip.command('install', context_settings={'ignore_unknown_options': True})
 @click.argument('pipargs', nargs=-1, type=click.UNPROCESSED)
 @click_async
 async def marvcli_pip_install(pipargs):
     """Execute a pip command (EE)."""
-    pyexe = Path(code.__file__).parent / 'python'
-    with pyexe.open('w') as f:
-        f.write(f'#!/bin/sh\nexec {sys.executable} python "$@"')
-    pyexe.chmod(0o700)
-    sys.executable = str(pyexe)
     async with create_site() as site:
         venv = site.config.marv.venv
-    sys.argv = [str(pyexe), 'install', '--prefix', venv, *pipargs]
+    ensure_python()
+    sys.argv = [sys.executable, 'install', '--prefix', venv, *pipargs]
     sys.exit(pip.main())
 
 
@@ -808,6 +813,7 @@ async def marvcli_pip_install(pipargs):
 @click.argument('args', nargs=-1, type=click.UNPROCESSED)
 def marvcli_python(unbuffered, ignore, command, args):  # pylint: disable=unused-argument
     """Drop into interactive python (EE)."""
+    ensure_python()
     if command:
         sys.argv = ['-c', *args]
         sys.path.append('.')
