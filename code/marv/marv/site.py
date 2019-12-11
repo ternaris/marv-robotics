@@ -129,6 +129,20 @@ class DBNotInitialized(Exception):
     pass
 
 
+def load_sitepackages(sitepackages):
+    sys.path.append(str(sitepackages))
+    try:
+        with (sitepackages / 'easy-install.pth').open('r') as f:
+            for directory in f.readlines():
+                if directory[0] == '#' or directory.startswith('import'):
+                    continue
+                directory = directory.strip()
+                if directory not in sys.path:
+                    sys.path.append(directory)
+    except OSError:
+        pass
+
+
 class Site:
     def __init__(self, siteconf):
         self.config = make_config(siteconf)
@@ -143,7 +157,7 @@ class Site:
     @classmethod
     async def create(cls, siteconf, init=None):
         site = cls(siteconf)
-        sys.path.append(f'{site.config.marv.venv}/lib/python3.7/site-packages')
+        load_sitepackages(Path(site.config.marv.venv, 'lib', 'python3.7', 'site-packages'))
 
         if init:
             site.init_directory()
