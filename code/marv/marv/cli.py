@@ -785,11 +785,11 @@ def marvcli_pip():
     """Integrate pip commands (EE)."""
 
 
-def ensure_python():
+def ensure_python(venv=''):
     pyexe = Path(code.__file__).parent / 'python'
     if not pyexe.exists():
         with pyexe.open('w') as f:
-            f.write(f'#!/bin/sh\nexec {sys.executable} python "$@"')
+            f.write(f'#!/bin/sh\nexport PYTHONPATH={venv}\nexec {sys.executable} python "$@"')
         pyexe.chmod(0o700)
     sys.executable = str(pyexe)
 
@@ -801,7 +801,7 @@ async def marvcli_pip_install(pipargs):
     """Execute a pip command (EE)."""
     async with create_site() as site:
         venv = site.config.marv.venv
-    ensure_python()
+    ensure_python(Path(venv, 'lib', 'python3.7', 'site-packages'))
     sys.argv = [sys.executable, 'install', '--prefix', venv, *pipargs]
     sys.exit(pip.main())
 
