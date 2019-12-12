@@ -785,13 +785,13 @@ def marvcli_pip():
     """Integrate pip commands (EE)."""
 
 
-def ensure_python(pypath):
+def ensure_python(siteconf, sitepackages):
     pyexe = Path(code.__file__).parent / 'python'
     if not pyexe.exists():
         with pyexe.open('w') as f:
             f.write(f'#!/bin/sh\n'
-                    f'export PYTHONPATH="{pypath}:$PYTHONPATH"\n'
-                    f'exec {sys.executable} python "$@"')
+                    f'export PYTHONPATH="{sitepackages}:$PYTHONPATH"\n'
+                    f'exec {sys.executable} --config {siteconf} python "$@"')
         pyexe.chmod(0o700)
     sys.executable = str(pyexe)
 
@@ -800,10 +800,11 @@ def ensure_python(pypath):
 @click.argument('pipargs', nargs=-1, type=click.UNPROCESSED)
 def marvcli_pip_install(pipargs):
     """Execute a pip command (EE)."""
-    config = make_config(get_site_config())
+    siteconf = get_site_config()
+    config = make_config(siteconf)
     sitepackages = config.marv.sitepackages
     load_sitepackages(sitepackages)
-    ensure_python(sitepackages)
+    ensure_python(siteconf, sitepackages)
     sys.argv = [sys.executable, 'install', '--prefix', config.marv.venv, *pipargs]
     sys.exit(pip.main())
 
@@ -812,9 +813,10 @@ def marvcli_pip_install(pipargs):
 @click.argument('pipargs', nargs=-1, type=click.UNPROCESSED)
 def marvcli_pip_uninstall(pipargs):
     """Execute a pip command (EE)."""
-    sitepackages = make_config(get_site_config()).marv.sitepackages
+    siteconf = get_site_config()
+    sitepackages = make_config(siteconf).marv.sitepackages
     load_sitepackages(sitepackages)
-    ensure_python(sitepackages)
+    ensure_python(siteconf, sitepackages)
     sys.argv = [sys.executable, 'uninstall', *pipargs]
     sys.exit(pip.main())
 
@@ -826,9 +828,10 @@ def marvcli_pip_uninstall(pipargs):
 @click.argument('args', nargs=-1, type=click.UNPROCESSED)
 def marvcli_python(unbuffered, ignore, command, args):  # pylint: disable=unused-argument
     """Drop into interactive python (EE)."""
-    sitepackages = make_config(get_site_config()).marv.sitepackages
+    siteconf = get_site_config()
+    sitepackages = make_config(siteconf).marv.sitepackages
     load_sitepackages(sitepackages)
-    ensure_python(sitepackages)
+    ensure_python(siteconf, sitepackages)
     if command:
         sys.argv = ['-c', *args]
         sys.path.append('.')
