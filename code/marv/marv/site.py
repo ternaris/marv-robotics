@@ -5,6 +5,7 @@ import fcntl
 import os
 import shutil
 import sys
+import sysconfig
 from itertools import count, product
 from logging import getLogger
 from pathlib import Path
@@ -66,6 +67,7 @@ class UnknownNode(Exception):
 
 def make_config(siteconf):
     sitedir = Path(siteconf).parent
+    py_ver = sysconfig.get_python_version()
     defaults = {
         'marv': {
             'acl': 'marv_webapi.acls:authenticated',
@@ -77,6 +79,7 @@ def make_config(siteconf):
             'staticdir': str(sitedir / resource_filename('marv_ludwig', 'static')),
             'storedir': str(sitedir / 'store'),
             'venv': str(sitedir / 'venv'),
+            'sitepackages': str(sitedir / 'venv' / 'lib' / f'python{py_ver}' / 'site-packages'),
             'window_title': '',
         },
         'collection': {
@@ -130,7 +133,10 @@ class DBNotInitialized(Exception):
 
 
 def load_sitepackages(sitepackages):
-    sys.path.append(str(sitepackages))
+    sitepackages = Path(sitepackages)
+    sitepackages.mkdir(parents=True, exist_ok=True)
+    if str(sitepackages) not in sys.path:
+        sys.path.append(str(sitepackages))
     try:
         with (sitepackages / 'easy-install.pth').open('r') as f:
             for directory in f.readlines():
@@ -157,7 +163,7 @@ class Site:
     @classmethod
     async def create(cls, siteconf, init=None):
         site = cls(siteconf)
-        load_sitepackages(Path(site.config.marv.venv, 'lib', 'python3.7', 'site-packages'))
+        load_sitepackages(site.config.marv.sitepackages)
 
         if init:
             site.init_directory()

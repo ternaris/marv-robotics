@@ -25,7 +25,7 @@ from tortoise.exceptions import DoesNotExist
 import marv.app
 from marv.config import ConfigError
 from marv.db import dump_database
-from marv.site import Site, UnknownNode, make_config
+from marv.site import Site, UnknownNode, load_sitepackages, make_config
 from marv.utils import find_obj
 from marv_cli import PDB
 from marv_cli import marv as marvcli
@@ -785,11 +785,13 @@ def marvcli_pip():
     """Integrate pip commands (EE)."""
 
 
-def ensure_python(pypath=''):
+def ensure_python(pypath):
     pyexe = Path(code.__file__).parent / 'python'
     if not pyexe.exists():
         with pyexe.open('w') as f:
-            f.write(f'#!/bin/sh\nexport PYTHONPATH={pypath}\nexec {sys.executable} python "$@"')
+            f.write(f'#!/bin/sh\n'
+                    f'export PYTHONPATH="{pypath}:$PYTHONPATH"\n'
+                    f'exec {sys.executable} python "$@"')
         pyexe.chmod(0o700)
     sys.executable = str(pyexe)
 
@@ -799,12 +801,11 @@ def ensure_python(pypath=''):
 @click_async
 async def marvcli_pip_install(pipargs):
     """Execute a pip command (EE)."""
-    async with create_site() as site:
-        venv = site.config.marv.venv
-    sitepackages = Path(venv, 'lib', 'python3.7', 'site-packages')
-    sitepackages.mkdir(parents=True, exist_ok=True)
+    config = make_config(get_site_config())
+    sitepackages = config.marv.sitepackages
+    load_sitepackages(sitepackages)
     ensure_python(sitepackages)
-    sys.argv = [sys.executable, 'install', '--prefix', venv, *pipargs]
+    sys.argv = [sys.executable, 'install', '--prefix', config.marv.venv, *pipargs]
     sys.exit(pip.main())
 
 
@@ -815,7 +816,9 @@ async def marvcli_pip_install(pipargs):
 @click.argument('args', nargs=-1, type=click.UNPROCESSED)
 def marvcli_python(unbuffered, ignore, command, args):  # pylint: disable=unused-argument
     """Drop into interactive python (EE)."""
-    ensure_python()
+    sitepackages = make_config(get_site_config()).marv.sitepackages
+    load_sitepackages(sitepackages)
+    ensure_python(sitepackages)
     if command:
         sys.argv = ['-c', *args]
         sys.path.append('.')
