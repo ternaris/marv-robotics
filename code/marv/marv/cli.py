@@ -798,14 +798,24 @@ def ensure_python(pypath):
 
 @marvcli_pip.command('install', context_settings={'ignore_unknown_options': True})
 @click.argument('pipargs', nargs=-1, type=click.UNPROCESSED)
-@click_async
-async def marvcli_pip_install(pipargs):
+def marvcli_pip_install(pipargs):
     """Execute a pip command (EE)."""
     config = make_config(get_site_config())
     sitepackages = config.marv.sitepackages
     load_sitepackages(sitepackages)
     ensure_python(sitepackages)
     sys.argv = [sys.executable, 'install', '--prefix', config.marv.venv, *pipargs]
+    sys.exit(pip.main())
+
+
+@marvcli_pip.command('uninstall', context_settings={'ignore_unknown_options': True})
+@click.argument('pipargs', nargs=-1, type=click.UNPROCESSED)
+def marvcli_pip_uninstall(pipargs):
+    """Execute a pip command (EE)."""
+    sitepackages = make_config(get_site_config()).marv.sitepackages
+    load_sitepackages(sitepackages)
+    ensure_python(sitepackages)
+    sys.argv = [sys.executable, 'uninstall', *pipargs]
     sys.exit(pip.main())
 
 
