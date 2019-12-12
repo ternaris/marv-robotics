@@ -19,7 +19,6 @@ import click
 from aiohttp import web
 from gunicorn.app.base import BaseApplication
 from jinja2 import Template
-from pip import _internal as pip
 from tortoise.exceptions import DoesNotExist
 
 import marv.app
@@ -805,6 +804,7 @@ def marvcli_pip_install(pipargs):
     sitepackages = config.marv.sitepackages
     load_sitepackages(sitepackages)
     ensure_python(siteconf, sitepackages)
+    from pip import _internal as pip
     sys.argv = [sys.executable, 'install', '--prefix', config.marv.venv, *pipargs]
     sys.exit(pip.main())
 
@@ -817,6 +817,7 @@ def marvcli_pip_uninstall(pipargs):
     sitepackages = make_config(siteconf).marv.sitepackages
     load_sitepackages(sitepackages)
     ensure_python(siteconf, sitepackages)
+    from pip import _internal as pip
     sys.argv = [sys.executable, 'uninstall', *pipargs]
     sys.exit(pip.main())
 
