@@ -133,6 +133,8 @@ class DBNotInitialized(Exception):
 
 
 def load_sitepackages(sitepackages):
+    import site  # pylint: disable=import-outside-toplevel
+    site.USER_SITE = sitepackages
     sitepackages = Path(sitepackages)
     sitepackages.mkdir(parents=True, exist_ok=True)
     if str(sitepackages) not in sys.path:
@@ -145,7 +147,7 @@ def load_sitepackages(sitepackages):
                 directory = directory.strip()
                 if directory not in sys.path:
                     sys.path.append(directory)
-    except OSError:
+    except FileNotFoundError:
         pass
 
 
