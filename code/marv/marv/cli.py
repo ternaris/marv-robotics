@@ -809,7 +809,7 @@ def marvcli_pip_install(pipargs):
     sys.exit(pip.main())
 
 
-@marvcli_pip.command('uninstall', context_settings={'ignore_unknown_options': True})
+@marvcli_pip.command('uninstall', hidden=True, context_settings={'ignore_unknown_options': True})
 @click.argument('pipargs', nargs=-1, type=click.UNPROCESSED)
 def marvcli_pip_uninstall(pipargs):
     """Execute a pip command (EE)."""
