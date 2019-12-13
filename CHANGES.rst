@@ -32,6 +32,8 @@ Removed
 
 Fixed
 ~~~~~
+- Let marv pip install understand what packages are contained within bundle
+- Let marv python see marv pip installed packages
 
 Security
 ~~~~~~~~
