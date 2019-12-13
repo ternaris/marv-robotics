@@ -13,30 +13,15 @@ documentation. Within GitLab please find the migration document
 `here <./docs/migrate/index.rst>`_.
 
 
-.. _upcoming_changes:
+.. _v19_11_1:
 
-Upcoming (unreleased)
-^^^^^^^^^^^^^^^^^^^^^
-
-Added
-~~~~~
-
-Changed
-~~~~~~~
-
-Deprecated
-~~~~~~~~~~
-
-Removed
-~~~~~~~
+19.11.1 (2019-12-13)
+^^^^^^^^^^^^^^^^^^^^
 
 Fixed
 ~~~~~
 - Let marv pip install understand what packages are contained within bundle
 - Let marv python see marv pip installed packages
-
-Security
-~~~~~~~~
 
 
 .. _v19_11_0:
