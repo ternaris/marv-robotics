@@ -20,6 +20,7 @@ Upcoming (unreleased)
 
 Added
 ~~~~~
+- Support uninstall of python packages in single binary mode (EE)
 
 Changed
 ~~~~~~~
@@ -32,6 +33,8 @@ Removed
 
 Fixed
 ~~~~~
+- Fix pip dist-info discovery for packages contained in bundle (EE)
+
 
 Security
 ~~~~~~~~
@@ -44,8 +47,8 @@ Security
 
 Fixed
 ~~~~~
-- Let marv pip install understand what packages are contained within bundle
-- Let marv python see marv pip installed packages
+- Let marv pip install understand what packages are contained within bundle (EE)
+- Let marv python see marv pip installed packages (EE)
 
 
 .. _v19_11_0:
@@ -56,6 +59,7 @@ Fixed
 Added
 ~~~~~
 - Add query API
+- Add single binary installation method (EE)
 
 Changed
 ~~~~~~~
