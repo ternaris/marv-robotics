@@ -6,6 +6,7 @@ import code
 import datetime
 import functools
 import json
+import os
 import re
 import sqlite3
 import sys
@@ -32,7 +33,12 @@ from marv_node.setid import SetID
 from marv_node.stream import RequestedMessageTooOld
 from marv_store import DirectoryAlreadyExists
 
+try:
+    import marv_ee
+except ImportError:
+    marv_ee = None
 
+STATICX_PROG_PATH = os.environ.get('STATICX_PROG_PATH')
 log = getLogger(__name__)
 warnings.simplefilter('always', DeprecationWarning)
 
@@ -779,12 +785,13 @@ async def marvcli_group_rm(ctx, groupname):
             ctx.fail(e.args[0])
 
 
-@marvcli.group('pip')
+@marvcli.group('pip', hidden=not marv_ee)
 def marvcli_pip():
     """Integrate pip commands (EE)."""
 
 
 def ensure_python(siteconf, sitepackages):
+    assert STATICX_PROG_PATH
     pyexe = Path(code.__file__).parent / 'python'
     if not pyexe.exists():
         with pyexe.open('w') as f:
@@ -798,7 +805,11 @@ def ensure_python(siteconf, sitepackages):
 @marvcli_pip.command('install', context_settings={'ignore_unknown_options': True})
 @click.argument('pipargs', nargs=-1, type=click.UNPROCESSED)
 def marvcli_pip_install(pipargs):
-    """Execute a pip command (EE)."""
+    """Install python package (EE).
+
+    Use -e like with plain pip to install in editable mode.
+    """
+    assert STATICX_PROG_PATH
     siteconf = get_site_config()
     config = make_config(siteconf)
     sitepackages = config.marv.sitepackages
@@ -812,7 +823,8 @@ def marvcli_pip_install(pipargs):
 @marvcli_pip.command('uninstall', context_settings={'ignore_unknown_options': True})
 @click.argument('pipargs', nargs=-1, type=click.UNPROCESSED)
 def marvcli_pip_uninstall(pipargs):
-    """Execute a pip command (EE)."""
+    """Uninstall python package (EE)."""
+    assert STATICX_PROG_PATH
     siteconf = get_site_config()
     sitepackages = make_config(siteconf).marv.sitepackages
     load_sitepackages(sitepackages)
@@ -822,13 +834,14 @@ def marvcli_pip_uninstall(pipargs):
     sys.exit(pip.main())
 
 
-@marvcli.command('python', context_settings={'ignore_unknown_options': True})
+@marvcli.command('python', hidden=not marv_ee, context_settings={'ignore_unknown_options': True})
 @click.option('-u', '--unbuffered', is_flag=True, help='Python -u equivalent (ignored)')
 @click.option('-E', 'ignore', is_flag=True, help='Python -E equivalent (ignored)')
 @click.option('-c', '--command', help='Python -c equivalent')
 @click.argument('args', nargs=-1, type=click.UNPROCESSED)
 def marvcli_python(unbuffered, ignore, command, args):  # pylint: disable=unused-argument
     """Drop into interactive python (EE)."""
+    assert STATICX_PROG_PATH
     siteconf = get_site_config()
     sitepackages = make_config(siteconf).marv.sitepackages
     load_sitepackages(sitepackages)
