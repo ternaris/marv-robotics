@@ -80,7 +80,7 @@ Let's dedicate a terminal to build the documentation and to start a small webser
 .. code-block:: console
 
    (venv) $ ./scripts/build-docs
-   (venv) $ marv serve --config tutorial/docs-only-site/marv.conf
+   (venv) $ marv --config tutorial/docs-only-site/marv.conf serve
 
 Now you have an instance of MARV running at: http://localhost:8000.
 
