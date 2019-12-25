@@ -3,6 +3,7 @@
 
 import os
 import re
+import sys
 import time
 from datetime import datetime, timedelta
 from datetime import tzinfo as tzinfo_base
@@ -141,3 +142,11 @@ def sanitize_env(env):
 def popen(*args, env=None, **kw):
     env = sanitize_env(os.environ.copy() if env is None else env)
     return _Popen(*args, env=env, **kw)
+
+
+def within_pyinstaller_bundle():
+    return any(x for x in sys.path if '/tmp/_MEI' in x)
+
+
+def within_staticx_bundle():
+    return bool(os.environ.get('STATICX_PROG_PATH'))
