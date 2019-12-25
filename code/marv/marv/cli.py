@@ -6,7 +6,6 @@ import code
 import datetime
 import functools
 import json
-import os
 import re
 import sqlite3
 import sys
@@ -26,7 +25,7 @@ import marv.app
 from marv.config import ConfigError
 from marv.db import dump_database
 from marv.site import Site, UnknownNode, load_sitepackages, make_config
-from marv.utils import find_obj
+from marv.utils import find_obj, within_pyinstaller_bundle
 from marv_cli import PDB
 from marv_cli import marv as marvcli
 from marv_node.setid import SetID
@@ -38,7 +37,6 @@ try:
 except ImportError:
     marv_ee = None
 
-STATICX_PROG_PATH = os.environ.get('STATICX_PROG_PATH')
 log = getLogger(__name__)
 warnings.simplefilter('always', DeprecationWarning)
 
@@ -791,7 +789,7 @@ def marvcli_pip():
 
 
 def ensure_python(siteconf, sitepackages):
-    assert STATICX_PROG_PATH
+    assert within_pyinstaller_bundle()
     pyexe = Path(code.__file__).parent / 'python'
     if not pyexe.exists():
         with pyexe.open('w') as f:
@@ -809,7 +807,7 @@ def marvcli_pip_install(pipargs):
 
     Use -e like with plain pip to install in editable mode.
     """
-    assert STATICX_PROG_PATH
+    assert within_pyinstaller_bundle()
     siteconf = get_site_config()
     config = make_config(siteconf)
     sitepackages = config.marv.sitepackages
@@ -824,7 +822,7 @@ def marvcli_pip_install(pipargs):
 @click.argument('pipargs', nargs=-1, type=click.UNPROCESSED)
 def marvcli_pip_uninstall(pipargs):
     """Uninstall python package (EE)."""
-    assert STATICX_PROG_PATH
+    assert within_pyinstaller_bundle()
     siteconf = get_site_config()
     sitepackages = make_config(siteconf).marv.sitepackages
     load_sitepackages(sitepackages)
@@ -841,7 +839,7 @@ def marvcli_pip_uninstall(pipargs):
 @click.argument('args', nargs=-1, type=click.UNPROCESSED)
 def marvcli_python(unbuffered, ignore, command, args):  # pylint: disable=unused-argument
     """Drop into interactive python (EE)."""
-    assert STATICX_PROG_PATH
+    assert within_pyinstaller_bundle()
     siteconf = get_site_config()
     sitepackages = make_config(siteconf).marv.sitepackages
     load_sitepackages(sitepackages)
