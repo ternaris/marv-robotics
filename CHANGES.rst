@@ -36,6 +36,7 @@ Fixed
 - Fix pip dist-info discovery for packages contained in bundle (EE)
 - Fix position of CLI config option in docs
 - Run ffmpeg in sanitized environment to prevent exec errors in single binary mode (EE)
+- Load marv pip managed user site only when running from pyinstaller bundle (EE)
 
 
 Security

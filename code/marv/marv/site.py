@@ -165,7 +165,8 @@ class Site:
     @classmethod
     async def create(cls, siteconf, init=None):
         site = cls(siteconf)
-        load_sitepackages(site.config.marv.sitepackages)
+        if utils.within_pyinstaller_bundle():
+            load_sitepackages(site.config.marv.sitepackages)
 
         if init:
             site.init_directory()
