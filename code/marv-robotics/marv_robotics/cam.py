@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import math
-import subprocess
 from itertools import count
+from subprocess import PIPE
 
 try:
     import cv2
@@ -14,6 +14,7 @@ import numpy
 
 import marv
 from marv.types import File
+from marv.utils import popen
 from marv_ros.img_tools import ImageConversionError, ImageFormatError, imgmsg_to_cv2
 from .bag import get_message_type, messages
 
@@ -75,7 +76,7 @@ def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):  # pylint:
                 '-y',
                 video.path,
             ]
-            encoder = subprocess.Popen(ffargs, stdin=subprocess.PIPE)
+            encoder = popen(ffargs, stdin=PIPE)
 
         encoder.stdin.write(img)
 
