@@ -1,7 +1,7 @@
 -r marv.in
 lz4
 matplotlib
-pillow
+pillow<7.0.0  # leads to matplotlib not supporting jpg
 pretty-bad-protocol  # aka: gnupg
 pycrypto
 pyyaml
