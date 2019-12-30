@@ -254,9 +254,9 @@ class Site:
             prefixes = [f'l_{col}' for col in self.collections.keys()]
             tables = {
                 name for name in [
-                    x['name'] for x in await transaction.execute_query(
+                    x['name'] for x in (await transaction.execute_query(
                         'SELECT name FROM sqlite_master WHERE type="table"',
-                    )
+                    ))[1]
                 ]
                 if any(name.startswith(prefix) for prefix in prefixes)
             }

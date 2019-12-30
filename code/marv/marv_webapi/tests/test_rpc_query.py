@@ -382,3 +382,23 @@ async def test_rpc_query(site, client):
             {'id': 145, 'name': 'podge_0095'},
         ],
     }
+
+    # check users do not return password
+    res = await client.post_json('/marv/api/v1/rpcs', json={'rpcs': [{'query': {
+        'model': 'user',
+    }}]})
+    assert 'user' in res['data']
+    assert len(res['data']['user']) == 2
+    for user in res['data']['user']:
+        assert 'password' not in user
+
+    res = await client.post_json('/marv/api/v1/rpcs', json={'rpcs': [{'query': {
+        'model': 'group',
+        'attrs': {
+            'users': True,
+        },
+    }}]})
+    assert 'user' in res['data']
+    assert len(res['data']['user']) == 1
+    for user in res['data']['user']:
+        assert 'password' not in user

@@ -64,8 +64,8 @@ async def site(loop):  # pylint: disable=unused-argument
     yield site_
 
     async with scoped_session(site_.db) as connection:
-        tables = await connection\
-                .execute_query('SELECT name FROM sqlite_master WHERE type="table"')
+        tables = (await connection
+                  .execute_query('SELECT name FROM sqlite_master WHERE type="table"'))[1]
         tables = (x['name'] for x in tables if x['name'].startswith(prefix))
         for table in sorted(tables, key=len, reverse=True):
             await connection.execute_query(f'DROP TABLE {table}')

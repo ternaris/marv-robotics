@@ -161,7 +161,7 @@ def resolve_filter(table, fltr):  # noqa: C901
         fieldname, subname = name.split('.', 1)
         if fieldname in tablemeta.backward_fk_fields:
             field = tablemeta.fields_map[fieldname]
-            subtable = Table(field.type._meta.table)
+            subtable = Table(field.model_class._meta.table)
             resolved = resolve_filter(subtable, {'op': operator, 'name': subname, 'value': value})
             return getattr(table, 'id').isin(Query.from_(subtable)
                                              .select(getattr(subtable, field.relation_field))
@@ -170,7 +170,7 @@ def resolve_filter(table, fltr):  # noqa: C901
         if fieldname in tablemeta.m2m_fields:
             field = tablemeta.fields_map[fieldname]
             through = Table(field.through)
-            rel = Table(field.type._meta.table)
+            rel = Table(field.model_class._meta.table)
             resolved = resolve_filter(rel, {'op': operator, 'name': subname, 'value': value})
             return getattr(table, 'id').isin(Query.from_(through)
                                              .join(rel)
@@ -192,10 +192,10 @@ def resolve_filter(table, fltr):  # noqa: C901
 
 
 def cleanup_attrs(items):
-    for item in items:
-        if 'password' in item:
-            del item['password']
-    return items
+    return [
+        {k: x[k] for k in x.keys() if k != 'password'}
+        for x in items
+    ]
 
 
 class Database:
@@ -366,9 +366,9 @@ class Database:
         descs = [x for x in collection.table_descriptors if x.through]
         all_known = {
             desc.key: [
-                x['value'] for x in await transaction.execute_query(Query.from_(desc.table)
-                                                                    .select('value')
-                                                                    .get_sql())
+                x['value'] for x in (await transaction.execute_query(Query.from_(desc.table)
+                                                                     .select('value')
+                                                                     .get_sql()))[1]
             ]
             for desc in descs
             if {'any', 'all'}.intersection(collection.filter_specs[desc.key].operators)
@@ -536,7 +536,7 @@ class Database:
                 raise UnknownOperator(operator)
 
         query = query.orderby(tag.value).groupby('id')
-        return await transaction.execute_query(query.get_sql())
+        return (await transaction.execute_query(query.get_sql()))[1]
 
     @run_in_transaction
     async def get_datasets_for_collections(self, collections, transaction=None):
@@ -588,10 +588,10 @@ class Database:
     async def update_tags_for_setids(self, setids, add, remove, transaction=None):
         setids = [str(x) for x in await self.get_setids(setids, transaction=transaction)]
         dataset = Table('dataset')
-        colids = await transaction.execute_query(Query.from_(dataset)
-                                                 .where(dataset.setid.isin(setids))
-                                                 .select(dataset.collection, dataset.id)
-                                                 .get_sql())
+        colids = (await transaction.execute_query(Query.from_(dataset)
+                                                  .where(dataset.setid.isin(setids))
+                                                  .select(dataset.collection, dataset.id)
+                                                  .get_sql()))[1]
         add = [
             (colid['collection'], tag, colid['id'])
             for tag, colid in product(add, colids)
@@ -857,7 +857,7 @@ class Database:
                      .orderby(dataset.setid)\
                      .get_sql()
 
-        datasets = await transaction.execute_query(query)
+        datasets = (await transaction.execute_query(query))[1]
         return [
             x['setid'][:abbrev] if abbrev else x['setid']
             for x in datasets
@@ -942,8 +942,8 @@ class Database:
             if offset:
                 query = query.offset(offset)
 
-        qres = await transaction.execute_query(query.get_sql())
-        result.setdefault(model, []).extend(cleanup_attrs(qres))
+        qres = cleanup_attrs((await transaction.execute_query(query.get_sql()))[1])
+        result.setdefault(model, []).extend(qres)
 
         ids = [x['id'] for x in qres]
         for fieldname in set(attrs.keys()) - set(tablemeta.db_fields):
@@ -957,7 +957,7 @@ class Database:
 
             if fieldname in tablemeta.backward_fk_fields:
                 field = tablemeta.fields_map[fieldname]
-                tablename = field.type._meta.table
+                tablename = field.model_class._meta.table
                 subtable = Table(tablename)
                 if '*' not in select and field.relation_field not in select:
                     select.append(field.relation_field)
@@ -965,7 +965,7 @@ class Database:
                              .select(*select)\
                              .where(getattr(subtable, field.relation_field).isin(ids))\
                              .get_sql()
-                relres = await transaction.execute_query(query)
+                relres = (await transaction.execute_query(query))[1]
                 for prime in qres:
                     prime[fieldname] = [
                         x['id']
@@ -977,13 +977,13 @@ class Database:
             elif fieldname in tablemeta.m2m_fields:
                 field = tablemeta.fields_map[fieldname]
                 through = Table(field.through)
-                tablename = field.type._meta.table
+                tablename = field.model_class._meta.table
                 rel = Table(tablename)
                 query = Query.from_(through)\
                              .select(field.backward_key, field.forward_key)\
                              .where(getattr(through, field.backward_key).isin(ids))\
                              .get_sql()
-                links = await transaction.execute_query(query)
+                links = (await transaction.execute_query(query))[1]
                 for prime in qres:
                     prime[fieldname] = [
                         x[field.forward_key]
@@ -994,7 +994,7 @@ class Database:
                              .select(*select)\
                              .where(rel.id.isin({x[field.forward_key] for x in links}))\
                              .get_sql()
-                relres = await transaction.execute_query(query)
+                relres = (await transaction.execute_query(query))[1]
                 result.setdefault(tablename, []).extend(cleanup_attrs(relres))
 
             else:
@@ -1021,135 +1021,129 @@ async def dump_database(dburi):  # noqa: C901
         async def transaction(cls):
             await cls.init(db_url=dburi, modules={'models': []})
             connection = cls._connections['default']
-            conn = connection._in_transaction()  # pylint: disable=protected-access
-            await conn.start()
-            return conn
+            return connection._in_transaction()  # pylint: disable=protected-access
 
-    conn = await T2.transaction()
+    async with await T2.transaction() as conn:
+        async def get_items_for_query(query):
+            return [
+                {k: x[k] for k in x.keys()}
+                for x in (await conn.execute_query(query.get_sql()))[1]
+            ]
 
-    master = Table('sqlite_master')
-    tables = {
-        x['name']: Table(x['name'])
-        for x in await conn.execute_query(Query.from_(master)
-                                          .select(master.name)
-                                          .where((master.type == 'table')
-                                                 & master.name.not_like('sqlite_%')
-                                                 & master.name.not_like('l_%'))
-                                          .get_sql())
-    }
+        master = Table('sqlite_master')
+        tables = {
+            x['name']: Table(x['name'])
+            for x in await get_items_for_query(Query.from_(master)
+                                               .select(master.name)
+                                               .where((master.type == 'table')
+                                                      & master.name.not_like('sqlite_%')
+                                                      & master.name.not_like('l_%')))
+        }
 
-    comments = {}
-    comment_t = tables.pop('comment')
-    items = await conn.execute_query(Query.from_(comment_t)
-                                     .select(comment_t.star)
-                                     .orderby(comment_t.dataset_id)
-                                     .orderby(comment_t.id)
-                                     .get_sql())
-    for did, grp in groupby(items, key=lambda x: x['dataset_id']):
-        assert did not in comments
-        comments[did] = lst = []
-        for comment in grp:
-            # Everything except these fields is included in the dump
-            del comment['dataset_id']
-            del comment['id']
-            lst.append(comment)
+        comments = {}
+        comment_t = tables.pop('comment')
+        items = await get_items_for_query(Query.from_(comment_t)
+                                          .select(comment_t.star)
+                                          .orderby(comment_t.dataset_id)
+                                          .orderby(comment_t.id))
+        for did, grp in groupby(items, key=lambda x: x['dataset_id']):
+            assert did not in comments
+            comments[did] = lst = []
+            for comment in grp:
+                # Everything except these fields is included in the dump
+                del comment['dataset_id']
+                del comment['id']
+                lst.append(comment)
 
-    files = {}
-    file_t = tables.pop('file')
-    items = await conn.execute_query(Query.from_(file_t)
-                                     .select(file_t.star)
-                                     .orderby(file_t.dataset_id)
-                                     .orderby(file_t.id)
-                                     .get_sql())
-    for did, grp in groupby(items, key=lambda x: x['dataset_id']):
-        assert did not in files
-        files[did] = lst = []
-        for file in grp:
-            # Everything except these fields is included in the dump
-            del file['id']
-            del file['dataset_id']
-            del file['idx']
-            lst.append(file)
+        files = {}
+        file_t = tables.pop('file')
+        items = await get_items_for_query(Query.from_(file_t)
+                                          .select(file_t.star)
+                                          .orderby(file_t.dataset_id)
+                                          .orderby(file_t.id))
+        for did, grp in groupby(items, key=lambda x: x['dataset_id']):
+            assert did not in files
+            files[did] = lst = []
+            for file in grp:
+                # Everything except these fields is included in the dump
+                del file['id']
+                del file['dataset_id']
+                del file['idx']
+                lst.append(file)
 
-    tags = {}
-    dataset_tag_t = tables.pop('dataset_tag')
-    tag_t = tables.pop('tag')
-    items = await conn.execute_query(Query.from_(dataset_tag_t)
-                                     .join(tag_t)
-                                     .on(dataset_tag_t.tag_id == tag_t.id)
-                                     .select('*')
-                                     .orderby(dataset_tag_t.dataset_id)
-                                     .orderby(tag_t.value)
-                                     .get_sql())
+        tags = {}
+        dataset_tag_t = tables.pop('dataset_tag')
+        tag_t = tables.pop('tag')
+        items = await get_items_for_query(Query.from_(dataset_tag_t)
+                                          .join(tag_t)
+                                          .on(dataset_tag_t.tag_id == tag_t.id)
+                                          .select('*')
+                                          .orderby(dataset_tag_t.dataset_id)
+                                          .orderby(tag_t.value))
+        for did, grp in groupby(items, key=lambda x: x['dataset_id']):
+            assert did not in tags
+            tags[did] = lst = []
+            for tag in grp:
+                del tag['dataset_id']
+                del tag['collection']
+                del tag['id']
+                del tag['tag_id']
+                lst.append(tag.pop('value'))
+                assert not tag
 
-    for did, grp in groupby(items, key=lambda x: x['dataset_id']):
-        assert did not in tags
-        tags[did] = lst = []
-        for tag in grp:
-            del tag['dataset_id']
-            del tag['collection']
-            del tag['id']
-            del tag['tag_id']
-            lst.append(tag.pop('value'))
-            assert not tag
+        dump = {}
+        dump['datasets'] = collections = {}
+        dataset_t = tables.pop('dataset')
+        items = await get_items_for_query(Query.from_(dataset_t)
+                                          .select('*')
+                                          .orderby(dataset_t.setid))
+        for dataset in items:
+            did = dataset.pop('id')  # Everything except this is included in the dump
+            dataset['comments'] = comments.pop(did, [])
+            dataset['files'] = files.pop(did)
+            dataset['tags'] = tags.pop(did, [])
+            collections.setdefault(dataset.pop('collection'), []).append(dataset)
 
-    dump = {}
-    dump['datasets'] = collections = {}
-    dataset_t = tables.pop('dataset')
-    items = await conn.execute_query(Query.from_(dataset_t)
-                                     .select('*')
-                                     .orderby(dataset_t.setid)
-                                     .get_sql())
-    for dataset in items:
-        did = dataset.pop('id')  # Everything except this is included in the dump
-        dataset['comments'] = comments.pop(did, [])
-        dataset['files'] = files.pop(did)
-        dataset['tags'] = tags.pop(did, [])
-        collections.setdefault(dataset.pop('collection'), []).append(dataset)
+        assert not comments, comments
+        assert not files, files
+        assert not tags, tags
 
-    assert not comments, comments
-    assert not files, files
-    assert not tags, tags
+        groups = {}
+        group_t = tables.pop('group')
+        user_group_t = tables.pop('user_group')
+        items = await get_items_for_query(Query.from_(user_group_t)
+                                          .join(group_t)
+                                          .on(user_group_t.group_id == group_t.id)
+                                          .select('*')
+                                          .orderby(user_group_t.user_id)
+                                          .orderby(group_t.name))
+        for uid, grp in groupby(items, key=lambda x: x['user_id']):
+            assert uid not in groups
+            groups[uid] = lst = []
+            for group in grp:
+                del group['user_id']
+                del group['group_id']
+                del group['id']
+                name = group.pop('name')
+                assert not group
+                lst.append(name)
 
-    groups = {}
-    group_t = tables.pop('group')
-    user_group_t = tables.pop('user_group')
-    items = await conn.execute_query(Query.from_(user_group_t)
-                                     .join(group_t)
-                                     .on(user_group_t.group_id == group_t.id)
-                                     .select('*')
-                                     .orderby(user_group_t.user_id)
-                                     .orderby(group_t.name)
-                                     .get_sql())
-    for uid, grp in groupby(items, key=lambda x: x['user_id']):
-        assert uid not in groups
-        groups[uid] = lst = []
-        for group in grp:
-            del group['user_id']
-            del group['group_id']
-            del group['id']
-            name = group.pop('name')
-            assert not group
-            lst.append(name)
+        dump['users'] = users = []
+        user_t = tables.pop('user')
+        items = await get_items_for_query(Query.from_(user_t)
+                                          .select('*')
+                                          .orderby(user_t.name))
+        for user in items:
+            user_id = user.pop('id')  # Everything except this is included in the dump
+            user['groups'] = groups.pop(user_id, [])
+            user['time_created'] = int((datetime.fromisoformat(user['time_created'])
+                                        - datetime.fromtimestamp(0)).total_seconds())  # noqa: DTZ
+            user['time_updated'] = int((datetime.fromisoformat(user['time_updated'])
+                                        - datetime.fromtimestamp(0)).total_seconds())  # noqa: DTZ
+            users.append(user)
 
-    dump['users'] = users = []
-    user_t = tables.pop('user')
-    items = await conn.execute_query(Query.from_(user_t)
-                                     .select('*')
-                                     .orderby(user_t.name)
-                                     .get_sql())
-    for user in items:
-        user_id = user.pop('id')  # Everything except this is included in the dump
-        user['groups'] = groups.pop(user_id, [])
-        user['time_created'] = int((datetime.fromisoformat(user['time_created'])
-                                    - datetime.fromtimestamp(0)).total_seconds())  # noqa: DTZ
-        user['time_updated'] = int((datetime.fromisoformat(user['time_updated'])
-                                    - datetime.fromtimestamp(0)).total_seconds())  # noqa: DTZ
-        users.append(user)
+        assert not groups, groups
+        assert not tables, tables.keys()
 
-    assert not groups, groups
-    assert not tables, tables.keys()
-
-    await conn.commit()
     await T2.close_connections()
     return dump

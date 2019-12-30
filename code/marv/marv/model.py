@@ -6,8 +6,16 @@ import sqlite3
 from collections import OrderedDict, namedtuple
 
 import tortoise
-from tortoise.fields import BooleanField, DatetimeField, FloatField, ForeignKeyField, IntField
-from tortoise.fields import ManyToManyField, TextField
+from tortoise.fields import (
+    BooleanField,
+    CharField,
+    DatetimeField,
+    FloatField,
+    ForeignKeyField,
+    IntField,
+    ManyToManyField,
+    TextField,
+)
 from tortoise.models import Model
 
 from . import model_fields as custom
@@ -123,7 +131,7 @@ class Tag(Model):
 
 class User(Model):
     id = IntField(pk=True)
-    name = TextField(unique=True)
+    name = CharField(max_length=255, unique=True)
     password = TextField(null=True)
     given_name = TextField(null=True)
     family_name = TextField(null=True)
@@ -137,7 +145,7 @@ class User(Model):
 
 class Group(Model):
     id = IntField(pk=True)
-    name = TextField(unique=True)
+    name = CharField(max_length=255, unique=True)
 
 
 __models__ = [Dataset, File, Comment, Tag, User, Group]
@@ -160,7 +168,7 @@ def make_listing_model(name, filter_specs):
         model = type(rel_model_name, (Model,), {
             'Meta': type('Meta', (), {'table': rel_name}),
             'id': IntField(pk=True),
-            'value': TextField(index=True, unique=True),
+            'value': CharField(max_length=255, index=True, unique=True),
             '__repr__': lambda self: f'<{type(self).__name__} {self.id} {self.value!r}>',
         })
 
@@ -202,7 +210,7 @@ def make_table_descriptors(models):
     result = [ListingDescriptor(meta.table, '', '', '', '')]
     for key in meta.m2m_fields:
         field = meta.fields_map[key]
-        table = field.type._meta.table
+        table = field.model_class.Meta.table
         result.append(
             ListingDescriptor(table, key, field.through, field.forward_key, field.backward_key))
 

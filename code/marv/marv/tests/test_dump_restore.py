@@ -9,11 +9,10 @@ from pathlib import Path
 
 import mock
 import pytest
-from tortoise.transactions import in_transaction
 
 import marv
 import marv.app
-from marv.db import dump_database
+from marv.db import dump_database, scoped_session
 from marv.scanner import DatasetInfo
 from marv.site import Site
 from marv.types import Int8Value, Section
@@ -190,10 +189,10 @@ async def test_dump(site, client):  # pylint: disable=redefined-outer-name  # no
     sitedir = os.path.dirname(site.config.filename)
 
     # Ensure all tables are empty / at factory defaults
-    async with in_transaction() as connection:
+    async with scoped_session(site.db) as connection:
         query = 'SELECT name FROM sqlite_master WHERE type="table"'
         tables = [
-            x['name'] for x in await connection.execute_query(query)
+            x['name'] for x in (await connection.execute_query(query))[1]
             if not x['name'].startswith('l_')
             if not x['name'].startswith('sqlite_')
         ]
@@ -201,7 +200,8 @@ async def test_dump(site, client):  # pylint: disable=redefined-outer-name  # no
             'dataset', 'dataset_tag', 'tag', 'file', 'comment', 'user', 'user_group', 'group',
         } == set(tables)
         for name in sorted(tables):
-            rows = list(await connection.execute_query(f'SELECT * FROM "{name}";'))
+            rows = list((await connection.execute_query(f'SELECT * FROM "{name}";'))[1])
+            rows = [{k: x[k] for k in x.keys()} for x in rows]
             if name == 'group':
                 assert rows == [{'id': 1, 'name': 'admin'}]
             else:
@@ -240,15 +240,15 @@ async def test_dump(site, client):  # pylint: disable=redefined-outer-name  # no
         await site.db.comment_multiple([fooids[0]], 'user1', 'comment\ntext')
         await site.db.comment_multiple([fooids[1], barids[1]], 'user2', 'more\ncomment')
 
-    async with in_transaction() as connection:
+    async with scoped_session(site.db) as connection:
         # Ensure all tables have been populated
         query = 'SELECT name FROM sqlite_master WHERE type="table"'
         tables = [
-            x['name'] for x in (await connection.execute_query(query))
+            x['name'] for x in ((await connection.execute_query(query))[1])
             if not x['name'].startswith('l_')
         ]
         for name in sorted(tables):
-            rows = list(await connection.execute_query(f'SELECT * FROM "{name}"'))
+            rows = list((await connection.execute_query(f'SELECT * FROM "{name}"'))[1])
             if name == 'group':
                 assert len(rows) > 1
             else:
@@ -296,10 +296,10 @@ async def test_restore(client, site):  # pylint: disable=redefined-outer-name  #
     sitedir = os.path.dirname(site.config.filename)
 
     # Ensure all tables are empty / at factory defaults
-    async with in_transaction() as connection:
+    async with scoped_session(site.db) as connection:
         query = 'SELECT name FROM sqlite_master WHERE type="table"'
         tables = [
-            x['name'] for x in await connection.execute_query(query)
+            x['name'] for x in (await connection.execute_query(query))[1]
             if not x['name'].startswith('l_')
             if not x['name'].startswith('sqlite_')
         ]
@@ -307,7 +307,8 @@ async def test_restore(client, site):  # pylint: disable=redefined-outer-name  #
             'dataset', 'dataset_tag', 'tag', 'file', 'comment', 'user', 'user_group', 'group',
         } == set(tables)
         for name in sorted(tables):
-            rows = list(await connection.execute_query(f'SELECT * FROM "{name}";'))
+            rows = list((await connection.execute_query(f'SELECT * FROM "{name}";'))[1])
+            rows = [{k: x[k] for k in x.keys()} for x in rows]
             if name == 'group':
                 assert rows == [{'id': 1, 'name': 'admin'}]
             else:
@@ -332,14 +333,14 @@ async def test_restore(client, site):  # pylint: disable=redefined-outer-name  #
     await site.restore_database(**full_dump)
 
     # Ensure all tables have been populated
-    async with in_transaction() as connection:
+    async with scoped_session(site.db) as connection:
         query = 'SELECT name FROM sqlite_master WHERE type="table"'
         tables = [
-            x['name'] for x in (await connection.execute_query(query))
+            x['name'] for x in ((await connection.execute_query(query))[1])
             if not x['name'].startswith('l_')
         ]
         for name in sorted(tables):
-            rows = list(await connection.execute_query(f'SELECT * FROM "{name}"'))
+            rows = list((await connection.execute_query(f'SELECT * FROM "{name}"'))[1])
             if name == 'group':
                 assert len(rows) > 1
             else:
