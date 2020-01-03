@@ -39,7 +39,7 @@ tortoise.logger.setLevel(logging.WARN)
 
 
 def patch_pypika_boolean_for_old_sqlite():
-    from pypika.terms import ValueWrapper
+    from pypika.terms import ValueWrapper  # pylint: disable=import-outside-toplevel
 
     _original = ValueWrapper.get_value_sql
 

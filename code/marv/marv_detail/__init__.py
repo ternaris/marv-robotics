@@ -34,7 +34,7 @@ def detail_to_dict(obj):
         try:
             fixup_widget(widget)
         except Exception:
-            from pprint import pformat
+            from pprint import pformat  # pylint: disable=import-outside-toplevel
             print(pformat(dct), file=sys.stderr)
             print(pformat(widget), file=sys.stderr)
             raise

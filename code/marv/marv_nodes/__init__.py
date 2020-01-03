@@ -33,7 +33,7 @@ def load_dataset(setdir, dataset):  # pylint: disable=redefined-outer-name
     try:
         wrapper = Wrapper.from_dict(Dataset, dct)
     except KjException as e:
-        from pprint import pformat
+        from pprint import pformat  # pylint: disable=import-outside-toplevel
         print('Schema violation for %s with data:\n%s\nschema: %s' % (
             Dataset.schema.node.displayName,
             pformat(dct),

@@ -40,4 +40,4 @@ def fulltext(streams):
 
     msgs = yield marv.pull_all(*streams)
     words = {x for msg in msgs for x in msg.words}
-    yield marv.push({'words': sorted(list(words))})
+    yield marv.push({'words': sorted(words)})

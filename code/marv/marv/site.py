@@ -172,7 +172,7 @@ class Site:
             site.init_directory()
 
         # Generate all dynamic models
-        from . import model
+        from . import model  # pylint: disable=import-outside-toplevel
         model.__models__ += (y for x in site.collections.values() for y in x.model)
 
         assert site.config.marv.dburi.startswith('sqlite://')

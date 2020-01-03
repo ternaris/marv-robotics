@@ -8,7 +8,7 @@ import unittest
 
 class TestCase(unittest.TestCase):
     def test_(self):
-        from . import pythonic_capnp  # pylint: disable=no-name-in-module
+        from . import pythonic_capnp  # pylint: disable=no-name-in-module,import-outside-toplevel
 
         # class Pythonic(Base):
         #     """foo"""

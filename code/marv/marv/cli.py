@@ -409,7 +409,7 @@ async def marvcli_query(ctx, list_tags, collections, discarded,
 @click.argument('datasets', nargs=-1)
 @click.pass_context
 @click_async
-async def marvcli_run(
+async def marvcli_run(  # noqa: C901
         ctx, datasets, deps, excluded_nodes, force, force_dependent, force_deps, keep, keep_going,
         list_nodes, list_dependent, selected_nodes, update_detail, update_listing, cachesize,
         collections,
@@ -813,7 +813,7 @@ def marvcli_pip_install(pipargs):
     sitepackages = config.marv.sitepackages
     load_sitepackages(sitepackages)
     ensure_python(siteconf, sitepackages)
-    from pip import _internal as pip
+    from pip import _internal as pip  # pylint: disable=import-outside-toplevel
     sys.argv = [sys.executable, 'install', '--prefix', config.marv.venv, *pipargs]
     sys.exit(pip.main())
 
@@ -827,7 +827,7 @@ def marvcli_pip_uninstall(pipargs):
     sitepackages = make_config(siteconf).marv.sitepackages
     load_sitepackages(sitepackages)
     ensure_python(siteconf, sitepackages)
-    from pip import _internal as pip
+    from pip import _internal as pip  # pylint: disable=import-outside-toplevel
     sys.argv = [sys.executable, 'uninstall', *pipargs]
     sys.exit(pip.main())
 

@@ -1,6 +1,8 @@
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+# pylint: disable=import-outside-toplevel
+
 from collections import deque
 from itertools import count
 from numbers import Integral

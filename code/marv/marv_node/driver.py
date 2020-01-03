@@ -137,7 +137,7 @@ class Driver(Keyed, GenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-i
                     try:
                         msg._data = Wrapper.from_dict(schema, msg._data)
                     except KjException as e:
-                        from pprint import pformat
+                        from pprint import pformat  # pylint: disable=import-outside-toplevel
                         self.logerror(
                             'Schema violation for %s with data:\n%s\nschema: %s',
                             schema.schema.node.displayName,

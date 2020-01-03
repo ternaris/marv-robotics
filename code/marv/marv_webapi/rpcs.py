@@ -16,7 +16,7 @@ def rpcs(_):
 
 
 @rpcs.endpoint('/v1/rpcs', methods=['POST'], force_acl=['__authenticated__'])  # noqa: C901
-async def rpc_entry(request):
+async def rpc_entry(request):  # noqa: C901
     # pylint: disable=too-many-locals
 
     try:

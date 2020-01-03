@@ -382,8 +382,8 @@ class Database:
         })
         return all_known
 
-    @run_in_transaction   # noqa: C901
-    async def get_filtered_listing(self, descs, filters, transaction=None):
+    @run_in_transaction  # noqa: C901
+    async def get_filtered_listing(self, descs, filters, transaction=None):  # noqa: C901
         # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         listing, dataset, dataset_tag, tag = \
             Tables(descs[0].table, 'dataset', 'dataset_tag', 'tag')  # pylint: disable=unbalanced-tuple-unpacking
@@ -908,7 +908,8 @@ class Database:
                                         .replace('((', '(VALUES(', 1))
 
     @run_in_transaction  # noqa: C901
-    async def rpc_query(self, model, filters, attrs, order, limit, offset, transaction=None):
+    async def rpc_query(self, model, filters, attrs, order, limit, offset,  # noqa: C901
+                        transaction=None):
         # pylint: disable=too-many-arguments, too-many-statements, too-many-locals, too-many-branches
         result = {}
         table = Table(model)

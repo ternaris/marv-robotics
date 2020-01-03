@@ -111,7 +111,7 @@ class Wrapper:
         return _to_dict(self._reader, which=which)
 
     def load(self, node):
-        from marv_store import Store
+        from marv_store import Store  # pylint: disable=import-outside-toplevel
         store = Store(self._storedir, {node.name: node})
         return store.load(self._setdir, node, default=None)
 
