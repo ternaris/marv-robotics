@@ -11,6 +11,7 @@ flake8-datetimez
 flake8-docstrings
 flake8-import-order
 flake8-quotes
+flake8-print
 flake8-tuple
 ipython
 mock
