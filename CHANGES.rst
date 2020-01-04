@@ -24,6 +24,8 @@ Added
 
 Changed
 ~~~~~~~
+- Update python dependencies and tooling
+- **BREAKING** Update to most recent tortoise-orm (see migration)
 
 Deprecated
 ~~~~~~~~~~
