@@ -813,9 +813,9 @@ def marvcli_pip_install(pipargs):
     sitepackages = config.marv.sitepackages
     load_sitepackages(sitepackages)
     ensure_python(siteconf, sitepackages)
-    from pip import _internal as pip  # pylint: disable=import-outside-toplevel
+    from pip._internal.main import main as pip_main  # pylint: disable=import-outside-toplevel
     sys.argv = [sys.executable, 'install', '--prefix', config.marv.venv, *pipargs]
-    sys.exit(pip.main())
+    sys.exit(pip_main())
 
 
 @marvcli_pip.command('uninstall', context_settings={'ignore_unknown_options': True})
@@ -827,9 +827,9 @@ def marvcli_pip_uninstall(pipargs):
     sitepackages = make_config(siteconf).marv.sitepackages
     load_sitepackages(sitepackages)
     ensure_python(siteconf, sitepackages)
-    from pip import _internal as pip  # pylint: disable=import-outside-toplevel
+    from pip._internal.main import main as pip_main  # pylint: disable=import-outside-toplevel
     sys.argv = [sys.executable, 'uninstall', *pipargs]
-    sys.exit(pip.main())
+    sys.exit(pip_main())
 
 
 @marvcli.command('python', hidden=not marv_ee, context_settings={'ignore_unknown_options': True})
