@@ -14,6 +14,7 @@ import pytest
 import marv.model
 from marv.db import scoped_session
 from marv.site import Site
+from marv.utils import echo
 
 
 KEEP = os.environ.get('KEEP')
@@ -73,7 +74,7 @@ async def site(loop):  # pylint: disable=unused-argument
     if not KEEP:
         shutil.rmtree(sitedir)
     else:
-        print(f'Keeping {sitedir}')
+        echo(f'Keeping {sitedir}')
 
 
 def generate_foo(scanroot, name):

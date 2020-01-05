@@ -7,6 +7,7 @@ import sys
 from capnp.lib.capnp import KjException
 
 import marv
+from marv.utils import err
 from marv_detail import Widget
 from marv_node.setid import SetID
 from marv_pycapnp import Wrapper
@@ -34,10 +35,10 @@ def load_dataset(setdir, dataset):  # pylint: disable=redefined-outer-name
         wrapper = Wrapper.from_dict(Dataset, dct)
     except KjException as e:
         from pprint import pformat  # pylint: disable=import-outside-toplevel
-        print('Schema violation for %s with data:\n%s\nschema: %s' % (
+        err('Schema violation for %s with data:\n%s\nschema: %s' % (
             Dataset.schema.node.displayName,
             pformat(dct),
-            Dataset.schema.node.displayName), file=sys.stderr)
+            Dataset.schema.node.displayName))
         raise e
     wrapper._setdir = setdir  # needed by dataset.load(node)  # pylint: disable=protected-access
     return [wrapper]

@@ -10,7 +10,7 @@ from functools import partial
 from inspect import getmembers
 from logging import getLogger
 
-from .utils import find_obj
+from .utils import echo, find_obj
 
 log = getLogger(__name__)
 
@@ -165,7 +165,7 @@ def parse_lookup(name, default=None):
 
 
 def print_trace(args):
-    print('TRACE', args)
+    echo('TRACE', args)
     return args
 
 

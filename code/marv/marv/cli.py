@@ -22,10 +22,9 @@ from jinja2 import Template
 from tortoise.exceptions import DoesNotExist
 
 import marv.app
-from marv.config import ConfigError
 from marv.db import dump_database
 from marv.site import Site, UnknownNode, load_sitepackages, make_config
-from marv.utils import find_obj, within_pyinstaller_bundle
+from marv.utils import echo, err, find_obj, within_pyinstaller_bundle
 from marv_cli import PDB
 from marv_cli import marv as marvcli
 from marv_node.setid import SetID
@@ -156,14 +155,9 @@ def marvcli_serve(host, port, certfile, keyfile, approot):
             site = await marv.site.Site.create(config)
             application = marv.app.create_app(site, app_root=approot)
         except sqlite3.OperationalError as e:
-            print(e, file=sys.stderr)
-            print('Did you run marv init?', file=sys.stderr)
-            sys.exit(4)
-        except OSError as e:
-            if e.errno == 13:
-                print(e, file=sys.stderr)
-                sys.exit(4)
-            raise
+            err(f'{e}\nDid you run marv init?', exit=1)
+        except PermissionError as e:
+            err(e, exit=1)
         return application
 
     class GunicornApplication(BaseApplication):  # pylint: disable=abstract-method
@@ -573,9 +567,9 @@ async def marvcli_comment_list(datasets):
     async with create_site() as site:
         comments = await site.db.get_comments_for_setids(datasets)
         for comment in sorted(comments, key=lambda x: (x.dataset.setid, x.id)):
-            print(comment.dataset.setid, comment.id,
-                  datetime.datetime.fromtimestamp(int(comment.time_added / 1000)),  # noqa: DTZ
-                  comment.author, repr(comment.text))
+            echo(comment.dataset.setid, comment.id,
+                 datetime.datetime.fromtimestamp(int(comment.time_added / 1000)),  # noqa: DTZ
+                 comment.author, repr(comment.text))
 
 
 SHOW_TEMPLATE = Template("""
@@ -609,7 +603,7 @@ async def marvcli_show(datasets):
     async with create_site() as site:
         datasets = await site.db.get_datasets_by_setids(datasets, prefetch=['files'])
         yamldoc = SHOW_TEMPLATE.render(datasets=datasets)
-        print(yamldoc, end='')
+        echo(yamldoc, end='')
 
 
 @marvcli_comment.command('rm')

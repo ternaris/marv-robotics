@@ -6,6 +6,7 @@ import sys
 
 import capnp  # pylint: disable=unused-import
 
+from marv.utils import err
 from marv_pycapnp import Wrapper
 from .types_capnp import Detail, Widget  # pylint: disable=import-error,unused-import
 
@@ -35,8 +36,8 @@ def detail_to_dict(obj):
             fixup_widget(widget)
         except Exception:
             from pprint import pformat  # pylint: disable=import-outside-toplevel
-            print(pformat(dct), file=sys.stderr)
-            print(pformat(widget), file=sys.stderr)
+            err(pformat(dct))
+            err(pformat(widget))
             raise
     return dct
 
