@@ -71,22 +71,6 @@ async def create_site(init=None):
         await site.destroy()
 
 
-async def create_app(middlewares=None):
-    siteconf = get_site_config()
-    site = await Site.create(siteconf)
-    try:
-        app = marv.app.create_app(site, middlewares=middlewares)
-    except ConfigError as e:
-        click.echo(f'Error {e.args[0]}', err=True)
-        click.get_current_context().exit(1)
-    except OSError as e:
-        if e.errno == 13:
-            print(e, file=sys.stderr)
-            sys.exit(13)
-        raise
-    return app
-
-
 def click_async(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
@@ -143,6 +127,11 @@ def marvcli_develop_server(port, public):
                 pdb.xpm()  # pylint: disable=no-member
 
         middlewares.append(pdb_middleware)
+
+    async def create_app(middlewares=None):
+        siteconf = get_site_config()
+        site = await Site.create(siteconf)
+        return marv.app.create_app(site, middlewares=middlewares)
 
     loop = asyncio.get_event_loop()
     app = loop.run_until_complete(create_app(middlewares=middlewares))
