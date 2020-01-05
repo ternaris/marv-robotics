@@ -17,6 +17,18 @@ from marv_node.setid import decode_setid, encode_setid  # pylint: disable=unused
 NOTSET = type('NOTSET', (tuple,), {})()
 
 
+def echo(*args, **kw):
+    """Wrap print to let linter forbid print usage."""
+    print(*args, **kw)  # noqa: T001
+
+
+def err(*args, exit=None, **kw):
+    """Print to stderr and optionally exit."""
+    print(*args, **kw, file=sys.stderr)  # noqa: T001
+    if exit is not None:
+        sys.exit(exit)
+
+
 def chunked(iterable, chunk_size):
     itr = iter(iterable)
     return iter(lambda: tuple(islice(itr, chunk_size)), ())
