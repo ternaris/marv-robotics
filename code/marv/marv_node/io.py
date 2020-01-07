@@ -112,16 +112,12 @@ MakeFile = namedtuple('MakeFile', 'handle name')
 
 Pull = namedtuple('Pull', 'handle enumerate')
 PullAll = namedtuple('PullAll', 'handles')
-PullAny = namedtuple('PullAny', 'handles')
-PullSome = namedtuple('PullSome', 'handles')
 Push = namedtuple('Push', 'output')
 SetHeader = namedtuple('SetHeader', 'header')
 
 # TODO: Rename
 Request.register(Pull)
 Request.register(PullAll)
-Request.register(PullAny)
-Request.register(PullSome)
 Request.register(Push)
 Request.register(SetHeader)
 
