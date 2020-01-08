@@ -9,6 +9,28 @@ Migration
 Before doing any migration you might want to check the :ref:`config` and :ref:`deploy` sections.
 
 
+.. _migrate_19_11_0_to_20_01_0:
+
+19.11.0 -> 20.01.0
+------------------
+
+An updated version of tortoise-orm required changes to the database schemas. A
+migration of the MARV database is necessary. Export the database with your
+current version of MARV:
+
+.. code-block:: console
+
+   marv dump dump-1911.json
+   mv db/db.sqlite db/db.sqlite.1911
+
+After updating MARV run:
+
+.. code-block:: console
+
+   marv init
+   marv restore dump-1911.json
+
+
 .. _migrate_19_09_0_to_19_11_0:
 
 19.09.0 -> 19.11.0
