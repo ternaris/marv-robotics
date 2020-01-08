@@ -8,6 +8,7 @@ import shutil
 from collections.abc import Mapping
 from pathlib import Path
 
+from marv.utils import NOTSET
 from marv_node.mixins import LoggerMixin
 from marv_pycapnp import Wrapper
 from .streams import PersistentStream, ReadStream
@@ -121,7 +122,7 @@ class Store(Mapping, LoggerMixin):
                 'header': stream.handle.header,
                 'streams': {x.name: self._streaminfo(x) for x in (stream.streams or {}).values()}}
 
-    def load(self, setdir, node=None, nodename=None, default=()):
+    def load(self, setdir, node=None, nodename=None, default=NOTSET):
         assert bool(node) != bool(nodename)
         assert nodename != 'dataset'
         assert node.name != 'dataset'
@@ -133,7 +134,6 @@ class Store(Mapping, LoggerMixin):
                 msgs = node.schema.read_multiple_packed(f)
                 return [Wrapper(x, None, setdir) for x in msgs]
         except IOError:
-            # https://github.com/PyCQA/pylint/issues/3031
-            if default is not ():  # pylint: disable=literal-comparison
+            if default is not NOTSET:
                 return default
             raise
