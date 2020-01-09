@@ -1,10 +1,9 @@
-# Copyright 2016 - 2018  Ternaris.
+# Copyright 2016 - 2020  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 # pylint: disable=invalid-name,redefined-outer-name
 
-from ..run import run_nodes
-from ..testing import make_dataset, make_sink, marv
+from ..testing import make_dataset, marv, run_nodes
 
 DATASET = make_dataset()
 SETID = DATASET.setid
@@ -94,7 +93,9 @@ def collect(nodeA, nodeB, nodeC):
     yield marv.push({'acc': acc})
 
 
-def test():
-    sink = make_sink(collect)
-    run_nodes(DATASET, [sink], {})
-    assert sink.stream == [{'acc': ['nodeB-b0', 'nodeC-c0', 'nodeB-b1', 'nodeC-c1', 'nodeC-c2']}]
+async def test():
+    nodes = [collect]
+    streams = await run_nodes(DATASET, nodes)
+    assert streams == [
+        [{'acc': ['nodeB-b0', 'nodeC-c0', 'nodeB-b1', 'nodeC-c1', 'nodeC-c2']}],
+    ]

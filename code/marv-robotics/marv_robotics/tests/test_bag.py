@@ -4,24 +4,23 @@
 from pkg_resources import resource_filename
 
 import marv_node.testing
-from marv_node.testing import make_dataset, make_sink, run_nodes, temporary_directory
+from marv_node.testing import make_dataset, run_nodes, temporary_directory
 from marv_robotics.bag import bagmeta as node
 from marv_store import Store
 
-
 # XXX: in what form do we need this test?
+
 
 class TestCase(marv_node.testing.TestCase):
     # TODO: Generate bags instead, but with connection info!
     BAGS = [resource_filename('marv_robotics.tests', 'data/test_0.bag'),
             resource_filename('marv_robotics.tests', 'data/test_1.bag')]
 
-    def test_node(self):
+    async def test_node(self):
         with temporary_directory() as storedir:
             store = Store(storedir, {})
             dataset = make_dataset(self.BAGS)
             store.add_dataset(dataset)
-            sink = make_sink(node)
-            run_nodes(dataset, [sink], store)
-            self.assertNodeOutput(sink.stream, node)
+            streams = await run_nodes(dataset, [node], store)
+            self.assertNodeOutput(streams[0], node)
             # XXX: test also header

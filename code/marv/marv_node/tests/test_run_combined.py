@@ -29,9 +29,7 @@ def square(stream_a):
 @marv.input('stream_c', default=square)
 def add(stream_a, stream_b, stream_c):
     while True:
-        a = yield marv.pull(stream_a)
-        b = yield marv.pull(stream_b)
-        c = yield marv.pull(stream_c)
+        a, b, c = yield marv.pull_all(stream_a, stream_b, stream_c)
         if a is None:
             break
         yield marv.push(a+b+c)

@@ -44,11 +44,13 @@ class TestCase(unittest.TestCase):
 
     def test_comparisons(self):
         @marv.node()
-        def a():  # pylint: disable=invalid-name
+        @marv.input('a', default=1)
+        def a(a):  # pylint: disable=invalid-name,unused-argument
             yield
 
         @marv.node()
-        def b():  # pylint: disable=invalid-name
+        @marv.input('a', default=1)
+        def b(a):  # pylint: disable=invalid-name,unused-argument
             yield
 
         self.assertIs(type(a), type(b))
@@ -67,3 +69,4 @@ class TestCase(unittest.TestCase):
         self.assertGreaterEqual(b, b)
 
         self.assertEqual(a, a.clone())
+        self.assertNotEqual(a, a.clone(a=2))

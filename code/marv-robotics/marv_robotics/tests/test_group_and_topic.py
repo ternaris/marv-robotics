@@ -5,7 +5,7 @@ from pkg_resources import resource_filename
 
 import marv
 import marv_node.testing
-from marv_node.testing import make_dataset, make_sink, run_nodes, temporary_directory
+from marv_node.testing import make_dataset, run_nodes, temporary_directory
 from marv_robotics.bag import get_message_type, messages
 from marv_robotics.fulltext import fulltext
 from marv_store import Store
@@ -33,13 +33,11 @@ class TestCase(marv_node.testing.TestCase):
     BAGS = [resource_filename('marv_robotics.tests', 'data/test_0.bag'),
             resource_filename('marv_robotics.tests', 'data/test_1.bag')]
 
-    def test_node(self):
+    async def test_node(self):
         with temporary_directory() as storedir:
             store = Store(storedir, {})
             dataset = make_dataset(self.BAGS)
             store.add_dataset(dataset)
-            sink1 = make_sink(fulltext)
-            sink2 = make_sink(collect)
-            run_nodes(dataset, [sink1, sink2], store)
-            assert 'hello' in sink1.stream[0].words
-            assert any('hello' in x for x in sink2.stream)
+            streams = await run_nodes(dataset, [fulltext, collect], store)
+            assert 'hello' in streams[0][0].words
+            assert any('hello' in x for x in streams[1])
