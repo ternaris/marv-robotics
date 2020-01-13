@@ -20,4 +20,4 @@ class TestCase(marv_node.testing.TestCase):
             store.add_dataset(dataset)
             sink = make_sink(node)
             run_nodes(dataset, [sink], store)
-            self.assertEqual(len(sink.stream), 0)
+            assert len(sink.stream) == 0

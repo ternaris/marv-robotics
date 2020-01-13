@@ -7,7 +7,6 @@ import json
 import os
 import shutil
 import tempfile
-import unittest
 import warnings
 from collections import namedtuple
 from contextlib import contextmanager
@@ -115,25 +114,9 @@ def make_spy(node):
     return spy
 
 
-class TestCase(unittest.TestCase):
+class TestCase:  # pylint: disable=too-few-public-methods
     BAGS = None
     MARV_TESTING_RECORD = os.environ.get('MARV_TESTING_RECORD')
-    bags = None
-    cleanup = None
-    maxDiff = None
-    scanroot = None
-
-    @classmethod
-    def setUpClass(cls):
-        scanroot = tempfile.mkdtemp()
-        @staticmethod
-        def cleanup():
-            shutil.rmtree(scanroot)
-        cls.cleanup_class = cleanup
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.cleanup_class()
 
     def assertNodeOutput(self, output, node):  # pylint: disable=invalid-name
         name = node.name
@@ -148,4 +131,4 @@ class TestCase(unittest.TestCase):
                 json.dump(out, f, sort_keys=True, indent=2)
         else:
             with open(outfile) as f:
-                self.assertEqual(json.loads(json.dumps(out)), json.load(f))
+                assert json.loads(json.dumps(out)) == json.load(f)

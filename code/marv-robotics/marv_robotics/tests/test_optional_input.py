@@ -43,4 +43,4 @@ class TestCase(marv_node.testing.TestCase):
             store.add_dataset(dataset)
             sink = make_sink(collect)
             run_nodes(dataset, [sink], store)
-            self.assertEqual(sink.stream, ['Success'])
+            assert sink.stream == ['Success']
