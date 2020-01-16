@@ -382,7 +382,7 @@ async def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=N
                 if not reqdriver.stream_creation:
                     loggers[reqdriver].verbose('restarting')
                     handles = list(reqdriver._requested_streams)
-                    reqdriver.destroy()
+                    await reqdriver.destroy()
                     del drivers[reqdriver.key]
                     if reqdriver in done:
                         del done[reqdriver]

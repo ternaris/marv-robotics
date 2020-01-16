@@ -55,6 +55,7 @@ class Driver(Keyed, AGenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-
         self.inputs = inputs
         self._requested_streams = []
         self._agen = self._run()
+        self._agen_node = None
 
     async def start(self):
         req = await self.asend(None)
@@ -68,7 +69,7 @@ class Driver(Keyed, AGenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-
         # pylint: disable=too-many-statements,too-many-branches,too-many-locals
         self.started = True
 
-        agen = self.node.invoke(self.inputs)
+        agen = self._agen_node = self.node.invoke(self.inputs)
         assert hasattr(agen, 'asend'), agen
 
         yield  # Wait for start signal before returning anything notable
@@ -259,7 +260,9 @@ class Driver(Keyed, AGenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-
                 self._requested_streams.append(handle)
                 self.logdebug('REQFILED %s', handle.key_abbrev)
 
-    def destroy(self):
+    async def destroy(self):
+        await self._agen_node.aclose()
+        await self._agen.aclose()
         for stream in self.streams.values():
             stream.destroy()
 
