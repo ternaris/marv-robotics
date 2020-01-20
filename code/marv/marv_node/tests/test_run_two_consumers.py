@@ -12,8 +12,8 @@ def source():
 
 
 @marv.node()
-def cubic():
-    stream = yield marv.get_stream(source)
+@marv.input('stream', default=source)
+def cubic(stream):
     while True:
         msg = yield marv.pull(stream)
         if msg is None:

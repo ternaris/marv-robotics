@@ -29,9 +29,9 @@ def source():
 
 
 @marv.node()
-def consumer():
-    stream1 = yield marv.get_stream(source, 'a')
-    stream2 = yield marv.get_stream(source, 'b')
+@marv.input('stream1', default=marv.select(source, 'a'))
+@marv.input('stream2', default=marv.select(source, 'b'))
+def consumer(stream1, stream2):
     streams = [stream1, stream2]
     while streams:
         for stream in streams[:]:
@@ -49,7 +49,7 @@ async def test():
         streams = await run_nodes(DATASET, nodes)
 
     assert [x.msg for x in log.records] == [
-        ['a'],
+        ['b'],
         ['a', 'b'],
     ]
     assert streams == [

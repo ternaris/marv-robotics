@@ -28,10 +28,10 @@ def multi():
 
 
 @marv.node()
-def consumer():
+@marv.input('node', default=multi)
+def consumer(node):
     logger = yield marv.get_logger()
     logger.critical('consumer started')
-    node = yield marv.get_stream(multi)
     a_in, b_in = yield marv.pull_all(node, node)
     assert a_in.name == 'a'
     assert b_in.name == 'b'
@@ -54,8 +54,8 @@ async def test():
         await run_nodes(DATASET, nodes)
 
     assert [x.msg for x in log.records] == [
-        'consumer started',
         'multi started',
+        'consumer started',
         'multi finished',
         'consumer finished',
     ]

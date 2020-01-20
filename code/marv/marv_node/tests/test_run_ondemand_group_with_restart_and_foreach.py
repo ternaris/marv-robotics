@@ -28,8 +28,8 @@ def source():
 
 
 @marv.node()
-def stream_a():
-    stream = yield marv.get_stream(source, 'a')
+@marv.input('stream', default=marv.select(source, 'a'))
+def stream_a(stream):
     while True:
         msg = yield marv.pull(stream)
         if msg is None:
@@ -38,8 +38,8 @@ def stream_a():
 
 
 @marv.node()
-def stream_b():
-    stream = yield marv.get_stream(source, 'b')
+@marv.input('stream', default=marv.select(source, 'b'))
+def stream_b(stream):
     while True:
         msg = yield marv.pull(stream)
         if msg is None:
@@ -48,9 +48,9 @@ def stream_b():
 
 
 @marv.node(group=True)
-def merged():
-    stream1 = yield marv.get_stream(stream_a)
-    stream2 = yield marv.get_stream(stream_b)
+@marv.input('stream1', default=stream_a)
+@marv.input('stream2', default=stream_b)
+def merged(stream1, stream2):
     yield marv.push(stream1)
     yield marv.push(stream2)
 
@@ -74,10 +74,10 @@ async def test():
         await run_nodes(DATASET, nodes)
 
     assert [x.msg for x in log.records] == [
-        ['a'],
+        ['b'],
         ['a', 'b'],
         ('stream_a', 'default', 1),
-        ('stream_a', 'default', 2),
         ('stream_b', 'default', 1),
+        ('stream_a', 'default', 2),
         ('stream_b', 'default', 2),
     ]

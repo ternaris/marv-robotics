@@ -26,8 +26,8 @@ def source():
 
 
 @marv.node()
-def even():
-    stream = yield marv.get_stream(source, 'evensub')
+@marv.input('stream', default=marv.select(source, 'evensub'))
+def even(stream):
     while True:
         msg = yield marv.pull(stream)
         if msg is None:
@@ -36,8 +36,8 @@ def even():
 
 
 @marv.node()
-def odd():
-    stream = yield marv.get_stream(source, 'oddsub')
+@marv.input('stream', default=marv.select(source, 'oddsub'))
+def odd(stream):
     while True:
         msg = yield marv.pull(stream)
         if msg is None:
@@ -46,8 +46,8 @@ def odd():
 
 
 @marv.node()
-def prime():
-    stream = yield marv.get_stream(source, 'primesub')
+@marv.input('stream', default=marv.select(source, 'primesub'))
+def prime(stream):
     while True:
         msg = yield marv.pull(stream)
         if msg is None:

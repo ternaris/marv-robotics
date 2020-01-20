@@ -8,7 +8,8 @@ from collections import OrderedDict, namedtuple
 from inspect import isgeneratorfunction
 from itertools import count, product
 
-from .io import fork, get_logger, get_stream, pull
+from . import io
+from .io import get_logger, pull
 from .mixins import Keyed
 
 
@@ -186,7 +187,8 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
             for spec in self.specs.values():
                 assert not isinstance(spec.value, Node), (self, spec.value)
                 if isinstance(spec.value, StreamSpec):
-                    value = yield get_stream(*spec.value.args)
+                    value = yield io.GetStream(setid=None, node=spec.value.node,
+                                               name=spec.value.name or 'default')
                     target = foreach_stream if spec.foreach else common
                 else:
                     value = spec.value
@@ -213,7 +215,7 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
                         # TODO: give fork a name
                         _idx = next(idx)
                         log.noisy('FORK %d with: %r', _idx, inputs)
-                        yield fork(f'{_idx}', inputs, False)
+                        yield io.Fork(f'{_idx}', inputs, False)
             else:
                 # pylint: disable=redefined-argument-from-local
                 for _idx, inputs in enumerate(cross):
@@ -221,7 +223,7 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
                     inputs = dict(inputs)
                     inputs.update(common)
                     log.noisy('FORK %d with: %r', _idx, inputs)
-                    yield fork(f'{_idx}', inputs, False)
+                    yield io.Fork(f'{_idx}', inputs, False)
                 log.noisy('finished forking')
         else:
             if inputs is None:

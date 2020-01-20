@@ -26,22 +26,12 @@ def create_group(name, **header):
     return CreateStream(parent=None, name=name, group=True, header=header)
 
 
-def fork(name, inputs, group):
-    assert isinstance(name, str), name
-    assert inputs
-    return Fork(name, inputs, group)
-
-
 def get_logger():
     return GetLogger()
 
 
 def get_requested():
     return GetRequested()
-
-
-def get_stream(node, name='default', setid=None):
-    return GetStream(setid, node, name)
 
 
 def make_file(name):

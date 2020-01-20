@@ -3,10 +3,8 @@
 
 from marv_node.io import create_group
 from marv_node.io import create_stream
-from marv_node.io import fork
 from marv_node.io import get_logger
 from marv_node.io import get_requested
-from marv_node.io import get_stream
 from marv_node.io import make_file
 from marv_node.io import pull
 from marv_node.io import pull_all
@@ -19,10 +17,8 @@ from marv_node.tools import select
 __all__ = [
     'create_group',
     'create_stream',
-    'fork',
     'get_logger',
     'get_requested',
-    'get_stream',
     'input',
     'make_file',
     'node',
