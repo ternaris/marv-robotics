@@ -8,8 +8,8 @@ import pytest
 
 import marv
 from marv.config import ConfigError
-from marv.scanner import DatasetInfo
 from marv.site import Site
+from marv_api import DatasetInfo
 from marv_nodes import dataset as dataset_node
 
 

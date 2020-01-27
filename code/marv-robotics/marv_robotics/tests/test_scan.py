@@ -3,7 +3,7 @@
 
 import unittest
 
-from marv.scanner import DatasetInfo as DSI
+from marv_api import DatasetInfo as DSI
 from marv_robotics.bag import scan
 
 

@@ -1,30 +1,12 @@
-# Copyright 2016 - 2018  Ternaris.
+# Copyright 2016 - 2020  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-"""Dataset scanner.
+from marv_api import (
+    DatasetInfo as _DatasetInfo,
+    deprecation,
+)
 
-Datasets are created based on information provided by scanners.  A
-scanner is responsible to group files into named datasets::
-
-    def scan(dirpath, dirnames, filenames):
-        return [DatasetInfo(os.path.basename(x), [x])
-                for x in filenames
-                if x.endswith('.csv')]
-
-Scanners are called for every directory within the configured
-scanroots, while files and directories starting with a ``.`` and
-directories containing an (empty) ``.marvignore`` file are ignored and
-will not be traversed into.
-
-Further, traversal into subdirectories can be controlled by
-altering the :paramref:`.dirnames` list in-place. To block further
-traversal, e.g. for a directory-based dataset type, set it to an
-empty list -- :py:func:`os.walk` is used behind the scenes::
-
-  dirnames[:] = []
-
-"""
-
-from collections import namedtuple
-
-DatasetInfo = namedtuple('DatasetInfo', ('name', 'files'))
+__all__ = ()
+__dir__, __getattr__ = deprecation.dir_and_getattr(__name__, __all__, {
+    'DatasetInfo': deprecation.Info(__name__, '20.07', _DatasetInfo),
+})

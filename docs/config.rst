@@ -152,7 +152,7 @@ Configuration for a collection of datasets.
 
 scanner
 ^^^^^^^
-A :mod:`marv.scanner` is responsible to group files into named datasets.
+A scanner is responsible to group files into named datasets.
 
 Example:
 

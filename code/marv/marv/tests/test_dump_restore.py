@@ -13,9 +13,9 @@ import pytest
 import marv
 import marv.app
 from marv.db import dump_database, scoped_session
-from marv.scanner import DatasetInfo
 from marv.site import Site
 from marv.types import Int8Value, Section
+from marv_api import DatasetInfo
 from marv_nodes import dataset as dataset_node
 
 

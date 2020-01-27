@@ -11,7 +11,7 @@ import capnp  # pylint: disable=unused-import
 
 import marv
 import marv_nodes
-from marv.scanner import DatasetInfo
+from marv_api import DatasetInfo
 from marv_ros import genpy
 from marv_ros import rosbag
 from marv_ros.rosbag import _get_message_type
@@ -85,7 +85,7 @@ def scan(dirpath, dirnames, filenames):  # pylint: disable=unused-argument
         foo_2018-01-12-14-45-23_1 [foo_2018-01-12-14-45-23_1.bag]
         foo_2018-01-12-14-55-42_3 [foo_2018-01-12-14-55-42_3.bag]
 
-    For more information on scanners see :any:`marv.scanner`.
+    For more information on scanners see :any:`marv_api.scanner`.
 
     Args:
         dirpath (str): The path to the directory currently being
@@ -97,7 +97,7 @@ def scan(dirpath, dirnames, filenames):  # pylint: disable=unused-argument
             currently being scanned.
 
     Returns:
-        A list of :class:`marv.scanner.DatasetInfo` instances mapping
+        A list of :class:`marv_api.DatasetInfo` instances mapping
         set of files to dataset names.  Absolute filenames must
         start with :paramref:`.dirpath`, relative filenames are
         automatically prefixed with it.

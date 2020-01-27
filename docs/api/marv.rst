@@ -14,7 +14,7 @@ Access control lists
 Creating datasets
 -----------------
 
-.. automodule:: marv.scanner
+.. automodule:: marv_api.scanner
    :members:
    :show-inheritance:
 
