@@ -69,6 +69,7 @@ RUN bash -c '\
 if [[ -n "$MARV_VENV" ]]; then \
     ${PYTHON} -m venv $MARV_VENV && \
     $MARV_VENV/bin/pip install -U pip==19.3.1 setuptools==44.0.0 wheel==0.33.6 && \
+    $MARV_VENV/bin/pip install -U -c /requirements/marv-robotics.txt cython && \
     $MARV_VENV/bin/pip install -U -r /requirements/marv-robotics.txt && \
     $MARV_VENV/bin/pip install opencv-python-headless==4.1.1.26 && \
     $MARV_VENV/bin/pip install -U -r /requirements/develop.txt; \
