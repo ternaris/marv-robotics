@@ -9,7 +9,6 @@ import json
 import re
 import sqlite3
 import sys
-import warnings
 from contextlib import asynccontextmanager
 from functools import reduce
 from logging import getLogger
@@ -36,7 +35,6 @@ except ImportError:
     marv_ee = None
 
 log = getLogger(__name__)
-warnings.simplefilter('always', DeprecationWarning)
 
 
 class NodeParamType(click.ParamType):

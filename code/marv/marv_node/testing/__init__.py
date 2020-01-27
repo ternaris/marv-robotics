@@ -7,7 +7,6 @@ import json
 import os
 import shutil
 import tempfile
-import warnings
 from collections import namedtuple
 from contextlib import contextmanager
 from logging import getLogger
@@ -18,7 +17,6 @@ from ..run import run_nodes as _run_nodes
 from ..setid import SetID
 
 create_loglevels()
-warnings.simplefilter('always', DeprecationWarning)
 
 marv_node_run.RAISE_IF_UNFINISHED = True
 
