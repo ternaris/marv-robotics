@@ -244,14 +244,6 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
                     schema=self.schema, specs=specs)
         return clone
 
-    def __getitem__(self, key):
-        # pylint: disable=import-outside-toplevel
-        from .tools import select
-        import warnings
-        warnings.warn('Use ``marv.select(node, name)`` instead of ``node[name]``',
-                      DeprecationWarning, stacklevel=2)
-        return select(self, key)
-
     def __str__(self):
         return self.key
 
