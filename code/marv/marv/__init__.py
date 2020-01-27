@@ -1,10 +1,6 @@
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-import sys
-
-from pkg_resources import iter_entry_points
-
 from marv_node.io import Abort
 from marv_node.io import create_group
 from marv_node.io import create_stream
@@ -41,9 +37,3 @@ __all__ = [
     'select',
     'set_header',
 ]
-
-MODULE = sys.modules[__name__]
-for ep in iter_entry_points(group='marv_deco'):
-    assert not hasattr(MODULE, ep.name)
-    setattr(MODULE, ep.name, ep.load())
-del MODULE
