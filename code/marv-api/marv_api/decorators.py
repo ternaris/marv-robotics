@@ -1,9 +1,10 @@
-# Copyright 2016 - 2018  Ternaris.
+# Copyright 2016 - 2020  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-from marv_node.node import StreamSpec as _StreamSpec
+from marv_node.node import StreamSpec
 
 
+# NOTE: Strictly speaking not a decorator but related to decoration of node functions
 def select(node, name):
     """Select specific stream of a node by name.
 
@@ -15,4 +16,4 @@ def select(node, name):
         Node outputting selected stream.
 
     """
-    return _StreamSpec(node, name)
+    return StreamSpec(node, name)
