@@ -13,7 +13,7 @@ from .io import CreateStream, Fork, GetRequested, GetStream, SetHeader
 from .io import GetLogger, MakeFile, MsgRequest, Task
 from .io import NEXT, PAUSED, RESUME, THEEND, TheEnd
 from .io import Pull, PullAll, Push
-from .mixins import GenWrapperMixin, LoggerMixin
+from .mixins import AGenWrapperMixin, LoggerMixin
 from .node import Keyed
 from .stream import Handle, Msg
 
@@ -22,7 +22,7 @@ class MakeFileNotSupported(Exception):
     """Only persistent streams can make files."""
 
 
-class Driver(Keyed, GenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-instance-attributes
+class Driver(Keyed, AGenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-instance-attributes
     """Drive a generator."""
 
     started = False
@@ -54,22 +54,22 @@ class Driver(Keyed, GenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-i
         self.streams = OrderedDict([(stream.handle, stream)])
         self.inputs = inputs
         self._requested_streams = []
-        self._gen = self._run()
+        self._agen = self._run()
 
-    def start(self):
-        req = next(self)
+    async def start(self):
+        req = await self.asend(None)
         assert req is None
         return NEXT
 
     def __repr__(self):
         return f'<{type(self).__name__} {self.key_abbrev}>'
 
-    def _run(self):  # noqa: C901
+    async def _run(self):  # noqa: C901
         # pylint: disable=too-many-statements,too-many-branches,too-many-locals
         self.started = True
 
-        gen = self.node.invoke(self.inputs)
-        assert hasattr(gen, 'send'), gen
+        agen = self.node.invoke(self.inputs)
+        assert hasattr(agen, 'asend'), agen
 
         yield  # Wait for start signal before returning anything notable
         yield self.stream
@@ -81,8 +81,8 @@ class Driver(Keyed, GenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-i
         finished = False
         while not finished:
             try:
-                request = gen.send(send)
-            except (Abort, StopIteration):
+                request = await agen.asend(send)
+            except (Abort, StopAsyncIteration):
                 finished = True
             else:
                 self.logdebug('got from node %s', type(request))

@@ -48,6 +48,26 @@ class Keyed(metaclass=ABCMeta):
         return f'<{type(self).__name__} key={self.key!r}>'
 
 
+class AGenWrapperMixin:
+    _agen = None
+
+    @property
+    def aclose(self):
+        return self._agen.aclose
+
+    @property
+    def __anext__(self):
+        return self._agen.__anext__
+
+    @property
+    def asend(self):
+        return self._agen.asend
+
+    @property
+    def athrow(self):
+        return self._agen.athrow
+
+
 class GenWrapperMixin:
     _gen = None
 

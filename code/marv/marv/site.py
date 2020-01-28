@@ -360,9 +360,9 @@ class Site:
         changed = False
         try:
             if nodes:
-                changed = run_nodes(dataset, nodes, store, force=force,
-                                    persistent=persistent,
-                                    deps=deps, cachesize=cachesize)
+                changed = await run_nodes(dataset, nodes, store, force=force,
+                                          persistent=persistent,
+                                          deps=deps, cachesize=cachesize)
         finally:
             if not keep:
                 for tmpdir, tmpdir_fd in store.pending.values():

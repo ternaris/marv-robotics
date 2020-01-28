@@ -174,7 +174,7 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
     def __call__(self, **inputs):
         return self.func(**inputs)
 
-    def invoke(self, inputs=None):  # noqa: C901
+    async def invoke(self, inputs=None):  # noqa: C901
         # pylint: disable=too-many-locals,too-many-branches
         # We must not write any instance variables, a node is running
         # multiple times in parallel.
@@ -228,7 +228,13 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
                 inputs = dict(common)
             gen = self.func(**inputs)
             assert hasattr(gen, 'send')
-            yield from gen
+            response = None
+            while True:
+                try:
+                    request = gen.send(response)
+                except StopIteration:
+                    return
+                response = yield request
 
     def clone(self, **kw):
         specs = {spec.name: (spec if spec.name not in kw else

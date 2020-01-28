@@ -31,7 +31,7 @@ MARV_RUN_LOGBREAK = os.environ.get('MARV_RUN_LOGBREAK')
 RAISE_IF_UNFINISHED = False
 
 
-def run_nodes(dataset, nodes, store, persistent=None, force=None, deps=None, cachesize=None):
+async def run_nodes(dataset, nodes, store, persistent=None, force=None, deps=None, cachesize=None):
     # pylint: disable=too-many-arguments
 
     if cachesize is not None:
@@ -40,9 +40,9 @@ def run_nodes(dataset, nodes, store, persistent=None, force=None, deps=None, cac
         marv_node.stream.CACHESIZE = cachesize
 
     queue = []
-    ret = run_nodes_async(dataset=dataset, nodes=nodes, store=store,
-                          queue=queue, persistent=persistent,
-                          force=force, deps=deps)
+    ret = await run_nodes_async(dataset=dataset, nodes=nodes, store=store,
+                                queue=queue, persistent=persistent,
+                                force=force, deps=deps)
     if ret is None:
         return False
 
@@ -58,13 +58,13 @@ def run_nodes(dataset, nodes, store, persistent=None, force=None, deps=None, cac
         #     done, send_queue_empty = process_task(None, None)
         # # random pick from queue
         current, task = queue.pop(0) if queue else (None, None)
-        done, send_queue_empty = process_task(current, task)
+        done, send_queue_empty = await process_task(current, task)
     after()
 
     return streams
 
 
-def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=None, deps=None):  # pylint: disable=line-too-long  # noqa: C901
+async def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=None, deps=None):  # pylint: disable=line-too-long  # noqa: C901
     # pylint: disable=too-many-arguments
     deps = True if deps is None else deps
     force = False if force is None else force
@@ -96,10 +96,10 @@ def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=None, d
     waiting = DefaultOrderedDict(list)
     loggers = OrderedDict()
 
-    def start_driver(driver, force=False):
+    async def start_driver(driver, force=False):
         assert driver.key not in drivers, driver
         drivers[driver.key] = driver
-        send_queue.append((driver, driver.start()))
+        send_queue.append((driver, await driver.start()))
         store_name = persistent.get(driver.node)
 
         class LoggerProxy:
@@ -136,7 +136,7 @@ def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=None, d
         stream = (store.create_stream(handle) if node in persistent
                   else VolatileStream(handle))
         driver = Driver(stream)
-        start_driver(driver, force and handle in store)
+        await start_driver(driver, force and handle in store)
 
     if not drivers:
         logverbose('all satisfied.')
@@ -213,7 +213,7 @@ def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=None, d
     class Counter:
         msgnum = 0
 
-    def loop():
+    async def loop():
         pppinfo  # make available in context for debugging; somebody invented classes...
         if not send_queue:
             # simply wake up all suspended as long as there are
@@ -239,12 +239,12 @@ def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=None, d
                                        msg.handle.key_abbrev)
             else:
                 loggers[current].debug('<- %r', send)
-            promise = current.send(send)
+            promise = await current.asend(send)
             assert isinstance(promise, Task), promise
             queue.append((current, promise))
             Counter.msgnum += 1
             # loggers[current].debug('recv %r', promise)
-        except StopIteration:
+        except StopAsyncIteration:
             methname = 'info' if current.node in persistent else 'verbose'
             logmeth = getattr(loggers[current], methname)
             logmeth('finished')
@@ -253,28 +253,28 @@ def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=None, d
 
         return False, False
 
-    def process_task(current, task):
+    async def process_task(current, task):
         if not (current is None and task is None):
             Counter.msgnum -= 1
 
         if current is None and task is None:
-            return loop()
+            return await loop()
 
         logger = loggers[current]
 
         if task is PAUSED:
             meth = (queue_back if current in pulling else suspend)
             meth(current, RESUME)
-            return loop()
+            return await loop()
 
         elif isinstance(task, Driver):
             driver = task
             logger.noisy('FORK %s', driver.name)
-            start_driver(driver)
+            await start_driver(driver)
             if current in pulling:
                 pulling[driver] = None
             queue_back(current, NEXT)
-            return loop()
+            return await loop()
 
         elif isinstance(task, Stream):
             stream = task
@@ -287,7 +287,7 @@ def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=None, d
             serving[stream.handle] = current
             logger.noisy('ADDSTREAM %s', stream.name)
             queue_front(current, NEXT)
-            return loop()
+            return await loop()
 
         elif isinstance(task, Msg):
             msg = task
@@ -314,7 +314,7 @@ def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=None, d
                     queue_back(waitee, msg)
             meth = (queue_back if current in pulling else suspend)
             meth(current, NEXT)
-            return loop()
+            return await loop()
 
         elif isinstance(task, MsgRequest):
             req, (handle, idx) = task, task
@@ -349,7 +349,7 @@ def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=None, d
 
             if send is not None:
                 queue_back(current, send)
-                return loop()
+                return await loop()
 
             # Request has to wait
             waitees = waiting[(handle, idx)]
@@ -360,7 +360,7 @@ def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=None, d
                          req.handle.key_abbrev)
 
             if handle in serving:
-                return loop()
+                return await loop()
 
             # Get driver or instantiate it (and request substream)
             node, setid = handle.node, handle.setid
@@ -397,7 +397,7 @@ def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=None, d
                     VolatileStream(driver_handle)
                 reqdriver = Driver(driver_stream)
                 assert reqdriver.key == driver_key
-                start_driver(reqdriver, forced)
+                await start_driver(reqdriver, forced)
                 if node in persistent:
                     pulling[reqdriver] = None
             if handle.name != 'default':
@@ -406,7 +406,7 @@ def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=None, d
         else:
             raise RuntimeError(f'Unknown task: {task!r} from {current!r}')
 
-        return loop()
+        return await loop()
 
     def after_loop():
         if PPINFO:
