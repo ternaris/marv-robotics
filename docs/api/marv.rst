@@ -22,7 +22,7 @@ Creating datasets
 Declaring nodes
 ---------------
 
-.. automodule:: marv
+.. automodule:: marv_api
    :members: node, input
    :undoc-members:
    :show-inheritance:
@@ -31,7 +31,7 @@ Declaring nodes
 Interacting with marv
 ---------------------
 
-.. automodule:: marv
+.. automodule:: marv_api
    :noindex:
    :members:
    :exclude-members: input, node
