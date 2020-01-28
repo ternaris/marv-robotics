@@ -9,7 +9,7 @@ from itertools import groupby
 
 import capnp  # pylint: disable=unused-import
 
-import marv
+import marv_api as marv
 import marv_nodes
 from marv_api import DatasetInfo
 from marv_ros import genpy

@@ -12,7 +12,7 @@ except ImportError:
 
 import numpy
 
-import marv
+import marv_api as marv
 from marv.types import File
 from marv.utils import popen
 from marv_ros.img_tools import ImageConversionError, ImageFormatError, imgmsg_to_cv2

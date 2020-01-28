@@ -9,8 +9,8 @@ from pathlib import Path
 import mock
 import pytest
 
-import marv
 import marv.model
+import marv_api as marv
 from marv.app import create_app
 from marv.site import Site
 from marv.types import Int8Value, Section, Words

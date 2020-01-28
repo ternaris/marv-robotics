@@ -4,7 +4,7 @@
 import json
 import os
 
-import marv
+import marv_api as marv
 import marv_nodes
 from marv.types import Section, Widget
 from marv_detail import make_map_dict

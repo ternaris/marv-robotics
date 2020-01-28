@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-import marv
+import marv_api as marv
 from marv.config import ConfigError
 from marv.site import Site
 from marv_api import DatasetInfo

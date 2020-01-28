@@ -1,7 +1,7 @@
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-import marv
+import marv_api as marv
 from marv.types import Words
 from .bag import get_message_type, messages
 

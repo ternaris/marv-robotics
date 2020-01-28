@@ -3,7 +3,7 @@
 
 from pkg_resources import resource_filename
 
-import marv
+import marv_api as marv
 import marv_node.testing
 from marv_node.testing import make_dataset, run_nodes, temporary_directory
 from marv_robotics.bag import get_message_type, messages

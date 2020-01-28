@@ -10,8 +10,8 @@ from pathlib import Path
 import mock
 import pytest
 
-import marv
-import marv.app
+import marv.app as marv_app
+import marv_api as marv
 from marv.db import dump_database, scoped_session
 from marv.site import Site
 from marv.types import Int8Value, Section
@@ -166,7 +166,7 @@ async def site(tmpdir):
 
 @pytest.fixture(scope='function')
 def app(site):  # pylint: disable=redefined-outer-name
-    yield marv.app.create_app(site)
+    yield marv_app.create_app(site)
 
 
 @pytest.fixture(scope='function')

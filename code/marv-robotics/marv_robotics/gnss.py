@@ -11,8 +11,7 @@ from matplotlib import cm
 from matplotlib import dates as md
 from matplotlib import pyplot as plt
 
-
-import marv
+import marv_api as marv
 from marv.types import File
 from .bag import get_message_type, messages
 

@@ -3,7 +3,7 @@
 
 import numpy as np
 
-import marv
+import marv_api as marv
 from marv.types import GeoJson
 from .bag import get_message_type, messages
 
