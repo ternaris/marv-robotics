@@ -4,7 +4,6 @@
 import os
 import shutil
 import tempfile
-import unittest
 from contextlib import contextmanager
 
 
@@ -49,15 +48,3 @@ def decode(data, encoding='utf-8'):
     elif isinstance(data, tuple):
         data = tuple(decode(x) for x in data)
     return data
-
-
-class TestCase(unittest.TestCase):
-    """Basic marv test case."""
-
-    KEEP_TEST_DIR = None
-    test_dir = None
-
-    def run(self, result=None):
-        with temporary_directory(self.KEEP_TEST_DIR) as tmpdir:
-            self.test_dir = tmpdir
-            super(TestCase, self).run(result)
