@@ -13,18 +13,24 @@ from marv_node.io import pull
 from marv_node.io import pull_all
 from marv_node.io import push
 from marv_node.io import set_header
-from marv_node.node import input, node
 from marv_webapi.tooling import api_endpoint as _api_endpoint
 from marv_webapi.tooling import api_group as _api_group
 
 DEPRECATIONS = {
     'api_endpoint': deprecation.Info(__name__, '20.07', _api_endpoint),
     'api_group': deprecation.Info(__name__, '20.07', _api_group),
-    'select': deprecation.Info(
-        __name__, '20.07', marv_api.select,
-        'Use marv_api.select instead: import marv_api as marv.',
-    ),
 }
+
+DEPRECATIONS.update(
+    (name, deprecation.Info(
+        __name__, '20.07', getattr(marv_api, name),
+        f'Use marv_api.{name} instead: import marv_api as marv.',
+    )) for name in (
+        'input',
+        'node',
+        'select',
+    )
+)
 
 __all__ = [
     'Abort',
@@ -32,9 +38,7 @@ __all__ = [
     'create_stream',
     'get_logger',
     'get_requested',
-    'input',
     'make_file',
-    'node',
     'pull',
     'pull_all',
     'push',
