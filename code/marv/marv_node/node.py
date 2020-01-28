@@ -11,10 +11,6 @@ from .io import get_logger, pull
 from .mixins import Keyed
 
 
-class InputNameCollision(Exception):
-    pass
-
-
 class InputSpec(Keyed, namedtuple('InputSpec', ('name', 'value', 'foreach'))):
     @property
     def key(self):

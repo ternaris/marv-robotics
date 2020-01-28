@@ -5,7 +5,11 @@ import functools
 from collections import OrderedDict
 from inspect import isgeneratorfunction
 
-from marv_node.node import InputNameCollision, InputSpec, Node, StreamSpec
+from marv_node.node import InputSpec, Node, StreamSpec
+
+
+class InputNameCollision(Exception):
+    """An input with the same name already has been declared."""
 
 
 def input(name, default=None, foreach=None):

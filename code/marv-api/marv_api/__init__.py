@@ -13,13 +13,14 @@ from marv_node.io import (
     push,
     set_header,
 )
-from .decorators import input, node, select
+from .decorators import InputNameCollision, input, node, select
 from .scanner import DatasetInfo
 
 
 __all__ = (
     'Abort',
     'DatasetInfo',
+    'InputNameCollision',
     'create_group',
     'create_stream',
     'get_logger',

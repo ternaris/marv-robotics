@@ -5,19 +5,11 @@
 
 import unittest
 
-from ..node import InputNameCollision, Node
+from ..node import Node
 from ..testing import marv
 
 
 class TestCase(unittest.TestCase):
-    def test_node_duplicate_input(self):
-        with self.assertRaises(InputNameCollision):
-            @marv.node()
-            @marv.input('a')
-            @marv.input('a')
-            def no_inputs():  # pylint: disable=unused-variable
-                yield
-
     @unittest.skip  # Do we want this?
     def test_node_without_inputs(self):
         @marv.node()
