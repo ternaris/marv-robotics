@@ -7,6 +7,8 @@ Our versioning scheme uses a two-digit year, a two-digit month, and a release co
 
 Changes necessitating migration reference the corresponding migration section. References are only rendered correctly as part of the Sphinx documentation. Within GitLab please find the migration document `here <./docs/migrate/index.rst>`_.
 
+If we're deprecating features you rely on, please speak up.
+
 
 .. _upcoming_changes:
 
@@ -17,6 +19,8 @@ Added
 ~~~~~
 - Support uninstall of python packages in single binary mode (EE)
 - Support for leaves to upload datasets (EE)
+- Add infrastructure to manage deprecations warnings
+- Introduce marv_api package to bundle public API for node development
 
 Changed
 ~~~~~~~
@@ -28,12 +32,15 @@ Changed
 
 Deprecated
 ~~~~~~~~~~
+- In 20.07, marv.api_endpoint and marv.api_group will be removed, please let us know if you need these
+- All marv.* controls are now available via marv_api and will be removed from old location in 20.07
 
 Removed
 ~~~~~~~
 - Unittest dependency of node testing base class
 - Unused and long deprecated code
 - Support for shortened setids on CLI
+- Internally used marv.fork and marv.get_stream controls
 
 Fixed
 ~~~~~
