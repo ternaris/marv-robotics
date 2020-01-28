@@ -23,6 +23,8 @@ Changed
 - Update python dependencies and tooling
 - **BREAKING** Update to most recent tortoise-orm (see migration)
 - Improved map layer controls
+- Prepare for asynchronous node execution in multiple processes
+- Simplify node testing by introducing a wrapper for run_nodes
 
 Deprecated
 ~~~~~~~~~~
@@ -46,6 +48,7 @@ Fixed
 - Remove distutils trove classifiers that are not applicable anymore
 - Warning when building documentation
 - Do not reset map zoom on window resize `#67`_
+- Properly shutdown node and driver generators upon driver restart
 
 
 Security
