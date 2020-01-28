@@ -50,11 +50,6 @@ struct Topic {
   latching @3 :Bool;
 }
 
-struct Header {
-  msgTypes @0 :List(MsgType);
-  topics @1 :List(Topic);
-}
-
 struct Message {
   tidx @0 :UInt32;
   # Message belongs to topic with tidx within header.topics list
@@ -64,5 +59,3 @@ struct Message {
 
   timestamp @2 :Timestamp;
 }
-
-

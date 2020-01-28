@@ -15,7 +15,7 @@ from marv.scanner import DatasetInfo
 from marv_ros import genpy
 from marv_ros import rosbag
 from marv_ros.rosbag import _get_message_type
-from .bag_capnp import Bagmeta, Header, Message  # pylint: disable=import-error
+from .bag_capnp import Bagmeta, Message  # pylint: disable=import-error
 
 
 # Regular expression used to aggregate individual bags into sets (see
@@ -241,7 +241,7 @@ def read_messages(paths, topics=None, start_time=None, end_time=None):
         prev_time = next_time
 
 
-@marv.node(Message, Header, group='ondemand')
+@marv.node(Message, group='ondemand')
 @marv.input('dataset', marv_nodes.dataset)
 @marv.input('bagmeta', bagmeta)
 def raw_messages(dataset, bagmeta):  # pylint: disable=redefined-outer-name

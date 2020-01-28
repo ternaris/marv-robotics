@@ -54,13 +54,11 @@ def input(name, default=None, foreach=None):
     return deco
 
 
-def node(schema=None, header=None, group=None, version=None):
+def node(schema=None, group=None, version=None):
     """Turn function into node.
 
     Args:
         schema: capnproto schema describing the output messages format
-        header: This parameter is currently not supported and only for
-            internal usage.
         group (bool): A boolean indicating whether the default stream
             of the node is a group, meaning it will be used to
             published handles for streams or further groups. In case
@@ -84,13 +82,12 @@ def node(schema=None, header=None, group=None, version=None):
         if hasattr(func, '__marv_input_specs__'):
             del func.__marv_input_specs__
 
-        _node = Node(func, schema=schema, header_schema=header,
-                     group=group, specs=specs, version=version)
+        _node = Node(func, schema=schema, group=group, specs=specs, version=version)
         functools.update_wrapper(_node, func)
         return _node
     deco.__doc__ = f"""Turn function into node with given arguments.
 
-        :func:`node`(schema={schema!r}, header={header!r}, group={group!r})
+        :func:`node`(schema={schema!r}, group={group!r})
         """
     return deco
 
@@ -140,7 +137,7 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
         spec_keys = repr(tuple(x.key for x in sorted(specs.values()))).encode('utf-8')
         return b32encode(hashlib.sha256(spec_keys).digest()).decode('utf-8').lower()[:-4]
 
-    def __init__(self, func, schema=None, header_schema=None, version=None,
+    def __init__(self, func, schema=None, version=None,
                  name=None, namespace=None, specs=None, group=None):
         # pylint: disable=too-many-arguments
         # TODO: assert no default values on func, or consider default
@@ -152,7 +149,6 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
         self.namespace = namespace = func.__module__ if namespace is None else namespace
         self.fullname = (name if not namespace else ':'.join([namespace, name]))
         self.specs_hash = self.genhash(specs or {})
-        self.header_schema = header_schema
         self.schema = schema
         self.specs = specs or {}
         assert group in (None, False, True, 'ondemand'), group
@@ -240,8 +236,7 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
                  for spec in self.specs.values()}
         assert not kw, (kw, self.specs)
         cls = type(self)
-        clone = cls(func=self.func, header_schema=self.header_schema,
-                    schema=self.schema, specs=specs)
+        clone = cls(func=self.func, schema=self.schema, specs=specs)
         return clone
 
     def __str__(self):
