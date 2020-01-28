@@ -14,11 +14,7 @@ from logging import getLogger
 
 from marv_cli import create_loglevels
 from marv_node import run as marv_node_run
-from ..io import get_logger as marv_get_logger
-from ..io import get_stream as marv_get_stream
-from ..io import pull as marv_pull
-from ..node import node as marv_node
-from ..run import run_nodes  # pylint: disable=unused-import
+from ..run import run_nodes as _run_nodes
 from ..setid import SetID
 
 create_loglevels()
@@ -63,25 +59,16 @@ def make_dataset(files=None, setid=None, name=None, collection=None,
                        timestamp=timestamp)
 
 
-def make_sink(node):
-    msgs = []
-
-    @marv_node()
-    def testsink():
-        log = yield marv_get_logger()
-        stream = yield marv_get_stream(node)
-        log.debug('recv %r', stream)
-
-        while True:
-            msg = yield marv_pull(stream)
-            log.debug('recv %r', msg)
-            if msg is None:
-                return
-            msgs.append(msg)
-
-    testsink._key = f'{node.abbrev}-testsink'  # pylint: disable=protected-access
-    testsink.stream = msgs
-    return testsink
+async def run_nodes(dataset, nodes, store=None, persistent=None, **kw):
+    """Wrap marv_node.run.run_nodes gathering streams for provided nodes."""
+    streams = {}
+    await _run_nodes(dataset,
+                     nodes,
+                     {} if store is None else store,
+                     persistent=persistent,
+                     _gather_into=streams,
+                     **kw)
+    return [streams.get(x) for x in nodes]
 
 
 class Spy:  # pylint: disable=too-few-public-methods

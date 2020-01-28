@@ -31,7 +31,8 @@ MARV_RUN_LOGBREAK = os.environ.get('MARV_RUN_LOGBREAK')
 RAISE_IF_UNFINISHED = False
 
 
-async def run_nodes(dataset, nodes, store, persistent=None, force=None, deps=None, cachesize=None):
+async def run_nodes(dataset, nodes, store, persistent=None, force=None, deps=None, cachesize=None,
+                    _gather_into=None):
     # pylint: disable=too-many-arguments
 
     if cachesize is not None:
@@ -42,7 +43,7 @@ async def run_nodes(dataset, nodes, store, persistent=None, force=None, deps=Non
     queue = []
     ret = await run_nodes_async(dataset=dataset, nodes=nodes, store=store,
                                 queue=queue, persistent=persistent,
-                                force=force, deps=deps)
+                                force=force, deps=deps, _gather_into=_gather_into)
     if ret is None:
         return False
 
@@ -64,7 +65,8 @@ async def run_nodes(dataset, nodes, store, persistent=None, force=None, deps=Non
     return streams
 
 
-async def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=None, deps=None):  # pylint: disable=line-too-long  # noqa: C901
+async def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=None, deps=None,
+                          _gather_into=None):  # noqa: C901
     # pylint: disable=too-many-arguments
     deps = True if deps is None else deps
     force = False if force is None else force
@@ -302,6 +304,14 @@ async def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=N
                              ' DONE' if msg.data == THEEND else '')
             stream = streams[msg.handle]
             stream.add_msg(msg)
+
+            # Only used for testing
+            if _gather_into is not None \
+               and msg.handle.node in nodes \
+               and not isinstance(msg.data, Handle) \
+               and not msg.data is THEEND:
+                _gather_into.setdefault(msg.handle.node, []).append(msg.data)
+
             waitees = waiting.pop((msg.handle, msg.idx), [])
             for waitee in waitees:
                 queue_back(waitee, msg)
