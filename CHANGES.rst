@@ -32,6 +32,8 @@ Deprecated
 
 Removed
 ~~~~~~~
+- Unittest dependency of node testing base class
+- Unused and long deprecated code
 
 Fixed
 ~~~~~
@@ -39,6 +41,8 @@ Fixed
 - Fix position of CLI config option in docs
 - Run ffmpeg in sanitized environment to prevent exec errors in single binary mode (EE)
 - Load marv pip managed user site only when running from pyinstaller bundle (EE)
+- Remove distutils trove classifiers that are not applicable anymore
+- Warning when building documentation
 
 
 Security
