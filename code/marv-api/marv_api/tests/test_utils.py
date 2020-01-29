@@ -3,6 +3,8 @@
 
 # pylint: disable=too-few-public-methods
 
+import pytest
+
 from .. import utils
 
 
@@ -11,3 +13,16 @@ def test_notset():
     assert isinstance(utils.NOTSET, tuple)
     empty_tuple = ()
     assert utils.NOTSET is not empty_tuple
+
+
+def test_popattr():
+    class Foo:
+        a = 1
+        bb = 2
+
+    assert utils.popattr(Foo, 'a') == 1
+    with pytest.raises(AttributeError):
+        assert utils.popattr(Foo, 'a')
+    assert utils.popattr(Foo, 'a', None) is None
+    assert utils.popattr(Foo, 'bb', None) == 2
+    assert utils.popattr(Foo, 'bb', None) is None
