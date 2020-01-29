@@ -13,6 +13,12 @@ def find_obj(objpath, name=False):
     return (objname, obj) if name else obj
 
 
+def exclusive_setitem(dct, key, value, exc_class=KeyError):
+    if key in dct:
+        raise exc_class(f'{key!r} already in dictionary')
+    dct[key] = value
+
+
 def popattr(obj, name, default=NOTSET):
     try:
         value = getattr(obj, name)

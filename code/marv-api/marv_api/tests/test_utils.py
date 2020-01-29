@@ -26,3 +26,13 @@ def test_popattr():
     assert utils.popattr(Foo, 'a', None) is None
     assert utils.popattr(Foo, 'bb', None) == 2
     assert utils.popattr(Foo, 'bb', None) is None
+
+
+def test_exclusive_setitem():
+    dct = {}
+    utils.exclusive_setitem(dct, 'foo', 1)
+    assert dct['foo'] == 1
+    with pytest.raises(KeyError):
+        utils.exclusive_setitem(dct, 'foo', 1)
+    with pytest.raises(ValueError):
+        utils.exclusive_setitem(dct, 'foo', 1, ValueError)
