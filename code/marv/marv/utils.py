@@ -11,10 +11,8 @@ from importlib import import_module
 from itertools import islice
 from subprocess import Popen as _Popen
 
+from marv_api.utils import NOTSET
 from marv_node.setid import decode_setid, encode_setid  # pylint: disable=unused-import
-
-
-NOTSET = type('NOTSET', (tuple,), {})()
 
 
 def echo(*args, **kw):
