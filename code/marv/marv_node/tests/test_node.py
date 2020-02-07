@@ -1,7 +1,7 @@
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-# pylint: disable=blacklisted-name
+# pylint: disable=blacklisted-name,invalid-name
 
 import unittest
 
@@ -9,42 +9,32 @@ from ..node import Node
 from ..testing import marv
 
 
+@marv.node()
+@marv.input('a', default=1)
+def a_orig(a):  # pylint: disable=unused-argument
+    yield
+
+
+@marv.node()
+@marv.input('a', default=1)
+def b_orig(a):  # pylint: disable=unused-argument
+    yield
+
+
 class TestCase(unittest.TestCase):
-    @unittest.skip  # Do we want this?
-    def test_node_without_inputs(self):
-        @marv.node()
-        def no_inputs():
-            return 1
-        self.assertEqual(no_inputs(), 1)
-
-    def test_double_declare_node(self):
-        with self.assertRaises(TypeError):
-            @marv.node()
-            @marv.node()
-            def foo():  # pylint: disable=unused-variable
-                yield  # pragma: nocoverage
-
     def test_node_repr(self):
         @marv.node()
         def foo():
             yield
         foo()
         self.assertEqual(
-            repr(foo),
+            repr(Node.from_dag_node(foo)),
             '<Node foo.fy4oo6zcym>',
         )
 
     def test_comparisons(self):
-        @marv.node()
-        @marv.input('a', default=1)
-        def a(a):  # pylint: disable=invalid-name,unused-argument
-            yield
-
-        @marv.node()
-        @marv.input('a', default=1)
-        def b(a):  # pylint: disable=invalid-name,unused-argument
-            yield
-
+        a = Node.from_dag_node(a_orig)
+        b = Node.from_dag_node(b_orig)
         self.assertIs(type(a), type(b))
         self.assertIs(type(a), Node)
         self.assertIs(a, a)
@@ -60,5 +50,5 @@ class TestCase(unittest.TestCase):
         self.assertGreaterEqual(b, a)
         self.assertGreaterEqual(b, b)
 
-        self.assertEqual(a, a.clone())
-        self.assertNotEqual(a, a.clone(a=2))
+        self.assertEqual(a, Node.from_dag_node(a_orig.clone()))
+        self.assertNotEqual(a, Node.from_dag_node(a_orig.clone(a=2)))

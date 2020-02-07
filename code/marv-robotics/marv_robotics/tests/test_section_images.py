@@ -9,7 +9,7 @@ from marv_robotics.cam import images
 from marv_robotics.detail import images_section as node
 from marv_store import Store
 
-PERSIST = {images.name: images}
+PERSIST = {'images': images}
 
 
 class TestCase(marv_node.testing.TestCase):

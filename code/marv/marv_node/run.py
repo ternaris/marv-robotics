@@ -12,8 +12,9 @@ from collections import OrderedDict, deque
 from logging import getLogger
 from pprint import pformat
 
+from marv_node.node import Node
 from marv_node.setid import SetID
-from marv_nodes import dataset as dataset_node
+from marv_nodes import dataset as _dataset_node
 from marv_store.streams import ReadStream
 from .driver import Driver
 from .event import DefaultOrderedDict
@@ -26,6 +27,7 @@ class UnmetDependency(Exception):
     pass
 
 
+DATASET_NODE = Node.from_dag_node(_dataset_node)
 PPINFO = os.environ.get('PPINFO')
 MARV_RUN_LOGBREAK = os.environ.get('MARV_RUN_LOGBREAK')
 RAISE_IF_UNFINISHED = False
@@ -150,9 +152,9 @@ async def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=N
     # unfinished and continue until they are finished.
     pulling = OrderedDict((x, None) for x in drivers.values())
 
-    dataset_handle = Handle(setid, dataset_node, 'default')
+    dataset_handle = Handle(setid, DATASET_NODE, 'default')
     streams[dataset_handle] = ReadStream(dataset_handle, None, None,
-                                         dataset_node.load(None, dataset))
+                                         DATASET_NODE.load(None, dataset))
 
     def queue_front(driver, send):
         assert driver not in {driver for lst in waiting.values()

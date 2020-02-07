@@ -21,6 +21,7 @@ from marv.model import Comment, Dataset, File
 from marv.model import make_listing_model, make_table_descriptors
 from marv_detail import FORMATTER_MAP, detail_to_dict
 from marv_detail.types_capnp import Detail  # pylint: disable=no-name-in-module
+from marv_node.node import Node
 from marv_node.setid import SetID
 from marv_store import Store
 
@@ -246,6 +247,9 @@ class Collection:
                 nodename, node = utils.find_obj(line, True)
             except AttributeError:
                 raise ConfigError(self.section, 'nodes', 'Cannot find node %s' % line)
+
+            node = Node.from_dag_node(node)
+
             if node in linemap:
                 raise ConfigError(self.section, 'nodes',
                                   '%s already listed as %s' %

@@ -9,7 +9,7 @@ from marv_robotics.cam import ffmpeg
 from marv_robotics.detail import video_section as node
 from marv_store import Store
 
-PERSIST = {ffmpeg.name: ffmpeg}
+PERSIST = {'ffmpeg': ffmpeg}
 
 
 class TestCase(marv_node.testing.TestCase):

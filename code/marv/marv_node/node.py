@@ -3,9 +3,11 @@
 
 import hashlib
 from base64 import b32encode
-from collections import namedtuple
+from collections import OrderedDict, namedtuple
 from itertools import count, product
 
+from marv_api import dag
+from marv_api.utils import find_obj
 from . import io
 from .io import get_logger, pull
 from .mixins import Keyed
@@ -56,8 +58,36 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
         spec_keys = repr(tuple(x.key for x in sorted(specs.values()))).encode('utf-8')
         return b32encode(hashlib.sha256(spec_keys).digest()).decode('utf-8').lower()[:-4]
 
+    @classmethod
+    def from_dag_node(cls, func):
+        if hasattr(func, '__marv_node__'):
+            dnode = func.__marv_node__
+        else:
+            dnode = func
+            func = find_obj(dnode.function)
+        namespace, name = dnode.function.rsplit('.', 1)
+        schema = find_obj(dnode.message_schema) if dnode.message_schema is not None else None
+        inputs = dnode.inputs
+        specs = OrderedDict((
+            (name, InputSpec(name=name,
+                             value=(value if not isinstance(value, dag.Stream) else
+                                    StreamSpec(node=Node.from_dag_node(value.node),
+                                               name=value.name)),
+                             foreach=name == dnode.foreach))
+            for name, value in ((name, getattr(inputs, name)) for name in inputs.__fields__.keys())
+        ))
+        node = cls(func,
+                   schema=schema,
+                   version=dnode.version,
+                   name=name,
+                   namespace=namespace,
+                   specs=specs,
+                   group=dnode.group,
+                   dag_node=dnode)
+        return node
+
     def __init__(self, func, schema=None, version=None,
-                 name=None, namespace=None, specs=None, group=None):
+                 name=None, namespace=None, specs=None, group=None, dag_node=None):
         # pylint: disable=too-many-arguments
         # TODO: assert no default values on func, or consider default
         # values (instead of) marv.input() declarations
@@ -89,6 +119,12 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
         for dep in self.alldeps:
             assert self not in dep.dependent, (dep, self)
             dep.dependent.add(self)
+
+        if self.fullname == 'marv_nodes:dataset':
+            self.load = func.load
+
+        assert dag_node is not None
+        self.dag_node = dag_node
 
     def __call__(self, **inputs):
         return self.func(**inputs)
@@ -155,15 +191,6 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
                 except StopIteration:
                     return
                 response = yield request
-
-    def clone(self, **kw):
-        specs = {spec.name: (spec if spec.name not in kw else
-                             spec.clone(kw.pop(spec.name)))
-                 for spec in self.specs.values()}
-        assert not kw, (kw, self.specs)
-        cls = type(self)
-        clone = cls(func=self.func, schema=self.schema, specs=specs)
-        return clone
 
     def __str__(self):
         return self.key

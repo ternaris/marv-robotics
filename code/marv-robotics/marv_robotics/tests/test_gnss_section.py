@@ -9,7 +9,7 @@ from marv_robotics.detail import gnss_section as node
 from marv_robotics.gnss import gnss_plots
 from marv_store import Store
 
-PERSIST = {gnss_plots.name: gnss_plots}
+PERSIST = {'gnss_plots': gnss_plots}
 
 
 class TestCase(marv_node.testing.TestCase):

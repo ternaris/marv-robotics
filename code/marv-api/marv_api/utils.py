@@ -7,7 +7,10 @@ NOTSET = type('NOTSET', (tuple,), {'__repr__': lambda x: '<NOTSET>'})()
 
 
 def find_obj(objpath, name=False):
-    modpath, objname = objpath.split(':')
+    try:
+        modpath, objname = objpath.split(':')
+    except ValueError:
+        modpath, objname = objpath.rsplit('.', 1)
     mod = import_module(modpath)
     obj = getattr(mod, objname)
     return (objname, obj) if name else obj

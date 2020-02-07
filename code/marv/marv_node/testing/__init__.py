@@ -14,6 +14,7 @@ from logging import getLogger
 import marv_api as marv  # pylint: disable=unused-import
 from marv_cli import create_loglevels
 from marv_node import run as marv_node_run
+from marv_node.node import Node
 from ..run import run_nodes as _run_nodes
 from ..setid import SetID
 
@@ -60,6 +61,11 @@ def make_dataset(files=None, setid=None, name=None, collection=None,
 
 async def run_nodes(dataset, nodes, store=None, persistent=None, **kw):
     """Wrap marv_node.run.run_nodes gathering streams for provided nodes."""
+    nodes = [x if isinstance(x, Node) else Node.from_dag_node(x) for x in nodes]
+    persistent = {
+        k: v if isinstance(v, Node) else Node.from_dag_node(v)
+        for k, v in (persistent or {}).items()
+    }
     streams = {}
     await _run_nodes(dataset,
                      nodes,
@@ -105,7 +111,7 @@ class TestCase:  # pylint: disable=too-few-public-methods
     MARV_TESTING_RECORD = os.environ.get('MARV_TESTING_RECORD')
 
     def assertNodeOutput(self, output, node):  # pylint: disable=invalid-name
-        name = node.name
+        name = node.__marv_node__.function.rsplit('.', 1)[1]
         testfile = inspect.getmodule(type(self)).__file__
         dirpath = os.path.join(os.path.dirname(testfile), 'output')
         if not os.path.isdir(dirpath):

@@ -1,18 +1,19 @@
 # Copyright 2016 - 2020  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-import functools
-from collections import OrderedDict
-from inspect import isgeneratorfunction
+from inspect import getfullargspec, isgeneratorfunction
 
-from marv_node.node import InputSpec, Node, StreamSpec
+from pydantic import Field
+
+from .dag import Inputs, Node, Stream
+from .utils import NOTSET, exclusive_setitem, popattr
 
 
 class InputNameCollision(Exception):
     """An input with the same name already has been declared."""
 
 
-def input(name, default=None, foreach=None):
+def input(name, default=NOTSET, foreach=None, type=None):
     """Declare input for a node.
 
     Plain inputs, that is plain python objects, are directly passed to
@@ -34,19 +35,33 @@ def input(name, default=None, foreach=None):
         :func:`node` decorator.
 
     """
-    assert default is None or foreach is None
-    value = foreach if foreach is not None else default
-    value = StreamSpec(value) if isinstance(value, Node) else value
-    foreach = foreach is not None
-    spec = InputSpec(name, value, foreach)
+    # NOTE: Foreach is deprecated and does not need a proper exception
+    assert default is NOTSET or foreach is None
+
+    if foreach is not None:
+        default = foreach
+
+    if type is None and default in (NOTSET, None):
+        raise TypeError("'type' is needed if 'default' is None or not set")
+
+    if hasattr(default, '__marv_node__'):
+        default = default.__marv_node__
+    if isinstance(default, Node):
+        default = Stream(node=default)
+        if type:
+            raise TypeError("'type' is not (yet) supported for input streams")
+
+    field = Field(default)
 
     def deco(func):
-        specs = func.__dict__.setdefault('__marv_input_specs__', OrderedDict())
-        if spec.name in specs:
-            raise InputNameCollision(spec.name)
-        specs[spec.name] = spec
+        if foreach:
+            # NOTE: Foreach is deprecated and does not need a proper exception
+            assert not hasattr(func, '__marv_foreach__'), 'Only one input may declare foreach'
+            func.__marv_foreach__ = name
+
+        inputs = func.__dict__.setdefault('__marv_inputs__', {})
+        exclusive_setitem(inputs, name, (type, field), InputNameCollision)
         return func
-    deco.__doc__ = f"""Add {spec!r} to function."""
     return deco
 
 
@@ -68,23 +83,44 @@ def node(schema=None, group=None, version=None):
         arguments and :func:`input` decorators.
 
     """
+    if hasattr(schema, 'from_bytes_packed'):  # capnp schema
+        # There are two known variations:
+        # - marv_nodes/types.capnp:Dataset
+        # - marv_api.tests.types_capnp:Test
+        schema = schema.schema.node.displayName.replace('.capnp', '_capnp')\
+                                               .replace('/', '.')
+
     def deco(func):
-        if isinstance(func, Node):
+        if hasattr(func, '__marv_node__'):
             raise TypeError('Attempted to convert function into node twice.')
-        assert isgeneratorfunction(func), \
-            f'Node {func.__module__}:{func.__name__} needs to be a generator function'
 
-        specs = getattr(func, '__marv_input_specs__', None)
-        if hasattr(func, '__marv_input_specs__'):
-            del func.__marv_input_specs__
+        if not isgeneratorfunction(func):
+            raise TypeError(f'{func} needs to be a generator function')
 
-        _node = Node(func, schema=schema, group=group, specs=specs, version=version)
-        functools.update_wrapper(_node, func)
-        return _node
-    deco.__doc__ = f"""Turn function into node with given arguments.
+        foreach = popattr(func, '__marv_foreach__', None)
+        inputs = popattr(func, '__marv_inputs__', {})
 
-        :func:`node`(schema={schema!r}, group={group!r})
-        """
+        argspec = getfullargspec(func)
+        missing = inputs.keys() ^ argspec.args
+        unsupported = {
+            x for x in (
+                'varargs', 'varkw', 'defaults', 'kwonlyargs', 'kwonlydefaults', 'annotations',
+            )
+            if getattr(argspec, x)
+        }
+        if missing:
+            raise TypeError(f'Missing input declarations: {missing}')
+        if unsupported:
+            raise TypeError('Only positional arguments allowed in function signature')
+
+        func.__marv_node__ = Node(function=f'{func.__module__}.{func.__qualname__}',
+                                  inputs=Inputs.subclass(func.__module__, **inputs)(),
+                                  message_schema=schema,
+                                  group=group,
+                                  version=version,
+                                  foreach=foreach)
+        func.clone = func.__marv_node__.clone
+        return func
     return deco
 
 
@@ -100,11 +136,4 @@ def select(node, name):  # pylint: disable=redefined-outer-name
         Node outputting selected stream.
 
     """
-    return StreamSpec(node, name)
-
-
-__all__ = (
-    'input',
-    'node',
-    'select',
-)
+    return Stream(node=node.__marv_node__, name=name)
