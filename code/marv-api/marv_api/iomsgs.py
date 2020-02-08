@@ -3,6 +3,8 @@
 
 from collections import namedtuple
 
+from marv_node.stream import Handle  # pylint: disable=unused-import
+
 CreateStream = namedtuple('CreateStream', 'parent name group header')
 GetLogger = namedtuple('GetLogger', '')
 GetRequested = namedtuple('GetRequested', '')

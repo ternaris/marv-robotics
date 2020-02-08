@@ -7,10 +7,10 @@ from collections import OrderedDict, namedtuple
 from itertools import count, product
 
 from marv_api import dag
+from marv_api.ioctrl import get_logger, pull
 from marv_api.utils import find_obj
 
 from . import io
-from .io import get_logger, pull
 from .mixins import Keyed
 
 NODE_CACHE = {}
