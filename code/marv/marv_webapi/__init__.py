@@ -33,6 +33,3 @@ def load_entry_points():
     for entry_point in iter_entry_points(group='marv_webapi'):
         endpoint = entry_point.load()
         webapi.add_endpoint(endpoint)
-
-
-load_entry_points()

@@ -7,13 +7,14 @@ from logging import getLogger
 
 from aiohttp import web
 
-from marv_webapi import webapi
+import marv_webapi
 
 
+LOADED = False
 log = getLogger(__name__)
 
 
-def create_app(site, app_root='', middlewares=None):  # noqa: C901
+def create_app(site, app_root='', middlewares=None):  # noqa: C901  # pylint: disable=too-many-statements
     app = web.Application(middlewares=middlewares or [])
     app['acl'] = site.config.marv.acl()
     app['api_endpoints'] = {}
@@ -35,7 +36,11 @@ def create_app(site, app_root='', middlewares=None):  # noqa: C901
     async def shutdown(app):  # pylint: disable=unused-argument
         await site.destroy()
     app.on_shutdown.append(shutdown)
-    webapi.init_app(app, url_prefix='/marv/api', app_root=app_root)
+    global LOADED  # pylint: disable=global-statement
+    if not LOADED:
+        marv_webapi.load_entry_points()
+        LOADED = True
+    marv_webapi.webapi.init_app(app, url_prefix='/marv/api', app_root=app_root)
 
     with open(site.config.marv.sessionkey_file) as f:
         app['config']['SECRET_KEY'] = f.read()
