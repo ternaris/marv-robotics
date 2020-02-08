@@ -4,6 +4,9 @@
 from collections import namedtuple
 from numbers import Integral
 
+from marv_api.iomsgs import (CreateStream, GetLogger, GetRequested, MakeFile, Pull, PullAll, Push,
+                             SetHeader)
+
 from .mixins import Keyed, Request, Task
 from .stream import Handle
 
@@ -93,17 +96,8 @@ def set_header(**header):
     return SetHeader(header)
 
 
-CreateStream = namedtuple('CreateStream', 'parent name group header')
 Fork = namedtuple('Fork', 'name inputs group')
-GetLogger = namedtuple('GetLogger', '')
-GetRequested = namedtuple('GetRequested', '')
 GetStream = namedtuple('GetStream', 'setid node name')
-MakeFile = namedtuple('MakeFile', 'handle name')
-
-Pull = namedtuple('Pull', 'handle enumerate')
-PullAll = namedtuple('PullAll', 'handles')
-Push = namedtuple('Push', 'output')
-SetHeader = namedtuple('SetHeader', 'header')
 
 # TODO: Rename
 Request.register(Pull)
