@@ -7,11 +7,10 @@ import sys
 import time
 from datetime import datetime, timedelta
 from datetime import tzinfo as tzinfo_base
-from importlib import import_module
 from itertools import islice
 from subprocess import Popen as _Popen
 
-from marv_api.utils import NOTSET
+from marv_api.utils import NOTSET, find_obj  # pylint: disable=unused-import
 from marv_node.setid import decode_setid, encode_setid  # pylint: disable=unused-import
 
 
@@ -30,13 +29,6 @@ def err(*args, exit=None, **kw):
 def chunked(iterable, chunk_size):
     itr = iter(iterable)
     return iter(lambda: tuple(islice(itr, chunk_size)), ())
-
-
-def find_obj(objpath, name=False):
-    modpath, objname = objpath.split(':')
-    mod = import_module(modpath)
-    obj = getattr(mod, objname)
-    return (objname, obj) if name else obj
 
 
 def findfirst(predicate, iterable, default=NOTSET):
