@@ -824,9 +824,8 @@ class Database:
             query = query.where(dataset.collection.isin(collections))
 
         if outdated:
-            status_ids = list(STATUS.keys())
-            bitmask = 2**status_ids.index(STATUS_OUTDATED)
-            query = query.where(dataset.status.bitwiseand(bitmask) == bitmask)
+            bitmask = ValueWrapper(STATUS_OUTDATED)
+            query = query.where(dataset.status.bitwiseand(bitmask).eq(bitmask))
 
         query = query.where(dataset.discarded == discarded)
 
@@ -856,7 +855,6 @@ class Database:
         query = query.select(dataset.setid)\
                      .orderby(dataset.setid)\
                      .get_sql()
-
         datasets = (await transaction.execute_query(query))[1]
         return [
             x['setid'][:abbrev] if abbrev else x['setid']

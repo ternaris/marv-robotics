@@ -85,8 +85,8 @@ async def test_query(site):
     res = await site.db.query(discarded=True)
     assert len(res) == 1
 
-    # res = await site.db.query(outdated=True)
-    # assert len(res) == 0
+    res = await site.db.query(outdated=True)
+    assert len(res) == 0
 
     res = await site.db.query(missing=True)
     assert len(res) == 0
