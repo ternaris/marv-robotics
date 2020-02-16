@@ -25,6 +25,7 @@ Added
 Changed
 ~~~~~~~
 - Update python dependencies and tooling
+- Fix queries for outdated datasets
 - **BREAKING** Update to most recent tortoise-orm (see migration)
 
 Deprecated
