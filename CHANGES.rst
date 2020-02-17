@@ -27,6 +27,7 @@ Changed
 - Update python dependencies and tooling
 - Fix queries for outdated datasets
 - **BREAKING** Update to most recent tortoise-orm (see migration)
+- Improved map layer controls
 
 Deprecated
 ~~~~~~~~~~
@@ -44,6 +45,8 @@ Fixed
 - Load marv pip managed user site only when running from pyinstaller bundle (EE)
 - Remove distutils trove classifiers that are not applicable anymore
 - Warning when building documentation
+- Do not reset map zoom on window resize
+  `#67 <https://gitlab.com/ternaris/marv-robotics/issues/67>`_
 
 
 Security
