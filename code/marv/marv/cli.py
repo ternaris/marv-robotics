@@ -631,8 +631,7 @@ async def marvcli_user_add(username, password):
     """Add a user."""
     if not re.match(r'[0-9a-zA-Z\-_\.@+]+$', username):
         click.echo(f'Invalid username: {username}', err=True)
-        click.echo('Must only contain ASCII letters, numbers, dash, underscore and dot',
-                   err=True)
+        click.echo('Must only contain ASCII letters, numbers, and [-_+@.]', err=True)
         sys.exit(1)
 
     if password is None:
