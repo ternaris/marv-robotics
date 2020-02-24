@@ -113,6 +113,35 @@ Default:
    storedir = ./store
 
 
+.. _cfg_upload_checkpoint_commands:
+
+upload_checkpoint_commands
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+List of commands that is executed before marv touches a collection's scanroot as part of an upload from a leaf. See :ref:`upload` for more information.
+
+Example:
+
+.. code-block:: ini
+
+   upload_checkpoint_commands =
+       /path/to/checkpoint/script
+
+Content of checkpoint script:
+
+.. code-block:: sh
+
+   #!/bin/sh
+
+   NAME="$(basename "${MARV_SCANROOT}")"
+   sudo btrfs subvolume snapshot -r "${MARV_SCANROOT}" /snapshots/"${NAME}"-$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+
+Checkpoint script needs to be executable (``chmod +x``) and user running marv needs to have sudoer permission for btrfs:
+
+.. code-block::
+
+   marvuser ALL=(root) /usr/bin/btrfs subvolume snapshot -r /path/to/scanroot /snapshots/*
+
+
 .. _cfg_section_collection:
 
 collection section
@@ -145,7 +174,7 @@ Example:
 
 .. code-block:: ini
 
-   scanroos =
+   scanroots =
        ./foo
        ./bar
 

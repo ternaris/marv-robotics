@@ -21,6 +21,7 @@ Welcome to MARV Robotics!
    nodes
    widgets
    httpapi
+   upload
    deploy
    maintenance
    migrate/index

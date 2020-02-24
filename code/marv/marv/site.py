@@ -78,6 +78,7 @@ def make_config(siteconf):
             'sessionkey_file': str(sitedir / 'sessionkey'),
             'staticdir': str(sitedir / resource_filename('marv_ludwig', 'static')),
             'storedir': str(sitedir / 'store'),
+            'upload_checkpoint_commands': '',
             'venv': str(sitedir / 'venv'),
             'sitepackages': str(sitedir / 'venv' / 'lib' / f'python{py_ver}' / 'site-packages'),
             'window_title': '',
@@ -110,6 +111,7 @@ def make_config(siteconf):
             'oauth': 'lines',
             'staticdir': 'path',
             'storedir': 'path',
+            'upload_checkpoint_commands': 'cmd_lines',
         },
         'collection': {
             'compare': 'find_obj',
@@ -302,7 +304,7 @@ class Site:
         descs = {key: x.table_descriptors for key, x in self.collections.items()}
         await self.db.cleanup_listing_relations(descs)
 
-    async def restore_database(self, datasets=None, users=None):
+    async def restore_database(self, datasets=None, users=None, leafs=None):
         for user in users or []:
             user.setdefault('realm', 'marv')
             user.setdefault('realmuid', '')
@@ -314,6 +316,9 @@ class Site:
                 except ValueError:
                     await self.db.group_add(grp)
                     await self.db.group_adduser(grp, user['name'])
+
+        for leaf in leafs or []:
+            await self.db.leaf_add(_restore=True, **leaf)
 
         for key, sets in (datasets or {}).items():
             key = self.collections.keys()[0] if key == 'DEFAULT_COLLECTION' else key

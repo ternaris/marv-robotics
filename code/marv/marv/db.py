@@ -4,6 +4,9 @@
 # pylint: disable=too-many-lines
 
 import asyncio
+import hashlib
+import secrets
+import string
 import sys
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
@@ -21,7 +24,7 @@ from tortoise.transactions import current_transaction_map
 
 from marv_node.setid import SetID
 from . import utils
-from .model import Comment, Dataset, File, Group, Tag, User
+from .model import Comment, Dataset, File, Group, Leaf, Tag, User
 from .model import STATUS, STATUS_MISSING, STATUS_OUTDATED
 from .model import __models__ as MODELS
 from .utils import findfirst
@@ -75,6 +78,8 @@ class GroupConcat(AggregateFunction):
 
 
 class EscapableLikeCriterion(Criterion):
+    operator = 'LIKE'
+
     def __init__(self, left, right, escchr, alias=None):
         super().__init__(alias)
         self.left = left
@@ -85,11 +90,15 @@ class EscapableLikeCriterion(Criterion):
         return self.left.fields() + self.right.fields()
 
     def get_sql(self, with_alias=False, **kwargs):  # pylint: disable=arguments-differ
-        sql = (f'{self.left.get_sql(**kwargs)} LIKE {self.right.get_sql(**kwargs)} '
+        sql = (f'{self.left.get_sql(**kwargs)} {self.operator} {self.right.get_sql(**kwargs)} '
                f'ESCAPE "{self.escchr}"')
         if with_alias and self.alias:
             return f'{sql} "{self.alias}"'
         return sql
+
+
+class EscapableNotlikeCriterion(EscapableLikeCriterion):
+    operator = 'NOT LIKE'
 
 
 def esc(value, escchr='$'):
@@ -108,6 +117,10 @@ def escaped_startswith(field, value, escchr='$'):
 
 def escaped_endswith(field, value, escchr='$'):
     return EscapableLikeCriterion(field, ValueWrapper(f'%{esc(value, escchr)}'), escchr)
+
+
+def escaped_not_startswith(field, value, escchr='$'):
+    return EscapableNotlikeCriterion(field, ValueWrapper(f'{esc(value, escchr)}%'), escchr)
 
 
 OPS = {
@@ -317,6 +330,56 @@ class Database:
         except DoesNotExist:
             raise ValueError(f'User {username} does not exist')
         await group.users.remove(user, using_db=transaction)
+
+    @run_in_transaction
+    async def leaf_add(self, name, access_token=None, refresh_token=None, time_created=None,
+                       time_updated=None, _restore=None, transaction=None):
+        # pylint: disable=too-many-arguments
+        if _restore:
+            clear_access_token = None
+            clear_refresh_token = None
+        else:
+            alnum = string.ascii_letters + string.digits
+            clear_access_token = ''.join(secrets.choice(alnum) for i in range(20))
+            clear_refresh_token = ''.join(secrets.choice(alnum) for i in range(20))
+            access_token = hashlib.sha256(clear_access_token.encode()).hexdigest()
+            refresh_token = hashlib.sha256(clear_refresh_token.encode()).hexdigest()
+
+        now = datetime.utcnow()  # noqa: DTZ
+        time_created = datetime.fromtimestamp(time_created) if time_created else now
+        time_updated = datetime.fromtimestamp(time_updated) if time_updated else now
+        try:
+            leaf = await Leaf.create(name=name, access_token=access_token,
+                                     refresh_token=refresh_token, time_created=time_created,
+                                     time_updated=time_updated, using_db=transaction)
+            if _restore:
+                leaf_t = Table('leaf')
+                await transaction.execute_query(Query.update(leaf_t)
+                                                .set(leaf_t.time_updated, time_updated)
+                                                .where(leaf_t.name == name)
+                                                .get_sql())
+        except IntegrityError:
+            raise ValueError(f'Recording unit {name} exists already')
+
+        return leaf
+
+    @run_in_transaction
+    async def leaf_regentoken(self, name, transaction=None):
+        try:
+            leaf = await Leaf.get(name=name).using_db(transaction)
+        except DoesNotExist:
+            raise ValueError(f'Recording unit {name} does not exist')
+
+        alnum = string.ascii_letters + string.digits
+        clear_access_token = ''.join(secrets.choice(alnum) for i in range(20))
+        clear_refresh_token = ''.join(secrets.choice(alnum) for i in range(20))
+        leaf.access_token = hashlib.sha256(clear_access_token.encode('utf8')).hexdigest()
+        leaf.refresh_token = hashlib.sha256(clear_refresh_token.encode('utf8')).hexdigest()
+        leaf.time_updated = int(utils.now())
+        await leaf.save(using_db=transaction)
+        leaf.clear_access_token = clear_access_token
+        leaf.clear_refresh_token = clear_refresh_token
+        return leaf
 
     @run_in_transaction
     async def get_setids(self, prefixes, discarded=False, dbids=False, transaction=None):
@@ -708,6 +771,15 @@ class Database:
         return await query
 
     @run_in_transaction
+    async def get_leafs(self, transaction=None):
+        return await Leaf.all().using_db(transaction).order_by('name')
+
+    @run_in_transaction
+    async def get_leaf_by_token(self, clear_access_token, transaction=None):
+        access_token = hashlib.sha256(clear_access_token.encode()).hexdigest()
+        return await Leaf.filter(access_token=access_token).using_db(transaction).first()
+
+    @run_in_transaction
     async def delete_comments_by_ids(self, ids, transaction=None):
         await Comment.filter(id__in=ids).using_db(transaction).delete()
 
@@ -1002,6 +1074,12 @@ class Database:
         return result
 
 
+def dt_to_sec(dtime):
+    """Return seconds since epoch for datetime object."""
+    sec = (datetime.fromisoformat(dtime) - datetime.fromtimestamp(0)).total_seconds()  # noqa: DTZ
+    return int(sec)
+
+
 async def dump_database(dburi):  # noqa: C901
     """Dump database.
 
@@ -1028,15 +1106,16 @@ async def dump_database(dburi):  # noqa: C901
                 {k: x[k] for k in x.keys()}
                 for x in (await conn.execute_query(query.get_sql()))[1]
             ]
-
         master = Table('sqlite_master')
         tables = {
             x['name']: Table(x['name'])
-            for x in await get_items_for_query(Query.from_(master)
-                                               .select(master.name)
-                                               .where((master.type == 'table')
-                                                      & master.name.not_like('sqlite_%')
-                                                      & master.name.not_like('l_%')))
+            for x in await get_items_for_query(
+                Query.from_(master)
+                .select(master.name)
+                .where((master.type == 'table')
+                       & escaped_not_startswith(master.name, 'sqlite_')
+                       & escaped_not_startswith(master.name, 'l_')),
+            )
         }
 
         comments = {}
@@ -1135,11 +1214,21 @@ async def dump_database(dburi):  # noqa: C901
         for user in items:
             user_id = user.pop('id')  # Everything except this is included in the dump
             user['groups'] = groups.pop(user_id, [])
-            user['time_created'] = int((datetime.fromisoformat(user['time_created'])
-                                        - datetime.fromtimestamp(0)).total_seconds())  # noqa: DTZ
-            user['time_updated'] = int((datetime.fromisoformat(user['time_updated'])
-                                        - datetime.fromtimestamp(0)).total_seconds())  # noqa: DTZ
+            user['time_created'] = dt_to_sec(user['time_created'])
+            user['time_updated'] = dt_to_sec(user['time_updated'])
             users.append(user)
+
+        dump['leafs'] = leafs = []
+        if 'leaf' in tables:
+            leaf_t = tables.pop('leaf')
+            items = await get_items_for_query(Query.from_(leaf_t)
+                                              .select('*')
+                                              .orderby(leaf_t.name))
+            for leaf in items:
+                del leaf['id']
+                leaf['time_created'] = dt_to_sec(leaf['time_created'])
+                leaf['time_updated'] = dt_to_sec(leaf['time_updated'])
+                leafs.append(leaf)
 
         assert not groups, groups
         assert not tables, tables.keys()

@@ -255,6 +255,8 @@ class Section(Mapping):
             result = find_obj(value)
         elif value_type == 'lines':
             result = [x.strip() for x in value.splitlines()]
+        elif value_type == 'cmd_lines':
+            result = [x.split() for x in value.splitlines()]
         elif value_type == 'nodes':
             result = [find_obj(x.strip()) for x in value.splitlines()]
         elif value_type == 'path':

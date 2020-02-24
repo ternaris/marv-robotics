@@ -198,6 +198,7 @@ async def test_dump(site, client):  # pylint: disable=redefined-outer-name  # no
         ]
         assert {
             'dataset', 'dataset_tag', 'tag', 'file', 'comment', 'user', 'user_group', 'group',
+            'leaf',
         } == set(tables)
         for name in sorted(tables):
             rows = list((await connection.execute_query(f'SELECT * FROM "{name}";'))[1])
@@ -224,9 +225,12 @@ async def test_dump(site, client):  # pylint: disable=redefined-outer-name  # no
         await site.scan()
 
     with mock.patch('bcrypt.gensalt', return_value=b'$2b$12$k67acf6S32i3nW0c7ycwe.') as _, \
-            mock.patch.object(datetime, 'datetime', create_datemock()):
+            mock.patch.object(datetime, 'datetime', create_datemock()) as __, \
+            mock.patch('secrets.choice', return_value='#'):
         await site.db.user_add('user1', 'pw1', 'marv', '', time_created=4201, time_updated=4202)
         await site.db.user_add('user2', 'pw2', 'marv', '', time_created=4203, time_updated=4204)
+        await site.db.leaf_add('T800', time_created=4205, time_updated=4206)
+        await site.db.leaf_add('T1000', time_created=4207, time_updated=4208)
     await site.db.group_add('grp')
     await site.db.group_adduser('admin', 'user1')
     await site.db.group_adduser('grp', 'user2')
@@ -305,6 +309,7 @@ async def test_restore(client, site):  # pylint: disable=redefined-outer-name  #
         ]
         assert {
             'dataset', 'dataset_tag', 'tag', 'file', 'comment', 'user', 'user_group', 'group',
+            'leaf',
         } == set(tables)
         for name in sorted(tables):
             rows = list((await connection.execute_query(f'SELECT * FROM "{name}";'))[1])

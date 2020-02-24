@@ -148,7 +148,16 @@ class Group(Model):
     name = CharField(max_length=255, unique=True)
 
 
-__models__ = [Dataset, File, Comment, Tag, User, Group]
+class Leaf(Model):
+    id = IntField(pk=True)
+    name = CharField(max_length=255, unique=True)
+    access_token = TextField()
+    refresh_token = TextField()
+    time_created = DatetimeField(auto_now_add=True)
+    time_updated = DatetimeField(auto_now=True)
+
+
+__models__ = [Dataset, File, Comment, Tag, User, Group, Leaf]
 
 
 ListingModel = namedtuple('ListingModel', 'Listing relations secondaries')
