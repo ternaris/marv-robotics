@@ -17,37 +17,27 @@ from marv_ros.rosbag import _get_message_type
 from .bag_capnp import Bagmeta, Message  # pylint: disable=import-error
 
 
-# Regular expression used to aggregate individual bags into sets (see
-# below). Bags with the same *name* and consecutive *idx* starting
-# with 0 are put into sets. If one bag is missing all remaining bags
-# will result in sets with one bag each.
-REGEX = re.compile(r"""
-^
-(?P<basename>
-  (?P<name>
-    .+?
-  )
-  (?:
-    _(?P<timestamp>
-      \d{4}(?:-\d{2}){5}
-    )
-  )?
-  (?:
-    _(?P<idx>
-      \d+
-    )
-  )?
-)
-.bag$
-""", re.VERBOSE)
+class Baginfo(namedtuple('Baginfo', 'filename basename prefix timestamp idx')):
+    @classmethod
+    def parse(cls, filename):
+        assert filename.endswith('.bag'), filename
+        basename = filename[:-4]
+        parts = basename.rsplit('_', 2)
+        if parts[-1].isnumeric():
+            idx = int(parts.pop())
+        else:
+            idx = None
 
+        if re.match(r'\d{4}(?:-\d{2}){5}', parts[-1]):
+            timestamp = parts.pop()
+        else:
+            timestamp = None
 
-class Baginfo(namedtuple('Baginfo', 'filename basename name timestamp idx')):
-    def __new__(cls, filename, basename, name, timestamp=None, idx=None):
-        # pylint: disable=too-many-arguments
-        idx = None if idx is None else int(idx)
-        return super(Baginfo, cls).__new__(cls, filename, basename,
-                                           name, timestamp, idx)
+        if parts:
+            prefix = parts[0]
+        else:
+            prefix = None
+        return cls(filename, basename, prefix, timestamp, idx)
 
 
 def scan(dirpath, dirnames, filenames):  # pylint: disable=unused-argument
@@ -104,13 +94,11 @@ def scan(dirpath, dirnames, filenames):  # pylint: disable=unused-argument
     See :ref:`cfg_c_scanner` config key.
 
     """
-    groups = groupby([Baginfo(x, **re.match(REGEX, x).groupdict())
-                      for x in reversed(filenames)
-                      if x.endswith('.bag')],
-                     lambda x: x.name)
+    groups = groupby([Baginfo.parse(x) for x in reversed(filenames) if x.endswith('.bag')],
+                     lambda x: x.prefix)
     bags = []
     datasets = []
-    for name, group in groups:
+    for prefix, group in groups:
         group = list(group)
         prev_idx = None
         for bag in group:
@@ -122,7 +110,7 @@ def scan(dirpath, dirnames, filenames):  # pylint: disable=unused-argument
             bags.insert(0, bag)
             prev_idx = bag.idx
             if bag.idx == 0:
-                datasets.insert(0, DatasetInfo(name, [x.filename for x in bags]))
+                datasets.insert(0, DatasetInfo(prefix or bag.timestamp, [x.filename for x in bags]))
                 bags[:] = []
             elif bag.idx is None:
                 assert len(bags) == 1, bags
