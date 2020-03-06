@@ -64,7 +64,12 @@ def get_site_config():
 @asynccontextmanager
 async def create_site(init=None):
     siteconf = get_site_config()
-    site = await Site.create(siteconf, init=init)
+    try:
+        site = await Site.create(siteconf, init=init)
+    except sqlite3.OperationalError as exc:
+        if PDB:
+            raise
+        err(f'{exc!r}\n\nDid you run marv init?\n', exit=1)
     try:
         yield site
     finally:
