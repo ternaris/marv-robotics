@@ -39,6 +39,7 @@ Removed
 
 Fixed
 ~~~~~
+- Fix documentation for widget pre
 - Fix pip dist-info discovery for packages contained in bundle (EE)
 - Fix position of CLI config option in docs
 - Run ffmpeg in sanitized environment to prevent exec errors in single binary mode (EE)

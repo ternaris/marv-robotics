@@ -133,7 +133,7 @@ Wraps data into an html ``<pre></pre>`` tag.
 
 .. code-block:: python
 
-   pre = {'pre': 'foo\nbar'}
+   pre = {'pre': {'text': 'foo\nbar'}}
 
 
 .. _widget_custom:
