@@ -21,11 +21,11 @@ Upcoming (unreleased)
 Added
 ~~~~~
 - Support uninstall of python packages in single binary mode (EE)
+- Support for leaves to upload datasets (EE)
 
 Changed
 ~~~~~~~
 - Update python dependencies and tooling
-- Fix queries for outdated datasets
 - **BREAKING** Update to most recent tortoise-orm (see migration)
 - Improved map layer controls
 
@@ -39,6 +39,7 @@ Removed
 
 Fixed
 ~~~~~
+- Fix queries for outdated datasets
 - Fix documentation for widget pre
 - Fix pip dist-info discovery for packages contained in bundle (EE)
 - Fix position of CLI config option in docs
