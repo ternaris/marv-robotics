@@ -72,6 +72,11 @@ def run_in_transaction(func):
     return wrapper
 
 
+class ValuesTuple(Tuple):
+    def get_sql(self, **kw):
+        return f'(VALUES {",".join(x.get_sql(**kw) for x in self.values)})'
+
+
 class GroupConcat(AggregateFunction):
     def __init__(self, term, alias=None):
         super().__init__('GROUP_CONCAT', term, alias=alias)
@@ -685,17 +690,16 @@ class Database:
         tag, dataset_tag, tmp = Tables('tag', 'dataset_tag', 'tmp')  # pylint: disable=unbalanced-tuple-unpacking
         names = [x for x, y in groupby(add, key=lambda k: (k[0], k[1]))]
         if add:
-            need = Query().from_(Tuple(*names))\
+            need = Query().from_(ValuesTuple(*names))\
                           .select('*')\
-                          .get_sql()\
-                          .replace('((', '(VALUES(', 1)
+                          .get_sql()
             have = Query().from_(tag)\
                           .select(tag.collection, tag.value)\
                           .get_sql()
             insert = f'INSERT INTO tag (collection, value) SELECT * FROM ({need} EXCEPT {have})'
             await transaction.execute_query(insert)
 
-            need = Query.with_(Query.with_(Query.from_(Tuple(*add))
+            need = Query.with_(Query.with_(Query.from_(ValuesTuple(*add))
                                            .select('*'), 'tmp(collection, value, dataset_id)')
                                .from_(tmp)
                                .join(tag)
@@ -703,8 +707,7 @@ class Database:
                                .select(tag.id, tmp.dataset_id), 'x(tag_id, dataset_id)')\
                         .from_('x')\
                         .select(tmp.tag_id, tmp.dataset_id)\
-                        .get_sql()\
-                        .replace('((', '(VALUES(', 1)
+                        .get_sql()
             have = Query.from_(dataset_tag)\
                         .select(dataset_tag.tag_id, dataset_tag.dataset_id)\
                         .get_sql()
@@ -713,7 +716,7 @@ class Database:
             await transaction.execute_query(insert_rel)
 
         if remove:
-            kill = Query.with_(Query.with_(Query.from_(Tuple(*remove))
+            kill = Query.with_(Query.with_(Query.from_(ValuesTuple(*remove))
                                            .select('*'), 'tmp(collection, value, dataset_id)')
                                .from_(tmp)
                                .join(tag)
@@ -729,8 +732,7 @@ class Database:
                                             .select(dataset_tag.tag_id, dataset_tag.dataset_id)
                                             .where(Tuple(dataset_tag.tag_id, dataset_tag.dataset_id)
                                                    .isin(kill))
-                                            .get_sql()
-                                            .replace('((', '(VALUES('))
+                                            .get_sql())
 
     @run_in_transaction
     async def get_comments_for_setids(self, setids, transaction=None):
@@ -936,10 +938,9 @@ class Database:
     @run_in_transaction
     async def ensure_values(self, tablename, values, transaction=None):
         table = Table(tablename)
-        need = Query().from_(Tuple(*values))\
+        need = Query().from_(ValuesTuple(*values))\
                       .select('*')\
-                      .get_sql()\
-                      .replace('((', '(VALUES(', 1)
+                      .get_sql()
         have = Query().from_(table)\
                       .select(table.value)\
                       .get_sql()
@@ -955,7 +956,7 @@ class Database:
         tmp = Table('tmp')
         relid = getattr(through, rel_id)
         backid = getattr(through, back_id)
-        needq = Query.with_(Query.with_(Query.from_(Tuple(*relations))
+        needq = Query.with_(Query.with_(Query.from_(ValuesTuple(*relations))
                                         .select('*'), 'tmp(value, back_id)')
                             .from_(tmp)
                             .join(rel)
@@ -964,7 +965,7 @@ class Database:
                      .from_('ins')\
                      .select(tmp.rel_id, tmp.back_id)
 
-        need = needq.get_sql().replace('((', '(VALUES(', 1)
+        need = needq.get_sql()
         have = Query.from_(through)\
                     .select(relid, backid)\
                     .get_sql()
@@ -974,8 +975,7 @@ class Database:
                                         .where(backid.isin({x[1] for x in relations})
                                                & ~Tuple(relid, backid).isin(needq))
                                         .delete()
-                                        .get_sql()
-                                        .replace('((', '(VALUES(', 1))
+                                        .get_sql())
 
     @run_in_transaction  # noqa: C901
     async def rpc_query(self, model, filters, attrs, order, limit, offset,  # noqa: C901
