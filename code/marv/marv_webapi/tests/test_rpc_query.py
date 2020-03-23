@@ -297,10 +297,10 @@ async def test_rpc_query(site, client):
     }
 
     res = await site.db.bulk_tag((
-        ('hodge', 'important', 2),
-        ('hodge', 'important', 3),
-        ('podge', 'important', 150),
-        ('hodge', 'check', 2),
+        ('important', 2),
+        ('important', 3),
+        ('important', 150),
+        ('check', 2),
     ), ())
 
     res = await client.post_json('/marv/api/v1/rpcs', json=make_query(filters=[
@@ -326,12 +326,11 @@ async def test_rpc_query(site, client):
         'dataset': [
             {'id': 2, 'name': 'hodge_0002', 'tags': [1, 2]},
             {'id': 3, 'name': 'hodge_0003', 'tags': [2]},
-            {'id': 150, 'name': 'podge_0100', 'tags': [3]},
+            {'id': 150, 'name': 'podge_0100', 'tags': [2]},
         ],
         'tag': [
             {'id': 1, 'value': 'check'},
             {'id': 2, 'value': 'important'},
-            {'id': 3, 'value': 'important'},
         ],
     }
 

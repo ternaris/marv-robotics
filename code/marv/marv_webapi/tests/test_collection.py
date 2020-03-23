@@ -6,8 +6,8 @@ import json
 
 async def test_collection(app, site, client):
     await site.db.bulk_tag([
-        ('hodge', 'foo', 1),
-        ('hodge', 'foo', 2),
+        ('foo', 1),
+        ('foo', 2),
     ], [])
 
     res = await client.get('/marv/api/collection/notexist')

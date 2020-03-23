@@ -56,7 +56,7 @@ async def test_tag(site):
 
     # get all
     res = await site.db.get_all_known_tags_for_collection('hodge')
-    assert res == ['bar', 'foo']
+    assert res == ['bar']
     res = await site.db.get_all_known_tags_for_collection('podge')
     assert res == ['bar', 'baz']
 
@@ -65,7 +65,7 @@ async def test_tag(site):
     assert res == ['bar', 'baz', 'foo']
 
     res = await site.db.list_tags(collections=['hodge'])
-    assert res == ['bar', 'foo']
+    assert res == ['bar']
 
     # cleanup
     res = await site.db.cleanup_tags()
@@ -74,14 +74,14 @@ async def test_tag(site):
 
     # bulk
     res = await site.db.bulk_tag([
-        ('hodge', 'foo', 1),
-        ('hodge', 'foo', 2),
+        ('foo', 1),
+        ('foo', 2),
     ], [])
     res = await site.db.list_tags()
     assert res == ['bar', 'baz', 'foo']
 
     res = await site.db.bulk_tag([], [
-        ('hodge', 'bar', 1),
+        ('bar', 1),
     ])
     res = await site.db.cleanup_tags()
     res = await site.db.list_tags()

@@ -18,9 +18,9 @@ async def test_listing(site):
     await site.db.comment_multiple([sets[2]], 'test', 'lorem ipsum')
 
     res = await site.db.bulk_tag([
-        ('hodge', 'foo', 1),
-        ('hodge', 'foo', 2),
-        ('hodge', 'bar', 1),
+        ('foo', 1),
+        ('foo', 2),
+        ('bar', 1),
     ], [])
 
     collection = site.collections['hodge']

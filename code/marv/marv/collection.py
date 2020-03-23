@@ -425,7 +425,7 @@ class Collection:
             await self._add_tags(connection, tags)
 
     async def _add_tags(self, connection, data):
-        add = [(self.name, tag, dataset.id) for dataset, tags in data for tag in tags]
+        add = [(tag, dataset.id) for dataset, tags in data for tag in tags]
         await self.site.db.bulk_tag(add, [], transaction=connection)
         data[:] = []
 

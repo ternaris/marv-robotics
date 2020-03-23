@@ -443,10 +443,7 @@ class Database:
         }
         all_known.update({
             'status': list(STATUS),
-            'tags': (await (Tag.filter(collection=collection.name)
-                            .using_db(transaction)
-                            .order_by('value')
-                            .values_list('value', flat=True))),
+            'tags': await self.get_all_known_tags_for_collection(collection.name),
         })
         return all_known
 
@@ -616,11 +613,19 @@ class Database:
                 if not x['status'] & STATUS_MISSING]
 
     @run_in_transaction
-    async def get_all_known_tags_for_collection(self, collection, transaction=None):
-        return await Tag.filter(collection=collection)\
-                        .using_db(transaction)\
-                        .order_by('value')\
-                        .values_list('value', flat=True)
+    async def get_all_known_tags_for_collection(self, collection_name, transaction=None):
+        dataset, dataset_tag, tag = Tables('dataset', 'dataset_tag', 'tag')
+        query = Query.from_(tag)\
+                     .select(tag.value)\
+                     .where(tag.id.isin(Query.from_(dataset_tag)
+                                        .join(dataset)
+                                        .on(dataset_tag.dataset_id == dataset.id)
+                                        .select(dataset_tag.tag_id)
+                                        .where(dataset.collection == collection_name)
+                                        .distinct()))\
+                     .orderby(tag.value)\
+                     .get_sql()
+        return [x['value'] for x in (await transaction.execute_query(query))[1]]
 
     @run_in_transaction
     async def delete_comments_tags(self, setids, comments, tags, transaction=None):
@@ -658,14 +663,14 @@ class Database:
         dataset = Table('dataset')
         colids = (await transaction.execute_query(Query.from_(dataset)
                                                   .where(dataset.setid.isin(setids))
-                                                  .select(dataset.collection, dataset.id)
+                                                  .select(dataset.id)
                                                   .get_sql()))[1]
         add = [
-            (colid['collection'], tag, colid['id'])
+            (tag, colid['id'])
             for tag, colid in product(add, colids)
         ]
         remove = [
-            (colid['collection'], tag, colid['id'])
+            (tag, colid['id'])
             for tag, colid in product(remove, colids)
         ]
         await self.bulk_tag(add, remove, transaction=transaction)
@@ -688,22 +693,22 @@ class Database:
     @run_in_transaction
     async def bulk_tag(self, add, remove, transaction=None):
         tag, dataset_tag, tmp = Tables('tag', 'dataset_tag', 'tmp')  # pylint: disable=unbalanced-tuple-unpacking
-        names = [x for x, y in groupby(add, key=lambda k: (k[0], k[1]))]
+        names = [(x[0],) for x in add]
         if add:
             need = Query().from_(ValuesTuple(*names))\
                           .select('*')\
                           .get_sql()
             have = Query().from_(tag)\
-                          .select(tag.collection, tag.value)\
+                          .select(tag.value)\
                           .get_sql()
-            insert = f'INSERT INTO tag (collection, value) SELECT * FROM ({need} EXCEPT {have})'
+            insert = f'INSERT INTO tag (value) SELECT * FROM ({need} EXCEPT {have})'
             await transaction.execute_query(insert)
 
             need = Query.with_(Query.with_(Query.from_(ValuesTuple(*add))
-                                           .select('*'), 'tmp(collection, value, dataset_id)')
+                                           .select('*'), 'tmp(value, dataset_id)')
                                .from_(tmp)
                                .join(tag)
-                               .on((tmp.collection == tag.collection) & (tmp.value == tag.value))
+                               .on(tmp.value == tag.value)
                                .select(tag.id, tmp.dataset_id), 'x(tag_id, dataset_id)')\
                         .from_('x')\
                         .select(tmp.tag_id, tmp.dataset_id)\
@@ -717,10 +722,10 @@ class Database:
 
         if remove:
             kill = Query.with_(Query.with_(Query.from_(ValuesTuple(*remove))
-                                           .select('*'), 'tmp(collection, value, dataset_id)')
+                                           .select('*'), 'tmp(value, dataset_id)')
                                .from_(tmp)
                                .join(tag)
-                               .on((tmp.collection == tag.collection) & (tmp.value == tag.value))
+                               .on(tmp.value == tag.value)
                                .join(dataset_tag)
                                .on((tag.id == dataset_tag.tag_id)
                                    & (tmp.dataset_id == dataset_tag.dataset_id))
@@ -814,7 +819,8 @@ class Database:
 
     @run_in_transaction
     async def list_tags(self, collections=None, transaction=None):
-        return await ((Tag.filter(collection__in=collections) if collections else Tag.all())
+        return await ((Tag.filter(datasets__collection__in=collections)
+                       if collections else Tag.all())
                       .using_db(transaction)
                       .distinct()
                       .order_by('value')
@@ -1163,7 +1169,6 @@ async def dump_database(dburi):  # noqa: C901
             tags[did] = lst = []
             for tag in grp:
                 del tag['dataset_id']
-                del tag['collection']
                 del tag['id']
                 del tag['tag_id']
                 lst.append(tag.pop('value'))

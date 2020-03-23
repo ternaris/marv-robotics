@@ -69,8 +69,8 @@ async def test_discard(site):
 async def test_query(site):
     await site.db.discard_datasets_by_dbid([50])
     res = await site.db.bulk_tag([
-        ('hodge', 'foo', 1),
-        ('hodge', 'foo', 2),
+        ('foo', 1),
+        ('foo', 2),
     ], [])
 
     res = await site.db.query()

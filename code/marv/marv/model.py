@@ -119,14 +119,8 @@ class Comment(Model):
 
 
 class Tag(Model):
-    class Meta:  # pylint: disable=too-few-public-methods
-        unique_together = (
-            ('collection', 'value'),
-        )
-
     id = IntField(pk=True)
-    collection = TextField()
-    value = TextField()
+    value = CharField(max_length=255, unique=True)
 
 
 class User(Model):

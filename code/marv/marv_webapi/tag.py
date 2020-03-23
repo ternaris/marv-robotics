@@ -22,7 +22,7 @@ async def tag(request):
         for opname, target in (('add', add), ('remove', remove)):
             for tagname, ids in ops.get(opname, {}).items():
                 for id in ids:
-                    target.append((collection, tagname, id))
+                    target.append((tagname, id))
 
     await request.app['site'].db.bulk_tag(add, remove)
 
