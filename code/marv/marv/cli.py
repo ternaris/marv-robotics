@@ -200,10 +200,10 @@ async def marvcli_discard(datasets, tags, comments, confirm):
     Otherwise, selected data associated with the specified datasets is
     discarded right away.
     """
-    delete_related = filter(None, [
+    delete_related = list(filter(None, [
         'comments' if comments else None,
         'tags' if tags else None,
-    ])
+    ]))
     if delete_related and confirm:
         msg = ''.join(f'  - {x}\n' for x in delete_related)
         click.confirm(f'About to PERMANENTLY delete:\n{msg}Do you want to continue?', abort=True)
