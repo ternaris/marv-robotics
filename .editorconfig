@@ -1,19 +1,18 @@
 root = true
 
-
 [*]
 charset = utf-8
 end_of_line = lf
 indent_style = space
 indent_size = 4
 insert_final_newline = true
-max_line_length = 100
 trim_trailing_whitespace = true
 
-
-[*.rst]
-max_line_length = 80
-
+[*.py]
+max_line_length = 100
 
 [*.{yml,yaml}]
 indent_size = 2
+
+[COMMIT_EDITMSG]
+max_line_length = 72
