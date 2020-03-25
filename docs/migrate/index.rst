@@ -14,9 +14,7 @@ Before doing any migration you might want to check the :ref:`config` and :ref:`d
 19.11.0 -> 20.01.0
 ------------------
 
-An updated version of tortoise-orm required changes to the database schemas. A
-migration of the MARV database is necessary. Export the database with your
-current version of MARV:
+An updated version of tortoise-orm required changes to the database schemas. A migration of the MARV database is necessary. Export the database with your current version of MARV:
 
 .. code-block:: console
 
@@ -36,17 +34,11 @@ After updating MARV run:
 19.09.0 -> 19.11.0
 ------------------
 
-The gunicorn configuration was simplified. Instead of providing
-``gunicorn_cfg.py`` and running gunicorn manually, the ``marv serve`` cli was
-added. Check it out with ``marv serve --help``.
+The gunicorn configuration was simplified. Instead of providing ``gunicorn_cfg.py`` and running gunicorn manually, the ``marv serve`` cli was added. Check it out with ``marv serve --help``.
 
-If you were overriding the dburi path in your marv.conf, there is no need for
-the odd sqlalchemy URIs with four slashes anymore. If your custom dburi starts
-with ``sqlite:////`` please remove one slash.
+If you were overriding the dburi path in your marv.conf, there is no need for the odd sqlalchemy URIs with four slashes anymore. If your custom dburi starts with ``sqlite:////`` please remove one slash.
 
-This version makes the switch from sqlalchemy to tortoise as the underlying ORM,
-which makes a migration of the MARV database necessary. Export the database with
-your current version of MARV:
+This version makes the switch from sqlalchemy to tortoise as the underlying ORM, which makes a migration of the MARV database necessary. Export the database with your current version of MARV:
 
 .. code-block:: console
 
@@ -66,8 +58,7 @@ After updating MARV run:
 19.07.0 -> 19.09.0
 ------------------
 
-Uwsgi was replaced in favour of Gunicorn. In your site directory, replace
-``uwsgi.conf`` with a ``gunicorn_cfg.py``:
+Uwsgi was replaced in favour of Gunicorn. In your site directory, replace ``uwsgi.conf`` with a ``gunicorn_cfg.py``:
 
 .. code-block:: python
 
@@ -86,10 +77,7 @@ Uwsgi was replaced in favour of Gunicorn. In your site directory, replace
    workers = multiprocessing.cpu_count() * 2 + 1
    worker_class = 'aiohttp.GunicornUVLoopWebWorker'
 
-If you made any changes to your old ``uwsgi.conf`` please adjust the above
-config accordingly. If you are using an nginx reverse proxy you also have to
-adjust its configuration. Replace any ``uwsgi_pass`` directives with a
-``proxy_pass``:
+If you made any changes to your old ``uwsgi.conf`` please adjust the above config accordingly. If you are using an nginx reverse proxy you also have to adjust its configuration. Replace any ``uwsgi_pass`` directives with a ``proxy_pass``:
 
 .. code-block:: diff
 

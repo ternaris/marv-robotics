@@ -19,9 +19,7 @@ Two deployments are described here in short:
 Gunicorn with self-signed certificate
 -------------------------------------
 
-Gunicorn supports HTTPS out of the box with the limitation that it cannot serve
-HTTP and HTTPS simultaneously. To activate HTTPS mode you only need to provide
-Gunicorn with a certificate and corresponding keyfile.
+Gunicorn supports HTTPS out of the box with the limitation that it cannot serve HTTP and HTTPS simultaneously. To activate HTTPS mode you only need to provide Gunicorn with a certificate and corresponding keyfile.
 
 Generate self-signed certificate
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -66,8 +64,7 @@ Errors
 
    ValueError: certfile "gunicorn-ssl.crt" does not exist
 
-This means Gunicorn could not find the SSL certificate which should be right
-next to ``sites/example/gunicorn_cfg.py`` (see above).
+This means Gunicorn could not find the SSL certificate which should be right next to ``sites/example/gunicorn_cfg.py`` (see above).
 
 
 .. _deploy_nginx:
@@ -81,8 +78,7 @@ References:
 - https://aiohttp.readthedocs.io/en/stable/deployment.html#nginx-gunicorn
 
 
-When working behind a revese proxy MARV's default Gunicorn config will work
-without change.
+When working behind a revese proxy MARV's default Gunicorn config will work without change.
 
 nginx config
 ^^^^^^^^^^^^

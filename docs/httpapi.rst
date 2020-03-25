@@ -6,11 +6,7 @@
 HTTP API
 ========
 
-MARV provides an HTTP API for integration with other services. There is a
-dedicated API endpoint that can be used to run complex queries on the MARV
-database. For performing actions like tagging or commenting there are no
-dedicated endpoints at this time, and we recommend using the frontend API
-endpoints documented below for the time being.
+MARV provides an HTTP API for integration with other services. There is a dedicated API endpoint that can be used to run complex queries on the MARV database. For performing actions like tagging or commenting there are no dedicated endpoints at this time, and we recommend using the frontend API endpoints documented below for the time being.
 
 To work with the API on the command line it is handy to have `curl <https://curl.haxx.se/>`_ and `jq <https://stedolan.github.io/jq/>`_.
 
@@ -45,10 +41,7 @@ For some API calls you need to be authenticated, let's get a token, and set hand
 Query
 -----
 
-Database queries can be performed by posting a corresponding request to
-``v1/rpcs``. The endpoint expects a json encoded object with an ``rpcs``
-key and a list of actions to run. An empty request and its response would look
-like:
+Database queries can be performed by posting a corresponding request to ``v1/rpcs``. The endpoint expects a json encoded object with an ``rpcs`` key and a list of actions to run. An empty request and its response would look like:
 
 .. code-block:: bash
 
@@ -64,11 +57,7 @@ like:
      "data": {}
    }
 
-Query actions are represented by dictionaries with a key ``query``. The simplest
-query payload ``{"model": "dataset"}`` asks for all entries of a single entity,
-in this case dataset. The valid entities are ``dataset``, ``file``, ``comment``,
-``tag``, ``user``, and ``group``. The complete HTTP request to get all datasets
-looks like:
+Query actions are represented by dictionaries with a key ``query``. The simplest query payload ``{"model": "dataset"}`` asks for all entries of a single entity, in this case dataset. The valid entities are ``dataset``, ``file``, ``comment``, ``tag``, ``user``, and ``group``. The complete HTTP request to get all datasets looks like:
 
 .. code-block:: bash
 
@@ -98,10 +87,7 @@ looks like:
      }
    }
 
-Often not all attributes are required on the client side. To restrict the fields
-in the response the query payload can contain an ``attrs`` object. Its keys
-correspond to the database fields that should be returned, and its values are
-always set to ``true`` for real database columns.
+Often not all attributes are required on the client side. To restrict the fields in the response the query payload can contain an ``attrs`` object. Its keys correspond to the database fields that should be returned, and its values are always set to ``true`` for real database columns.
 
 .. code-block:: python
 
@@ -147,11 +133,7 @@ always set to ``true`` for real database columns.
      }
    }
 
-The results can be filtered using the ``filters`` key. Its value is a list of
-filter objects to apply. Each filter object consists at least of an operator
-``op``. Most operators are applied to a field ``name`` and work with a value
-``value``. The following query payload gets the dataset where the field ``id``
-equals 3:
+The results can be filtered using the ``filters`` key. Its value is a list of filter objects to apply. Each filter object consists at least of an operator ``op``. Most operators are applied to a field ``name`` and work with a value ``value``. The following query payload gets the dataset where the field ``id`` equals 3:
 
 .. code-block:: python
 
@@ -176,8 +158,7 @@ equals 3:
      }
    }
 
-The filters list can contain multiple filter objects and by default the results
-have to match all. The following operators work on fields and values:
+The filters list can contain multiple filter objects and by default the results have to match all. The following operators work on fields and values:
 
 - ``between``: field is in the range of value ([low, high])
 - ``endswith``: string field ends with value
@@ -195,16 +176,13 @@ have to match all. The following operators work on fields and values:
 - ``startswith``: string field starts with value
 - ``substring``: value is a substring of field
 
-There are three additional operators that implement boolean logic to combine
-filters. Each of the operators works without a field name and operates on value
-only:
+There are three additional operators that implement boolean logic to combine filters. Each of the operators works without a field name and operates on value only:
 
 - ``not``: Negates val which is another filter object itself
 - ``and``: "ANDs" all filter objects in a value list
 - ``or``: "ORs" all filter objects in a value list
 
-Filters can also operate on related tables by using a dotted path notation in
-field names. To search for datasets tagged ``important`` use:
+Filters can also operate on related tables by using a dotted path notation in field names. To search for datasets tagged ``important`` use:
 
 .. code-block:: python
 
@@ -229,10 +207,7 @@ field names. To search for datasets tagged ``important`` use:
      }
    }
 
-A query can also embed related models into the response by setting its
-corresponding ``attrs`` key similarly to regular model fields. Set the value to
-``true`` to embed complete objects or set the value to an object that shall be
-used as ``attrs`` for the related model:
+A query can also embed related models into the response by setting its corresponding ``attrs`` key similarly to regular model fields. Set the value to ``true`` to embed complete objects or set the value to an object that shall be used as ``attrs`` for the related model:
 
 .. code-block:: python
 
@@ -273,10 +248,7 @@ used as ``attrs`` for the related model:
      }
    }
 
-The API supports sorting and paging. To sort the results use the option
-``order`` with a value of ``["fieldname" "ORDER"]`` with ORDER being either
-``ASC`` or ``DESC``. Paging is achieved with the ``limit`` and ``offset``
-integer options. An example query payload would look like:
+The API supports sorting and paging. To sort the results use the option ``order`` with a value of ``["fieldname" "ORDER"]`` with ORDER being either ``ASC`` or ``DESC``. Paging is achieved with the ``limit`` and ``offset`` integer options. An example query payload would look like:
 
 .. code-block:: python
 

@@ -156,8 +156,7 @@ Config
 
 .. note::
 
-   Remember to stop ``marv serve``, run ``marv init``, and start ``marv serve``
-   again.
+   Remember to stop ``marv serve``, run ``marv init``, and start ``marv serve`` again.
 
 
 Run nodes
@@ -208,8 +207,7 @@ Config
 
 .. note::
 
-   Remember to stop ``marv serve``, run ``marv init``, and start ``marv serve``
-   again.
+   Remember to stop ``marv serve``, run ``marv init``, and start ``marv serve`` again.
 
 .. code-block:: console
 
@@ -255,8 +253,7 @@ New is the ``table`` widget here, defined by ``rows`` and ``columns``. The colum
 
 .. note::
 
-   Remember to stop ``marv serve``, run ``marv init``, and start ``marv serve``
-   again.
+   Remember to stop ``marv serve``, run ``marv init``, and start ``marv serve`` again.
 
 .. code-block:: console
 
@@ -276,8 +273,7 @@ For nodes to be able to make files, they need to be persistent. We forgot to add
 
 .. note::
 
-   Remember to stop ``marv serve``, run ``marv init``, and start ``marv serve``
-   again.
+   Remember to stop ``marv serve``, run ``marv init``, and start ``marv serve`` again.
 
 .. code-block:: console
 

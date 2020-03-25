@@ -3,14 +3,9 @@
 Changelog
 ---------
 
-Our versioning scheme uses a two-digit year, a two-digit month, and a
-release counter within month. Previously the release counter was
-omitted when zero.
+Our versioning scheme uses a two-digit year, a two-digit month, and a release counter within month. Previously the release counter was omitted when zero.
 
-Changes necessitating migration reference the corresponding migration
-section. References are only rendered correctly as part of the Sphinx
-documentation. Within GitLab please find the migration document
-`here <./docs/migrate/index.rst>`_.
+Changes necessitating migration reference the corresponding migration section. References are only rendered correctly as part of the Sphinx documentation. Within GitLab please find the migration document `here <./docs/migrate/index.rst>`_.
 
 
 .. _upcoming_changes:
@@ -48,13 +43,13 @@ Fixed
 - Load marv pip managed user site only when running from pyinstaller bundle (EE)
 - Remove distutils trove classifiers that are not applicable anymore
 - Warning when building documentation
-- Do not reset map zoom on window resize
-  `#67 <https://gitlab.com/ternaris/marv-robotics/issues/67>`_
+- Do not reset map zoom on window resize `#67`_
 
 
 Security
 ~~~~~~~~
 
+.. _#67: https://gitlab.com/ternaris/marv-robotics/issues/67
 
 .. _v19_11_1:
 
@@ -82,10 +77,8 @@ Changed
 - Provide marv serve cli to replace gunicorn (see migration)
 - Speedup database queries
 - **BREAKING** Switch from sqlalchemy to tortoise-orm (see migration)
-- Remove need for four slashes for absolute database URI
-  `#68 <https://gitlab.com/ternaris/marv-robotics/issues/68>`_
-- Contribution guide to require contributions to documentation be licensed under
-  CC-BY-4.0 instead of CC-BY-SA-4.0
+- Remove need for four slashes for absolute database URI `#68`_
+- Contribution guide to require contributions to documentation be licensed under CC-BY-4.0 instead of CC-BY-SA-4.0
 - Upgrade python gnupg library and silence log message upon import
 - Make opencv an optional dependency
 
@@ -97,12 +90,13 @@ Removed
 
 Fixed
 ~~~~~
-- Support non-ascii characters in API filters
-  `#70 <https://gitlab.com/ternaris/marv-robotics/issues/70>`_
-- Use correct timestamp to playback messages from multiple bags
-  `#72 <https://gitlab.com/ternaris/marv-robotics/issues/72>`_
+- Support non-ascii characters in API filters `#70`_
+- Use correct timestamp to playback messages from multiple bags `#72`_
 - Explicitly set algorithm for json web tokens
 
+.. _#68: https://gitlab.com/ternaris/marv-robotics/issues/68
+.. _#70: https://gitlab.com/ternaris/marv-robotics/issues/70
+.. _#72: https://gitlab.com/ternaris/marv-robotics/issues/72
 
 .. _v19_09_0:
 
@@ -113,10 +107,8 @@ Added
 ~~~~~
 - Add linter and editorconfig
 - Add marv_ros Python package as new home of ROS specific code
-- Ship versions of genmsg, genpy, and rosbag to make MARV independent of a ROS
-  installation
-- Add support for sensor_msgs/CompressedImage
-  `#60 <https://gitlab.com/ternaris/marv-robotics/issues/60>`_
+- Ship versions of genmsg, genpy, and rosbag to make MARV independent of a ROS installation
+- Add support for sensor_msgs/CompressedImage `#60`_
 
 Changed
 ~~~~~~~
@@ -139,16 +131,16 @@ Removed
 
 Fixed
 ~~~~~
-- Fix out of range video encoding bug by using newer ffmpeg version (3.4.6) in
-  docker image `#59 <https://gitlab.com/ternaris/marv-robotics/issues/59>`_
-- Correct handling of 16 bit single channel image types
-  `#29 <https://gitlab.com/ternaris/marv-robotics/issues/29>`_
+- Fix out of range video encoding bug by using newer ffmpeg version (3.4.6) in docker image `#59`_
+- Correct handling of 16 bit single channel image types `#29`_
 
 Security
 ~~~~~~~~
-- Rebuild images published on dockerhub for latest release and master branch by
-  GitLab CI nightly if a newer base image is available
+- Rebuild images published on dockerhub for latest release and master branch by GitLab CI nightly if a newer base image is available
 
+.. _#29: https://gitlab.com/ternaris/marv-robotics/issues/29
+.. _#59: https://gitlab.com/ternaris/marv-robotics/issues/59
+.. _#60: https://gitlab.com/ternaris/marv-robotics/issues/60
 
 .. _v19_07_0:
 
@@ -157,23 +149,23 @@ Security
 
 Added
 ~~~~~
-- Add marv show cli command to show basic information about datasets
-  `#62 <https://gitlab.com/ternaris/marv-robotics/issues/62>`_
+- Add marv show cli command to show basic information about datasets `#62`_
 
 Fixed
 ~~~~~
 - Fix pycapnp wrapper to handle nested lists
-- Fix broken CE docker image builds
-  `#66 <https://gitlab.com/ternaris/marv-robotics/issues/66>`_
-- Fix pasting into multi-select input field
-  `#65 <https://gitlab.com/ternaris/marv-robotics/issues/65>`_
-- Automatically cleanup node output from unsuccessful previous runs
-  `#64 <https://gitlab.com/ternaris/marv-robotics/issues/64>`_
-- Let gnss node gracefully handle bags without valid messages
-  `!65 <https://gitlab.com/ternaris/marv-robotics/merge_requests/65>`_
-- Fix loading of raster tiles during window resize
-  `#63 <https://gitlab.com/ternaris/marv-robotics/issues/63>`_
+- Fix broken CE docker image builds `#66`_
+- Fix pasting into multi-select input field `#65`_
+- Automatically cleanup node output from unsuccessful previous runs `#64`_
+- Let gnss node gracefully handle bags without valid messages `!65`_
+- Fix loading of raster tiles during window resize `#63`_
 
+.. _#62: https://gitlab.com/ternaris/marv-robotics/issues/62
+.. _#63: https://gitlab.com/ternaris/marv-robotics/issues/63
+.. _#64: https://gitlab.com/ternaris/marv-robotics/issues/64
+.. _#65: https://gitlab.com/ternaris/marv-robotics/issues/65
+.. _#66: https://gitlab.com/ternaris/marv-robotics/issues/66
+.. _!65: https://gitlab.com/ternaris/marv-robotics/merge_requests/65
 
 .. _v19_04_0:
 
@@ -195,7 +187,7 @@ Added
 Changed
 ~~~~~~~
 - End-to-end tests run reliably (EE)
-- Move to GitLab to consolidate tooling `#54 <https://gitlab.com/ternaris/marv-robotics/issues/54>`_
+- Move to GitLab to consolidate tooling `#54`_
 - Remove quickstart instructions from README in favour of normal installation instructions
 - Mount scanroot readonly in docker container
 - Manage requirements files in central location for ease of use
@@ -211,7 +203,7 @@ Fixed
 - Set default unit of timedelta filters to seconds `#58`_
 - Hitting enter key in subset filter now applies filters
 - Fix initial zoom level for maps with empty geometries
-- Fix support for GeoJSON points in trajectory widget `#50 <https://gitlab.com/ternaris/marv-robotics/issues/50>`_
+- Fix support for GeoJSON points in trajectory widget `#50`_
 - Let trajectory node produce correct GeoJSON for segments with only one coordinate
 - Fix filtering of date fields with greater than or equals operation
 - Only display successfully converted videos in video detail section
@@ -222,6 +214,7 @@ Security
 - Upgrade requests library for `CVE-2018-18074`_
 
 .. _#50: https://gitlab.com/ternaris/marv-robotics/issues/50
+.. _#54: https://gitlab.com/ternaris/marv-robotics/issues/54
 .. _#58: https://gitlab.com/ternaris/marv-robotics/issues/58
 .. _CVE-2017-18342: https://nvd.nist.gov/vuln/detail/CVE-2017-18342
 .. _CVE-2018-18074: https://nvd.nist.gov/vuln/detail/CVE-2018-18074
@@ -374,7 +367,8 @@ Added
 
 Changed
 ~~~~~~~
-- Changed GeoJSON property object needs rerender (see :ref:`migrate_18_02_to_18_03`)
+- Changed GeoJSON property object needs rerender (see
+  :ref:`migrate_18_02_to_18_03`)
 
 Fixed
 ~~~~~

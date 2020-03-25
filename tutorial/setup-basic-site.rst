@@ -59,14 +59,7 @@ Tell container to run ``marv init`` and install all code in development mode.
 Serve the site
 --------------
 
-The MARV backend is implemented using the asynchronous HTTP client/server
-framework `aiohttp <https://github.com/aio-libs/aiohttp>`_ and is by default
-served using the Python WSGI HTTP Server `Gunicorn <https://gunicorn.org>`_.
-MARV internally wraps Gunicorn through the MARV cli ``server`` subcommand. If
-you followed the installation instructions, the page you are looking at is
-already being served by MARV. When run without any options MARV will try to find
-a ``marv.conf`` in the current directory. You can also point MARV to serve a
-specific site using:
+The MARV backend is implemented using the asynchronous HTTP client/server framework `aiohttp <https://github.com/aio-libs/aiohttp>`_ and is by default served using the Python WSGI HTTP Server `Gunicorn <https://gunicorn.org>`_.  MARV internally wraps Gunicorn through the MARV cli ``server`` subcommand. If you followed the installation instructions, the page you are looking at is already being served by MARV. When run without any options MARV will try to find a ``marv.conf`` in the current directory. You can also point MARV to serve a specific site using:
 
 .. code-block:: console
 
@@ -86,9 +79,7 @@ You should see something like the above lines and MARV should be accessible via 
 
 .. note::
 
-   In the course of this tutorial we'll keep changing the configuration. For
-   these changes to take effect, ``marv serve`` has to be stopped (CTRL-C) and the
-   site reinitialized with ``marv init``.
+   In the course of this tutorial we'll keep changing the configuration. For these changes to take effect, ``marv serve`` has to be stopped (CTRL-C) and the site reinitialized with ``marv init``.
 
 
 **docker**:
@@ -207,13 +198,8 @@ Reload your browser and check the result.
 Summary
 -------
 
-You initialized a marv site with one collection that looks for bag files in a
-scanroot directory. You setup Gunicorn to serve your site for development
-purposes, created a user account for sign-in to the web application, populated
-the scanroot with some bag files and configured and ran nodes to display meta
-information about these bag files.
+You initialized a marv site with one collection that looks for bag files in a scanroot directory. You setup Gunicorn to serve your site for development purposes, created a user account for sign-in to the web application, populated the scanroot with some bag files and configured and ran nodes to display meta information about these bag files.
 
-Familiarize yourself a bit with the web frontend (http://localhost:8000). We
-intend it to be self-explanatory. Please let us know if you have questions.
+Familiarize yourself a bit with the web frontend (http://localhost:8000). We intend it to be self-explanatory. Please let us know if you have questions.
 
 Now your are ready to write your first nodes :ref:`write-your-own`.

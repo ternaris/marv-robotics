@@ -19,16 +19,12 @@ Prerequisites
 System dependenices
 -------------------
 
-MARV Robotics needs Python 3.7 and ships all components to open bag
-files and process ROS messages. If you need any ROS libraries for your
-nodes, please let us know if we can assist making them available for
-Python 3.7.
+MARV Robotics needs Python 3.7 and ships all components to open bag files and process ROS messages. If you need any ROS libraries for your nodes, please let us know if we can assist making them available for Python 3.7.
 
 Ubuntu bionic
 ^^^^^^^^^^^^^
 
-In general, MARV Robotics works on any Linux system. For Ubuntu bionic
-the following will install the necessary system dependencies.
+In general, MARV Robotics works on any Linux system. For Ubuntu bionic the following will install the necessary system dependencies.
 
 .. code-block:: console
 
@@ -63,13 +59,11 @@ Setup MARV Robotics in Python virtual environment and activate it:
   $ source venv/bin/activate
   (venv) $ marv --help
 
-Et voilà, marv is successfully installed. The ``(venv)`` prefix indicates the activated virtualenv. In the following sections we assume that your virtualenv is activated. If ``marv`` cannot be found, chances are that the virtualenv containing MARV Robotics is not activated.
-For more information see `Virtual Environments <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_.
+Et voilà, marv is successfully installed. The ``(venv)`` prefix indicates the activated virtualenv. In the following sections we assume that your virtualenv is activated. If ``marv`` cannot be found, chances are that the virtualenv containing MARV Robotics is not activated.  For more information see `Virtual Environments <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_.
 
 .. warning::
-   MARV Robotics does not need write access to your bag files. As a
-   safety measure install and run MARV as a user having only read-only
-   access to your bag files.
+
+   MARV Robotics does not need write access to your bag files. As a safety measure install and run MARV as a user having only read-only access to your bag files.
 
 
 Build and serve documentation

@@ -8,8 +8,7 @@ Configuration
 
 The configuration file ``marv.conf`` is in Python config parser / ini-syntax and consists of at least one :ref:`cfg_section_marv` and one or more :ref:`cfg_section_collection`. See some :ref:`cfg_examples` below.
 
-If you make changes to your configuration, keep in mind that you have to stop
-``gunicorn``, run ``marv init``, and start ``gunicorn`` again.
+If you make changes to your configuration, keep in mind that you have to stop ``gunicorn``, run ``marv init``, and start ``gunicorn`` again.
 
 
 Relative paths
@@ -179,9 +178,8 @@ Example:
        ./bar
 
 .. warning::
-   MARV Robotics does not need write access to your bag files. As a
-   safety measure install and run MARV as a user having only read-only
-   access to your bag files.
+
+   MARV Robotics does not need write access to your bag files. As a safety measure install and run MARV as a user having only read-only access to your bag files.
 
 
 .. _cfg_c_nodes:
