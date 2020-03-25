@@ -9,12 +9,6 @@ Maintenance
 Cleanup
 -------
 
-When searching for tags and other ``subset`` :ref:`cfg_c_filters`, marv presents lists of existing tags. To present only used items, these lists need to be regularly cleaned-up.
-
-.. code-block:: bash
-
-   marv cleanup --unused-tags
-
 When datasets are discarded (via frontend, API, cli) they are only marked to be removed from marv's database and can be "undiscarded".
 
 .. code-block:: bash
@@ -34,6 +28,12 @@ After deleting datasets manually from the filesystem, you can remove them from t
    marv scan
    marv query --missing | xargs marv discard
    marv cleanup --discarded
+
+When searching for ``subset`` :ref:`cfg_c_filters`, marv presents matching results, including values from meanwhile cleaned-up datasets. Cleanup these filters with:
+
+.. code-block:: bash
+
+   marv cleanup --filters
 
 Additional cleanup operations will be added in one of the next releases.
 

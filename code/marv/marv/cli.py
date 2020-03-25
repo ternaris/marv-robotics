@@ -78,12 +78,12 @@ def click_async(func):
 
 @marvcli.command('cleanup')
 @click.option('--discarded/--no-discarded', help='Delete discarded datasets')
-@click.option('--unused-tags/--no-unused-tags', help='Cleanup unused tags and other relations')
+@click.option('--filters/--no-filters', help='Cleanup unused filter values')
 @click.pass_context
 @click_async
-async def marvcli_cleanup(ctx, discarded, unused_tags):
-    """Cleanup unused tags and discarded datasets."""
-    if not any([discarded, unused_tags]):
+async def marvcli_cleanup(ctx, discarded, filters):
+    """Cleanup subset filters and discarded datasets."""
+    if not any([discarded, filters]):
         click.echo(ctx.get_help())
         ctx.exit(1)
 
@@ -91,8 +91,7 @@ async def marvcli_cleanup(ctx, discarded, unused_tags):
         if discarded:
             await site.cleanup_discarded()
 
-        if unused_tags:
-            await site.db.cleanup_tags()
+        if filters:
             await site.cleanup_relations()
 
         # TODO: cleanup unused store paths / unused generations
