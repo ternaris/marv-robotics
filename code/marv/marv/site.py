@@ -332,7 +332,8 @@ class Site:
         assert not force_dependent or selected_nodes
 
         excluded_nodes = set(excluded_nodes or [])
-        dataset = (await self.db.get_datasets_by_setids([setid], prefetch=['files']))[0]
+        async with scoped_session(self.db) as transaction:
+            dataset = await Dataset.get(setid=setid).prefetch_related('files').using_db(transaction)
         collection = self.collections[dataset.collection]
         selected_nodes = set(selected_nodes or [])
         if not (selected_nodes or update_listing or update_detail):

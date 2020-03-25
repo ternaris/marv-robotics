@@ -27,7 +27,6 @@ from marv.site import Site, UnknownNode, load_sitepackages, make_config
 from marv.utils import echo, err, find_obj, within_pyinstaller_bundle
 from marv_cli import PDB
 from marv_cli import marv as marvcli
-from marv_node.setid import SetID
 from marv_node.stream import RequestedMessageTooOld
 from marv_store import DirectoryAlreadyExists
 
@@ -459,7 +458,7 @@ async def marvcli_run(  # noqa: C901
 
         errors = []
         if datasets:
-            setids = [SetID(x) for x in await site.db.get_setids(datasets)]
+            setids = datasets
         else:
             setids = await site.db.get_datasets_for_collections(collections)
 
@@ -566,8 +565,8 @@ async def marvcli_comment_list(datasets):
     """
     async with create_site() as site:
         comments = await site.db.get_comments_for_setids(datasets)
-        for comment in sorted(comments, key=lambda x: (x.dataset.setid, x.id)):
-            echo(comment.dataset.setid, comment.id,
+        for comment in sorted(comments, key=lambda x: (x.dataset[0].setid, x.id)):
+            echo(comment.dataset[0].setid, comment.id,
                  datetime.datetime.fromtimestamp(int(comment.time_added / 1000)),  # noqa: DTZ
                  comment.author, repr(comment.text))
 

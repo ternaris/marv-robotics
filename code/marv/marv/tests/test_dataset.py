@@ -7,21 +7,28 @@ from marv.db import MultipleSetidFound, NoSetidFound
 
 
 async def test_id_helpers(site):
-    assert not await site.db.get_setids([])
+    assert not await site.db.resolve_shortids([])
     with pytest.raises(MultipleSetidFound):
-        await site.db.get_setids([''])
+        await site.db.resolve_shortids([''])
     with pytest.raises(NoSetidFound):
-        await site.db.get_setids(['@'])
+        await site.db.resolve_shortids(['@'])
 
-    assert await site.db.get_setids(['tv43'], dbids=True) == [1]
-    assert await site.db.get_setids(['tv43', 'tv4'], dbids=True) == [1]
-    assert await site.db.get_setids(['tv43', '2x45'], dbids=True) == [1, 100]
+    sets = await site.db.get_datasets_for_collections(None)
+    setid1 = sets[0]
+    setid100 = sets[99]
 
-    res1 = await site.db.get_datasets_by_setids(['tv43', '2x45'], prefetch=[])
+    assert await site.db.resolve_shortids(['tv43']) == [setid1]
+    assert await site.db.resolve_shortids(['tv43', 'tv4']) == [setid1]
+    assert await site.db.resolve_shortids(['tv43', '2x45']) == sorted([setid1, setid100])
+
+    assert await site.db.get_dbids([setid1]) == [1]
+    assert await site.db.get_dbids([setid1, setid100]) == [1, 100]
+
+    res1 = await site.db.get_datasets_by_setids([setid1, setid100], prefetch=[])
     res2 = await site.db.get_datasets_by_dbids([1, 100], prefetch=[])
     assert [x.setid for x in res1] == [x.setid for x in res2]
 
-    res1 = await site.db.get_datasets_by_setids(['tv43', '2x45'], prefetch=['files'])
+    res1 = await site.db.get_datasets_by_setids([setid1, setid100], prefetch=['files'])
     res2 = await site.db.get_datasets_by_dbids([1, 100], prefetch=['files'])
     assert [x.files[0].path for x in res1] == [x.files[0].path for x in res2]
 
@@ -54,14 +61,14 @@ async def test_discard(site):
     assert set(sets) - set(rest) == {first}
 
     with pytest.raises(NoSetidFound):
-        await site.db.get_setids([first])
+        await site.db.resolve_shortids([first])
 
-    res = await site.db.get_setids([first], discarded=True)
+    res = await site.db.resolve_shortids([first], discarded=True)
     assert res == [first]
 
     await site.cleanup_discarded()
     with pytest.raises(NoSetidFound):
-        await site.db.get_setids([first], discarded=True)
+        await site.db.resolve_shortids([first], discarded=True)
 
     await site.cleanup_discarded()
 

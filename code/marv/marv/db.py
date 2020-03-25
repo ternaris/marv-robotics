@@ -1,4 +1,4 @@
-# Copyright 2016 - 2019  Ternaris.
+# Copyright 2016 - 2020  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 # pylint: disable=too-many-lines
@@ -8,6 +8,7 @@ import hashlib
 import secrets
 import string
 import sys
+from collections import namedtuple
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from datetime import datetime
@@ -24,7 +25,7 @@ from tortoise.transactions import current_transaction_map
 
 from marv_node.setid import SetID
 from . import utils
-from .model import Comment, Dataset, File, Group, Leaf, Tag, User
+from .model import Group, Leaf, User
 from .model import STATUS, STATUS_MISSING, STATUS_OUTDATED
 from .model import __models__ as MODELS
 from .utils import findfirst
@@ -216,6 +217,39 @@ def cleanup_attrs(items):
     ]
 
 
+def cast_fields(keys, values):
+    tmap = {
+        'setid': SetID,
+    }
+    return [tmap.get(k, lambda x: x)(v) for k, v in zip(keys, values)]
+
+
+def modelize(items, relations):
+    res = []
+    if not items:
+        return res
+
+    keys = items[0].keys()
+    relidx = [i for i, x in enumerate(keys) if x == 'id'] + [len(keys)]
+
+    dataset = namedtuple('dataset', keys[:relidx[1]] + list(relations))
+    types = [
+        namedtuple(x, keys[relidx[i+1]:relidx[i+2]])
+        for i, x in enumerate(relations)
+    ]
+
+    for _, group in groupby(items, lambda x: x[0]):
+        group = list(group)
+        related = [
+            sorted(set(filter(lambda x: x.id, [
+                x(*y[relidx[i+1]:relidx[i+2]]) for y in group
+            ])), key=lambda x: x.id)
+            for i, x in enumerate(types)
+        ]
+        res.append(dataset(*(cast_fields(keys[:relidx[1]], group[0]) + related)))
+    return res
+
+
 class Database:
     # pylint: disable=too-many-public-methods
     def __init__(self):
@@ -387,47 +421,80 @@ class Database:
         return leaf
 
     @run_in_transaction
-    async def get_setids(self, prefixes, discarded=False, dbids=False, transaction=None):
+    async def resolve_shortids(self, prefixes, discarded=False, transaction=None):
         setids = set()
+        dataset = Table('dataset')
         for prefix in prefixes:
             if isinstance(prefix, SetID):
                 prefix = str(prefix)
-            setid = await Dataset.filter(setid__startswith=prefix, discarded=discarded)\
-                                 .limit(2)\
-                                 .using_db(transaction)\
-                                 .values_list('id' if dbids else 'setid', flat=True)
+
+            setid = (await transaction.execute_query(
+                Query.from_(dataset)
+                .select('setid')
+                .where(escaped_startswith(dataset.setid, prefix) & (dataset.discarded == discarded))
+                .limit(2)
+                .get_sql(),
+            ))[1]
+
             if not setid:
                 discarded = 'discarded ' if discarded else ''
                 raise NoSetidFound(f'{prefix} does not match any {discarded}dataset')
             if len(setid) > 1:
                 matches = '\n  '.join([f'{x}' for x in setid])
                 raise MultipleSetidFound(f'{prefix} matches multiple:\n'
-                                         f'  {matches}\n'
-                                         f'Use "{prefix}*" to mean all these.')
-            setids.add(setid[0])
+                                         f'  {matches}\n')
+            setids.add(SetID(setid[0][0]))
         return sorted(setids)
 
     @run_in_transaction
+    async def get_dbids(self, setids, transaction=None):
+        setids = [(str(x),) for x in setids]
+        dataset, tmp = Tables('dataset', 'tmp')
+        query = Query.with_(Query.from_(ValuesTuple(*setids)).select('*'), 'tmp(setid)')\
+                     .from_(tmp)\
+                     .join(dataset, how=JoinType.left_outer)\
+                     .on(tmp.setid == dataset.setid)\
+                     .select(dataset.id)\
+                     .orderby(dataset.id)\
+                     .get_sql()
+        return [x[0] for x in (await transaction.execute_query(query))[1]]
+
+    @run_in_transaction
     async def get_datasets_by_setids(self, setids, prefetch, transaction=None):
-        ids = await self.get_setids(setids, dbids=True, transaction=transaction)
-        query = Dataset.filter(id__in=ids).using_db(transaction)
-        if prefetch:
-            query = query.prefetch_related(*prefetch)
-        return await query
+        ids = await self.get_dbids(setids, transaction=transaction)
+        return await self.get_datasets_by_dbids(ids, prefetch, transaction=transaction)
 
     @run_in_transaction
     async def get_datasets_by_dbids(self, ids, prefetch, transaction=None):
-        query = Dataset.filter(id__in=ids).using_db(transaction)
-        if prefetch:
-            query = query.prefetch_related(*prefetch)
-        return await query
+        dataset = Table('dataset')
+        query = Query.from_(dataset).where(dataset.id.isin(ids)).select(dataset.star)
+        for related in prefetch:
+            table = Table(related[:-1])
+            if related == 'tags':
+                through = Table('dataset_tag')
+                query = query.join(through, how=JoinType.left_outer)\
+                             .on(dataset.id == through.dataset_id)\
+                             .join(table, how=JoinType.left_outer)\
+                             .on(through.tag_id == table.id)\
+                             .select(table.star)
+            else:
+                query = query.join(table, how=JoinType.left_outer)\
+                             .on(table.dataset_id == dataset.id)\
+                             .select(table.star)
+        items = (await transaction.execute_query(query.get_sql()))[1]
+        return modelize(items, prefetch)
 
     @run_in_transaction
     async def get_filepath_by_setid_idx(self, setid, idx, transaction=None):
-        if isinstance(setid, SetID):
-            setid = str(setid)
-        file = await File.get(dataset__setid=setid, idx=idx).using_db(transaction)
-        return file.path
+        dataset, file = Tables('dataset', 'file')
+        return (await transaction.execute_query(
+            Query.from_(file)
+            .join(dataset)
+            .on(file.dataset_id == dataset.id)
+            .where((file.idx == idx) & (dataset.setid == str(setid)))
+            .select('path')
+            .get_sql(),
+        ))[1][0]['path']
 
     @run_in_transaction
     async def get_all_known_for_collection(self, collection, transaction=None):
@@ -451,7 +518,7 @@ class Database:
     async def get_filtered_listing(self, descs, filters, transaction=None):  # noqa: C901
         # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         listing, dataset, dataset_tag, tag = \
-            Tables(descs[0].table, 'dataset', 'dataset_tag', 'tag')  # pylint: disable=unbalanced-tuple-unpacking
+            Tables(descs[0].table, 'dataset', 'dataset_tag', 'tag')
 
         query = Query.from_(listing)\
                      .join(dataset, how=JoinType.left_outer)\
@@ -464,7 +531,7 @@ class Database:
                              listing.row.as_('row'),
                              dataset.status.as_('status'),
                              GroupConcat(tag.value).as_('tag_value'))\
-                     .where(dataset.discarded != True)  # pylint: disable=singleton-comparison
+                     .where(dataset.discarded.ne(True))
 
         for name, value, operator, val_type in filters:
             if isinstance(value, int):
@@ -605,12 +672,16 @@ class Database:
 
     @run_in_transaction
     async def get_datasets_for_collections(self, collections, transaction=None):
-        query = Dataset.filter(discarded__not=True).using_db(transaction)
+        dataset = Table('dataset')
+        bitmask = ValueWrapper(STATUS_MISSING)
+        query = Query.from_(dataset)\
+                     .select('setid')\
+                     .where((dataset.discarded.eq(False))
+                            & dataset.status.bitwiseand(bitmask).ne(bitmask))
         if collections is not None:
-            query = query.filter(collection__in=collections)
+            query = query.where(dataset.collection.isin(collections))
         return [SetID(x['setid'])
-                for x in await query.values('setid', 'status')
-                if not x['status'] & STATUS_MISSING]
+                for x in (await transaction.execute_query(query.get_sql()))[1]]
 
     @run_in_transaction
     async def get_all_known_tags_for_collection(self, collection_name, transaction=None):
@@ -629,37 +700,45 @@ class Database:
 
     @run_in_transaction
     async def delete_comments_tags(self, setids, comments, tags, transaction=None):
-        ids = await self.get_setids(setids, dbids=True, transaction=transaction)
+        dataset, dataset_tag, comment = Tables('dataset', 'dataset_tag', 'comment')
+        subq = Query.from_(dataset)\
+                    .select(dataset.id)\
+                    .where(dataset.setid.isin([str(x) for x in setids]))
         if tags:
-            dataset_tag = Table('dataset_tag')
             await transaction.execute_query(Query.from_(dataset_tag)
-                                            .where(dataset_tag.dataset_id.isin(ids))
+                                            .where(dataset_tag.dataset_id.isin(subq))
                                             .delete()
                                             .get_sql())
 
         if comments:
-            await Comment.filter(dataset_id__in=ids).using_db(transaction).delete()
+            await transaction.execute_query(Query.from_(comment)
+                                            .where(comment.dataset_id.isin(subq))
+                                            .delete()
+                                            .get_sql())
 
     @run_in_transaction
-    async def discard_datasets(self, setids, transaction=None):
-        ids = await self.get_setids(setids, dbids=True, transaction=transaction)
-        await Dataset.filter(id__in=ids).using_db(transaction)\
-                     .update(discarded=True)
+    async def discard_datasets(self, setids, state=True, transaction=None):
+        dataset = Table('dataset')
+        await transaction.execute_query(Query.update(dataset)
+                                        .set(dataset.discarded, state)
+                                        .where(dataset.setid.isin([str(x) for x in setids]))
+                                        .get_sql())
 
     @run_in_transaction
-    async def discard_datasets_by_dbid(self, ids, transaction=None):
-        await Dataset.filter(id__in=ids).using_db(transaction)\
-                     .update(discarded=True)
+    async def discard_datasets_by_dbid(self, ids, state=True, transaction=None):
+        dataset = Table('dataset')
+        await transaction.execute_query(Query.update(dataset)
+                                        .set(dataset.discarded, state)
+                                        .where(dataset.id.isin(ids))
+                                        .get_sql())
 
     @run_in_transaction
     async def undiscard_datasets(self, setids, transaction=None):
-        ids = await self.get_setids(setids, dbids=True, discarded=True, transaction=transaction)
-        await Dataset.filter(id__in=ids).using_db(transaction)\
-                     .update(discarded=False)
+        await self.discard_datasets(setids, False, transaction=transaction)
 
     @run_in_transaction
     async def update_tags_for_setids(self, setids, add, remove, transaction=None):
-        setids = [str(x) for x in await self.get_setids(setids, transaction=transaction)]
+        setids = [str(x) for x in setids]
         dataset = Table('dataset')
         colids = (await transaction.execute_query(Query.from_(dataset)
                                                   .where(dataset.setid.isin(setids))
@@ -677,22 +756,29 @@ class Database:
 
     @run_in_transaction
     async def comment_multiple(self, setids, user, message, transaction=None):
-        ids = await self.get_setids(setids, dbids=True, transaction=transaction)
+        ids = await self.get_dbids(setids, transaction=transaction)
         await User.get(name=user).using_db(transaction)
         now = int(utils.now() * 1000)
-        comments = [
-            Comment(dataset_id=id, author=user, time_added=now, text=message)
-            for id in ids
-        ]
-        await Comment.bulk_create(comments, using_db=transaction)
+
+        comment = Table('comment')
+        query = Query.into(comment)\
+                     .columns('dataset_id', 'author', 'time_added', 'text')\
+                     .insert(*[(id, user, now, message) for id in ids])\
+                     .get_sql()
+        await transaction.execute_query(query)
 
     @run_in_transaction
     async def bulk_comment(self, comments, transaction=None):
-        await Comment.bulk_create([Comment(**dct) for dct in comments], using_db=transaction)
+        comment = Table('comment')
+        query = Query.into(comment)\
+                     .columns(*(comments[0].keys()))\
+                     .insert(*[tuple(x.values()) for x in comments])\
+                     .get_sql()
+        await transaction.execute_query(query)
 
     @run_in_transaction
     async def bulk_tag(self, add, remove, transaction=None):
-        tag, dataset_tag, tmp = Tables('tag', 'dataset_tag', 'tmp')  # pylint: disable=unbalanced-tuple-unpacking
+        tag, dataset_tag, tmp = Tables('tag', 'dataset_tag', 'tmp')
         names = [(x[0],) for x in add]
         if add:
             need = Query().from_(ValuesTuple(*names))\
@@ -741,13 +827,15 @@ class Database:
 
     @run_in_transaction
     async def get_comments_for_setids(self, setids, transaction=None):
-        ids = await self.get_setids(setids, dbids=True, transaction=transaction)
-        filters = {}
-        if ids:
-            filters['dataset_id__in'] = ids
+        comment, dataset = Tables('comment', 'dataset')
+        query = Query.from_(comment).join(dataset).on(comment.dataset_id == dataset.id)
+        if setids:
+            query = query.where(dataset.setid.isin([str(x) for x in setids]))
         else:
-            filters['dataset__discarded__not'] = 1
-        return await Comment.filter(**filters).using_db(transaction).prefetch_related('dataset')
+            query = query.where(dataset.discarded.ne(True))
+        query = query.select(comment.star, dataset.star).get_sql()
+        items = (await transaction.execute_query(query))[1]
+        return modelize(items, ['dataset'])
 
     @run_in_transaction
     async def get_users(self, deep=False, transaction=None):
@@ -788,7 +876,11 @@ class Database:
 
     @run_in_transaction
     async def delete_comments_by_ids(self, ids, transaction=None):
-        await Comment.filter(id__in=ids).using_db(transaction).delete()
+        comment = Table('comment')
+        await transaction.execute_query(Query.from_(comment)
+                                        .where(comment.id.isin(ids))
+                                        .delete()
+                                        .get_sql())
 
     @run_in_transaction
     async def bulk_um(self, users_add, users_remove, groups_add, groups_remove,
@@ -819,12 +911,20 @@ class Database:
 
     @run_in_transaction
     async def list_tags(self, collections=None, transaction=None):
-        return await ((Tag.filter(datasets__collection__in=collections)
-                       if collections else Tag.all())
-                      .using_db(transaction)
-                      .distinct()
-                      .order_by('value')
-                      .values_list('value', flat=True))
+        dataset, dataset_tag, tag = Tables('dataset', 'dataset_tag', 'tag')
+        query = Query.from_(tag)\
+                     .select('value')\
+                     .distinct()\
+                     .orderby('value')
+
+        if collections:
+            query = query.join(dataset_tag, how=JoinType.left_outer)\
+                         .on(tag.id == dataset_tag.tag_id)\
+                         .join(dataset)\
+                         .on(dataset_tag.dataset_id == dataset.id)\
+                         .where(dataset.collection.isin(collections))
+
+        return [x['value'] for x in (await transaction.execute_query(query.get_sql()))[1]]
 
     @run_in_transaction
     async def cleanup_tags(self, transaction=None):
@@ -848,10 +948,12 @@ class Database:
 
     @run_in_transaction
     async def cleanup_discarded(self, descs, transaction=None):
-        datasets = await Dataset.filter(discarded=True)\
-                                .using_db(transaction)\
-                                .order_by('collection')\
-                                .values_list('collection', 'id')
+        dataset = Table('dataset')
+        datasets = (await transaction.execute_query(Query.from_(dataset)
+                                                    .select('collection', 'id')
+                                                    .where(dataset.discarded.eq(True))
+                                                    .orderby('collection')
+                                                    .get_sql()))[1]
         if not datasets:
             return
 
@@ -860,7 +962,6 @@ class Database:
             for col, tuples in groupby(datasets, lambda x: x[0])
         ]
         for col, ids in datasets:
-            dataset = Table('dataset')
             await transaction.execute_query(Query.from_(dataset)
                                             .where(dataset.id.isin(ids))
                                             .delete()
