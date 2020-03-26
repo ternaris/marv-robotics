@@ -50,6 +50,10 @@ class FilterError(Exception):
     pass
 
 
+class DBError(Exception):
+    pass
+
+
 @asynccontextmanager
 async def scoped_session(database, transaction=None):
     """Transaction scope for database operations."""
@@ -646,25 +650,44 @@ class Database:
 
     @run_in_transaction
     async def bulk_comment(self, comments, transaction=None):
-        comment = Table('comment')
-        query = Query.into(comment)\
-                     .columns(*(comments[0].keys()))\
-                     .insert(*[tuple(x.values()) for x in comments])\
-                     .get_sql()
-        await transaction.execute_query(query)
-
-    @run_in_transaction
-    async def comment_multiple(self, setids, user, message, transaction=None):
-        ids = await self.get_dbids(setids, transaction=transaction)
-        await User.get(name=user).using_db(transaction)
-        now = int(utils.now() * 1000)
-
-        comment = Table('comment')
+        comment, dataset, tmp, user = Tables('comment', 'dataset', 'tmp', 'user')
+        comments = [(x['dataset_id'], x['author'], x['time_added'], x['text']) for x in comments]
         query = Query.into(comment)\
                      .columns('dataset_id', 'author', 'time_added', 'text')\
-                     .insert(*[(id, user, now, message) for id in ids])\
+                     .from_(Query.with_(Query.from_(ValuesTuple(*comments))
+                                        .select('*'), 'tmp(dataset_id, author, time_added, text)')
+                            .from_(tmp)
+                            .join(dataset)
+                            .on(tmp.dataset_id == dataset.id)
+                            .join(user)
+                            .on(tmp.author == user.name)
+                            .select(tmp.star))\
+                     .select('*')\
                      .get_sql()
-        await transaction.execute_query(query)
+        count, _ = await transaction.execute_query(query)
+        if count != len(comments):
+            raise DBError(f'Bulk commenting failed, users or datasets missing')
+
+    @run_in_transaction
+    async def comment_by_setids(self, setids, author, text, transaction=None):
+        comment, dataset, tmp, user = Tables('comment', 'dataset', 'tmp', 'user')
+        time_added = int(utils.now() * 1000)
+        query = Query.into(comment)\
+                     .columns('dataset_id', 'author', 'time_added', 'text')\
+                     .from_(Query.with_(Query.from_(ValuesTuple((author, time_added, text)))
+                                        .select('*'), 'tmp(author, time_added, text)')
+                            .from_(dataset)
+                            .join(tmp)
+                            .cross()
+                            .join(user)
+                            .on(tmp.author == user.name)
+                            .where(dataset.setid.isin([str(x) for x in setids]))
+                            .select(dataset.id, tmp.star))\
+                     .select('*')\
+                     .get_sql()
+        count, _ = await transaction.execute_query(query)
+        if count != len(setids):
+            raise DBError(f'Commenting failed. User {author!r} or one of the datasets are missing')
 
     @run_in_transaction
     async def delete_comments_by_ids(self, ids, transaction=None):
@@ -675,14 +698,17 @@ class Database:
                                         .get_sql())
 
     @run_in_transaction
-    async def get_comments_for_setids(self, setids, transaction=None):
+    async def get_comments_by_setids(self, setids, transaction=None):
         comment, dataset = Tables('comment', 'dataset')
-        query = Query.from_(comment).join(dataset).on(comment.dataset_id == dataset.id)
         if setids:
-            query = query.where(dataset.setid.isin([str(x) for x in setids]))
+            crit = dataset.setid.isin([str(x) for x in setids])
         else:
-            query = query.where(dataset.discarded.ne(True))
-        query = query.select(comment.star, dataset.star).get_sql()
+            crit = dataset.discarded.ne(True)
+        query = Query.from_(comment)\
+                     .join(dataset).on(comment.dataset_id == dataset.id)\
+                     .select(comment.star, dataset.star)\
+                     .where(crit)\
+                     .get_sql()
         items = (await transaction.execute_query(query))[1]
         return modelize(items, ['dataset'])
 

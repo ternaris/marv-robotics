@@ -1,47 +1,66 @@
-# Copyright 2016 - 2019  Ternaris.
+# Copyright 2016 - 2020  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
+
+import pytest
+
+from marv.db import DBError
 
 
 async def test_comment(site):
     sets = await site.db.get_datasets_for_collections(None)
 
     # with setids
-    await site.db.comment_multiple(sets[0:2], 'test', 'lorem ipsum')
-    await site.db.comment_multiple(sets[0:1], 'test', 'dolor')
+    await site.db.comment_by_setids(sets[0:2], 'test', 'lorem ipsum')
+    await site.db.comment_by_setids(sets[0:1], 'test', 'dolor')
 
-    res = await site.db.get_comments_for_setids(sets[0:1])
+    res = await site.db.get_comments_by_setids(sets[0:1])
     assert len(res) == 2
     assert res[0].text == 'lorem ipsum'
     assert res[1].text == 'dolor'
 
-    await site.db.comment_multiple(sets[0:1], 'test', 'sit amet')
-    res = await site.db.get_comments_for_setids(sets[0:1])
+    await site.db.comment_by_setids(sets[0:1], 'test', 'sit amet')
+    res = await site.db.get_comments_by_setids(sets[0:1])
     assert len(res) == 3
     assert res[2].text == 'sit amet'
+
+    with pytest.raises(DBError):
+        await site.db.comment_by_setids('bad setid', 'test', 'lorem ipsum')
+    with pytest.raises(DBError):
+        await site.db.comment_by_setids(sets[0:1], 'bad user', 'lorem ipsum')
 
     # bulkish
     await site.db.bulk_comment([
         {'dataset_id': 1, 'author': 'test', 'text': 'consectetur', 'time_added': 1},
         {'dataset_id': 1, 'author': 'test', 'text': 'adipiscing', 'time_added': 1},
     ])
-    res = await site.db.get_comments_for_setids(sets[0:1])
+    res = await site.db.get_comments_by_setids(sets[0:1])
     assert len(res) == 5
     assert res[3].text == 'consectetur'
     assert res[4].text == 'adipiscing'
 
+    with pytest.raises(DBError):
+        await site.db.bulk_comment([
+            {'dataset_id': 9999999999, 'author': 'test', 'text': 'consectetur', 'time_added': 1},
+        ])
+    with pytest.raises(DBError):
+        await site.db.bulk_comment([
+            {'dataset_id': 1, 'author': 'bad user', 'text': 'consectetur', 'time_added': 1},
+        ])
+
     # get all
-    res = await site.db.get_comments_for_setids([])
+    res = await site.db.get_comments_by_setids([])
     assert len(res) == 6
 
     # delete
-    res = await site.db.delete_comments_by_ids([1])
-    res = await site.db.get_comments_for_setids([])
+    res = await site.db.get_comments_by_setids([sets[0]])
+    res = await site.db.delete_comments_by_ids([res[0].id])
+    res = await site.db.get_comments_by_setids([])
     assert len(res) == 5
-    res = await site.db.get_comments_for_setids(sets[0:1])
+    res = await site.db.get_comments_by_setids(sets[0:1])
     assert len(res) == 4
 
     await site.db.delete_comments_tags(sets[0:1], True, False)
-    res = await site.db.get_comments_for_setids(sets[0:1])
+    res = await site.db.get_comments_by_setids(sets[0:1])
     assert len(res) == 0
 
 

@@ -241,8 +241,8 @@ async def test_dump(site, client):  # pylint: disable=redefined-outer-name  # no
     await site.db.update_tags_for_setids([fooids[1], barids[1]], add=['TAG2'], remove=[])
 
     with mock.patch('marv.utils.now', side_effect=count(100000)):
-        await site.db.comment_multiple([fooids[0]], 'user1', 'comment\ntext')
-        await site.db.comment_multiple([fooids[1], barids[1]], 'user2', 'more\ncomment')
+        await site.db.comment_by_setids([fooids[0]], 'user1', 'comment\ntext')
+        await site.db.comment_by_setids([fooids[1], barids[1]], 'user2', 'more\ncomment')
 
     async with scoped_session(site.db) as connection:
         # Ensure all tables have been populated

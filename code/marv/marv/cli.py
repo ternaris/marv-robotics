@@ -22,7 +22,7 @@ from jinja2 import Template
 from tortoise.exceptions import DoesNotExist
 
 import marv.app
-from marv.db import dump_database
+from marv.db import DBError, dump_database
 from marv.site import Site, UnknownNode, load_sitepackages, make_config
 from marv.utils import echo, err, find_obj, within_pyinstaller_bundle
 from marv_cli import PDB
@@ -548,10 +548,9 @@ async def marvcli_comment_add(user, message, datasets):
     """Add comment as user for one or more datasets."""
     async with create_site() as site:
         try:
-            await site.db.comment_multiple(datasets, user, message)
-        except DoesNotExist:
-            click.echo(f'ERROR: No such user {user!r}', err=True)
-            sys.exit(1)
+            await site.db.comment_by_setids(datasets, user, message)
+        except DBError as e:
+            err(f'ERROR: {e}', exit=1)
 
 
 @marvcli_comment.command('list')
@@ -563,7 +562,7 @@ async def marvcli_comment_list(datasets):
     Output: setid comment_id date time author message
     """
     async with create_site() as site:
-        comments = await site.db.get_comments_for_setids(datasets)
+        comments = await site.db.get_comments_by_setids(datasets)
         for comment in sorted(comments, key=lambda x: (x.dataset[0].setid, x.id)):
             echo(comment.dataset[0].setid, comment.id,
                  datetime.datetime.fromtimestamp(int(comment.time_added / 1000)),  # noqa: DTZ

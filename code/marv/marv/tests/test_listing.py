@@ -15,7 +15,7 @@ async def test_listing(site):
     for setid in sets:
         await site.run(setid)
 
-    await site.db.comment_multiple([sets[2]], 'test', 'lorem ipsum')
+    await site.db.comment_by_setids([sets[2]], 'test', 'lorem ipsum')
 
     res = await site.db.bulk_tag([
         ('foo', 1),
