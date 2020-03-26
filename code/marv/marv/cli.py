@@ -219,7 +219,7 @@ async def marvcli_discard(datasets, tags, comments, confirm):
 async def marvcli_undiscard(datasets):
     """Undiscard DATASETS previously discarded."""
     async with create_site() as site:
-        await site.db.undiscard_datasets(datasets)
+        await site.db.discard_datasets(datasets, False)
 
 
 @marvcli.command('dump')

@@ -733,10 +733,6 @@ class Database:
                                         .get_sql())
 
     @run_in_transaction
-    async def undiscard_datasets(self, setids, transaction=None):
-        await self.discard_datasets(setids, False, transaction=transaction)
-
-    @run_in_transaction
     async def update_tags_for_setids(self, setids, add, remove, transaction=None):
         setids = [str(x) for x in setids]
         dataset = Table('dataset')

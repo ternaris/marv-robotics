@@ -52,7 +52,7 @@ async def test_discard(site):
     rest = await site.db.get_datasets_for_collections(None)
     assert set(sets) - set(rest) == {first}
 
-    await site.db.undiscard_datasets([first])
+    await site.db.discard_datasets([first], False)
     rest = await site.db.get_datasets_for_collections(None)
     assert sets == rest
 
