@@ -31,6 +31,7 @@ Removed
 ~~~~~~~
 - Unittest dependency of node testing base class
 - Unused and long deprecated code
+- Support for shortened setids on CLI
 
 Fixed
 ~~~~~
