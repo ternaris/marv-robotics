@@ -288,6 +288,33 @@ class Database:
         return bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8'))
 
     @run_in_transaction
+    async def bulk_um(self, users_add, users_remove, groups_add, groups_remove,
+                      groups_add_users, groups_remove_users, transaction=None):
+        # pylint: disable=too-many-arguments
+
+        for name in users_remove:
+            await User.get(name=name).using_db(transaction).delete()
+
+        for name in users_add:
+            await User.create(name=name, realm='marv', using_db=transaction)
+
+        for name in groups_remove:
+            await Group.get(name=name).using_db(transaction).delete()
+
+        for name in groups_add:
+            await Group.create(name=name, using_db=transaction)
+
+        for name, users in groups_remove_users:
+            group = await Group.get(name=name).using_db(transaction)
+            users = await User.filter(name__in=users).using_db(transaction)
+            await group.users.remove(*users, using_db=transaction)
+
+        for name, users in groups_add_users:
+            group = await Group.get(name=name).using_db(transaction)
+            users = await User.filter(name__in=users).using_db(transaction)
+            await group.users.add(*users, using_db=transaction)
+
+    @run_in_transaction
     async def user_add(self, name, password, realm, realmuid, given_name=None, family_name=None,
                        email=None, time_created=None, time_updated=None, _restore=None,
                        transaction=None):
@@ -371,6 +398,34 @@ class Database:
         await group.users.remove(user, using_db=transaction)
 
     @run_in_transaction
+    async def get_users(self, deep=False, transaction=None):
+        query = User.all().using_db(transaction).order_by('name')
+        if deep:
+            query = query.prefetch_related('groups')
+        return await query
+
+    @run_in_transaction
+    async def get_user_by_name(self, name, deep=False, transaction=None):
+        query = User.filter(name=name).using_db(transaction)
+        if deep:
+            query = query.prefetch_related('groups')
+        return await query.first()
+
+    @run_in_transaction
+    async def get_user_by_realmuid(self, realm, realmuid, deep=False, transaction=None):
+        query = User.filter(realm=realm, realmuid=realmuid).using_db(transaction)
+        if deep:
+            query = query.prefetch_related('groups')
+        return await query.first()
+
+    @run_in_transaction
+    async def get_groups(self, deep=False, transaction=None):
+        query = Group.all().using_db(transaction).order_by('name')
+        if deep:
+            query = query.prefetch_related('users')
+        return await query
+
+    @run_in_transaction
     async def leaf_add(self, name, access_token=None, refresh_token=None, time_created=None,
                        time_updated=None, _restore=None, transaction=None):
         # pylint: disable=too-many-arguments
@@ -419,6 +474,15 @@ class Database:
         leaf.clear_access_token = clear_access_token
         leaf.clear_refresh_token = clear_refresh_token
         return leaf
+
+    @run_in_transaction
+    async def get_leafs(self, transaction=None):
+        return await Leaf.all().using_db(transaction).order_by('name')
+
+    @run_in_transaction
+    async def get_leaf_by_token(self, clear_access_token, transaction=None):
+        access_token = hashlib.sha256(clear_access_token.encode()).hexdigest()
+        return await Leaf.filter(access_token=access_token).using_db(transaction).first()
 
     @run_in_transaction
     async def resolve_shortids(self, prefixes, discarded=False, transaction=None):
@@ -497,6 +561,232 @@ class Database:
         ))[1][0]['path']
 
     @run_in_transaction
+    async def get_datasets_for_collections(self, collections, transaction=None):
+        dataset = Table('dataset')
+        bitmask = ValueWrapper(STATUS_MISSING)
+        query = Query.from_(dataset)\
+                     .select('setid')\
+                     .where((dataset.discarded.eq(False))
+                            & dataset.status.bitwiseand(bitmask).ne(bitmask))
+        if collections is not None:
+            query = query.where(dataset.collection.isin(collections))
+        return [SetID(x['setid'])
+                for x in (await transaction.execute_query(query.get_sql()))[1]]
+
+    @run_in_transaction
+    async def discard_datasets(self, setids, state=True, transaction=None):
+        dataset = Table('dataset')
+        await transaction.execute_query(Query.update(dataset)
+                                        .set(dataset.discarded, state)
+                                        .where(dataset.setid.isin([str(x) for x in setids]))
+                                        .get_sql())
+
+    @run_in_transaction
+    async def discard_datasets_by_dbid(self, ids, state=True, transaction=None):
+        dataset = Table('dataset')
+        await transaction.execute_query(Query.update(dataset)
+                                        .set(dataset.discarded, state)
+                                        .where(dataset.id.isin(ids))
+                                        .get_sql())
+
+    @run_in_transaction
+    async def cleanup_discarded(self, descs, transaction=None):
+        dataset = Table('dataset')
+        datasets = (await transaction.execute_query(Query.from_(dataset)
+                                                    .select('collection', 'id')
+                                                    .where(dataset.discarded.eq(True))
+                                                    .orderby('collection')
+                                                    .get_sql()))[1]
+        if not datasets:
+            return
+
+        datasets = [
+            (col, [x[1] for x in tuples])
+            for col, tuples in groupby(datasets, lambda x: x[0])
+        ]
+        for col, ids in datasets:
+            await transaction.execute_query(Query.from_(dataset)
+                                            .where(dataset.id.isin(ids))
+                                            .delete()
+                                            .get_sql())
+
+            for table in (Table('dataset_tag'), Table('comment'), Table('file')):
+                await transaction.execute_query(Query.from_(table)
+                                                .where(table.dataset_id.isin(ids))
+                                                .delete()
+                                                .get_sql())
+
+            tbls = descs[col]
+            assert not tbls[0].through, 'Listing table should be first'
+            listing = Table(tbls[0].table)
+
+            await transaction.execute_query(Query.from_(listing)
+                                            .where(listing.id.isin(ids))
+                                            .delete()
+                                            .get_sql())
+
+            for desc in [x for x in tbls if x.through]:
+                through = Table(desc.through)
+                id_field = getattr(through, desc.listing_id)
+                await transaction.execute_query(Query.from_(through)
+                                                .where(id_field.isin(ids))
+                                                .delete()
+                                                .get_sql())
+
+    @run_in_transaction
+    async def bulk_comment(self, comments, transaction=None):
+        comment = Table('comment')
+        query = Query.into(comment)\
+                     .columns(*(comments[0].keys()))\
+                     .insert(*[tuple(x.values()) for x in comments])\
+                     .get_sql()
+        await transaction.execute_query(query)
+
+    @run_in_transaction
+    async def comment_multiple(self, setids, user, message, transaction=None):
+        ids = await self.get_dbids(setids, transaction=transaction)
+        await User.get(name=user).using_db(transaction)
+        now = int(utils.now() * 1000)
+
+        comment = Table('comment')
+        query = Query.into(comment)\
+                     .columns('dataset_id', 'author', 'time_added', 'text')\
+                     .insert(*[(id, user, now, message) for id in ids])\
+                     .get_sql()
+        await transaction.execute_query(query)
+
+    @run_in_transaction
+    async def delete_comments_by_ids(self, ids, transaction=None):
+        comment = Table('comment')
+        await transaction.execute_query(Query.from_(comment)
+                                        .where(comment.id.isin(ids))
+                                        .delete()
+                                        .get_sql())
+
+    @run_in_transaction
+    async def get_comments_for_setids(self, setids, transaction=None):
+        comment, dataset = Tables('comment', 'dataset')
+        query = Query.from_(comment).join(dataset).on(comment.dataset_id == dataset.id)
+        if setids:
+            query = query.where(dataset.setid.isin([str(x) for x in setids]))
+        else:
+            query = query.where(dataset.discarded.ne(True))
+        query = query.select(comment.star, dataset.star).get_sql()
+        items = (await transaction.execute_query(query))[1]
+        return modelize(items, ['dataset'])
+
+    @run_in_transaction
+    async def bulk_tag(self, add, remove, transaction=None):
+        tag, dataset_tag, tmp = Tables('tag', 'dataset_tag', 'tmp')
+        names = [(x[0],) for x in add]
+        if add:
+            need = Query().from_(ValuesTuple(*names))\
+                          .select('*')\
+                          .get_sql()
+            have = Query().from_(tag)\
+                          .select(tag.value)\
+                          .get_sql()
+            insert = f'INSERT INTO tag (value) SELECT * FROM ({need} EXCEPT {have})'
+            await transaction.execute_query(insert)
+
+            need = Query.with_(Query.with_(Query.from_(ValuesTuple(*add))
+                                           .select('*'), 'tmp(value, dataset_id)')
+                               .from_(tmp)
+                               .join(tag)
+                               .on(tmp.value == tag.value)
+                               .select(tag.id, tmp.dataset_id), 'x(tag_id, dataset_id)')\
+                        .from_('x')\
+                        .select(tmp.tag_id, tmp.dataset_id)\
+                        .get_sql()
+            have = Query.from_(dataset_tag)\
+                        .select(dataset_tag.tag_id, dataset_tag.dataset_id)\
+                        .get_sql()
+            insert_rel = \
+                f'INSERT INTO dataset_tag (tag_id, dataset_id) SELECT * FROM ({need}) EXCEPT {have}'
+            await transaction.execute_query(insert_rel)
+
+        if remove:
+            kill = Query.with_(Query.with_(Query.from_(ValuesTuple(*remove))
+                                           .select('*'), 'tmp(value, dataset_id)')
+                               .from_(tmp)
+                               .join(tag)
+                               .on(tmp.value == tag.value)
+                               .join(dataset_tag)
+                               .on((tag.id == dataset_tag.tag_id)
+                                   & (tmp.dataset_id == dataset_tag.dataset_id))
+                               .select(tag.id, tmp.dataset_id), 'x(tag_id, dataset_id)')\
+                        .from_('x')\
+                        .select(tmp.tag_id, tmp.dataset_id)
+            await transaction.execute_query(Query.from_(dataset_tag)
+                                            .delete()
+                                            .select(dataset_tag.tag_id, dataset_tag.dataset_id)
+                                            .where(Tuple(dataset_tag.tag_id, dataset_tag.dataset_id)
+                                                   .isin(kill))
+                                            .get_sql())
+
+    @run_in_transaction
+    async def update_tags_for_setids(self, setids, add, remove, transaction=None):
+        setids = [str(x) for x in setids]
+        dataset = Table('dataset')
+        colids = (await transaction.execute_query(Query.from_(dataset)
+                                                  .where(dataset.setid.isin(setids))
+                                                  .select(dataset.id)
+                                                  .get_sql()))[1]
+        add = [
+            (tag, colid['id'])
+            for tag, colid in product(add, colids)
+        ]
+        remove = [
+            (tag, colid['id'])
+            for tag, colid in product(remove, colids)
+        ]
+        await self.bulk_tag(add, remove, transaction=transaction)
+
+    @run_in_transaction
+    async def list_tags(self, collections=None, transaction=None):
+        dataset, dataset_tag, tag = Tables('dataset', 'dataset_tag', 'tag')
+        query = Query.from_(tag)\
+                     .select('value')\
+                     .distinct()\
+                     .orderby('value')
+
+        if collections:
+            query = query.join(dataset_tag, how=JoinType.left_outer)\
+                         .on(tag.id == dataset_tag.tag_id)\
+                         .join(dataset)\
+                         .on(dataset_tag.dataset_id == dataset.id)\
+                         .where(dataset.collection.isin(collections))
+
+        return [x['value'] for x in (await transaction.execute_query(query.get_sql()))[1]]
+
+    @run_in_transaction
+    async def delete_comments_tags(self, setids, comments, tags, transaction=None):
+        dataset, dataset_tag, comment = Tables('dataset', 'dataset_tag', 'comment')
+        subq = Query.from_(dataset)\
+                    .select(dataset.id)\
+                    .where(dataset.setid.isin([str(x) for x in setids]))
+        if tags:
+            await transaction.execute_query(Query.from_(dataset_tag)
+                                            .where(dataset_tag.dataset_id.isin(subq))
+                                            .delete()
+                                            .get_sql())
+
+        if comments:
+            await transaction.execute_query(Query.from_(comment)
+                                            .where(comment.dataset_id.isin(subq))
+                                            .delete()
+                                            .get_sql())
+
+    @run_in_transaction
+    async def cleanup_tags(self, transaction=None):
+        tag, dataset_tag = Tables('tag', 'dataset_tag')  # pylint: disable=unbalanced-tuple-unpacking
+        await transaction.execute_query(Query.from_(tag)
+                                        .where(tag.id.notin(Query.from_(dataset_tag)
+                                                            .select(dataset_tag.tag_id)))
+                                        .delete()
+                                        .get_sql())
+
+    @run_in_transaction
     async def get_all_known_for_collection(self, collection, transaction=None):
         descs = [x for x in collection.table_descriptors if x.through]
         all_known = {
@@ -513,6 +803,21 @@ class Database:
             'tags': await self.get_all_known_tags_for_collection(collection.name),
         })
         return all_known
+
+    @run_in_transaction
+    async def get_all_known_tags_for_collection(self, collection_name, transaction=None):
+        dataset, dataset_tag, tag = Tables('dataset', 'dataset_tag', 'tag')
+        query = Query.from_(tag)\
+                     .select(tag.value)\
+                     .where(tag.id.isin(Query.from_(dataset_tag)
+                                        .join(dataset)
+                                        .on(dataset_tag.dataset_id == dataset.id)
+                                        .select(dataset_tag.tag_id)
+                                        .where(dataset.collection == collection_name)
+                                        .distinct()))\
+                     .orderby(tag.value)\
+                     .get_sql()
+        return [x['value'] for x in (await transaction.execute_query(query))[1]]
 
     @run_in_transaction  # noqa: C901
     async def get_filtered_listing(self, descs, filters, transaction=None):  # noqa: C901
@@ -671,267 +976,6 @@ class Database:
         return (await transaction.execute_query(query.get_sql()))[1]
 
     @run_in_transaction
-    async def get_datasets_for_collections(self, collections, transaction=None):
-        dataset = Table('dataset')
-        bitmask = ValueWrapper(STATUS_MISSING)
-        query = Query.from_(dataset)\
-                     .select('setid')\
-                     .where((dataset.discarded.eq(False))
-                            & dataset.status.bitwiseand(bitmask).ne(bitmask))
-        if collections is not None:
-            query = query.where(dataset.collection.isin(collections))
-        return [SetID(x['setid'])
-                for x in (await transaction.execute_query(query.get_sql()))[1]]
-
-    @run_in_transaction
-    async def get_all_known_tags_for_collection(self, collection_name, transaction=None):
-        dataset, dataset_tag, tag = Tables('dataset', 'dataset_tag', 'tag')
-        query = Query.from_(tag)\
-                     .select(tag.value)\
-                     .where(tag.id.isin(Query.from_(dataset_tag)
-                                        .join(dataset)
-                                        .on(dataset_tag.dataset_id == dataset.id)
-                                        .select(dataset_tag.tag_id)
-                                        .where(dataset.collection == collection_name)
-                                        .distinct()))\
-                     .orderby(tag.value)\
-                     .get_sql()
-        return [x['value'] for x in (await transaction.execute_query(query))[1]]
-
-    @run_in_transaction
-    async def delete_comments_tags(self, setids, comments, tags, transaction=None):
-        dataset, dataset_tag, comment = Tables('dataset', 'dataset_tag', 'comment')
-        subq = Query.from_(dataset)\
-                    .select(dataset.id)\
-                    .where(dataset.setid.isin([str(x) for x in setids]))
-        if tags:
-            await transaction.execute_query(Query.from_(dataset_tag)
-                                            .where(dataset_tag.dataset_id.isin(subq))
-                                            .delete()
-                                            .get_sql())
-
-        if comments:
-            await transaction.execute_query(Query.from_(comment)
-                                            .where(comment.dataset_id.isin(subq))
-                                            .delete()
-                                            .get_sql())
-
-    @run_in_transaction
-    async def discard_datasets(self, setids, state=True, transaction=None):
-        dataset = Table('dataset')
-        await transaction.execute_query(Query.update(dataset)
-                                        .set(dataset.discarded, state)
-                                        .where(dataset.setid.isin([str(x) for x in setids]))
-                                        .get_sql())
-
-    @run_in_transaction
-    async def discard_datasets_by_dbid(self, ids, state=True, transaction=None):
-        dataset = Table('dataset')
-        await transaction.execute_query(Query.update(dataset)
-                                        .set(dataset.discarded, state)
-                                        .where(dataset.id.isin(ids))
-                                        .get_sql())
-
-    @run_in_transaction
-    async def update_tags_for_setids(self, setids, add, remove, transaction=None):
-        setids = [str(x) for x in setids]
-        dataset = Table('dataset')
-        colids = (await transaction.execute_query(Query.from_(dataset)
-                                                  .where(dataset.setid.isin(setids))
-                                                  .select(dataset.id)
-                                                  .get_sql()))[1]
-        add = [
-            (tag, colid['id'])
-            for tag, colid in product(add, colids)
-        ]
-        remove = [
-            (tag, colid['id'])
-            for tag, colid in product(remove, colids)
-        ]
-        await self.bulk_tag(add, remove, transaction=transaction)
-
-    @run_in_transaction
-    async def comment_multiple(self, setids, user, message, transaction=None):
-        ids = await self.get_dbids(setids, transaction=transaction)
-        await User.get(name=user).using_db(transaction)
-        now = int(utils.now() * 1000)
-
-        comment = Table('comment')
-        query = Query.into(comment)\
-                     .columns('dataset_id', 'author', 'time_added', 'text')\
-                     .insert(*[(id, user, now, message) for id in ids])\
-                     .get_sql()
-        await transaction.execute_query(query)
-
-    @run_in_transaction
-    async def bulk_comment(self, comments, transaction=None):
-        comment = Table('comment')
-        query = Query.into(comment)\
-                     .columns(*(comments[0].keys()))\
-                     .insert(*[tuple(x.values()) for x in comments])\
-                     .get_sql()
-        await transaction.execute_query(query)
-
-    @run_in_transaction
-    async def bulk_tag(self, add, remove, transaction=None):
-        tag, dataset_tag, tmp = Tables('tag', 'dataset_tag', 'tmp')
-        names = [(x[0],) for x in add]
-        if add:
-            need = Query().from_(ValuesTuple(*names))\
-                          .select('*')\
-                          .get_sql()
-            have = Query().from_(tag)\
-                          .select(tag.value)\
-                          .get_sql()
-            insert = f'INSERT INTO tag (value) SELECT * FROM ({need} EXCEPT {have})'
-            await transaction.execute_query(insert)
-
-            need = Query.with_(Query.with_(Query.from_(ValuesTuple(*add))
-                                           .select('*'), 'tmp(value, dataset_id)')
-                               .from_(tmp)
-                               .join(tag)
-                               .on(tmp.value == tag.value)
-                               .select(tag.id, tmp.dataset_id), 'x(tag_id, dataset_id)')\
-                        .from_('x')\
-                        .select(tmp.tag_id, tmp.dataset_id)\
-                        .get_sql()
-            have = Query.from_(dataset_tag)\
-                        .select(dataset_tag.tag_id, dataset_tag.dataset_id)\
-                        .get_sql()
-            insert_rel = \
-                f'INSERT INTO dataset_tag (tag_id, dataset_id) SELECT * FROM ({need}) EXCEPT {have}'
-            await transaction.execute_query(insert_rel)
-
-        if remove:
-            kill = Query.with_(Query.with_(Query.from_(ValuesTuple(*remove))
-                                           .select('*'), 'tmp(value, dataset_id)')
-                               .from_(tmp)
-                               .join(tag)
-                               .on(tmp.value == tag.value)
-                               .join(dataset_tag)
-                               .on((tag.id == dataset_tag.tag_id)
-                                   & (tmp.dataset_id == dataset_tag.dataset_id))
-                               .select(tag.id, tmp.dataset_id), 'x(tag_id, dataset_id)')\
-                        .from_('x')\
-                        .select(tmp.tag_id, tmp.dataset_id)
-            await transaction.execute_query(Query.from_(dataset_tag)
-                                            .delete()
-                                            .select(dataset_tag.tag_id, dataset_tag.dataset_id)
-                                            .where(Tuple(dataset_tag.tag_id, dataset_tag.dataset_id)
-                                                   .isin(kill))
-                                            .get_sql())
-
-    @run_in_transaction
-    async def get_comments_for_setids(self, setids, transaction=None):
-        comment, dataset = Tables('comment', 'dataset')
-        query = Query.from_(comment).join(dataset).on(comment.dataset_id == dataset.id)
-        if setids:
-            query = query.where(dataset.setid.isin([str(x) for x in setids]))
-        else:
-            query = query.where(dataset.discarded.ne(True))
-        query = query.select(comment.star, dataset.star).get_sql()
-        items = (await transaction.execute_query(query))[1]
-        return modelize(items, ['dataset'])
-
-    @run_in_transaction
-    async def get_users(self, deep=False, transaction=None):
-        query = User.all().using_db(transaction).order_by('name')
-        if deep:
-            query = query.prefetch_related('groups')
-        return await query
-
-    @run_in_transaction
-    async def get_user_by_name(self, name, deep=False, transaction=None):
-        query = User.filter(name=name).using_db(transaction)
-        if deep:
-            query = query.prefetch_related('groups')
-        return await query.first()
-
-    @run_in_transaction
-    async def get_user_by_realmuid(self, realm, realmuid, deep=False, transaction=None):
-        query = User.filter(realm=realm, realmuid=realmuid).using_db(transaction)
-        if deep:
-            query = query.prefetch_related('groups')
-        return await query.first()
-
-    @run_in_transaction
-    async def get_groups(self, deep=False, transaction=None):
-        query = Group.all().using_db(transaction).order_by('name')
-        if deep:
-            query = query.prefetch_related('users')
-        return await query
-
-    @run_in_transaction
-    async def get_leafs(self, transaction=None):
-        return await Leaf.all().using_db(transaction).order_by('name')
-
-    @run_in_transaction
-    async def get_leaf_by_token(self, clear_access_token, transaction=None):
-        access_token = hashlib.sha256(clear_access_token.encode()).hexdigest()
-        return await Leaf.filter(access_token=access_token).using_db(transaction).first()
-
-    @run_in_transaction
-    async def delete_comments_by_ids(self, ids, transaction=None):
-        comment = Table('comment')
-        await transaction.execute_query(Query.from_(comment)
-                                        .where(comment.id.isin(ids))
-                                        .delete()
-                                        .get_sql())
-
-    @run_in_transaction
-    async def bulk_um(self, users_add, users_remove, groups_add, groups_remove,
-                      groups_add_users, groups_remove_users, transaction=None):
-        # pylint: disable=too-many-arguments
-
-        for name in users_remove:
-            await User.get(name=name).using_db(transaction).delete()
-
-        for name in users_add:
-            await User.create(name=name, realm='marv', using_db=transaction)
-
-        for name in groups_remove:
-            await Group.get(name=name).using_db(transaction).delete()
-
-        for name in groups_add:
-            await Group.create(name=name, using_db=transaction)
-
-        for name, users in groups_remove_users:
-            group = await Group.get(name=name).using_db(transaction)
-            users = await User.filter(name__in=users).using_db(transaction)
-            await group.users.remove(*users, using_db=transaction)
-
-        for name, users in groups_add_users:
-            group = await Group.get(name=name).using_db(transaction)
-            users = await User.filter(name__in=users).using_db(transaction)
-            await group.users.add(*users, using_db=transaction)
-
-    @run_in_transaction
-    async def list_tags(self, collections=None, transaction=None):
-        dataset, dataset_tag, tag = Tables('dataset', 'dataset_tag', 'tag')
-        query = Query.from_(tag)\
-                     .select('value')\
-                     .distinct()\
-                     .orderby('value')
-
-        if collections:
-            query = query.join(dataset_tag, how=JoinType.left_outer)\
-                         .on(tag.id == dataset_tag.tag_id)\
-                         .join(dataset)\
-                         .on(dataset_tag.dataset_id == dataset.id)\
-                         .where(dataset.collection.isin(collections))
-
-        return [x['value'] for x in (await transaction.execute_query(query.get_sql()))[1]]
-
-    @run_in_transaction
-    async def cleanup_tags(self, transaction=None):
-        tag, dataset_tag = Tables('tag', 'dataset_tag')  # pylint: disable=unbalanced-tuple-unpacking
-        await transaction.execute_query(Query.from_(tag)
-                                        .where(tag.id.notin(Query.from_(dataset_tag)
-                                                            .select(dataset_tag.tag_id)))
-                                        .delete()
-                                        .get_sql())
-
-    @run_in_transaction
     async def cleanup_listing_relations(self, descs, transaction=None):
         for desc in [y for x in descs.values() for y in x if y.through]:
             rel = Table(desc.table)
@@ -941,50 +985,6 @@ class Database:
                                                                 .distinct()))
                                             .delete()
                                             .get_sql())
-
-    @run_in_transaction
-    async def cleanup_discarded(self, descs, transaction=None):
-        dataset = Table('dataset')
-        datasets = (await transaction.execute_query(Query.from_(dataset)
-                                                    .select('collection', 'id')
-                                                    .where(dataset.discarded.eq(True))
-                                                    .orderby('collection')
-                                                    .get_sql()))[1]
-        if not datasets:
-            return
-
-        datasets = [
-            (col, [x[1] for x in tuples])
-            for col, tuples in groupby(datasets, lambda x: x[0])
-        ]
-        for col, ids in datasets:
-            await transaction.execute_query(Query.from_(dataset)
-                                            .where(dataset.id.isin(ids))
-                                            .delete()
-                                            .get_sql())
-
-            for table in (Table('dataset_tag'), Table('comment'), Table('file')):
-                await transaction.execute_query(Query.from_(table)
-                                                .where(table.dataset_id.isin(ids))
-                                                .delete()
-                                                .get_sql())
-
-            tbls = descs[col]
-            assert not tbls[0].through, 'Listing table should be first'
-            listing = Table(tbls[0].table)
-
-            await transaction.execute_query(Query.from_(listing)
-                                            .where(listing.id.isin(ids))
-                                            .delete()
-                                            .get_sql())
-
-            for desc in [x for x in tbls if x.through]:
-                through = Table(desc.through)
-                id_field = getattr(through, desc.listing_id)
-                await transaction.execute_query(Query.from_(through)
-                                                .where(id_field.isin(ids))
-                                                .delete()
-                                                .get_sql())
 
     @run_in_transaction
     async def query(self, collections=None, discarded=None, outdated=None, path=None, tags=None,
