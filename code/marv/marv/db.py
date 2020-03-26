@@ -524,19 +524,6 @@ class Database:
             setids.add(SetID(setid[0][0]))
         return sorted(setids)
 
-    @run_in_transaction
-    async def get_dbids(self, setids, transaction=None):
-        setids = [(str(x),) for x in setids]
-        dataset, tmp = Tables('dataset', 'tmp')
-        query = Query.with_(Query.from_(ValuesTuple(*setids)).select('*'), 'tmp(setid)')\
-                     .from_(tmp)\
-                     .join(dataset, how=JoinType.left_outer)\
-                     .on(tmp.setid == dataset.setid)\
-                     .select(dataset.id)\
-                     .orderby(dataset.id)\
-                     .get_sql()
-        return [x[0] for x in (await transaction.execute_query(query))[1]]
-
     async def _get_datasets_by_id_crit(self, crit, prefetch, transaction):
         dataset = Table('dataset')
         query = Query.from_(dataset).where(crit).select(dataset.star)

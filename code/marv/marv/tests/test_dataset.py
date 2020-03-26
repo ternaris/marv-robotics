@@ -21,9 +21,6 @@ async def test_id_helpers(site):
     assert await site.db.resolve_shortids(['tv43', 'tv4']) == [setid1]
     assert await site.db.resolve_shortids(['tv43', '2x45']) == sorted([setid1, setid100])
 
-    assert await site.db.get_dbids([setid1]) == [1]
-    assert await site.db.get_dbids([setid1, setid100]) == [1, 100]
-
     res1 = await site.db.get_datasets_by_setids([setid1, setid100], prefetch=[])
     res2 = await site.db.get_datasets_by_dbids([1, 100], prefetch=[])
     assert {x.setid for x in res1} == {x.setid for x in res2}

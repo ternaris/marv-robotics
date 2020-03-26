@@ -26,5 +26,5 @@ async def test_tag(client, site):
     })
     assert res == {}
 
-    res = await site.db.get_dbids(await site.db.query(tags=['important']))
-    assert sorted(res) == [1, 2, 3]
+    res = await site.db.get_datasets_by_setids(await site.db.query(tags=['important']), [])
+    assert sorted(x.id for x in res) == [1, 2, 3]
