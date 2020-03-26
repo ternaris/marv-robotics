@@ -250,6 +250,16 @@ def modelize(items, relations):
     return res
 
 
+def id_crit(ids):
+    dataset = Table('dataset')
+    return dataset.id.isin(ids)
+
+
+def setid_crit(ids):
+    dataset = Table('dataset')
+    return dataset.setid.isin([str(x) for x in ids])
+
+
 class Database:
     # pylint: disable=too-many-public-methods
     def __init__(self):
@@ -523,15 +533,9 @@ class Database:
                      .get_sql()
         return [x[0] for x in (await transaction.execute_query(query))[1]]
 
-    @run_in_transaction
-    async def get_datasets_by_setids(self, setids, prefetch, transaction=None):
-        ids = await self.get_dbids(setids, transaction=transaction)
-        return await self.get_datasets_by_dbids(ids, prefetch, transaction=transaction)
-
-    @run_in_transaction
-    async def get_datasets_by_dbids(self, ids, prefetch, transaction=None):
+    async def _get_datasets_by_id_crit(self, crit, prefetch, transaction):
         dataset = Table('dataset')
-        query = Query.from_(dataset).where(dataset.id.isin(ids)).select(dataset.star)
+        query = Query.from_(dataset).where(crit).select(dataset.star)
         for related in prefetch:
             table = Table(related[:-1])
             if related == 'tags':
@@ -547,6 +551,14 @@ class Database:
                              .select(table.star)
         items = (await transaction.execute_query(query.get_sql()))[1]
         return modelize(items, prefetch)
+
+    @run_in_transaction
+    async def get_datasets_by_setids(self, setids, prefetch, transaction=None):
+        return await self._get_datasets_by_id_crit(setid_crit(setids), prefetch, transaction)
+
+    @run_in_transaction
+    async def get_datasets_by_dbids(self, ids, prefetch, transaction=None):
+        return await self._get_datasets_by_id_crit(id_crit(ids), prefetch, transaction)
 
     @run_in_transaction
     async def get_filepath_by_setid_idx(self, setid, idx, transaction=None):

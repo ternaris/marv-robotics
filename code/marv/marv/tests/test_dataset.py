@@ -26,11 +26,11 @@ async def test_id_helpers(site):
 
     res1 = await site.db.get_datasets_by_setids([setid1, setid100], prefetch=[])
     res2 = await site.db.get_datasets_by_dbids([1, 100], prefetch=[])
-    assert [x.setid for x in res1] == [x.setid for x in res2]
+    assert {x.setid for x in res1} == {x.setid for x in res2}
 
     res1 = await site.db.get_datasets_by_setids([setid1, setid100], prefetch=['files'])
     res2 = await site.db.get_datasets_by_dbids([1, 100], prefetch=['files'])
-    assert [x.files[0].path for x in res1] == [x.files[0].path for x in res2]
+    assert {x.files[0].path for x in res1} == {x.files[0].path for x in res2}
 
 
 async def test_lookups(site):
