@@ -11,5 +11,5 @@ async def delete(request):
     ids = await request.json()
     if not ids:
         raise web.HTTPBadRequest()
-    await request.app['site'].db.discard_datasets_by_dbid(ids)
+    await request.app['site'].db.discard_datasets_by_dbids(ids)
     return web.json_response({})

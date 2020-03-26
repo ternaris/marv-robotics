@@ -48,15 +48,15 @@ async def test_discard(site):
     sets = await site.db.get_datasets_for_collections(None)
 
     first = sets[0]
-    await site.db.discard_datasets([first])
+    await site.db.discard_datasets_by_setids([first])
     rest = await site.db.get_datasets_for_collections(None)
     assert set(sets) - set(rest) == {first}
 
-    await site.db.discard_datasets([first], False)
+    await site.db.discard_datasets_by_setids([first], False)
     rest = await site.db.get_datasets_for_collections(None)
     assert sets == rest
 
-    await site.db.discard_datasets_by_dbid([1])
+    await site.db.discard_datasets_by_dbids([1])
     rest = await site.db.get_datasets_for_collections(None)
     assert set(sets) - set(rest) == {first}
 
@@ -74,7 +74,7 @@ async def test_discard(site):
 
 
 async def test_query(site):
-    await site.db.discard_datasets_by_dbid([50])
+    await site.db.discard_datasets_by_dbids([50])
     res = await site.db.bulk_tag([
         ('foo', 1),
         ('foo', 2),

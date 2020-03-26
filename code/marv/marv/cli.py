@@ -210,7 +210,7 @@ async def marvcli_discard(datasets, tags, comments, confirm):
         if delete_related:
             await site.db.delete_comments_tags(datasets, comments, tags)
         else:
-            await site.db.discard_datasets(datasets)
+            await site.db.discard_datasets_by_setids(datasets)
 
 
 @marvcli.command('undiscard')
@@ -219,7 +219,7 @@ async def marvcli_discard(datasets, tags, comments, confirm):
 async def marvcli_undiscard(datasets):
     """Undiscard DATASETS previously discarded."""
     async with create_site() as site:
-        await site.db.discard_datasets(datasets, False)
+        await site.db.discard_datasets_by_setids(datasets, False)
 
 
 @marvcli.command('dump')

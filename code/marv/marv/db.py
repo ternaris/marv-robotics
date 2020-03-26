@@ -585,21 +585,20 @@ class Database:
         return [SetID(x['setid'])
                 for x in (await transaction.execute_query(query.get_sql()))[1]]
 
-    @run_in_transaction
-    async def discard_datasets(self, setids, state=True, transaction=None):
+    async def _set_dataset_discarded_by_id_crit(self, crit, state, transaction):
         dataset = Table('dataset')
         await transaction.execute_query(Query.update(dataset)
                                         .set(dataset.discarded, state)
-                                        .where(dataset.setid.isin([str(x) for x in setids]))
+                                        .where(crit)
                                         .get_sql())
 
     @run_in_transaction
-    async def discard_datasets_by_dbid(self, ids, state=True, transaction=None):
-        dataset = Table('dataset')
-        await transaction.execute_query(Query.update(dataset)
-                                        .set(dataset.discarded, state)
-                                        .where(dataset.id.isin(ids))
-                                        .get_sql())
+    async def discard_datasets_by_setids(self, setids, state=True, transaction=None):
+        await self._set_dataset_discarded_by_id_crit(setid_crit(setids), state, transaction)
+
+    @run_in_transaction
+    async def discard_datasets_by_dbids(self, ids, state=True, transaction=None):
+        await self._set_dataset_discarded_by_id_crit(id_crit(ids), state, transaction)
 
     @run_in_transaction
     async def cleanup_discarded(self, descs, transaction=None):
