@@ -77,6 +77,33 @@ def run_in_transaction(func):
     return wrapper
 
 
+class FromExceptQuery:
+    class Builder:
+        def __init__(self, from_=None, except_=None):
+            self._from = from_
+            self._except = except_
+
+        def from_(self, term):
+            self._from = term
+            return self
+
+        def except_(self, term):
+            self._except = term
+            return self
+
+        def get_sql(self, **kw):
+            kw['subquery'] = False
+            return f'({self._from.get_sql(**kw)} EXCEPT {self._except.get_sql(**kw)})'
+
+    @classmethod
+    def from_(cls, term):
+        return cls.Builder(from_=term)
+
+    @classmethod
+    def except_(cls, term):
+        return cls.Builder(except_=term)
+
+
 class ValuesTuple(Tuple):
     def get_sql(self, **kw):
         return f'(VALUES {",".join(x.get_sql(**kw) for x in self.values)})'
@@ -131,6 +158,18 @@ def escaped_endswith(field, value, escchr='$'):
 
 def escaped_not_startswith(field, value, escchr='$'):
     return EscapableNotlikeCriterion(field, ValueWrapper(f'{esc(value, escchr)}%'), escchr)
+
+
+def get_resolve_value_query(rel, relations):
+    out, tmp = Tables('out', 'tmp')  # pylint: disable=unbalanced-tuple-unpacking
+    return Query.with_(Query.with_(Query.from_(ValuesTuple(*relations))
+                                   .select('*'), 'tmp(value, back_id)')
+                       .from_(tmp)
+                       .join(rel)
+                       .on(tmp.value == rel.value)
+                       .select(rel.id, tmp.back_id), 'out(rel_id, back_id)')\
+                .from_(out)\
+                .select(out.rel_id, out.back_id)
 
 
 OPS = {
@@ -699,71 +738,66 @@ class Database:
         items = (await transaction.execute_query(query))[1]
         return modelize(items, ['dataset'])
 
+    async def _ensure_values(self, tablename, values, transaction):
+        table = Table(tablename)
+        query = Query.into(table)\
+                     .columns('value')\
+                     .from_(FromExceptQuery
+                            .from_(Query.from_(ValuesTuple(*values)).select('*'))
+                            .except_(Query().from_(table).select(table.value)))\
+                     .select('*')\
+                     .get_sql()
+        await transaction.execute_query(query)
+
+    async def _ensure_refs(self, relname, throughname, rel_id, back_id, relations, transaction):
+        # pylint: disable=too-many-arguments
+        rel, through = Tables(relname, throughname)
+        relid = getattr(through, rel_id)
+        backid = getattr(through, back_id)
+        query = Query.into(through)\
+                     .columns(rel_id, back_id)\
+                     .from_(FromExceptQuery
+                            .from_(get_resolve_value_query(rel, relations))
+                            .except_(Query.from_(through).select(relid, backid)))\
+                     .select('*')\
+                     .get_sql()
+        await transaction.execute_query(query)
+
+    async def _delete_values_without_ref(self, relname, throughname, rel_id, transaction=None):
+        rel, through = Tables(relname, throughname)
+        await transaction.execute_query(Query.from_(rel)
+                                        .where(rel.id.notin(Query.from_(throughname)
+                                                            .select(getattr(through, rel_id))
+                                                            .distinct()))
+                                        .delete()
+                                        .get_sql())
+
     @run_in_transaction
     async def bulk_tag(self, add, remove, transaction=None):
-        tag, dataset_tag, tmp = Tables('tag', 'dataset_tag', 'tmp')
-        names = [(x[0],) for x in add]
         if add:
-            need = Query().from_(ValuesTuple(*names))\
-                          .select('*')\
-                          .get_sql()
-            have = Query().from_(tag)\
-                          .select(tag.value)\
-                          .get_sql()
-            insert = f'INSERT INTO tag (value) SELECT * FROM ({need} EXCEPT {have})'
-            await transaction.execute_query(insert)
-
-            need = Query.with_(Query.with_(Query.from_(ValuesTuple(*add))
-                                           .select('*'), 'tmp(value, dataset_id)')
-                               .from_(tmp)
-                               .join(tag)
-                               .on(tmp.value == tag.value)
-                               .select(tag.id, tmp.dataset_id), 'x(tag_id, dataset_id)')\
-                        .from_('x')\
-                        .select(tmp.tag_id, tmp.dataset_id)\
-                        .get_sql()
-            have = Query.from_(dataset_tag)\
-                        .select(dataset_tag.tag_id, dataset_tag.dataset_id)\
-                        .get_sql()
-            insert_rel = \
-                f'INSERT INTO dataset_tag (tag_id, dataset_id) SELECT * FROM ({need}) EXCEPT {have}'
-            await transaction.execute_query(insert_rel)
+            await self._ensure_values('tag', [(x[0],) for x in add], transaction)
+            await self._ensure_refs('tag', 'dataset_tag', 'tag_id', 'dataset_id', add,
+                                    transaction)
 
         if remove:
-            kill = Query.with_(Query.with_(Query.from_(ValuesTuple(*remove))
-                                           .select('*'), 'tmp(value, dataset_id)')
-                               .from_(tmp)
-                               .join(tag)
-                               .on(tmp.value == tag.value)
-                               .join(dataset_tag)
-                               .on((tag.id == dataset_tag.tag_id)
-                                   & (tmp.dataset_id == dataset_tag.dataset_id))
-                               .select(tag.id, tmp.dataset_id), 'x(tag_id, dataset_id)')\
-                        .from_('x')\
-                        .select(tmp.tag_id, tmp.dataset_id)
-            await transaction.execute_query(Query.from_(dataset_tag)
+            through, tag = Tables('dataset_tag', 'tag')
+            await transaction.execute_query(Query.from_(through)
                                             .delete()
-                                            .select(dataset_tag.tag_id, dataset_tag.dataset_id)
-                                            .where(Tuple(dataset_tag.tag_id, dataset_tag.dataset_id)
-                                                   .isin(kill))
+                                            .select(through.tag_id, through.dataset_id)
+                                            .where(Tuple(through.tag_id, through.dataset_id)
+                                                   .isin(get_resolve_value_query(tag, remove)))
                                             .get_sql())
 
     @run_in_transaction
-    async def update_tags_for_setids(self, setids, add, remove, transaction=None):
+    async def update_tags_by_setids(self, setids, add, remove, transaction=None):
         setids = [str(x) for x in setids]
         dataset = Table('dataset')
         colids = (await transaction.execute_query(Query.from_(dataset)
                                                   .where(dataset.setid.isin(setids))
                                                   .select(dataset.id)
                                                   .get_sql()))[1]
-        add = [
-            (tag, colid['id'])
-            for tag, colid in product(add, colids)
-        ]
-        remove = [
-            (tag, colid['id'])
-            for tag, colid in product(remove, colids)
-        ]
+        add = [(tag, colid['id']) for tag, colid in product(add, colids)]
+        remove = [(tag, colid['id']) for tag, colid in product(remove, colids)]
         await self.bulk_tag(add, remove, transaction=transaction)
 
     @run_in_transaction
@@ -802,13 +836,8 @@ class Database:
                                             .get_sql())
 
     @run_in_transaction
-    async def cleanup_tags(self, transaction=None):
-        tag, dataset_tag = Tables('tag', 'dataset_tag')  # pylint: disable=unbalanced-tuple-unpacking
-        await transaction.execute_query(Query.from_(tag)
-                                        .where(tag.id.notin(Query.from_(dataset_tag)
-                                                            .select(dataset_tag.tag_id)))
-                                        .delete()
-                                        .get_sql())
+    async def delete_tag_values_without_ref(self, transaction=None):
+        await self._delete_values_without_ref('tag', 'dataset_tag', 'tag_id', transaction)
 
     @run_in_transaction
     async def get_all_known_for_collection(self, collection, transaction=None):
@@ -1000,15 +1029,10 @@ class Database:
         return (await transaction.execute_query(query.get_sql()))[1]
 
     @run_in_transaction
-    async def cleanup_listing_relations(self, descs, transaction=None):
+    async def delete_listing_rel_values_without_ref(self, descs, transaction=None):
         for desc in [y for x in descs.values() for y in x if y.through]:
-            rel = Table(desc.table)
-            await transaction.execute_query(Query.from_(rel)
-                                            .where(rel.id.notin(Query.from_(desc.through)
-                                                                .select(desc.rel_id)
-                                                                .distinct()))
-                                            .delete()
-                                            .get_sql())
+            await self._delete_values_without_ref(desc.table, desc.through, desc.rel_id,
+                                                  transaction)
 
     @run_in_transaction
     async def query(self, collections=None, discarded=None, outdated=None, path=None, tags=None,
@@ -1063,44 +1087,18 @@ class Database:
         ]
 
     @run_in_transaction
-    async def ensure_values(self, tablename, values, transaction=None):
-        table = Table(tablename)
-        need = Query().from_(ValuesTuple(*values))\
-                      .select('*')\
-                      .get_sql()
-        have = Query().from_(table)\
-                      .select(table.value)\
-                      .get_sql()
-        await transaction.execute_query(
-            f'INSERT INTO {table} (value) SELECT * FROM ({need} EXCEPT {have})')
+    async def update_listing_relations(self, desc, values, relations, transaction=None):
+        await self._ensure_values(desc.table, values, transaction)
+        await self._ensure_refs(desc.table, desc.through, desc.rel_id, desc.listing_id, relations,
+                                transaction=transaction)
 
-    @run_in_transaction
-    async def ensure_relations(self, relname, throughname, rel_id, back_id, relations,
-                               transaction=None):
-        # pylint: disable=too-many-arguments, too-many-locals
-        rel = Table(relname)
-        through = Table(throughname)
-        tmp = Table('tmp')
-        relid = getattr(through, rel_id)
-        backid = getattr(through, back_id)
-        needq = Query.with_(Query.with_(Query.from_(ValuesTuple(*relations))
-                                        .select('*'), 'tmp(value, back_id)')
-                            .from_(tmp)
-                            .join(rel)
-                            .on(tmp.value == rel.value)
-                            .select(rel.id, tmp.back_id), 'ins(rel_id, back_id)')\
-                     .from_('ins')\
-                     .select(tmp.rel_id, tmp.back_id)
-
-        need = needq.get_sql()
-        have = Query.from_(through)\
-                    .select(relid, backid)\
-                    .get_sql()
-        await transaction.execute_query(
-            f'INSERT INTO {through} ({rel_id}, {back_id}) SELECT * FROM ({need}) EXCEPT {have}')
+        table, through = Tables(desc.table, desc.through)
+        relid = getattr(through, desc.rel_id)
+        backid = getattr(through, desc.listing_id)
         await transaction.execute_query(Query.from_(through)
                                         .where(backid.isin({x[1] for x in relations})
-                                               & ~Tuple(relid, backid).isin(needq))
+                                               & ~Tuple(relid, backid).isin(
+                                                   get_resolve_value_query(table, relations)))
                                         .delete()
                                         .get_sql())
 
@@ -1181,16 +1179,16 @@ class Database:
                              .select(field.backward_key, field.forward_key)\
                              .where(getattr(through, field.backward_key).isin(ids))\
                              .get_sql()
-                links = (await transaction.execute_query(query))[1]
+                refs = (await transaction.execute_query(query))[1]
                 for prime in qres:
                     prime[fieldname] = [
                         x[field.forward_key]
-                        for x in links
+                        for x in refs
                         if x[field.backward_key] == prime['id']
                     ]
                 query = Query.from_(rel)\
                              .select(*select)\
-                             .where(rel.id.isin({x[field.forward_key] for x in links}))\
+                             .where(rel.id.isin({x[field.forward_key] for x in refs}))\
                              .get_sql()
                 relres = (await transaction.execute_query(query))[1]
                 result.setdefault(tablename, []).extend(cleanup_attrs(relres))

@@ -450,11 +450,8 @@ class Collection:
             relations = [(x[1], x[2]) for x in group]
 
             desc = [x for x in descs if x.key == key][0]
-
-            await self.site.db.ensure_values(desc.table, values, transaction=transaction)
-            await self.site.db.ensure_relations(desc.table, desc.through, desc.rel_id,
-                                                desc.listing_id, relations,
-                                                transaction=transaction)
+            await self.site.db.update_listing_relations(desc, values, relations,
+                                                        transaction=transaction)
 
         for dataset in batch:
             log.info(f'{"updated" if update else "added"} %r', dataset)

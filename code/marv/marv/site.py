@@ -302,7 +302,7 @@ class Site:
 
     async def cleanup_relations(self):
         descs = {key: x.table_descriptors for key, x in self.collections.items()}
-        await self.db.cleanup_listing_relations(descs)
+        await self.db.delete_listing_rel_values_without_ref(descs)
 
     async def restore_database(self, datasets=None, users=None, leafs=None):
         for user in users or []:

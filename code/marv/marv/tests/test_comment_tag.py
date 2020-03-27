@@ -68,10 +68,10 @@ async def test_tag(site):
     sets = await site.db.get_datasets_for_collections(None)
 
     # add / remove
-    await site.db.update_tags_for_setids(sets[0:1], add=['foo', 'bar'], remove=[])
-    await site.db.update_tags_for_setids(sets[0:1], add=[], remove=['foo'])
-    await site.db.update_tags_for_setids(sets[100:101], add=['baz'], remove=[])
-    await site.db.update_tags_for_setids(sets[101:102], add=['baz', 'bar'], remove=[])
+    await site.db.update_tags_by_setids(sets[0:1], add=['foo', 'bar'], remove=[])
+    await site.db.update_tags_by_setids(sets[0:1], add=[], remove=['foo'])
+    await site.db.update_tags_by_setids(sets[100:101], add=['baz'], remove=[])
+    await site.db.update_tags_by_setids(sets[101:102], add=['baz', 'bar'], remove=[])
 
     # get all
     res = await site.db.get_all_known_tags_for_collection('hodge')
@@ -87,7 +87,7 @@ async def test_tag(site):
     assert res == ['bar']
 
     # cleanup
-    res = await site.db.cleanup_tags()
+    res = await site.db.delete_tag_values_without_ref()
     res = await site.db.list_tags()
     assert res == ['bar', 'baz']
 
@@ -102,7 +102,7 @@ async def test_tag(site):
     res = await site.db.bulk_tag([], [
         ('bar', 1),
     ])
-    res = await site.db.cleanup_tags()
+    res = await site.db.delete_tag_values_without_ref()
     res = await site.db.list_tags()
     assert res == ['bar', 'baz', 'foo']
     res = await site.db.list_tags(collections=['hodge'])
@@ -111,6 +111,6 @@ async def test_tag(site):
     assert res == ['bar', 'baz']
 
     await site.db.delete_comments_tags([sets[x] for x in [0, 1, 100, 101]], False, True)
-    res = await site.db.cleanup_tags()
+    res = await site.db.delete_tag_values_without_ref()
     res = await site.db.list_tags()
     assert res == []

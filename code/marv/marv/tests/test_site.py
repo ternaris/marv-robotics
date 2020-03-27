@@ -128,8 +128,8 @@ async def test_flow_query_and_tag(site):  # pylint: disable=redefined-outer-name
     assert await site.db.query(collections=['foo', 'bar'], path=foo1) == [foo1id]
 
     # tag
-    await site.db.update_tags_for_setids([foo1id, foo2id, bar1id], add=['a', 'b'], remove=[])
-    await site.db.update_tags_for_setids([foo3id], add=['c'], remove=[])
+    await site.db.update_tags_by_setids([foo1id, foo2id, bar1id], add=['a', 'b'], remove=[])
+    await site.db.update_tags_by_setids([foo3id], add=['c'], remove=[])
     assert await site.db.list_tags() == ['a', 'b', 'c']
     assert await site.db.list_tags(collections=['foo']) == ['a', 'b', 'c']
     assert await site.db.list_tags(collections=['bar']) == ['a', 'b']
@@ -139,16 +139,16 @@ async def test_flow_query_and_tag(site):  # pylint: disable=redefined-outer-name
     assert set(await site.db.query(tags=['b', 'c'])) == {foo1id, foo2id, foo3id, bar1id}
 
     # untag
-    await site.db.update_tags_for_setids([foo1id, bar1id, bar2id], add=['x'], remove=['a', 'b'])
+    await site.db.update_tags_by_setids([foo1id, bar1id, bar2id], add=['x'], remove=['a', 'b'])
     assert await site.db.list_tags() == ['a', 'b', 'c', 'x']
     assert await site.db.list_tags(collections=['foo']) == ['a', 'b', 'c', 'x']
     assert await site.db.list_tags(collections=['bar']) == ['x']
     assert await site.db.query(path=foo1, tags=['a']) == []
     assert await site.db.query(path=foo2, tags=['a']) == [foo2id]
-    await site.db.update_tags_for_setids([foo1id], add=[], remove=['x'])
+    await site.db.update_tags_by_setids([foo1id], add=[], remove=['x'])
 
     # cleanup tags
-    await site.db.cleanup_tags()
+    await site.db.delete_tag_values_without_ref()
     assert await site.db.list_tags() == ['a', 'b', 'c', 'x']
     assert await site.db.list_tags(collections=['foo']) == ['a', 'b', 'c']
     assert await site.db.list_tags(collections=['bar']) == ['x']

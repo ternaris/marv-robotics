@@ -531,7 +531,7 @@ async def marvcli_tag(ctx, add, remove, datasets):
         ctx.exit(1)
 
     async with create_site() as site:
-        await site.db.update_tags_for_setids(datasets, add, remove)
+        await site.db.update_tags_by_setids(datasets, add, remove)
 
 
 @marvcli.group('comment')

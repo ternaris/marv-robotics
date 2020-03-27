@@ -237,8 +237,8 @@ async def test_dump(site, client):  # pylint: disable=redefined-outer-name  # no
 
     fooids = await site.db.query(['foo'])
     barids = await site.db.query(['bar'])
-    await site.db.update_tags_for_setids(fooids, add=['TAG1'], remove=[])
-    await site.db.update_tags_for_setids([fooids[1], barids[1]], add=['TAG2'], remove=[])
+    await site.db.update_tags_by_setids(fooids, add=['TAG1'], remove=[])
+    await site.db.update_tags_by_setids([fooids[1], barids[1]], add=['TAG2'], remove=[])
 
     with mock.patch('marv.utils.now', side_effect=count(100000)):
         await site.db.comment_by_setids([fooids[0]], 'user1', 'comment\ntext')

@@ -167,4 +167,22 @@ async def test_listing(site):
 
     # TODO: words
 
-# TODO: add test for cleanup_listing_relations
+
+async def test_listing_relations(site):
+    sets = await site.db.get_datasets_for_collections(['hodge'])
+    for setid in sets:
+        await site.run(setid)
+
+    collection = site.collections['hodge']
+    res = await site.db.get_all_known_for_collection(collection)
+    assert res['divisors'] == [f'div{x}' for x in range(1, 51)]
+
+    await site.db.discard_datasets_by_setids([sets[41]])
+    await site.cleanup_discarded()
+
+    res = await site.db.get_all_known_for_collection(collection)
+    assert res['divisors'] == [f'div{x}' for x in range(1, 51)]
+
+    await site.cleanup_relations()
+    res = await site.db.get_all_known_for_collection(collection)
+    assert res['divisors'] == [f'div{x}' for x in range(1, 51) if x != 42]
