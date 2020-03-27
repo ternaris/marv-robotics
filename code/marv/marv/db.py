@@ -64,6 +64,10 @@ async def scoped_session(database, transaction=None):
         try:
             # pylint: disable=protected-access
             async with connection._in_transaction() as transaction:
+                async def exq(query, count=False):
+                    cnt, res = await transaction.execute_query(query.get_sql())
+                    return cnt if count else res
+                transaction.exq = exq
                 yield transaction
         finally:
             await database.connection_queue.put(connection)
@@ -384,10 +388,9 @@ class Database:
                                      time_updated=time_updated, using_db=transaction)
             if _restore:
                 user = Table('user')
-                await transaction.execute_query(Query.update(user)
-                                                .set(user.time_updated, time_updated)
-                                                .where(user.name == name)
-                                                .get_sql())
+                await transaction.exq(Query.update(user)
+                                      .set(user.time_updated, time_updated)
+                                      .where(user.name == name))
         except IntegrityError:
             raise ValueError(f'User {name} exists already')
         return user
@@ -501,10 +504,9 @@ class Database:
                                      time_updated=time_updated, using_db=transaction)
             if _restore:
                 leaf_t = Table('leaf')
-                await transaction.execute_query(Query.update(leaf_t)
-                                                .set(leaf_t.time_updated, time_updated)
-                                                .where(leaf_t.name == name)
-                                                .get_sql())
+                await transaction.exq(Query.update(leaf_t)
+                                      .set(leaf_t.time_updated, time_updated)
+                                      .where(leaf_t.name == name))
         except IntegrityError:
             raise ValueError(f'Recording unit {name} exists already')
 
@@ -545,13 +547,11 @@ class Database:
             if isinstance(prefix, SetID):
                 prefix = str(prefix)
 
-            setid = (await transaction.execute_query(
-                Query.from_(dataset)
-                .select('setid')
-                .where(escaped_startswith(dataset.setid, prefix) & (dataset.discarded == discarded))
-                .limit(2)
-                .get_sql(),
-            ))[1]
+            setid = await transaction.exq(Query.from_(dataset)
+                                          .select('setid')
+                                          .where(escaped_startswith(dataset.setid, prefix)
+                                                 & (dataset.discarded == discarded))
+                                          .limit(2))
 
             if not setid:
                 discarded = 'discarded ' if discarded else ''
@@ -579,7 +579,7 @@ class Database:
                 query = query.join(table, how=JoinType.left_outer)\
                              .on(table.dataset_id == dataset.id)\
                              .select(table.star)
-        items = (await transaction.execute_query(query.get_sql()))[1]
+        items = await transaction.exq(query)
         return modelize(items, prefetch)
 
     @run_in_transaction
@@ -593,14 +593,11 @@ class Database:
     @run_in_transaction
     async def get_filepath_by_setid_idx(self, setid, idx, transaction=None):
         dataset, file = Tables('dataset', 'file')
-        return (await transaction.execute_query(
-            Query.from_(file)
-            .join(dataset)
-            .on(file.dataset_id == dataset.id)
-            .where((file.idx == idx) & (dataset.setid == str(setid)))
-            .select('path')
-            .get_sql(),
-        ))[1][0]['path']
+        return (await transaction.exq(Query.from_(file)
+                                      .join(dataset)
+                                      .on(file.dataset_id == dataset.id)
+                                      .where((file.idx == idx) & (dataset.setid == str(setid)))
+                                      .select('path')))[0]['path']
 
     @run_in_transaction
     async def get_datasets_for_collections(self, collections, transaction=None):
@@ -612,15 +609,13 @@ class Database:
                             & dataset.status.bitwiseand(bitmask).ne(bitmask))
         if collections is not None:
             query = query.where(dataset.collection.isin(collections))
-        return [SetID(x['setid'])
-                for x in (await transaction.execute_query(query.get_sql()))[1]]
+        return [SetID(x['setid']) for x in await transaction.exq(query)]
 
     async def _set_dataset_discarded_by_id_crit(self, crit, state, transaction):
         dataset = Table('dataset')
-        await transaction.execute_query(Query.update(dataset)
-                                        .set(dataset.discarded, state)
-                                        .where(crit)
-                                        .get_sql())
+        await transaction.exq(Query.update(dataset)
+                              .set(dataset.discarded, state)
+                              .where(crit))
 
     @run_in_transaction
     async def discard_datasets_by_setids(self, setids, state=True, transaction=None):
@@ -633,11 +628,10 @@ class Database:
     @run_in_transaction
     async def cleanup_discarded(self, descs, transaction=None):
         dataset = Table('dataset')
-        datasets = (await transaction.execute_query(Query.from_(dataset)
-                                                    .select('collection', 'id')
-                                                    .where(dataset.discarded.eq(True))
-                                                    .orderby('collection')
-                                                    .get_sql()))[1]
+        datasets = await transaction.exq(Query.from_(dataset)
+                                         .select('collection', 'id')
+                                         .where(dataset.discarded.eq(True))
+                                         .orderby('collection'))
         if not datasets:
             return
 
@@ -646,33 +640,29 @@ class Database:
             for col, tuples in groupby(datasets, lambda x: x[0])
         ]
         for col, ids in datasets:
-            await transaction.execute_query(Query.from_(dataset)
-                                            .where(dataset.id.isin(ids))
-                                            .delete()
-                                            .get_sql())
+            await transaction.exq(Query.from_(dataset)
+                                  .where(dataset.id.isin(ids))
+                                  .delete())
 
             for table in (Table('dataset_tag'), Table('comment'), Table('file')):
-                await transaction.execute_query(Query.from_(table)
-                                                .where(table.dataset_id.isin(ids))
-                                                .delete()
-                                                .get_sql())
+                await transaction.exq(Query.from_(table)
+                                      .where(table.dataset_id.isin(ids))
+                                      .delete())
 
             tbls = descs[col]
             assert not tbls[0].through, 'Listing table should be first'
             listing = Table(tbls[0].table)
 
-            await transaction.execute_query(Query.from_(listing)
-                                            .where(listing.id.isin(ids))
-                                            .delete()
-                                            .get_sql())
+            await transaction.exq(Query.from_(listing)
+                                  .where(listing.id.isin(ids))
+                                  .delete())
 
             for desc in [x for x in tbls if x.through]:
                 through = Table(desc.through)
                 id_field = getattr(through, desc.listing_id)
-                await transaction.execute_query(Query.from_(through)
-                                                .where(id_field.isin(ids))
-                                                .delete()
-                                                .get_sql())
+                await transaction.exq(Query.from_(through)
+                                      .where(id_field.isin(ids))
+                                      .delete())
 
     @run_in_transaction
     async def bulk_comment(self, comments, transaction=None):
@@ -688,9 +678,8 @@ class Database:
                             .join(user)
                             .on(tmp.author == user.name)
                             .select(tmp.star))\
-                     .select('*')\
-                     .get_sql()
-        count, _ = await transaction.execute_query(query)
+                     .select('*')
+        count = await transaction.exq(query, count=True)
         if count != len(comments):
             raise DBError(f'Bulk commenting failed, users or datasets missing')
 
@@ -709,19 +698,17 @@ class Database:
                             .on(tmp.author == user.name)
                             .where(dataset.setid.isin([str(x) for x in setids]))
                             .select(dataset.id, tmp.star))\
-                     .select('*')\
-                     .get_sql()
-        count, _ = await transaction.execute_query(query)
+                     .select('*')
+        count = await transaction.exq(query, count=True)
         if count != len(setids):
             raise DBError(f'Commenting failed. User {author!r} or one of the datasets are missing')
 
     @run_in_transaction
     async def delete_comments_by_ids(self, ids, transaction=None):
         comment = Table('comment')
-        await transaction.execute_query(Query.from_(comment)
-                                        .where(comment.id.isin(ids))
-                                        .delete()
-                                        .get_sql())
+        await transaction.exq(Query.from_(comment)
+                              .where(comment.id.isin(ids))
+                              .delete())
 
     @run_in_transaction
     async def get_comments_by_setids(self, setids, transaction=None):
@@ -733,9 +720,8 @@ class Database:
         query = Query.from_(comment)\
                      .join(dataset).on(comment.dataset_id == dataset.id)\
                      .select(comment.star, dataset.star)\
-                     .where(crit)\
-                     .get_sql()
-        items = (await transaction.execute_query(query))[1]
+                     .where(crit)
+        items = await transaction.exq(query)
         return modelize(items, ['dataset'])
 
     async def _ensure_values(self, tablename, values, transaction):
@@ -745,9 +731,8 @@ class Database:
                      .from_(FromExceptQuery
                             .from_(Query.from_(ValuesTuple(*values)).select('*'))
                             .except_(Query().from_(table).select(table.value)))\
-                     .select('*')\
-                     .get_sql()
-        await transaction.execute_query(query)
+                     .select('*')
+        await transaction.exq(query)
 
     async def _ensure_refs(self, relname, throughname, rel_id, back_id, relations, transaction):
         # pylint: disable=too-many-arguments
@@ -759,18 +744,16 @@ class Database:
                      .from_(FromExceptQuery
                             .from_(get_resolve_value_query(rel, relations))
                             .except_(Query.from_(through).select(relid, backid)))\
-                     .select('*')\
-                     .get_sql()
-        await transaction.execute_query(query)
+                     .select('*')
+        await transaction.exq(query)
 
     async def _delete_values_without_ref(self, relname, throughname, rel_id, transaction=None):
         rel, through = Tables(relname, throughname)
-        await transaction.execute_query(Query.from_(rel)
-                                        .where(rel.id.notin(Query.from_(throughname)
-                                                            .select(getattr(through, rel_id))
-                                                            .distinct()))
-                                        .delete()
-                                        .get_sql())
+        await transaction.exq(Query.from_(rel)
+                              .where(rel.id.notin(Query.from_(throughname)
+                                                  .select(getattr(through, rel_id))
+                                                  .distinct()))
+                              .delete())
 
     @run_in_transaction
     async def bulk_tag(self, add, remove, transaction=None):
@@ -781,21 +764,19 @@ class Database:
 
         if remove:
             through, tag = Tables('dataset_tag', 'tag')
-            await transaction.execute_query(Query.from_(through)
-                                            .delete()
-                                            .select(through.tag_id, through.dataset_id)
-                                            .where(Tuple(through.tag_id, through.dataset_id)
-                                                   .isin(get_resolve_value_query(tag, remove)))
-                                            .get_sql())
+            await transaction.exq(Query.from_(through)
+                                  .delete()
+                                  .select(through.tag_id, through.dataset_id)
+                                  .where(Tuple(through.tag_id, through.dataset_id)
+                                         .isin(get_resolve_value_query(tag, remove))))
 
     @run_in_transaction
     async def update_tags_by_setids(self, setids, add, remove, transaction=None):
         setids = [str(x) for x in setids]
         dataset = Table('dataset')
-        colids = (await transaction.execute_query(Query.from_(dataset)
-                                                  .where(dataset.setid.isin(setids))
-                                                  .select(dataset.id)
-                                                  .get_sql()))[1]
+        colids = await transaction.exq(Query.from_(dataset)
+                                       .where(dataset.setid.isin(setids))
+                                       .select(dataset.id))
         add = [(tag, colid['id']) for tag, colid in product(add, colids)]
         remove = [(tag, colid['id']) for tag, colid in product(remove, colids)]
         await self.bulk_tag(add, remove, transaction=transaction)
@@ -815,7 +796,7 @@ class Database:
                          .on(dataset_tag.dataset_id == dataset.id)\
                          .where(dataset.collection.isin(collections))
 
-        return [x['value'] for x in (await transaction.execute_query(query.get_sql()))[1]]
+        return [x['value'] for x in await transaction.exq(query)]
 
     @run_in_transaction
     async def delete_comments_tags(self, setids, comments, tags, transaction=None):
@@ -824,16 +805,14 @@ class Database:
                     .select(dataset.id)\
                     .where(dataset.setid.isin([str(x) for x in setids]))
         if tags:
-            await transaction.execute_query(Query.from_(dataset_tag)
-                                            .where(dataset_tag.dataset_id.isin(subq))
-                                            .delete()
-                                            .get_sql())
+            await transaction.exq(Query.from_(dataset_tag)
+                                  .where(dataset_tag.dataset_id.isin(subq))
+                                  .delete())
 
         if comments:
-            await transaction.execute_query(Query.from_(comment)
-                                            .where(comment.dataset_id.isin(subq))
-                                            .delete()
-                                            .get_sql())
+            await transaction.exq(Query.from_(comment)
+                                  .where(comment.dataset_id.isin(subq))
+                                  .delete())
 
     @run_in_transaction
     async def delete_tag_values_without_ref(self, transaction=None):
@@ -844,9 +823,7 @@ class Database:
         descs = [x for x in collection.table_descriptors if x.through]
         all_known = {
             desc.key: [
-                x['value'] for x in (await transaction.execute_query(Query.from_(desc.table)
-                                                                     .select('value')
-                                                                     .get_sql()))[1]
+                x['value'] for x in await transaction.exq(Query.from_(desc.table).select('value'))
             ]
             for desc in descs
             if {'any', 'all'}.intersection(collection.filter_specs[desc.key].operators)
@@ -868,9 +845,8 @@ class Database:
                                         .select(dataset_tag.tag_id)
                                         .where(dataset.collection == collection_name)
                                         .distinct()))\
-                     .orderby(tag.value)\
-                     .get_sql()
-        return [x['value'] for x in (await transaction.execute_query(query))[1]]
+                     .orderby(tag.value)
+        return [x['value'] for x in await transaction.exq(query)]
 
     @run_in_transaction  # noqa: C901
     async def get_filtered_listing(self, descs, filters, transaction=None):  # noqa: C901
@@ -1026,7 +1002,7 @@ class Database:
                 raise UnknownOperator(operator)
 
         query = query.orderby(tag.value).groupby('id')
-        return (await transaction.execute_query(query.get_sql()))[1]
+        return await transaction.exq(query)
 
     @run_in_transaction
     async def delete_listing_rel_values_without_ref(self, descs, transaction=None):
@@ -1078,9 +1054,8 @@ class Database:
                                                 .distinct()))
 
         query = query.select(dataset.setid)\
-                     .orderby(dataset.setid)\
-                     .get_sql()
-        datasets = (await transaction.execute_query(query))[1]
+                     .orderby(dataset.setid)
+        datasets = await transaction.exq(query)
         return [
             x['setid'][:abbrev] if abbrev else x['setid']
             for x in datasets
@@ -1095,12 +1070,11 @@ class Database:
         table, through = Tables(desc.table, desc.through)
         relid = getattr(through, desc.rel_id)
         backid = getattr(through, desc.listing_id)
-        await transaction.execute_query(Query.from_(through)
-                                        .where(backid.isin({x[1] for x in relations})
-                                               & ~Tuple(relid, backid).isin(
-                                                   get_resolve_value_query(table, relations)))
-                                        .delete()
-                                        .get_sql())
+        await transaction.exq(Query.from_(through)
+                              .where(backid.isin({x[1] for x in relations})
+                                     & ~Tuple(relid, backid).isin(
+                                         get_resolve_value_query(table, relations)))
+                              .delete())
 
     @run_in_transaction  # noqa: C901
     async def rpc_query(self, model, filters, attrs, order, limit, offset,  # noqa: C901
@@ -1138,7 +1112,7 @@ class Database:
             if offset:
                 query = query.offset(offset)
 
-        qres = cleanup_attrs((await transaction.execute_query(query.get_sql()))[1])
+        qres = cleanup_attrs(await transaction.exq(query))
         result.setdefault(model, []).extend(qres)
 
         ids = [x['id'] for x in qres]
@@ -1159,9 +1133,8 @@ class Database:
                     select.append(field.relation_field)
                 query = Query.from_(subtable)\
                              .select(*select)\
-                             .where(getattr(subtable, field.relation_field).isin(ids))\
-                             .get_sql()
-                relres = (await transaction.execute_query(query))[1]
+                             .where(getattr(subtable, field.relation_field).isin(ids))
+                relres = await transaction.exq(query)
                 for prime in qres:
                     prime[fieldname] = [
                         x['id']
@@ -1177,9 +1150,8 @@ class Database:
                 rel = Table(tablename)
                 query = Query.from_(through)\
                              .select(field.backward_key, field.forward_key)\
-                             .where(getattr(through, field.backward_key).isin(ids))\
-                             .get_sql()
-                refs = (await transaction.execute_query(query))[1]
+                             .where(getattr(through, field.backward_key).isin(ids))
+                refs = await transaction.exq(query)
                 for prime in qres:
                     prime[fieldname] = [
                         x[field.forward_key]
@@ -1188,9 +1160,8 @@ class Database:
                     ]
                 query = Query.from_(rel)\
                              .select(*select)\
-                             .where(rel.id.isin({x[field.forward_key] for x in refs}))\
-                             .get_sql()
-                relres = (await transaction.execute_query(query))[1]
+                             .where(rel.id.isin({x[field.forward_key] for x in refs}))
+                relres = await transaction.exq(query)
                 result.setdefault(tablename, []).extend(cleanup_attrs(relres))
 
             else:
