@@ -17,7 +17,7 @@ def rpcs(_):
 
 @rpcs.endpoint('/v1/rpcs', methods=['POST'], force_acl=['__authenticated__'])  # noqa: C901
 async def rpc_entry(request):  # noqa: C901
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals,too-many-branches
 
     try:
         posted = await request.json()
@@ -45,6 +45,10 @@ async def rpc_entry(request):  # noqa: C901
             order = payload.get('order')
             limit = payload.get('limit')
             offset = payload.get('offset')
+            # v1 keeps collection
+            if 'collection' in attrs:
+                attrs['collection_id'] = attrs.pop('collection')
+            # /v1 keeps collection
             try:
                 result = await request.app['site'].db.rpc_query(model, filters, attrs,
                                                                 order, limit, offset)
@@ -53,6 +57,23 @@ async def rpc_entry(request):  # noqa: C901
 
             aliases = payload.get('aliases', {})
             for key, values in result.items():
+                # v1 keeps collection
+                if key == 'dataset':
+                    try:
+                        collections = {
+                            x['id']: x['name']
+                            for x in (
+                                await request.app['site'].db.rpc_query('collection', {}, {},
+                                                                       None, None, None)
+                            )['collection']
+                        }
+                        for value in values:
+                            if 'collection_id' in value:
+                                value['collection'] = collections[value.pop('collection_id')]
+                    except (OperationalError, ValueError) as err:
+                        # raise web.HTTPBadRequest(text=json.dumps({'errors': [str(err)]}))
+                        collections = {}
+                # /v1 keeps collection
                 res['data'][aliases.get(key, key)].extend(values)
         else:
             raise web.HTTPBadRequest(text=f'unknown rpc function "{func}"')

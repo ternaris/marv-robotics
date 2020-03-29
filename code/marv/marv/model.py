@@ -71,10 +71,15 @@ def make_status_property(bitmask, doc=None):
     return property(fget, fset, fdel, doc)
 
 
+class Collection(Model):
+    id = IntField(pk=True)
+    name = CharField(max_length=32, unique=True)
+
+
 class Dataset(Model):
     id = IntField(pk=True)
 
-    collection = TextField()
+    collection = ForeignKeyField('models.Collection', related_name='datasets')
     discarded = BooleanField(default=False)
     name = TextField()
     status = IntField(default=0)
@@ -151,7 +156,7 @@ class Leaf(Model):
     time_updated = DatetimeField(auto_now=True)
 
 
-__models__ = [Dataset, File, Comment, Tag, User, Group, Leaf]
+__models__ = [Collection, Dataset, File, Comment, Tag, User, Group, Leaf]
 
 
 ListingModel = namedtuple('ListingModel', 'Listing relations secondaries')

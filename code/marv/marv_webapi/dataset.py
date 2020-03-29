@@ -42,16 +42,18 @@ async def _send_detail_json(request, setid, setdir):
         raise web.HTTPNotFound()
 
     site = request.app['site']
-    query = await site.db.get_datasets_by_setids((setid,), prefetch=('comments', 'tags'))
+    query = await site.db.get_datasets_by_setids((setid,),
+                                                 prefetch=('collections', 'comments', 'tags'))
     dataset = query[0]  # pylint: disable=redefined-outer-name
     detail.update({
-        'collection': dataset.collection,
+        'collection': dataset.collections[0].name,
         'id': dataset.id,
         'setid': str(dataset.setid),
         'comments': [{'author': x.author, 'text': x.text, 'timeAdded': x.time_added}
                      for x in sorted(dataset.comments, key=lambda x: x.time_added)],
         'tags': [x.value for x in sorted(dataset.tags, key=lambda x: x.value)],
-        'all_known_tags': await site.db.get_all_known_tags_for_collection(dataset.collection),
+        'all_known_tags':
+            await site.db.get_all_known_tags_for_collection(dataset.collections[0].name),
     })
 
     resp = web.json_response(detail, headers={'Cache-Control': 'no-cache'})

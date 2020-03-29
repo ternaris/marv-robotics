@@ -92,6 +92,19 @@ detail_sections =
     section_test
 """
 
+KNOWN_TABLES = {
+    'collection',
+    'comment',
+    'dataset_tag',
+    'dataset',
+    'file',
+    'group',
+    'leaf',
+    'tag',
+    'user_group',
+    'user',
+}
+
 
 def create_datemock():
     vanilla_datetime = datetime.datetime
@@ -196,10 +209,7 @@ async def test_dump(site, client):  # pylint: disable=redefined-outer-name  # no
             if not x['name'].startswith('l_')
             if not x['name'].startswith('sqlite_')
         ]
-        assert {
-            'dataset', 'dataset_tag', 'tag', 'file', 'comment', 'user', 'user_group', 'group',
-            'leaf',
-        } == set(tables)
+        assert set(tables) == KNOWN_TABLES
         for name in sorted(tables):
             rows = list((await connection.execute_query(f'SELECT * FROM "{name}";'))[1])
             rows = [{k: x[k] for k in x.keys()} for x in rows]
@@ -307,10 +317,7 @@ async def test_restore(client, site):  # pylint: disable=redefined-outer-name  #
             if not x['name'].startswith('l_')
             if not x['name'].startswith('sqlite_')
         ]
-        assert {
-            'dataset', 'dataset_tag', 'tag', 'file', 'comment', 'user', 'user_group', 'group',
-            'leaf',
-        } == set(tables)
+        assert set(tables) == KNOWN_TABLES
         for name in sorted(tables):
             rows = list((await connection.execute_query(f'SELECT * FROM "{name}";'))[1])
             rows = [{k: x[k] for k in x.keys()} for x in rows]

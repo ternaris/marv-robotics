@@ -16,6 +16,7 @@ from pypika import SQLLiteQuery as Query
 from marv import utils
 from marv.config import ConfigError, calltree, getdeps, make_funcs, parse_function
 from marv.db import scoped_session
+from marv.model import Collection as CollectionModel
 from marv.model import Comment, Dataset, File
 from marv.model import make_listing_model, make_table_descriptors
 from marv_detail import FORMATTER_MAP, detail_to_dict
@@ -462,7 +463,10 @@ class Collection:
         # pylint: disable=too-many-arguments
         time_added = int(utils.now() * 1000) if time_added is None else time_added
 
-        dataset = await Dataset.create(collection=self.name,
+        collection = await CollectionModel.filter(name=self.name).using_db(connection).first()
+        if not collection:
+            collection = await CollectionModel.create(name=self.name, using_db=connection)
+        dataset = await Dataset.create(collection=collection,
                                        name=name,
                                        discarded=discarded,
                                        status=status,

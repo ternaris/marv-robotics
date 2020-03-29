@@ -568,7 +568,11 @@ class Database:
         query = Query.from_(dataset).where(crit).select(dataset.star)
         for related in prefetch:
             table = Table(related[:-1])
-            if related == 'tags':
+            if related == 'collections':
+                query = query.join(table)\
+                             .on(dataset.collection_id == table.id)\
+                             .select(table.star)
+            elif related == 'tags':
                 through = Table('dataset_tag')
                 query = query.join(through, how=JoinType.left_outer)\
                              .on(dataset.id == through.dataset_id)\
@@ -608,7 +612,10 @@ class Database:
                      .where((dataset.discarded.eq(False))
                             & dataset.status.bitwiseand(bitmask).ne(bitmask))
         if collections is not None:
-            query = query.where(dataset.collection.isin(collections))
+            collection = Table('collection')
+            query = query.join(collection)\
+                         .on(dataset.collection_id == collection.id)\
+                         .where(collection.name.isin(collections))
         return [SetID(x['setid']) for x in await transaction.exq(query)]
 
     async def _set_dataset_discarded_by_id_crit(self, crit, state, transaction):
@@ -627,11 +634,13 @@ class Database:
 
     @run_in_transaction
     async def cleanup_discarded(self, descs, transaction=None):
-        dataset = Table('dataset')
+        collection, dataset = Tables('collection', 'dataset')
         datasets = await transaction.exq(Query.from_(dataset)
-                                         .select('collection', 'id')
+                                         .join(collection)
+                                         .on(dataset.collection_id == collection.id)
+                                         .select(collection.name, dataset.id)
                                          .where(dataset.discarded.eq(True))
-                                         .orderby('collection'))
+                                         .orderby(collection.name))
         if not datasets:
             return
 
@@ -783,7 +792,8 @@ class Database:
 
     @run_in_transaction
     async def list_tags(self, collections=None, transaction=None):
-        dataset, dataset_tag, tag = Tables('dataset', 'dataset_tag', 'tag')
+        collection, dataset, dataset_tag, tag = Tables('collection', 'dataset', 'dataset_tag',
+                                                       'tag')
         query = Query.from_(tag)\
                      .select('value')\
                      .distinct()\
@@ -794,7 +804,9 @@ class Database:
                          .on(tag.id == dataset_tag.tag_id)\
                          .join(dataset)\
                          .on(dataset_tag.dataset_id == dataset.id)\
-                         .where(dataset.collection.isin(collections))
+                         .join(collection)\
+                         .on(dataset.collection_id == collection.id)\
+                         .where(collection.name.isin(collections))
 
         return [x['value'] for x in await transaction.exq(query)]
 
@@ -836,14 +848,17 @@ class Database:
 
     @run_in_transaction
     async def get_all_known_tags_for_collection(self, collection_name, transaction=None):
-        dataset, dataset_tag, tag = Tables('dataset', 'dataset_tag', 'tag')
+        collection, dataset, dataset_tag, tag = Tables('collection', 'dataset', 'dataset_tag',
+                                                       'tag')
         query = Query.from_(tag)\
                      .select(tag.value)\
                      .where(tag.id.isin(Query.from_(dataset_tag)
                                         .join(dataset)
                                         .on(dataset_tag.dataset_id == dataset.id)
                                         .select(dataset_tag.tag_id)
-                                        .where(dataset.collection == collection_name)
+                                        .join(collection)
+                                        .on(dataset.collection_id == collection.id)
+                                        .where(collection.name == collection_name)
                                         .distinct()))\
                      .orderby(tag.value)
         return [x['value'] for x in await transaction.exq(query)]
@@ -1022,7 +1037,10 @@ class Database:
         query = Query.from_(dataset)
 
         if collections:
-            query = query.where(dataset.collection.isin(collections))
+            collection = Table('collection')
+            query = query.join(collection)\
+                         .on(dataset.collection_id == collection.id)\
+                         .where(collection.name.isin(collections))
 
         if outdated:
             bitmask = ValueWrapper(STATUS_OUTDATED)
@@ -1266,12 +1284,16 @@ async def dump_database(dburi):  # noqa: C901
 
         dump = {}
         dump['datasets'] = collections = {}
+        collection = tables.pop('collection')
         dataset_t = tables.pop('dataset')
         items = await get_items_for_query(Query.from_(dataset_t)
-                                          .select('*')
+                                          .join(collection)
+                                          .on(dataset_t.collection_id == collection.id)
+                                          .select(dataset_t.star, collection.name.as_('collection'))
                                           .orderby(dataset_t.setid))
         for dataset in items:
             did = dataset.pop('id')  # Everything except this is included in the dump
+            del dataset['collection_id']
             dataset['comments'] = comments.pop(did, [])
             dataset['files'] = files.pop(did)
             dataset['tags'] = tags.pop(did, [])

@@ -278,7 +278,7 @@ class Site:
                 batchsize = 50
                 # TODO: increase verbosity and probably introduce --reinit
                 while True:
-                    batch = await Dataset.filter(collection=col)\
+                    batch = await Dataset.filter(collection__name=col)\
                                          .using_db(transaction)\
                                          .prefetch_related('files')\
                                          .limit(batchsize)\
@@ -333,8 +333,10 @@ class Site:
 
         excluded_nodes = set(excluded_nodes or [])
         async with scoped_session(self.db) as transaction:
-            dataset = await Dataset.get(setid=setid).prefetch_related('files').using_db(transaction)
-        collection = self.collections[dataset.collection]
+            dataset = await Dataset.get(setid=setid)\
+                                   .prefetch_related('collection', 'files')\
+                                   .using_db(transaction)
+        collection = self.collections[dataset.collection.name]
         selected_nodes = set(selected_nodes or [])
         if not (selected_nodes or update_listing or update_detail):
             selected_nodes.update(collection.listing_deps)
