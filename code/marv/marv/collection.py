@@ -467,8 +467,6 @@ class Collection:
         time_added = int(utils.now() * 1000) if time_added is None else time_added
 
         collection = await CollectionModel.filter(name=self.name).using_db(connection).first()
-        if not collection:
-            collection = await CollectionModel.create(name=self.name, using_db=connection)
         dataset = await Dataset.create(collection=collection,
                                        name=name,
                                        discarded=discarded,
@@ -476,6 +474,7 @@ class Collection:
                                        time_added=time_added,
                                        timestamp=0,
                                        setid=setid or SetID.random(),
+                                       acn_id=collection.acn_id,
                                        using_db=connection)
 
         if _restore:

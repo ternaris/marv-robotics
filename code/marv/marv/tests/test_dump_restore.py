@@ -93,6 +93,7 @@ detail_sections =
 """
 
 KNOWN_TABLES = {
+    'acn',
     'collection',
     'comment',
     'dataset_tag',
@@ -208,7 +209,11 @@ async def _check_tables_at_defaults(site):  # pylint: disable=redefined-outer-na
         for name in sorted(tables):
             rows = list((await connection.execute_query(f'SELECT * FROM "{name}";'))[1])
             rows = [{k: x[k] for k in x.keys()} for x in rows]
-            if name == 'group':
+            if name == 'acn':
+                assert len(rows) == 1, name
+            elif name == 'collection':
+                assert len(rows) == 2, name
+            elif name == 'group':
                 assert rows == [
                     {'id': 1, 'name': 'marv:user:anonymous'},
                     {'id': 2, 'name': 'marv:user:everybody'},

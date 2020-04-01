@@ -14,6 +14,7 @@ from tortoise.fields import (
     ForeignKeyField,
     IntField,
     ManyToManyField,
+    RESTRICT,
     TextField,
 )
 from tortoise.models import Model
@@ -71,9 +72,14 @@ def make_status_property(bitmask, doc=None):
     return property(fget, fset, fdel, doc)
 
 
+class Acn(Model):
+    id = IntField(pk=True)
+
+
 class Collection(Model):
     id = IntField(pk=True)
     name = CharField(max_length=32, unique=True)
+    acn = ForeignKeyField('models.Acn', related_name='collections', on_delete=RESTRICT)
 
 
 class Dataset(Model):
@@ -88,6 +94,7 @@ class Dataset(Model):
 
     setid = custom.SetIDField(unique=True)
     tags = ManyToManyField('models.Tag', related_name='datasets')
+    acn = ForeignKeyField('models.Acn', related_name='datasets', on_delete=RESTRICT)
 
     # Populated by backreferences: comments, files
 
@@ -156,7 +163,17 @@ class Leaf(Model):
     time_updated = DatetimeField(auto_now=True)
 
 
-__models__ = [Collection, Dataset, File, Comment, Tag, User, Group, Leaf]
+__models__ = [
+    Acn,
+    Collection,
+    Comment,
+    Dataset,
+    File,
+    Group,
+    Leaf,
+    Tag,
+    User,
+]
 
 
 ListingModel = namedtuple('ListingModel', 'Listing relations secondaries')

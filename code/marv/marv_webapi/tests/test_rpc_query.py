@@ -25,6 +25,7 @@ async def test_rpc_query(site, client):
     assert 'dataset' in res['data']
     assert len(res['data']['dataset']) == 150
     assert res['data']['dataset'][0] == {
+        'acn_id': 1,
         'collection': 'hodge',
         'discarded': 0,
         'id': 1,

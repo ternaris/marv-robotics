@@ -1329,6 +1329,7 @@ async def dump_database(dburi):  # noqa: C901
                                           .orderby(dataset_t.setid))
         for dataset in items:
             did = dataset.pop('id')  # Everything except this is included in the dump
+            del dataset['acn_id']
             del dataset['collection_id']
             dataset['comments'] = comments.pop(did, [])
             dataset['files'] = files.pop(did)
@@ -1385,6 +1386,7 @@ async def dump_database(dburi):  # noqa: C901
                 leaf['time_updated'] = dt_to_sec(leaf['time_updated'])
                 leafs.append(leaf)
 
+        del tables['acn']
         assert not groups, groups
         assert not tables, tables.keys()
 
