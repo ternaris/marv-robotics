@@ -6,7 +6,6 @@ import code
 import datetime
 import functools
 import json
-import re
 import sqlite3
 import sys
 from contextlib import asynccontextmanager
@@ -21,7 +20,7 @@ from jinja2 import Template
 from tortoise.exceptions import DoesNotExist
 
 import marv.app
-from marv.db import DBError, dump_database
+from marv.db import DBError, USERGROUP_REGEX, dump_database
 from marv.site import Site, UnknownNode, load_sitepackages, make_config
 from marv.utils import echo, err, find_obj, within_pyinstaller_bundle
 from marv_cli import PDB
@@ -624,7 +623,7 @@ def marvcli_user():
 @click_async
 async def marvcli_user_add(username, password):
     """Add a user."""
-    if not re.match(r'[0-9a-zA-Z\-_\.@+]+$', username):
+    if not USERGROUP_REGEX.match(username):
         click.echo(f'Invalid username: {username}', err=True)
         click.echo('Must only contain ASCII letters, numbers, and [-_+@.]', err=True)
         sys.exit(1)
@@ -698,7 +697,7 @@ def marvcli_group():
 @click_async
 async def marvcli_group_add(ctx, groupname):
     """Add a group."""
-    if not re.match(r'[0-9a-zA-Z\-_\.@+]+$', groupname):
+    if not USERGROUP_REGEX.match(groupname):
         click.echo(f'Invalid groupname: {groupname}', err=True)
         click.echo('Must only contain ASCII letters, numbers, dash, underscore and dot', err=True)
         sys.exit(1)

@@ -75,7 +75,7 @@ async def meta(request):
     groups = request['user_groups']
 
     collection_acl = request.app['acl']['collection']
-    if '__unauthenticated__' not in collection_acl and not request['username']:
+    if '__unauthenticated__' not in collection_acl and request['username'] == 'marv:anonymous':
         return web.json_response({
             'realms': list(request.app['site'].config.marv.oauth),
         })

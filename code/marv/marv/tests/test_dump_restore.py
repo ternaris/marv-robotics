@@ -196,12 +196,7 @@ def recorded(data, filename):
     return True
 
 
-async def test_dump(site, client):  # pylint: disable=redefined-outer-name  # noqa: C901
-    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
-
-    sitedir = os.path.dirname(site.config.filename)
-
-    # Ensure all tables are empty / at factory defaults
+async def _check_tables_at_defaults(site):  # pylint: disable=redefined-outer-name
     async with scoped_session(site.db) as connection:
         query = 'SELECT name FROM sqlite_master WHERE type="table"'
         tables = [
@@ -214,9 +209,26 @@ async def test_dump(site, client):  # pylint: disable=redefined-outer-name  # no
             rows = list((await connection.execute_query(f'SELECT * FROM "{name}";'))[1])
             rows = [{k: x[k] for k in x.keys()} for x in rows]
             if name == 'group':
-                assert rows == [{'id': 1, 'name': 'admin'}]
+                assert rows == [
+                    {'id': 1, 'name': 'marv:user:anonymous'},
+                    {'id': 2, 'name': 'marv:user:everybody'},
+                    {'id': 3, 'name': 'admin'},
+                ]
+            elif name == 'user':
+                assert len(rows) == 1, name
+                assert rows[0]['name'] == 'marv:anonymous'
+            elif name == 'user_group':
+                assert rows == [{'group_id': 1, 'user_id': 1}], name
             else:
                 assert not rows, name
+
+
+async def test_dump(site, client):  # pylint: disable=redefined-outer-name  # noqa: C901
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+
+    sitedir = os.path.dirname(site.config.filename)
+
+    await _check_tables_at_defaults(site)
 
     dump = await dump_database(site.config.marv.dburi)
     assert recorded(dump, 'empty_dump.json')
@@ -309,22 +321,7 @@ async def test_restore(client, site):  # pylint: disable=redefined-outer-name  #
 
     sitedir = os.path.dirname(site.config.filename)
 
-    # Ensure all tables are empty / at factory defaults
-    async with scoped_session(site.db) as connection:
-        query = 'SELECT name FROM sqlite_master WHERE type="table"'
-        tables = [
-            x['name'] for x in (await connection.execute_query(query))[1]
-            if not x['name'].startswith('l_')
-            if not x['name'].startswith('sqlite_')
-        ]
-        assert set(tables) == KNOWN_TABLES
-        for name in sorted(tables):
-            rows = list((await connection.execute_query(f'SELECT * FROM "{name}";'))[1])
-            rows = [{k: x[k] for k in x.keys()} for x in rows]
-            if name == 'group':
-                assert rows == [{'id': 1, 'name': 'admin'}]
-            else:
-                assert not rows, name
+    await _check_tables_at_defaults(site)
 
     dump = await dump_database(site.config.marv.dburi)
     assert recorded(dump, 'empty_dump.json')

@@ -11,7 +11,7 @@ from aiohttp import web
 
 
 async def check_authorization(request, acl, authorization):
-    username = None
+    username = 'marv:anonymous'
     groups = {'__unauthenticated__'}
     if authorization:
         token = authorization.replace('Bearer ', '')

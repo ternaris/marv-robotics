@@ -83,27 +83,56 @@ async def test_user(site):
     )
 
     res = [x.name for x in await site.db.get_users()]
-    assert res == ['adm', 'admin', 'bar', 'foo', 'test']
+    assert res == ['adm', 'admin', 'bar', 'foo', 'marv:anonymous', 'test']
 
-    res = [[y.name for y in x.groups] for x in await site.db.get_users(deep=True)]
-    assert res == [['admin'], ['manage'], [], ['qa', 'manage'], []]
+    res = [(x.name, sorted(y.name for y in x.groups)) for x in await site.db.get_users(deep=True)]
+    assert res == [
+        ('adm', ['admin', 'marv:user:adm', 'marv:users']),
+        ('admin', ['manage', 'marv:user:admin', 'marv:users']),
+        ('bar', ['marv:user:bar', 'marv:users']),
+        ('foo', ['manage', 'marv:user:foo', 'marv:users', 'qa']),
+        ('marv:anonymous', ['marv:user:anonymous']),
+        ('test', ['marv:user:test', 'marv:users']),
+    ]
 
     res = [x.name for x in await site.db.get_groups()]
-    assert res == ['admin', 'manage', 'qa']
+    assert res == [
+        'admin',
+        'manage',
+        'marv:user:adm',
+        'marv:user:admin',
+        'marv:user:anonymous',
+        'marv:user:bar',
+        'marv:user:foo',
+        'marv:user:test',
+        'marv:users',
+        'qa',
+    ]
 
-    res = [[y.name for y in x.users] for x in await site.db.get_groups(deep=True)]
-    assert res == [['adm'], ['admin', 'foo'], ['foo']]
+    res = [(x.name, sorted(y.name for y in x.users)) for x in await site.db.get_groups(deep=True)]
+    assert res == [
+        ('admin', ['adm']),
+        ('manage', ['admin', 'foo']),
+        ('marv:user:adm', ['adm']),
+        ('marv:user:admin', ['admin']),
+        ('marv:user:anonymous', ['marv:anonymous']),
+        ('marv:user:bar', ['bar']),
+        ('marv:user:foo', ['foo']),
+        ('marv:user:test', ['test']),
+        ('marv:users', ['adm', 'admin', 'bar', 'foo', 'test']),
+        ('qa', ['foo']),
+    ]
 
     res = await site.db.get_user_by_name('admin')
     assert res.name == 'admin'
 
     res = await site.db.get_user_by_name('admin', deep=True)
     assert res.name == 'admin'
-    assert [x.name for x in res.groups] == ['manage']
+    assert [x.name for x in res.groups] == ['manage', 'marv:user:admin', 'marv:users']
 
     res = await site.db.get_user_by_realmuid('marv', '', deep=True)
-    assert res.name == 'test'
-    assert not list(res.groups)
+    assert res.name == 'marv:anonymous'
+    assert [x.name for x in res.groups] == ['marv:user:anonymous']
 
     res = await site.db.get_user_by_realmuid('not an uid', '')
     assert not res

@@ -20,7 +20,7 @@ from . import utils
 from .collection import Collections
 from .config import Config
 from .db import Database, scoped_session
-from .model import Dataset, Group
+from .model import Dataset, Group, User
 
 
 DEFAULT_NODES = """
@@ -266,9 +266,16 @@ class Site:
         await tortoise.Tortoise.generate_schemas()
 
         async with scoped_session(self.db) as txn:
-            for name in ('admin', ):
-                if not await Group.filter(name=name).using_db(txn).count():
-                    await Group.create(name=name, using_db=txn)
+            for name in ('marv:user:anonymous', 'marv:users', 'admin'):
+                await Group.get_or_create(name=name, using_db=txn)
+
+            for name in ('marv:anonymous',):
+                user = await User.get_or_create(name=name, realm='marv', realmuid='',
+                                                using_db=txn)
+                await user[0].groups.add(
+                    await Group.get(name=name.replace(':', ':user:')).using_db(txn),
+                    using_db=txn,
+                )
 
             log.verbose('Initialized database %s', self.config.marv.dburi)
             for col, collection in self.collections.items():

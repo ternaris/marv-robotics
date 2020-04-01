@@ -5,6 +5,7 @@
 
 import asyncio
 import hashlib
+import re
 import secrets
 import string
 import sys
@@ -32,6 +33,9 @@ from .utils import findfirst
 
 
 log = getLogger(__name__)
+
+
+USERGROUP_REGEX = re.compile(r'[0-9a-zA-Z\-_\.@+]+$')
 
 
 class NoSetidFound(Exception):
@@ -344,37 +348,58 @@ class Database:
             return False
         return bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8'))
 
-    @run_in_transaction
-    async def bulk_um(self, users_add, users_remove, groups_add, groups_remove,
+    @run_in_transaction   # noqa: C901
+    async def bulk_um(self, users_add, users_remove, groups_add, groups_remove,    # noqa: C901
                       groups_add_users, groups_remove_users, txn=None):
         # pylint: disable=too-many-arguments
+        try:
+            everybody = await Group.get(name='marv:users').using_db(txn)
 
-        for name in users_remove:
-            await User.get(name=name).using_db(txn).delete()
+            for name in users_remove:
+                user = await User.get(name=name).using_db(txn)
+                group = await Group.get(name=f'marv:user:{name}').using_db(txn)
+                await user.groups.remove(group, everybody, using_db=txn)
+                await user.delete(using_db=txn)
+                await group.delete(using_db=txn)
 
-        for name in users_add:
-            await User.create(name=name, realm='marv', using_db=txn)
+            for name in users_add:
+                if not USERGROUP_REGEX.match(name):
+                    raise DBError('User name can only contain alphanumeric characters and [-_+@.]')
+                user = await User.create(name=name, realm='marv', using_db=txn)
+                await user.groups.add(
+                    await Group.create(name=f'marv:user:{name}', using_db=txn),
+                    everybody,
+                    using_db=txn,
+                )
 
-        for name in groups_remove:
-            await Group.get(name=name).using_db(txn).delete()
+            for name in groups_remove:
+                await Group.get(name=name).using_db(txn).delete()
 
-        for name in groups_add:
-            await Group.create(name=name, using_db=txn)
+            for name in groups_add:
+                if not USERGROUP_REGEX.match(name):
+                    raise DBError(
+                        'Group name can only contain alphanumeric characters and [-_+@.]',
+                    )
+                await Group.create(name=name, using_db=txn)
 
-        for name, users in groups_remove_users:
-            group = await Group.get(name=name).using_db(txn)
-            users = await User.filter(name__in=users).using_db(txn)
-            await group.users.remove(*users, using_db=txn)
+            for name, users in groups_remove_users:
+                group = await Group.get(name=name).using_db(txn)
+                users = await User.filter(name__in=users).using_db(txn)
+                await group.users.remove(*users, using_db=txn)
 
-        for name, users in groups_add_users:
-            group = await Group.get(name=name).using_db(txn)
-            users = await User.filter(name__in=users).using_db(txn)
-            await group.users.add(*users, using_db=txn)
+            for name, users in groups_add_users:
+                group = await Group.get(name=name).using_db(txn)
+                users = await User.filter(name__in=users).using_db(txn)
+                await group.users.add(*users, using_db=txn)
+        except DoesNotExist:
+            raise DBError('Entity does not exist')
 
     @run_in_transaction
     async def user_add(self, name, password, realm, realmuid, given_name=None, family_name=None,
                        email=None, time_created=None, time_updated=None, _restore=None, txn=None):
         # pylint: disable=too-many-arguments
+        if not USERGROUP_REGEX.match(name):
+            raise DBError('User name can only contain alphanumeric characters and [-_+@.]')
         if not _restore and password is not None:
             password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         now = datetime.utcnow()  # noqa: DTZ
@@ -385,6 +410,13 @@ class Database:
                                      given_name=given_name, family_name=family_name,
                                      email=email, realmuid=realmuid, time_created=time_created,
                                      time_updated=time_updated, using_db=txn)
+            if name != 'marv:anonymous':
+                everybody = await Group.get(name='marv:users').using_db(txn)
+                await user.groups.add(
+                    await Group.create(name=f'marv:user:{name}', using_db=txn),
+                    everybody,
+                    using_db=txn,
+                )
             if _restore:
                 user = Table('user')
                 await txn.exq(Query.update(user)
@@ -398,6 +430,12 @@ class Database:
     async def user_rm(self, username, txn=None):
         try:
             user = await User.get(name=username).using_db(txn)
+            group = await Group.get(name=f'marv:user:{username}').using_db(txn)
+            everybody = await Group.get(name='marv:users').using_db(txn)
+            await user.groups.remove(group, everybody, using_db=txn)
+            await user.delete(using_db=txn)
+            await group.delete(using_db=txn)
+
             await user.delete(using_db=txn)
         except DoesNotExist:
             raise ValueError(f'User {username} does not exist')
@@ -415,6 +453,8 @@ class Database:
 
     @run_in_transaction
     async def group_add(self, groupname, txn=None):
+        if not USERGROUP_REGEX.match(groupname):
+            raise DBError('Group name can only contain alphanumeric characters and [-_+@.]')
         try:
             await Group.create(name=groupname, using_db=txn)
         except IntegrityError:
@@ -1306,6 +1346,7 @@ async def dump_database(dburi):  # noqa: C901
                                           .join(group_t)
                                           .on(user_group_t.group_id == group_t.id)
                                           .select('*')
+                                          .where(~escaped_startswith(group_t.name, 'marv:'))
                                           .orderby(user_group_t.user_id)
                                           .orderby(group_t.name))
         for uid, grp in groupby(items, key=lambda x: x['user_id']):
@@ -1323,6 +1364,7 @@ async def dump_database(dburi):  # noqa: C901
         user_t = tables.pop('user')
         items = await get_items_for_query(Query.from_(user_t)
                                           .select('*')
+                                          .where(~escaped_startswith(user_t.name, 'marv:'))
                                           .orderby(user_t.name))
         for user in items:
             user_id = user.pop('id')  # Everything except this is included in the dump

@@ -387,7 +387,7 @@ async def test_rpc_query(site, client):
         'model': 'user',
     }}]})
     assert 'user' in res['data']
-    assert len(res['data']['user']) == 2
+    assert len(res['data']['user']) == 3
     for user in res['data']['user']:
         assert 'password' not in user
 
@@ -398,6 +398,6 @@ async def test_rpc_query(site, client):
         },
     }}]})
     assert 'user' in res['data']
-    assert len(res['data']['user']) == 1
+    assert [x['name'] for x in res['data']['user']] == ['marv:anonymous', 'test', 'adm']
     for user in res['data']['user']:
         assert 'password' not in user
