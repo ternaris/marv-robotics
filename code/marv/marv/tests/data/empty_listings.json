@@ -1,5 +1,10 @@
 {
   "bar": {
+    "acl": [
+        "download_raw",
+        "list",
+        "read"
+    ],
     "all_known": {
       "node_test": [],
       "status": [
@@ -213,6 +218,11 @@
     }
   },
   "foo": {
+    "acl": [
+        "download_raw",
+        "list",
+        "read"
+    ],
     "all_known": {
       "node_test": [],
       "status": [

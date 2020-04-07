@@ -18,7 +18,7 @@ log = getLogger(__name__)
 
 def create_app(site, app_root='', middlewares=None):  # noqa: C901  # pylint: disable=too-many-statements
     app = web.Application(middlewares=middlewares or [])
-    app['acl'] = site.config.marv.acl()
+    app['route_acl'] = site.config.marv.acl()
     app['api_endpoints'] = {}
     app['config'] = {}
     app['debug'] = False

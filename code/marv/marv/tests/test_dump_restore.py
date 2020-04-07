@@ -240,8 +240,8 @@ async def test_dump(site, client):  # pylint: disable=redefined-outer-name  # no
 
     metadata = await client.get_json('/marv/api/meta')
     listings = {}
-    for colinfo in metadata['collections']['items']:
-        name = colinfo['id']
+    for colinfo in metadata['collections']:
+        name = colinfo['name']
         listings[name] = await client.get_json(f'/marv/api/collection/{name}')
     assert recorded(listings, 'empty_listings.json')
 
@@ -293,8 +293,8 @@ async def test_dump(site, client):  # pylint: disable=redefined-outer-name  # no
         assert not changed
 
     listings = {}
-    for colinfo in metadata['collections']['items']:
-        name = colinfo['id']
+    for colinfo in metadata['collections']:
+        name = colinfo['name']
         listings[name] = lst = []
         data = await client.get_json(f'/marv/api/collection/{name}')
         rows = data['listing']['widget']['data']['rows']
@@ -333,8 +333,8 @@ async def test_restore(client, site):  # pylint: disable=redefined-outer-name  #
 
     metadata = await client.get_json('/marv/api/meta')
     listings = {}
-    for colinfo in metadata['collections']['items']:
-        name = colinfo['id']
+    for colinfo in metadata['collections']:
+        name = colinfo['name']
         listings[name] = await client.get_json(f'/marv/api/collection/{name}')
     assert recorded(listings, 'empty_listings.json')
 
@@ -371,8 +371,8 @@ async def test_restore(client, site):  # pylint: disable=redefined-outer-name  #
 
     # Assert listing is still the same
     listings = {}
-    for colinfo in metadata['collections']['items']:
-        name = colinfo['id']
+    for colinfo in metadata['collections']:
+        name = colinfo['name']
         listings[name] = lst = []
         data = await client.get_json(f'/marv/api/collection/{name}')
         rows = data['listing']['widget']['data']['rows']

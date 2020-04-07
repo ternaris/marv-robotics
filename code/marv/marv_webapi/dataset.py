@@ -8,7 +8,7 @@ from pathlib import Path
 from aiohttp import web
 
 from marv_node.setid import SetID
-from .tooling import api_group as marv_api_group, safejoin
+from .tooling import api_group as marv_api_group, get_local_granted, safejoin
 
 
 @marv_api_group()
@@ -16,7 +16,7 @@ def dataset(_):
     pass
 
 
-@dataset.endpoint('/file-list', methods=['POST'])
+@dataset.endpoint('/file-list', methods=['POST'], acl_key='download_raw')
 async def file_list(request):
     ids = await request.json()
     if not ids:
@@ -46,6 +46,7 @@ async def _send_detail_json(request, setid, setdir):
                                                  prefetch=('collections', 'comments', 'tags'))
     dataset = query[0]  # pylint: disable=redefined-outer-name
     detail.update({
+        'acl': get_local_granted(request),
         'collection': dataset.collections[0].name,
         'id': dataset.id,
         'setid': str(dataset.setid),
@@ -60,7 +61,7 @@ async def _send_detail_json(request, setid, setdir):
     return resp
 
 
-@dataset.endpoint('/dataset/{setid:[^/]+}{_:/?}{path:((?<=/).*)?}')
+@dataset.endpoint('/dataset/{setid:[^/]+}{_:/?}{path:((?<=/).*)?}', acl_key='read')
 async def detail(request):
     setid = request.match_info['setid']
     path = request.match_info['path'] or 'detail.json'

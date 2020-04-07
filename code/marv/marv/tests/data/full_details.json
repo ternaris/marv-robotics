@@ -1,5 +1,10 @@
 [
   {
+    "acl": [
+      "download_raw",
+      "list",
+      "read"
+    ],
     "all_known_tags": [
       "TAG2"
     ],
@@ -74,6 +79,11 @@
     "title": "bar_a"
   },
   {
+    "acl": [
+      "download_raw",
+      "list",
+      "read"
+    ],
     "all_known_tags": [
       "TAG2"
     ],
@@ -156,6 +166,11 @@
     "title": "bar_\u03a8"
   },
   {
+    "acl": [
+      "download_raw",
+      "list",
+      "read"
+    ],
     "all_known_tags": [
       "TAG1",
       "TAG2"
@@ -239,6 +254,11 @@
     "title": "foo_a"
   },
   {
+    "acl": [
+      "download_raw",
+      "list",
+      "read"
+    ],
     "all_known_tags": [
       "TAG1",
       "TAG2"

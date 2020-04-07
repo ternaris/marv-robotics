@@ -38,6 +38,24 @@ async def check_authorization(request, acl, authorization):
     request['user_groups'] = groups
 
 
+def get_global_granted(request):
+    granted = {
+        view.acl_key
+        for name, view in request.app['api_endpoints'].items()
+        if isinstance(view, APIEndpoint)
+        if view.acl.intersection(request['user_groups'])
+    }
+    return sorted(granted - set(request.app['route_acl'].keys()))
+
+
+def get_local_granted(request):
+    return sorted({
+        key
+        for key, groups in request.app['route_acl'].items()
+        if set(groups).intersection(request['user_groups'])
+    })
+
+
 def generate_token(username, key):
     now = math.ceil(time.time())
     return jwt.encode({
@@ -64,13 +82,14 @@ class APIEndpoint:
     acl = None
 
     def __init__(self, name, func, url_rule, defaults=None, methods=None, version=None,
-                 force_acl=None):
+                 acl_key=None, force_acl=None):
         # pylint: disable=too-many-arguments
         self.name = name
         version = self.MIN_API_VERSION if version is None else version
         self.funcs = [(version, func)]
         self.url_rules = [(url_rule, {'defaults': defaults, 'methods': methods})]
-        self._force_acl = set(force_acl) if force_acl else None
+        self.force_acl = set(force_acl) if force_acl else None
+        self.acl_key = acl_key or name
 
     async def __call__(self, request):
         authorization = request.headers.get('Authorization')
@@ -95,7 +114,7 @@ class APIEndpoint:
         return await func(request)
 
     def init_app(self, app, url_prefix=None, name_prefix=None, app_root=None):
-        self.acl = self._force_acl if self._force_acl else set(app['acl'][self.name])
+        self.acl = self.force_acl if self.force_acl else set(app['route_acl'][self.acl_key])
         name = '.'.join(filter(None, [name_prefix, self.name]))
         for url_rule, options in self.url_rules:
             url_rule = ''.join(filter(None, [url_prefix, url_rule]))
@@ -135,7 +154,7 @@ class APIGroup:
 
 
 def api_endpoint(url_rule, defaults=None, methods=None, version=None,
-                 cls=APIEndpoint, registry=None, force_acl=None):
+                 cls=APIEndpoint, registry=None, acl_key=None, force_acl=None):
     # pylint: disable=too-many-arguments
 
     def decorator(func):
@@ -145,7 +164,7 @@ def api_endpoint(url_rule, defaults=None, methods=None, version=None,
 
         name = func.__name__
         rv = cls(name, func, url_rule=url_rule, defaults=defaults,
-                 methods=methods, version=version, force_acl=force_acl)
+                 methods=methods, version=version, acl_key=acl_key, force_acl=force_acl)
         rv.__doc__ = func.__doc__  # pylint: disable=attribute-defined-outside-init
 
         if registry is not None:

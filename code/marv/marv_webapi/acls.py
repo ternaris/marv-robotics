@@ -20,16 +20,12 @@ def authenticated():
     - only admins may delete datasets
     """
     return {
-        'collection': ['__authenticated__'],
         'comment': ['__authenticated__'],
         'compare': ['__authenticated__'],
         'delete': ['admin'],
-        'detail': ['__authenticated__'],
-        'file_list': ['__authenticated__'],
-        'get_partial_url': ['__authenticated__'],
-        'get_stream_url': ['__authenticated__'],
-        'rpcs': ['__authenticated__'],
-        'stream': ['__authenticated__'],
+        'download_raw': ['__authenticated__'],
+        'list': ['__authenticated__'],
+        'read': ['__authenticated__'],
         'tag': ['__authenticated__'],
     }
 
@@ -42,15 +38,11 @@ def public():
     - only admins may delete datasets
     """
     return {
-        'collection': ['__unauthenticated__', '__authenticated__'],
         'comment': ['__authenticated__'],
         'compare': ['__authenticated__'],
         'delete': ['admin'],
-        'detail': ['__unauthenticated__', '__authenticated__'],
-        'file_list': ['__unauthenticated__', '__authenticated__'],
-        'get_partial_url': ['__unauthenticated__', '__authenticated__'],
-        'get_stream_url': ['__unauthenticated__', '__authenticated__'],
-        'rpcs': ['__authenticated__'],
-        'stream': ['__unauthenticated__'],
+        'download_raw': ['__unauthenticated__', '__authenticated__'],
+        'list': ['__unauthenticated__', '__authenticated__'],
+        'read': ['__unauthenticated__', '__authenticated__'],
         'tag': ['__authenticated__'],
     }

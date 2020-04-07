@@ -61,7 +61,7 @@ detail_sections =
 
 MARV_CONF = """
 [marv]
-acl = marv_webapi.acls:public
+acl = {acl_name}
 collections = {collection_names}
 
 {collections}
@@ -108,7 +108,7 @@ def section_test(node):
 
 
 @pytest.fixture(scope='function')
-async def site(loop, tmpdir):  # pylint: disable=unused-argument
+async def site(loop, request, tmpdir):  # pylint: disable=unused-argument
     collection_names = ('hodge', 'podge')
     add_nodes = '\n'.join([
         '    marv.tests.conftest:node_test',
@@ -130,7 +130,10 @@ async def site(loop, tmpdir):  # pylint: disable=unused-argument
                                add_sections=''),
     ])
     marv_conf = (tmpdir / 'marv.conf')
-    marv_conf.write(MARV_CONF.format(collection_names=' '.join(collection_names),
+    mark = {x.name: x.kwargs for x in request.node.iter_markers()}
+    acl_name = mark.get('site_acl', {}).get('name', 'marv_webapi.acls:public')
+    marv_conf.write(MARV_CONF.format(acl_name=acl_name,
+                                     collection_names=' '.join(collection_names),
                                      collections=collections))
 
     site = await Site.create(str(marv_conf), init=True)  # pylint: disable=redefined-outer-name

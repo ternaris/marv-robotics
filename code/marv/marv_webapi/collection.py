@@ -11,7 +11,7 @@ from marv.collection import Filter
 from marv.db import UnknownOperator
 from marv.model import STATUS
 from marv.utils import parse_datetime, parse_filesize, parse_timedelta
-from .tooling import APIEndpoint, api_endpoint as marv_api_endpoint
+from .tooling import api_endpoint as marv_api_endpoint, get_global_granted, get_local_granted
 
 
 ALIGN = {
@@ -70,33 +70,16 @@ def parse_filters(specs, filters):
     ]
 
 
-@marv_api_endpoint('/meta', force_acl=['__unauthenticated__', '__authenticated__'])
+@marv_api_endpoint('/meta', force_acl=['__unauthenticated__', '__authenticated__'], acl_key='list')
 async def meta(request):
-    groups = request['user_groups']
-
-    collection_acl = request.app['acl']['collection']
-    if '__unauthenticated__' not in collection_acl and request['username'] == 'marv:anonymous':
-        return web.json_response({
-            'realms': list(request.app['site'].config.marv.oauth),
-        })
-
-    # TODO: avoid clashes, forbid routes with same name / different name generation
-    acl = sorted(
-        name.split('.')[-1]
-        for name, view in request.app['api_endpoints'].items()
-        if isinstance(view, APIEndpoint)
-        if view.acl.intersection(groups)
-    )
-
-    # TODO: id probably numeric, title = name or title
     site = request.app['site']
-    collection_id = site.collections.default_id
+    collections = await site.db.get_collections()
+    if not set(request['user_groups']).intersection(request.app['route_acl']['list']):
+        collections = []
+
     resp = web.json_response({
-        'collections': {
-            'default': collection_id,
-            'items': [{'id': x, 'title': x} for x in site.collections],
-        },
-        'acl': acl,
+        'acl': get_global_granted(request),
+        'collections': collections,
         'realms': list(site.config.marv.oauth),
         'timezone': TIMEZONE,
     })
@@ -104,10 +87,10 @@ async def meta(request):
     return resp
 
 
-@marv_api_endpoint('/collection{_:/?}{collection_id:((?<=/).*)?}')
+@marv_api_endpoint('/collection{_:/?}{collection_id:((?<=/).*)?}', acl_key='read')
 async def collection(request):  # pylint: disable=too-many-locals
     site = request.app['site']
-    collection_id = request.match_info.get('collection_id', site.collections.default_id)
+    collection_id = request.match_info.get('collection_id') or site.collections.default_id
     try:
         collection = site.collections[collection_id]  # pylint: disable=redefined-outer-name
     except KeyError:
@@ -147,6 +130,7 @@ async def collection(request):  # pylint: disable=too-many-locals
                           .replace('"#STATUS#"', STATUS_STRS[row['status']])
                           for row in rows])
     dct = {
+        'acl': get_local_granted(request),
         'all_known': all_known,
         'compare': bool(collection.compare),
         'filters': {'title': 'Filter',
