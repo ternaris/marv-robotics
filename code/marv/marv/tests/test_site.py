@@ -93,6 +93,11 @@ def generate_bar(scanroot, name):
     return filename
 
 
+async def test_collections(site):  # pylint: disable=redefined-outer-name
+    collections = await site.db.get_collections()
+    assert collections == [{'id': 2, 'name': 'bar'}, {'id': 1, 'name': 'foo'}]
+
+
 async def test_flow_query_and_tag(site):  # pylint: disable=redefined-outer-name
     # init and scan empty
     await site.scan()

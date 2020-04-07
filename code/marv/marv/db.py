@@ -602,6 +602,16 @@ class Database:
             setids.add(SetID(setid[0][0]))
         return sorted(setids)
 
+    @run_in_transaction
+    async def get_collections(self, txn=None):
+        collection = Table('collection')
+        return [
+            {'id': x, 'name': y}
+            for x, y in await txn.exq(Query.from_(collection)
+                                      .select(collection.id, collection.name)
+                                      .orderby(collection.name))
+        ]
+
     async def _get_datasets_by_id_crit(self, crit, prefetch, txn):
         dataset = Table('dataset')
         query = Query.from_(dataset).where(crit).select(dataset.star)
