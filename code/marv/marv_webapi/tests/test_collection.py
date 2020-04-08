@@ -11,7 +11,7 @@ async def test_collection(app, site, client):
     ], [])
 
     res = await client.get('/marv/api/collection/notexist')
-    assert res.status == 404
+    assert res.status == 401
 
     res = await client.get_json('/marv/api/collection/hodge')
     assert len(res['listing']['widget']['data']['rows']) == 50

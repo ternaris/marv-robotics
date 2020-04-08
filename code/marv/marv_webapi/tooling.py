@@ -38,6 +38,12 @@ async def check_authorization(request, acl, authorization):
     request['user_groups'] = groups
 
 
+def HTTPPermissionError(request):  # pylint: disable=invalid-name
+    if request['username'] == 'marv:anonymous':
+        return web.HTTPUnauthorized
+    return web.HTTPForbidden
+
+
 def get_global_granted(request):
     granted = {
         view.acl_key

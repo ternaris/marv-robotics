@@ -406,12 +406,12 @@ class Collection:
         dataset_mtime = max(x.mtime for x in dataset.files)
         dataset.outdated = int(oldest_mtime * 1000) < dataset_mtime
 
-    async def restore_datasets(self, data):
+    async def restore_datasets(self, data, txn=None):
         log = getLogger('.'.join([__name__, self.name]))
         batch = []
         comments = []
         tags = []
-        async with scoped_session(self.site.db) as connection:
+        async with scoped_session(self.site.db, txn) as connection:
             for dataset in data:
                 _comments = dataset.pop('comments')
                 _tags = dataset.pop('tags')

@@ -25,7 +25,6 @@ async def test_rpc_query(site, client):
     assert 'dataset' in res['data']
     assert len(res['data']['dataset']) == 150
     assert res['data']['dataset'][0] == {
-        'acn_id': 1,
         'collection': 'hodge',
         'discarded': 0,
         'id': 1,
@@ -388,7 +387,7 @@ async def test_rpc_query(site, client):
         'model': 'user',
     }}]})
     assert 'user' in res['data']
-    assert len(res['data']['user']) == 3
+    assert len(res['data']['user']) == 2
     for user in res['data']['user']:
         assert 'password' not in user
 
@@ -399,6 +398,22 @@ async def test_rpc_query(site, client):
         },
     }}]})
     assert 'user' in res['data']
-    assert [x['name'] for x in res['data']['user']] == ['marv:anonymous', 'test', 'adm']
+    assert [x['name'] for x in res['data']['user']] == ['adm']
     for user in res['data']['user']:
         assert 'password' not in user
+
+    # internal users/groups are not returned
+    res = await client.post_json('/marv/api/v1/rpcs', json={'rpcs': [{'query': {
+        'model': 'user',
+        'attrs': {
+            'name': True,
+            'groups': True,
+        },
+    }}]})
+    assert res['data'] == {
+        'group': [{'id': 3, 'name': 'admin'}],
+        'user': [
+            {'groups': [3], 'id': 3, 'name': 'adm'},
+            {'groups': [], 'id': 2, 'name': 'test'},
+        ],
+    }

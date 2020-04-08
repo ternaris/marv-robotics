@@ -7,15 +7,14 @@ async def test_dataset(site, client):
 
     sets = await site.db.get_datasets_for_collections(None)
 
-    res = await client.get('/marv/api/dataset/xxxxxxxxxxxxxxxxxxxxxxxxxx',
-                           headers=client.headers, json={})
-    assert res.status == 404
+    res = await client.get_json('/marv/api/dataset/xxxxxxxxxxxxxxxxxxxxxxxxxx', json={})
+    assert res.status == 403
 
     res = await client.get_json(f'/marv/api/dataset/{sets[0]}')
     assert res['title'] == 'hodge_0001'
 
     # 404 with virtual scanroot
-    res = await client.get(f'/marv/api/dataset/{sets[0]}/0')
+    res = await client.get_json(f'/marv/api/dataset/{sets[0]}/0')
     assert res.status == 404
 
     # 403 for absolute file
@@ -23,7 +22,7 @@ async def test_dataset(site, client):
     assert res.status == 403
 
     # filelist
-    res = await client.post('/marv/api/file-list', headers=client.headers, json=[])
+    res = await client.post_json('/marv/api/file-list', json=[])
     assert res.status == 400
 
     res = await client.post_json('/marv/api/file-list', json=[1, 2])

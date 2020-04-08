@@ -8,9 +8,10 @@ import pendulum
 from aiohttp import web
 
 from marv.collection import Filter
-from marv.db import UnknownOperator
+from marv.db import DBPermissionError, UnknownOperator
 from marv.model import STATUS
 from marv.utils import parse_datetime, parse_filesize, parse_timedelta
+from .tooling import HTTPPermissionError
 from .tooling import api_endpoint as marv_api_endpoint, get_global_granted, get_local_granted
 
 
@@ -73,7 +74,7 @@ def parse_filters(specs, filters):
 @marv_api_endpoint('/meta', force_acl=['__unauthenticated__', '__authenticated__'], acl_key='list')
 async def meta(request):
     site = request.app['site']
-    collections = await site.db.get_collections()
+    collections = await site.db.get_collections(user=request['username'])
     if not set(request['user_groups']).intersection(request.app['route_acl']['list']):
         collections = []
 
@@ -87,10 +88,18 @@ async def meta(request):
     return resp
 
 
-@marv_api_endpoint('/collection{_:/?}{collection_id:((?<=/).*)?}', acl_key='read')
-async def collection(request):  # pylint: disable=too-many-locals
+@marv_api_endpoint('/collection{_:/?}{collection_id:((?<=/).*)?}', acl_key='read')  # noqa: C901
+async def collection(request):  # pylint: disable=too-many-locals  # noqa: C901
     site = request.app['site']
     collection_id = request.match_info.get('collection_id') or site.collections.default_id
+
+    try:
+        all_known = await site.db.get_all_known_for_collection(site.collections, collection_id,
+                                                               request['username'])
+    except DBPermissionError:
+        raise HTTPPermissionError(request)
+
+    # try .. except for legacy reasons. will disappear with better data structuring
     try:
         collection = site.collections[collection_id]  # pylint: disable=redefined-outer-name
     except KeyError:
@@ -103,11 +112,11 @@ async def collection(request):  # pylint: disable=too-many-locals
         raise web.HTTPBadRequest()
 
     try:
-        rows = await site.db.get_filtered_listing(collection.table_descriptors, filters)
+        rows = await site.db.get_filtered_listing(collection.table_descriptors, filters,
+                                                  user=request['username'])
     except (KeyError, ValueError, UnknownOperator):
         raise web.HTTPBadRequest()
 
-    all_known = await site.db.get_all_known_for_collection(collection)
     filters = [
         {
             'key': x.name,

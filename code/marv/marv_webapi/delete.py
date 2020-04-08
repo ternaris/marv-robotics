@@ -3,7 +3,8 @@
 
 from aiohttp import web
 
-from .tooling import api_endpoint as marv_api_endpoint
+from marv.db import DBPermissionError
+from .tooling import HTTPPermissionError, api_endpoint as marv_api_endpoint
 
 
 @marv_api_endpoint('/dataset', methods=['DELETE'])
@@ -11,5 +12,8 @@ async def delete(request):
     ids = await request.json()
     if not ids:
         raise web.HTTPBadRequest()
-    await request.app['site'].db.discard_datasets_by_dbids(ids)
+    try:
+        await request.app['site'].db.discard_datasets_by_dbids(ids, user=request['username'])
+    except DBPermissionError:
+        raise HTTPPermissionError(request)
     return web.json_response({})

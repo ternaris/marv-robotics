@@ -144,7 +144,7 @@ async def test_flow_query_and_tag(site):  # pylint: disable=redefined-outer-name
     assert set(await site.db.query(tags=['b', 'c'])) == {foo1id, foo2id, foo3id, bar1id}
 
     # untag
-    await site.db.update_tags_by_setids([foo1id, bar1id, bar2id], add=['x'], remove=['a', 'b'])
+    await site.db.update_tags_by_setids([foo1id, bar1id], add=['x'], remove=['a', 'b'])
     assert await site.db.list_tags() == ['a', 'b', 'c', 'x']
     assert await site.db.list_tags(collections=['foo']) == ['a', 'b', 'c', 'x']
     assert await site.db.list_tags(collections=['bar']) == ['x']

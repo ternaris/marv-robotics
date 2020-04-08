@@ -154,6 +154,8 @@ def load_sitepackages(sitepackages):
 
 
 class Site:
+    Database = Database
+
     def __init__(self, siteconf):
         self.config = make_config(siteconf)
         # TODO: maybe ordereddict for meta, or generate multiple keys
@@ -162,7 +164,7 @@ class Site:
             for line in self.config.marv.oauth
         }
         self.collections = Collections(config=self.config, site=self)
-        self.db = Database()  # pylint: disable=invalid-name
+        self.db = self.Database()  # pylint: disable=invalid-name
 
     @classmethod
     async def create(cls, siteconf, init=None):
@@ -313,25 +315,8 @@ class Site:
         descs = {key: x.table_descriptors for key, x in self.collections.items()}
         await self.db.delete_listing_rel_values_without_ref(descs)
 
-    async def restore_database(self, datasets=None, users=None, leafs=None):
-        for user in users or []:
-            user.setdefault('realm', 'marv')
-            user.setdefault('realmuid', '')
-            groups = user.pop('groups', [])
-            await self.db.user_add(_restore=True, **user)
-            for grp in groups:
-                try:
-                    await self.db.group_adduser(grp, user['name'])
-                except ValueError:
-                    await self.db.group_add(grp)
-                    await self.db.group_adduser(grp, user['name'])
-
-        for leaf in leafs or []:
-            await self.db.leaf_add(_restore=True, **leaf)
-
-        for key, sets in (datasets or {}).items():
-            key = self.collections.keys()[0] if key == 'DEFAULT_COLLECTION' else key
-            await self.collections[key].restore_datasets(sets)
+    async def restore_database(self, **kw):
+        await self.db.restore_database(self, kw)
 
     async def run(self, setid, selected_nodes=None, deps=None, force=None, keep=None,
                   force_dependent=None, update_detail=None, update_listing=None,

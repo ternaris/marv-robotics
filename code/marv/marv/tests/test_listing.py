@@ -26,7 +26,7 @@ async def test_listing(site):
     collection = site.collections['hodge']
     descs = collection.table_descriptors
 
-    res = await site.db.get_all_known_for_collection(collection)
+    res = await site.db.get_all_known_for_collection(site.collections, 'hodge', '::')
     assert res == {
         'divisors': [f'div{x}' for x in range(1, 51)],
         'node_test': [str(x) for x in range(1, 51)],
@@ -171,16 +171,15 @@ async def test_listing_relations(site):
     for setid in sets:
         await site.run(setid)
 
-    collection = site.collections['hodge']
-    res = await site.db.get_all_known_for_collection(collection)
+    res = await site.db.get_all_known_for_collection(site.collections, 'hodge', '::')
     assert res['divisors'] == [f'div{x}' for x in range(1, 51)]
 
     await site.db.discard_datasets_by_setids([sets[41]])
     await site.cleanup_discarded()
 
-    res = await site.db.get_all_known_for_collection(collection)
+    res = await site.db.get_all_known_for_collection(site.collections, 'hodge', '::')
     assert res['divisors'] == [f'div{x}' for x in range(1, 51)]
 
     await site.cleanup_relations()
-    res = await site.db.get_all_known_for_collection(collection)
+    res = await site.db.get_all_known_for_collection(site.collections, 'hodge', '::')
     assert res['divisors'] == [f'div{x}' for x in range(1, 51) if x != 42]

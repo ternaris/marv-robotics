@@ -52,7 +52,8 @@ async def rpc_entry(request):  # noqa: C901
             # /v1 keeps collection
             try:
                 result = await request.app['site'].db.rpc_query(model, filters, attrs,
-                                                                order, limit, offset)
+                                                                order, limit, offset,
+                                                                request['username'])
             except (OperationalError, ValueError) as err:
                 raise web.HTTPBadRequest(text=json.dumps({'errors': [str(err)]}))
 
@@ -60,20 +61,19 @@ async def rpc_entry(request):  # noqa: C901
             for key, values in result.items():
                 # v1 keeps collection
                 if key == 'dataset':
-                    try:
-                        collections = {
-                            x['id']: x['name']
-                            for x in (
-                                await request.app['site'].db.rpc_query('collection', {}, {},
-                                                                       None, None, None)
-                            )['collection']
-                        }
-                        for value in values:
-                            if 'collection_id' in value and value['collection_id'] in collections:
-                                value['collection'] = collections[value.pop('collection_id')]
-                    except (OperationalError, ValueError) as err:
-                        # raise web.HTTPBadRequest(text=json.dumps({'errors': [str(err)]}))
-                        collections = {}
+                    collections = {
+                        x['id']: x['name']
+                        for x in (
+                            await request.app['site'].db.rpc_query('collection', {}, {},
+                                                                   None, None, None,
+                                                                   request['username'])
+                        )['collection']
+                    }
+                    for value in values:
+                        if 'collection_id' in value:
+                            colid = value.pop('collection_id')
+                            if colid in collections:
+                                value['collection'] = collections[colid]
                 # /v1 keeps collection
                 res['data'][aliases.get(key, key)].extend(values)
         else:

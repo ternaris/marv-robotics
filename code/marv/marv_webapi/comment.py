@@ -5,7 +5,8 @@ import time
 
 from aiohttp import web
 
-from .tooling import api_endpoint as marv_api_endpoint
+from marv.db import DBPermissionError
+from .tooling import HTTPPermissionError, api_endpoint as marv_api_endpoint
 
 
 @marv_api_endpoint('/comment', methods=['POST'])
@@ -21,7 +22,9 @@ async def comment(request):
         for id, ops in changes.items()
         for text in ops.get('add', [])
     ]
-    await request.app['site'].db.bulk_comment(comments)
-    # TODO: inform about unknown setids?
+    try:
+        await request.app['site'].db.bulk_comment(comments, user=username)
+    except DBPermissionError:
+        raise HTTPPermissionError(request)
 
     return web.json_response({})

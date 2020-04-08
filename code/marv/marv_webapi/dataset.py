@@ -7,8 +7,9 @@ from pathlib import Path
 
 from aiohttp import web
 
+from marv.db import DBPermissionError
 from marv_node.setid import SetID
-from .tooling import api_group as marv_api_group, get_local_granted, safejoin
+from .tooling import HTTPPermissionError, api_group as marv_api_group, get_local_granted, safejoin
 
 
 @marv_api_group()
@@ -24,7 +25,15 @@ async def file_list(request):
 
     # TODO: remove scanroot prefix?
 
-    datasets = await request.app['site'].db.get_datasets_by_dbids(ids, prefetch=('files',))
+    try:
+        datasets = await request.app['site'].db.get_datasets_by_dbids(
+            ids,
+            user=request['username'],
+            action='download_raw',
+            prefetch=('files',),
+        )
+    except DBPermissionError:
+        raise HTTPPermissionError(request)
 
     paths = sorted(x.path for dataset in datasets for x in dataset.files)
     urls = [f'dataset/{dataset.setid}/{x.idx}' for dataset in datasets for x in dataset.files]
@@ -35,15 +44,20 @@ async def file_list(request):
 
 
 async def _send_detail_json(request, setid, setdir):
+    site = request.app['site']
+    try:
+        query = await site.db.get_datasets_by_setids((setid,), user=request['username'],
+                                                     action='read',
+                                                     prefetch=('collections', 'comments', 'tags'))
+    except DBPermissionError:
+        raise HTTPPermissionError(request)
+
     try:
         with (setdir / 'detail.json').open() as f:
             detail = json.load(f)  # pylint: disable=redefined-outer-name
     except IOError:
         raise web.HTTPNotFound()
 
-    site = request.app['site']
-    query = await site.db.get_datasets_by_setids((setid,),
-                                                 prefetch=('collections', 'comments', 'tags'))
     dataset = query[0]  # pylint: disable=redefined-outer-name
     detail.update({
         'acl': get_local_granted(request),
@@ -61,6 +75,33 @@ async def _send_detail_json(request, setid, setdir):
     return resp
 
 
+async def _get_filepath(request, setid, setdir, path):
+    if path.isdigit():
+        try:
+            pathstr = await request.app['site'].db.get_filepath_by_setid_idx(
+                setid,
+                int(path),
+                user=request['username'],
+            )
+        except DBPermissionError:
+            raise HTTPPermissionError(request)
+        path = Path(pathstr)
+    else:
+        try:
+            await request.app['site'].db.get_datasets_by_setids([setid], [],
+                                                                user=request['username'],
+                                                                action='read')
+        except DBPermissionError:
+            raise HTTPPermissionError(request)
+        path = safejoin(setdir, path)
+
+    # Make sure path exists and is safe
+    if not path.is_absolute() \
+       or not path.is_file():
+        raise web.HTTPNotFound()
+    return path
+
+
 @dataset.endpoint('/dataset/{setid:[^/]+}{_:/?}{path:((?<=/).*)?}', acl_key='read')
 async def detail(request):
     setid = request.match_info['setid']
@@ -68,20 +109,14 @@ async def detail(request):
     try:
         setid = str(SetID(setid))
     except TypeError:
-        raise web.HTTPNotFound()
+        raise web.HTTPBadRequest()
 
     setdir = Path(request.app['site'].config.marv.storedir) / setid
 
     if path == 'detail.json':
         return await _send_detail_json(request, setid, setdir)
 
-    if path.isdigit():
-        path = Path(await request.app['site'].db.get_filepath_by_setid_idx(setid, int(path)))
-    else:
-        path = safejoin(setdir, path)
-
-    if not path.is_file():
-        raise web.HTTPNotFound()
+    path = await _get_filepath(request, setid, setdir, path)
 
     headers = {
         'Cache-Control': 'no-cache',
@@ -98,4 +133,7 @@ async def detail(request):
             **headers,
         })
 
-    return web.FileResponse(path, headers=headers)
+    try:
+        return web.FileResponse(path, headers=headers)
+    except ValueError:
+        raise web.HTTPNotFound()

@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 
-from marv.db import dump_database
 from .conftest import recorded
 
 
@@ -32,13 +31,13 @@ async def postscan(site):
 
 @pytest.mark.marv(site={'empty': True})
 async def test_dump_empty(site):
-    dump = await dump_database(site.config.marv.dburi)
+    dump = await site.Database.dump_database(site.config.marv.dburi)
     assert recorded(dump, DATADIR / 'empty_dump.json')
 
 
 @pytest.mark.marv(site={'prescan': prescan, 'postscan': postscan, 'size': 2})
 async def test_dump(site):
-    dump = await dump_database(site.config.marv.dburi)
+    dump = await site.Database.dump_database(site.config.marv.dburi)
     assert recorded(dump, DATADIR / 'full_dump.json')
 
 
@@ -47,7 +46,7 @@ async def test_restore(site):
     full_dump = json.loads((DATADIR / 'full_dump.json').read_text())
     await site.restore_database(**full_dump)
 
-    dump = await dump_database(site.config.marv.dburi)
+    dump = await site.Database.dump_database(site.config.marv.dburi)
     dump = json.loads(json.dumps(dump))
     full_dump = json.loads((DATADIR / 'full_dump.json').read_text())
     assert full_dump == dump

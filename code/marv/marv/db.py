@@ -58,6 +58,10 @@ class DBError(Exception):
     pass
 
 
+class DBPermissionError(Exception):
+    pass
+
+
 @asynccontextmanager
 async def scoped_session(database, txn=None):
     """Transaction scope for database operations."""
@@ -168,18 +172,6 @@ def escaped_not_startswith(field, value, escchr='$'):
     return EscapableNotlikeCriterion(field, ValueWrapper(f'{esc(value, escchr)}%'), escchr)
 
 
-def get_resolve_value_query(rel, relations):
-    out, tmp = Tables('out', 'tmp')  # pylint: disable=unbalanced-tuple-unpacking
-    return Query.with_(Query.with_(Query.from_(ValuesTuple(*relations))
-                                   .select('*'), 'tmp(value, back_id)')
-                       .from_(tmp)
-                       .join(rel)
-                       .on(tmp.value == rel.value)
-                       .select(rel.id, tmp.back_id), 'out(rel_id, back_id)')\
-                .from_(out)\
-                .select(out.rel_id, out.back_id)
-
-
 OPS = {
     'between': lambda f, v: f.between(*v),
     'endswith': escaped_endswith,
@@ -263,7 +255,7 @@ def resolve_filter(table, fltr):  # noqa: C901
 
 def cleanup_attrs(items):
     return [
-        {k: x[k] for k in x.keys() if k != 'password'}
+        {k: x[k] for k in x.keys() if k not in ['acn_id', 'password']}
         for x in items
     ]
 
@@ -301,18 +293,202 @@ def modelize(items, relations):
     return res
 
 
-def id_crit(ids):
-    dataset = Table('dataset')
-    return dataset.id.isin(ids)
+def dt_to_sec(dtime):
+    """Return seconds since epoch for datetime object."""
+    sec = (datetime.fromisoformat(dtime) - datetime.utcfromtimestamp(0)).total_seconds()
+    return int(sec)
 
 
-def setid_crit(ids):
-    dataset = Table('dataset')
-    return dataset.setid.isin([str(x) for x in ids])
+async def get_items_for_query(query, txn):
+    return [
+        {k: x[k] for k in x.keys()}
+        for x in (await txn.execute_query(query.get_sql()))[1]
+    ]
+
+
+async def process_items(query, delkeys, getkey, txn):
+    items = await get_items_for_query(query, txn)
+    res = {}
+    for did, grp in groupby(items, key=lambda x: x['dataset_id']):
+        assert did not in res
+        res[did] = lst = []
+        for item in grp:
+            del item['id']
+            del item['dataset_id']
+            for delkey in delkeys:
+                del item[delkey]
+            lst.append(item[getkey] if getkey else item)
+    return res
+
+
+async def dump_users_groups(tables, dump, txn):
+    group_t = tables.pop('group')
+    user_t = tables.pop('user')
+    user_group_t = tables.pop('user_group')
+    groups = {}
+    items = await get_items_for_query(Query.from_(user_group_t)
+                                      .join(group_t)
+                                      .on(user_group_t.group_id == group_t.id)
+                                      .select('*')
+                                      .where(~escaped_startswith(group_t.name, 'marv:'))
+                                      .orderby(user_group_t.user_id)
+                                      .orderby(group_t.name),
+                                      txn)
+    for uid, grp in groupby(items, key=lambda x: x['user_id']):
+        assert uid not in groups
+        groups[uid] = lst = []
+        for group in grp:
+            del group['id']
+            del group['group_id']
+            del group['user_id']
+            name = group.pop('name')
+            assert not group
+            lst.append(name)
+
+    dump['users'] = users = []
+    items = await get_items_for_query(Query.from_(user_t)
+                                      .select('*')
+                                      .where(~escaped_startswith(user_t.name, 'marv:'))
+                                      .orderby(user_t.name),
+                                      txn)
+    for user in items:
+        uid = user.pop('id')
+        user['groups'] = groups.pop(uid, [])
+        user['time_created'] = dt_to_sec(user['time_created'])
+        user['time_updated'] = dt_to_sec(user['time_updated'])
+        users.append(user)
+    assert not groups, groups
+
+
+async def dump_leafs(tables, dump, txn):
+    dump['leafs'] = leafs = []
+    if 'leaf' in tables:
+        leaf_t = tables.pop('leaf')
+        items = await get_items_for_query(Query.from_(leaf_t)
+                                          .select('*')
+                                          .orderby(leaf_t.name),
+                                          txn)
+        for leaf in items:
+            del leaf['id']
+            leaf['time_created'] = dt_to_sec(leaf['time_created'])
+            leaf['time_updated'] = dt_to_sec(leaf['time_updated'])
+            leafs.append(leaf)
+
+
+async def dump_acns(tables, dump, txn):  # pylint: disable=unused-argument
+    del tables['acn']
+
+
+async def dump_comments(tables, dump, txn):
+    table = tables.pop('comment')
+    dump['comments'] = await process_items(Query.from_(table)
+                                           .select(table.star)
+                                           .orderby(table.dataset_id)
+                                           .orderby(table.id),
+                                           (),
+                                           None,
+                                           txn)
+
+
+async def dump_files(tables, dump, txn):
+    table = tables.pop('file')
+    dump['files'] = await process_items(Query.from_(table)
+                                        .select(table.star)
+                                        .orderby(table.dataset_id)
+                                        .orderby(table.id),
+                                        ('idx',),
+                                        None,
+                                        txn)
+
+
+async def dump_tags(tables, dump, txn):
+    dataset_tag_t = tables.pop('dataset_tag')
+    tag_t = tables.pop('tag')
+    dump['tags'] = await process_items(Query.from_(dataset_tag_t)
+                                       .join(tag_t)
+                                       .on(dataset_tag_t.tag_id == tag_t.id)
+                                       .select('*')
+                                       .orderby(dataset_tag_t.dataset_id)
+                                       .orderby(tag_t.value),
+                                       ('tag_id',),
+                                       'value',
+                                       txn)
+
+
+async def dump_datasets(tables, dump, txn):
+    comments = dump.pop('comments')
+    files = dump.pop('files')
+    tags = dump.pop('tags')
+
+    dump['datasets'] = collections = {}
+    collection_t = tables.pop('collection')
+    dataset_t = tables.pop('dataset')
+    items = await get_items_for_query(Query.from_(dataset_t)
+                                      .join(collection_t)
+                                      .on(dataset_t.collection_id == collection_t.id)
+                                      .select(dataset_t.star, collection_t.name.as_('collection'))
+                                      .orderby(dataset_t.setid),
+                                      txn)
+    for dataset in items:
+        did = dataset.pop('id')
+        del dataset['acn_id']
+        del dataset['collection_id']
+        dataset['comments'] = comments.pop(did, [])
+        dataset['files'] = files.pop(did)
+        dataset['tags'] = tags.pop(did, [])
+        collections.setdefault(dataset.pop('collection'), []).append(dataset)
+
+    assert not comments, comments
+    assert not files, files
+    assert not tags, tags
+
+
+async def restore_users(site, dct, txn):
+    users = dct.pop('users')
+    for user in users or []:
+        user.setdefault('realm', 'marv')
+        user.setdefault('realmuid', '')
+        groups = user.pop('groups', [])
+        await site.db.user_add(_restore=True, txn=txn, **user)
+        for grp in groups:
+            try:
+                await site.db.group_adduser(grp, user['name'], txn=txn)
+            except ValueError:
+                await site.db.group_add(grp, txn=txn)
+                await site.db.group_adduser(grp, user['name'], txn=txn)
+
+
+async def restore_leafs(site, dct, txn):
+    leafs = dct.pop('leafs')
+    for leaf in leafs or []:
+        await site.db.leaf_add(_restore=True, txn=txn, **leaf)
+
+
+async def restore_datasets(site, dct, txn):
+    datasets = dct.pop('datasets')
+    for key, sets in datasets.items():
+        await site.collections[key].restore_datasets(sets, txn)
 
 
 class Database:
     # pylint: disable=too-many-public-methods
+
+    EXPORT_HANDLERS = (
+        ({'group', 'user', 'user_group'}, dump_users_groups),
+        ({'leaf'}, dump_leafs),
+        ({'acn'}, dump_acns),
+        ({'comment'}, dump_comments),
+        ({'file'}, dump_files),
+        ({'tag', 'dataset_tag'}, dump_tags),
+        ({'dataset', 'collection'}, dump_datasets),
+    )
+
+    IMPORT_HANDLERS = (
+        ({'users'}, restore_users),
+        ({'leafs'}, restore_leafs),
+        ({'datasets'}, restore_datasets),
+    )
+
     def __init__(self):
         self.connections = []
         self.connection_queue = asyncio.Queue()
@@ -578,6 +754,35 @@ class Database:
         access_token = hashlib.sha256(clear_access_token.encode()).hexdigest()
         return await Leaf.filter(access_token=access_token).using_db(txn).first()
 
+    @staticmethod
+    def get_actionable(modelname, user, action):
+        # pylint: disable=unused-argument
+        model = Table(modelname)
+        return Query.from_(model).select(model.id)
+
+    @staticmethod
+    def get_resolve_value_query(rel, relations, user=None, action=None):
+        # pylint: disable=unused-argument
+        out, tmp = Tables('out', 'tmp')
+        return Query.with_(Query.with_(Query.from_(ValuesTuple(*relations))
+                                       .select('*'), 'tmp(value, back_id)')
+                           .from_(tmp)
+                           .join(rel)
+                           .on(tmp.value == rel.value)
+                           .select(rel.id, tmp.back_id), 'out(rel_id, back_id)')\
+                    .from_(out)\
+                    .select(out.rel_id, out.back_id)
+
+    @staticmethod
+    def id_crit(ids, user=None, action=None):  # pylint: disable=unused-argument
+        dataset = Table('dataset')
+        return dataset.id.isin(ids)
+
+    @staticmethod
+    def setid_crit(ids, user=None, action=None):  # pylint: disable=unused-argument
+        dataset = Table('dataset')
+        return dataset.setid.isin([str(x) for x in ids])
+
     @run_in_transaction
     async def resolve_shortids(self, prefixes, discarded=False, txn=None):
         setids = set()
@@ -603,16 +808,18 @@ class Database:
         return sorted(setids)
 
     @run_in_transaction
-    async def get_collections(self, txn=None):
+    async def get_collections(self, user=None, txn=None):  # pylint: disable=unused-argument
         collection = Table('collection')
         return [
             {'id': x, 'name': y}
             for x, y in await txn.exq(Query.from_(collection)
                                       .select(collection.id, collection.name)
+                                      .where(collection.id.isin(
+                                          self.get_actionable('collection', user, 'list')))
                                       .orderby(collection.name))
         ]
 
-    async def _get_datasets_by_id_crit(self, crit, prefetch, txn):
+    async def _get_datasets_by_crit(self, crit, prefetch, txn):
         dataset = Table('dataset')
         query = Query.from_(dataset).where(crit).select(dataset.star)
         for related in prefetch:
@@ -636,21 +843,32 @@ class Database:
         return modelize(items, prefetch)
 
     @run_in_transaction
-    async def get_datasets_by_setids(self, setids, prefetch, txn=None):
-        return await self._get_datasets_by_id_crit(setid_crit(setids), prefetch, txn)
+    async def get_datasets_by_setids(self, setids, prefetch, user=None, action=None, txn=None):
+        # pylint: disable=too-many-arguments
+        ret = await self._get_datasets_by_crit(self.setid_crit(setids, user, action), prefetch, txn)
+        if len(ret) != len(setids):
+            raise DBPermissionError
+        return ret
 
     @run_in_transaction
-    async def get_datasets_by_dbids(self, ids, prefetch, txn=None):
-        return await self._get_datasets_by_id_crit(id_crit(ids), prefetch, txn)
+    async def get_datasets_by_dbids(self, ids, prefetch, user=None, action=None, txn=None):
+        # pylint: disable=too-many-arguments
+        ret = await self._get_datasets_by_crit(self.id_crit(ids, user, action), prefetch, txn)
+        if len(ret) != len(ids):
+            raise DBPermissionError
+        return ret
 
     @run_in_transaction
-    async def get_filepath_by_setid_idx(self, setid, idx, txn=None):
+    async def get_filepath_by_setid_idx(self, setid, idx, user=None, txn=None):
         dataset, file = Tables('dataset', 'file')
-        return (await txn.exq(Query.from_(file)
-                              .join(dataset)
-                              .on(file.dataset_id == dataset.id)
-                              .where((file.idx == idx) & (dataset.setid == str(setid)))
-                              .select('path')))[0]['path']
+        res = await txn.exq(Query.from_(file)
+                            .join(dataset)
+                            .on(file.dataset_id == dataset.id)
+                            .where((file.idx == idx) & self.setid_crit([setid], user, 'download'))
+                            .select('path'))
+        if not res:
+            raise DBPermissionError
+        return res[0]['path']
 
     @run_in_transaction
     async def get_datasets_for_collections(self, collections, txn=None):
@@ -667,19 +885,22 @@ class Database:
                          .where(collection.name.isin(collections))
         return [SetID(x['setid']) for x in await txn.exq(query)]
 
-    async def _set_dataset_discarded_by_id_crit(self, crit, state, txn):
+    async def _set_dataset_discarded_by_crit(self, crit, state, txn):
         dataset = Table('dataset')
-        await txn.exq(Query.update(dataset)
-                      .set(dataset.discarded, state)
-                      .where(crit))
+        return await txn.exq(Query.update(dataset)
+                             .set(dataset.discarded, state)
+                             .where(crit), count=True)
 
     @run_in_transaction
     async def discard_datasets_by_setids(self, setids, state=True, txn=None):
-        await self._set_dataset_discarded_by_id_crit(setid_crit(setids), state, txn)
+        await self._set_dataset_discarded_by_crit(self.setid_crit(setids), state, txn)
 
     @run_in_transaction
-    async def discard_datasets_by_dbids(self, ids, state=True, txn=None):
-        await self._set_dataset_discarded_by_id_crit(id_crit(ids), state, txn)
+    async def discard_datasets_by_dbids(self, ids, state=True, user=None, txn=None):
+        count = await self._set_dataset_discarded_by_crit(self.id_crit(ids, user, 'delete'),
+                                                          state, txn)
+        if count != len(ids):
+            raise DBPermissionError
 
     @run_in_transaction
     async def cleanup_discarded(self, descs, txn=None):
@@ -723,8 +944,8 @@ class Database:
                               .delete())
 
     @run_in_transaction
-    async def bulk_comment(self, comments, txn=None):
-        comment, dataset, tmp, user = Tables('comment', 'dataset', 'tmp', 'user')
+    async def bulk_comment(self, comments, user=None, txn=None):
+        comment, dataset, tmp, user_t = Tables('comment', 'dataset', 'tmp', 'user')
         comments = [(x['dataset_id'], x['author'], x['time_added'], x['text']) for x in comments]
         query = Query.into(comment)\
                      .columns('dataset_id', 'author', 'time_added', 'text')\
@@ -733,13 +954,14 @@ class Database:
                             .from_(tmp)
                             .join(dataset)
                             .on(tmp.dataset_id == dataset.id)
-                            .join(user)
-                            .on(tmp.author == user.name)
+                            .where(self.id_crit([x[0] for x in comments], user, 'comment'))
+                            .join(user_t)
+                            .on(tmp.author == user_t.name)
                             .select(tmp.star))\
                      .select('*')
         count = await txn.exq(query, count=True)
         if count != len(comments):
-            raise DBError('Bulk commenting failed, users or datasets missing')
+            raise DBPermissionError
 
     @run_in_transaction
     async def comment_by_setids(self, setids, author, text, txn=None):
@@ -782,7 +1004,8 @@ class Database:
         items = await txn.exq(query)
         return modelize(items, ['dataset'])
 
-    async def _ensure_values(self, tablename, values, txn):
+    async def _ensure_values(self, tablename, values, user, txn):
+        # pylint: disable=unused-argument
         table = Table(tablename)
         query = Query.into(table)\
                      .columns('value')\
@@ -790,9 +1013,10 @@ class Database:
                             .from_(Query.from_(ValuesTuple(*values)).select('*'))
                             .except_(Query().from_(table).select(table.value)))\
                      .select('*')
-        await txn.exq(query)
+        return await txn.exq(query, count=True)
 
-    async def _ensure_refs(self, relname, throughname, rel_id, back_id, relations, txn):
+    async def _ensure_refs(self, relname, throughname, rel_id, back_id, relations, user,
+                           action, txn):
         # pylint: disable=too-many-arguments
         rel, through = Tables(relname, throughname)
         relid = getattr(through, rel_id)
@@ -800,10 +1024,10 @@ class Database:
         query = Query.into(through)\
                      .columns(rel_id, back_id)\
                      .from_(FromExceptQuery
-                            .from_(get_resolve_value_query(rel, relations))
+                            .from_(self.get_resolve_value_query(rel, relations, user, action))
                             .except_(Query.from_(through).select(relid, backid)))\
                      .select('*')
-        await txn.exq(query)
+        return await txn.exq(query, count=True)
 
     async def _delete_values_without_ref(self, relname, throughname, rel_id, txn):
         rel, through = Tables(relname, throughname)
@@ -814,18 +1038,24 @@ class Database:
                       .delete())
 
     @run_in_transaction
-    async def bulk_tag(self, add, remove, txn=None):
+    async def bulk_tag(self, add, remove, user=None, txn=None):
         if add:
-            await self._ensure_values('tag', [(x[0],) for x in add], txn)
-            await self._ensure_refs('tag', 'dataset_tag', 'tag_id', 'dataset_id', add, txn)
+            await self._ensure_values('tag', [(x[0],) for x in add], user, txn)
+            count = await self._ensure_refs('tag', 'dataset_tag', 'tag_id', 'dataset_id', add,
+                                            user, 'tag', txn)
+            if count != len(add):
+                raise DBPermissionError
 
         if remove:
             through, tag = Tables('dataset_tag', 'tag')
-            await txn.exq(Query.from_(through)
-                          .delete()
-                          .select(through.tag_id, through.dataset_id)
-                          .where(Tuple(through.tag_id, through.dataset_id)
-                                 .isin(get_resolve_value_query(tag, remove))))
+            query = Query.from_(through)\
+                         .delete()\
+                         .select(through.tag_id, through.dataset_id)\
+                         .where(Tuple(through.tag_id, through.dataset_id)
+                                .isin(self.get_resolve_value_query(tag, remove, user, 'tag')))
+            count = await txn.exq(query, count=True)
+            if count != len(remove):
+                raise DBPermissionError
 
     @run_in_transaction
     async def update_tags_by_setids(self, setids, add, remove, txn=None):
@@ -879,7 +1109,13 @@ class Database:
         await self._delete_values_without_ref('tag', 'dataset_tag', 'tag_id', txn)
 
     @run_in_transaction
-    async def get_all_known_for_collection(self, collection, txn=None):
+    async def get_all_known_for_collection(self, collections, name, user, txn=None):
+        collection_t = Table('collection')
+        res = await txn.exq(self.get_actionable('collection', user, 'read')
+                            .where(collection_t.name == name))
+        if len(res) != 1:
+            raise DBPermissionError
+        collection = collections[name]
         descs = [x for x in collection.table_descriptors if x.through]
         all_known = {
             desc.key: [
@@ -912,8 +1148,8 @@ class Database:
         return [x['value'] for x in await txn.exq(query)]
 
     @run_in_transaction  # noqa: C901
-    async def get_filtered_listing(self, descs, filters, txn=None):  # noqa: C901
-        # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+    async def get_filtered_listing(self, descs, filters, user=None, txn=None):  # noqa: C901
+        # pylint: disable=too-many-locals,too-many-branches,too-many-statements,unused-argument
         listing, dataset, dataset_tag, tag = \
             Tables(descs[0].table, 'dataset', 'dataset_tag', 'tag')
 
@@ -928,7 +1164,8 @@ class Database:
                              listing.row.as_('row'),
                              dataset.status.as_('status'),
                              GroupConcat(tag.value).as_('tag_value'))\
-                     .where(dataset.discarded.ne(True))
+                     .where(dataset.discarded.ne(True)
+                            & dataset.id.isin(self.get_actionable('dataset', user, 'list')))
 
         for name, value, operator, val_type in filters:
             if isinstance(value, int):
@@ -1128,9 +1365,9 @@ class Database:
 
     @run_in_transaction
     async def update_listing_relations(self, desc, values, relations, txn=None):
-        await self._ensure_values(desc.table, values, txn)
+        await self._ensure_values(desc.table, values, None, txn)
         await self._ensure_refs(desc.table, desc.through, desc.rel_id, desc.listing_id, relations,
-                                txn=txn)
+                                None, None, txn=txn)
 
         table, through = Tables(desc.table, desc.through)
         relid = getattr(through, desc.rel_id)
@@ -1138,11 +1375,12 @@ class Database:
         await txn.exq(Query.from_(through)
                       .where(backid.isin({x[1] for x in relations})
                              & ~Tuple(relid, backid).isin(
-                                 get_resolve_value_query(table, relations)))
+                                 self.get_resolve_value_query(table, relations)))
                       .delete())
 
     @run_in_transaction  # noqa: C901
-    async def rpc_query(self, model, filters, attrs, order, limit, offset, txn=None):  # noqa: C901
+    async def rpc_query(self, model, filters, attrs, order, limit, offset,  # noqa: C901
+                        user=None, txn=None):
         # pylint: disable=too-many-arguments, too-many-statements, too-many-locals, too-many-branches
         result = {}
         table = Table(model)
@@ -1165,6 +1403,18 @@ class Database:
 
         for filt in filters:
             query = query.where(resolve_filter(table, filt))
+
+        def customize_query(query, model, table, through=None):
+            if model in ['collection', 'dataset']:
+                if through:
+                    query = query.where(through.isin(self.get_actionable(model, user, 'list')))
+                else:
+                    query = query.where(table.id.isin(self.get_actionable(model, user, 'list')))
+            elif model in ['group', 'user'] and not through:
+                query = query.where(table.name.not_like('marv:%'))
+            return query
+
+        query = customize_query(query, model, table)
 
         if order:
             if not isinstance(order, list) or len(order) != 2:
@@ -1198,6 +1448,7 @@ class Database:
                 query = Query.from_(subtable)\
                              .select(*select)\
                              .where(getattr(subtable, field.relation_field).isin(ids))
+                query = customize_query(query, tablename, subtable)
                 relres = await txn.exq(query)
                 for prime in qres:
                     prime[fieldname] = [
@@ -1215,17 +1466,21 @@ class Database:
                 query = Query.from_(through)\
                              .select(field.backward_key, field.forward_key)\
                              .where(getattr(through, field.backward_key).isin(ids))
+                query = customize_query(query, field.through, through,
+                                        getattr(through, field.forward_key))
                 refs = await txn.exq(query)
+                query = Query.from_(rel)\
+                             .select(*select)\
+                             .where(rel.id.isin({x[field.forward_key] for x in refs}))
+                query = customize_query(query, tablename, rel)
+                relres = await txn.exq(query)
+                relids = [x['id'] for x in relres]
                 for prime in qres:
                     prime[fieldname] = [
                         x[field.forward_key]
                         for x in refs
-                        if x[field.backward_key] == prime['id']
+                        if x[field.backward_key] == prime['id'] and x[field.forward_key] in relids
                     ]
-                query = Query.from_(rel)\
-                             .select(*select)\
-                             .where(rel.id.isin({x[field.forward_key] for x in refs}))
-                relres = await txn.exq(query)
                 result.setdefault(tablename, []).extend(cleanup_attrs(relres))
 
             else:
@@ -1233,172 +1488,59 @@ class Database:
 
         return result
 
+    async def restore_database(self, site, dct):
+        async with scoped_session(self) as txn:
+            for keys, handler in self.IMPORT_HANDLERS:
+                if keys.issubset(dct.keys()):
+                    await handler(site, dct, txn)
+            if dct:
+                log.warning(
+                    'Some fields from the dump file could not be imported. If you are imporing '
+                    'from a newer version of MARV of from a different MARV distribution (EE into '
+                    'CE) this behavior is expected. Please be aware that some information from '
+                    'the original dump was lost. The following fields were not processed:\n %s',
+                    list(dct.keys()),
+                )
 
-def dt_to_sec(dtime):
-    """Return seconds since epoch for datetime object."""
-    sec = (datetime.fromisoformat(dtime) - datetime.utcfromtimestamp(0)).total_seconds()
-    return int(sec)
+    @classmethod
+    async def dump_database(cls, dburi):
+        """Dump database.
 
+        The structure of the database is reflected and therefore also
+        older databases, not matching the current version of marv, can be
+        dumped.
+        """
 
-async def dump_database(dburi):  # noqa: C901
-    """Dump database.
+        class T2(Tortoise):
+            apps = {}
+            _connections = {}
+            _inited = False
 
-    The structure of the database is reflected and therefore also
-    older databases, not matching the current version of marv, can be
-    dumped.
-    """
-    # pylint: disable=too-many-locals,too-many-statements
-
-    class T2(Tortoise):
-        apps = {}
-        _connections = {}
-        _inited = False
-
-        @classmethod
-        async def transaction(cls):
-            await cls.init(db_url=dburi, modules={'models': []})
-            connection = cls._connections['default']
-            return connection._in_transaction()  # pylint: disable=protected-access
-
-    async with await T2.transaction() as conn:
-        async def get_items_for_query(query):
-            return [
-                {k: x[k] for k in x.keys()}
-                for x in (await conn.execute_query(query.get_sql()))[1]
-            ]
-        master = Table('sqlite_master')
-        tables = {
-            x['name']: Table(x['name'])
-            for x in await get_items_for_query(
-                Query.from_(master)
-                .select(master.name)
-                .where((master.type == 'table')
-                       & escaped_not_startswith(master.name, 'sqlite_')
-                       & escaped_not_startswith(master.name, 'l_')),
-            )
-        }
-
-        comments = {}
-        comment_t = tables.pop('comment')
-        items = await get_items_for_query(Query.from_(comment_t)
-                                          .select(comment_t.star)
-                                          .orderby(comment_t.dataset_id)
-                                          .orderby(comment_t.id))
-        for did, grp in groupby(items, key=lambda x: x['dataset_id']):
-            assert did not in comments
-            comments[did] = lst = []
-            for comment in grp:
-                # Everything except these fields is included in the dump
-                del comment['dataset_id']
-                del comment['id']
-                lst.append(comment)
-
-        files = {}
-        file_t = tables.pop('file')
-        items = await get_items_for_query(Query.from_(file_t)
-                                          .select(file_t.star)
-                                          .orderby(file_t.dataset_id)
-                                          .orderby(file_t.id))
-        for did, grp in groupby(items, key=lambda x: x['dataset_id']):
-            assert did not in files
-            files[did] = lst = []
-            for file in grp:
-                # Everything except these fields is included in the dump
-                del file['id']
-                del file['dataset_id']
-                del file['idx']
-                lst.append(file)
-
-        tags = {}
-        dataset_tag_t = tables.pop('dataset_tag')
-        tag_t = tables.pop('tag')
-        items = await get_items_for_query(Query.from_(dataset_tag_t)
-                                          .join(tag_t)
-                                          .on(dataset_tag_t.tag_id == tag_t.id)
-                                          .select('*')
-                                          .orderby(dataset_tag_t.dataset_id)
-                                          .orderby(tag_t.value))
-        for did, grp in groupby(items, key=lambda x: x['dataset_id']):
-            assert did not in tags
-            tags[did] = lst = []
-            for tag in grp:
-                del tag['dataset_id']
-                del tag['id']
-                del tag['tag_id']
-                lst.append(tag.pop('value'))
-                assert not tag
+            @classmethod
+            async def transaction(cls):
+                await cls.init(db_url=dburi, modules={'models': []})
+                connection = cls._connections['default']
+                return connection._in_transaction()  # pylint: disable=protected-access
 
         dump = {}
-        dump['datasets'] = collections = {}
-        collection = tables.pop('collection')
-        dataset_t = tables.pop('dataset')
-        items = await get_items_for_query(Query.from_(dataset_t)
-                                          .join(collection)
-                                          .on(dataset_t.collection_id == collection.id)
-                                          .select(dataset_t.star, collection.name.as_('collection'))
-                                          .orderby(dataset_t.setid))
-        for dataset in items:
-            did = dataset.pop('id')  # Everything except this is included in the dump
-            del dataset['acn_id']
-            del dataset['collection_id']
-            dataset['comments'] = comments.pop(did, [])
-            dataset['files'] = files.pop(did)
-            dataset['tags'] = tags.pop(did, [])
-            collections.setdefault(dataset.pop('collection'), []).append(dataset)
+        async with await T2.transaction() as txn:
+            master = Table('sqlite_master')
+            tables = {
+                x['name']: Table(x['name'])
+                for x in await get_items_for_query(
+                    Query.from_(master)
+                    .select(master.name)
+                    .where((master.type == 'table')
+                           & escaped_not_startswith(master.name, 'sqlite_')
+                           & escaped_not_startswith(master.name, 'l_')),
+                    txn,
+                )
+            }
 
-        assert not comments, comments
-        assert not files, files
-        assert not tags, tags
+            for tbls, dumper in cls.EXPORT_HANDLERS:
+                assert tbls.issubset(tables.keys()), tbls
+                await dumper(tables, dump, txn)
+            assert not tables, tables.keys()
 
-        groups = {}
-        group_t = tables.pop('group')
-        user_group_t = tables.pop('user_group')
-        items = await get_items_for_query(Query.from_(user_group_t)
-                                          .join(group_t)
-                                          .on(user_group_t.group_id == group_t.id)
-                                          .select('*')
-                                          .where(~escaped_startswith(group_t.name, 'marv:'))
-                                          .orderby(user_group_t.user_id)
-                                          .orderby(group_t.name))
-        for uid, grp in groupby(items, key=lambda x: x['user_id']):
-            assert uid not in groups
-            groups[uid] = lst = []
-            for group in grp:
-                del group['user_id']
-                del group['group_id']
-                del group['id']
-                name = group.pop('name')
-                assert not group
-                lst.append(name)
-
-        dump['users'] = users = []
-        user_t = tables.pop('user')
-        items = await get_items_for_query(Query.from_(user_t)
-                                          .select('*')
-                                          .where(~escaped_startswith(user_t.name, 'marv:'))
-                                          .orderby(user_t.name))
-        for user in items:
-            user_id = user.pop('id')  # Everything except this is included in the dump
-            user['groups'] = groups.pop(user_id, [])
-            user['time_created'] = dt_to_sec(user['time_created'])
-            user['time_updated'] = dt_to_sec(user['time_updated'])
-            users.append(user)
-
-        dump['leafs'] = leafs = []
-        if 'leaf' in tables:
-            leaf_t = tables.pop('leaf')
-            items = await get_items_for_query(Query.from_(leaf_t)
-                                              .select('*')
-                                              .orderby(leaf_t.name))
-            for leaf in items:
-                del leaf['id']
-                leaf['time_created'] = dt_to_sec(leaf['time_created'])
-                leaf['time_updated'] = dt_to_sec(leaf['time_updated'])
-                leafs.append(leaf)
-
-        del tables['acn']
-        assert not groups, groups
-        assert not tables, tables.keys()
-
-    await T2.close_connections()
-    return dump
+        await T2.close_connections()
+        return dump

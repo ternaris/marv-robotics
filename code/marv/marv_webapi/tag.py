@@ -3,12 +3,12 @@
 
 from aiohttp import web
 
-from .tooling import api_endpoint as marv_api_endpoint
+from marv.db import DBPermissionError
+from .tooling import HTTPPermissionError, api_endpoint as marv_api_endpoint
 
 
 @marv_api_endpoint('/tag', methods=['POST'])
 async def tag(request):
-    # TODO: very similar to cli marv_tag
     changes = await request.json()
     if not changes:
         raise web.HTTPBadRequest()
@@ -24,7 +24,8 @@ async def tag(request):
                 for id in ids:
                     target.append((tagname, id))
 
-    await request.app['site'].db.bulk_tag(add, remove)
-
-    # TODO: report about unprocessed "setids"
+    try:
+        await request.app['site'].db.bulk_tag(add, remove, user=request['username'])
+    except DBPermissionError:
+        raise HTTPPermissionError(request)
     return web.json_response({})

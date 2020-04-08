@@ -20,7 +20,7 @@ from jinja2 import Template
 from tortoise.exceptions import DoesNotExist
 
 import marv.app
-from marv.db import DBError, USERGROUP_REGEX, dump_database
+from marv.db import DBError, USERGROUP_REGEX
 from marv.site import Site, UnknownNode, load_sitepackages, make_config
 from marv.utils import echo, err, find_obj, within_pyinstaller_bundle
 from marv_cli import PDB
@@ -228,7 +228,7 @@ async def marvcli_dump(dump_file):
     Use '-' for stdout.
     """
     siteconf = make_config(get_site_config())
-    dump = await dump_database(siteconf.marv.dburi)
+    dump = await Site.Database.dump_database(siteconf.marv.dburi)
     json.dump(dump, dump_file, sort_keys=True, indent=2)
 
 

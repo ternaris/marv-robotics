@@ -3,7 +3,7 @@
 
 import pytest
 
-from marv.db import DBError
+from marv.db import DBError, DBPermissionError
 
 
 async def test_comment(site):
@@ -38,11 +38,11 @@ async def test_comment(site):
     assert res[3].text == 'consectetur'
     assert res[4].text == 'adipiscing'
 
-    with pytest.raises(DBError):
+    with pytest.raises(DBPermissionError):
         await site.db.bulk_comment([
             {'dataset_id': 9999999999, 'author': 'test', 'text': 'consectetur', 'time_added': 1},
         ])
-    with pytest.raises(DBError):
+    with pytest.raises(DBPermissionError):
         await site.db.bulk_comment([
             {'dataset_id': 1, 'author': 'bad user', 'text': 'consectetur', 'time_added': 1},
         ])
