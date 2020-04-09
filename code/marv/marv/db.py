@@ -403,8 +403,8 @@ class Database:
         if not _restore and password is not None:
             password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         now = datetime.utcnow()  # noqa: DTZ
-        time_created = datetime.fromtimestamp(time_created) if time_created else now
-        time_updated = datetime.fromtimestamp(time_updated) if time_updated else now
+        time_created = datetime.utcfromtimestamp(time_created) if time_created else now
+        time_updated = datetime.utcfromtimestamp(time_updated) if time_updated else now
         try:
             user = await User.create(name=name, password=password, realm=realm,
                                      given_name=given_name, family_name=family_name,
@@ -535,8 +535,8 @@ class Database:
             refresh_token = hashlib.sha256(clear_refresh_token.encode()).hexdigest()
 
         now = datetime.utcnow()  # noqa: DTZ
-        time_created = datetime.fromtimestamp(time_created) if time_created else now
-        time_updated = datetime.fromtimestamp(time_updated) if time_updated else now
+        time_created = datetime.utcfromtimestamp(time_created) if time_created else now
+        time_updated = datetime.utcfromtimestamp(time_updated) if time_updated else now
         try:
             leaf = await Leaf.create(name=name, access_token=access_token,
                                      refresh_token=refresh_token, time_created=time_created,
@@ -1236,7 +1236,7 @@ class Database:
 
 def dt_to_sec(dtime):
     """Return seconds since epoch for datetime object."""
-    sec = (datetime.fromisoformat(dtime) - datetime.fromtimestamp(0)).total_seconds()  # noqa: DTZ
+    sec = (datetime.fromisoformat(dtime) - datetime.utcfromtimestamp(0)).total_seconds()
     return int(sec)
 
 

@@ -34,7 +34,7 @@ async def try_tag(client):
     })
 
 
-@pytest.mark.site_acl(name='marv_webapi.acls:public')
+@pytest.mark.marv(site={'acl': 'marv_webapi.acls:public'})
 async def test_profile_public(client):  # pylint: disable=too-many-statements
     expected_acls = {
         'auth_post',
@@ -139,7 +139,7 @@ async def test_profile_public(client):  # pylint: disable=too-many-statements
     assert res.status == 200
 
 
-@pytest.mark.site_acl(name='marv_webapi.acls:authenticated')
+@pytest.mark.marv(site={'acl': 'marv_webapi.acls:authenticated'})
 async def test_profile_authenticated(client):  # pylint: disable=too-many-statements
     expected_acls = {
         'auth_post',

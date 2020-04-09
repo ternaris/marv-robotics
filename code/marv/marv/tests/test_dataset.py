@@ -17,9 +17,9 @@ async def test_id_helpers(site):
     setid1 = sets[0]
     setid100 = sets[99]
 
-    assert await site.db.resolve_shortids(['tv43']) == [setid1]
-    assert await site.db.resolve_shortids(['tv43', 'tv4']) == [setid1]
-    assert await site.db.resolve_shortids(['tv43', '2x45']) == sorted([setid1, setid100])
+    assert await site.db.resolve_shortids(['aaaa']) == [setid1]
+    assert await site.db.resolve_shortids(['aaaa', 'aaa']) == [setid1]
+    assert await site.db.resolve_shortids(['aaaa', 'mmaa']) == sorted([setid1, setid100])
 
     res1 = await site.db.get_datasets_by_setids([setid1, setid100], prefetch=[])
     res2 = await site.db.get_datasets_by_dbids([1, 100], prefetch=[])
@@ -95,7 +95,7 @@ async def test_query(site):
     res = await site.db.query(missing=True)
     assert len(res) == 0
 
-    res = await site.db.query(path='/tmp')
+    res = await site.db.query(path='/dev/null/')
     assert len(res) == 149
 
     res = await site.db.query(tags=['bar', 'baz'])

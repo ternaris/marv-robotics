@@ -1,11 +1,12 @@
 {
-  "bar": {
+  "hodge": {
     "acl": [
-        "download_raw",
-        "list",
-        "read"
+      "download_raw",
+      "list",
+      "read"
     ],
     "all_known": {
+      "divisors": [],
       "node_test": [],
       "status": [
         "error",
@@ -110,6 +111,30 @@
             "value_type": "datetime"
           },
           {
+            "constraints": null,
+            "key": "time_mtime",
+            "operators": [
+              "lt",
+              "le",
+              "eq",
+              "ne",
+              "ge",
+              "gt"
+            ],
+            "title": "Mtime",
+            "value_type": "datetime"
+          },
+          {
+            "constraints": [],
+            "key": "divisors",
+            "operators": [
+              "any",
+              "all"
+            ],
+            "title": "Divisors",
+            "value_type": "subset"
+          },
+          {
             "constraints": [],
             "key": "node_test",
             "operators": [
@@ -166,6 +191,14 @@
               "list": false,
               "sortkey": null,
               "title": "Added"
+            },
+            {
+              "align": "left",
+              "formatter": "datetime",
+              "id": "time_mtime",
+              "list": false,
+              "sortkey": null,
+              "title": "Mtime"
             },
             {
               "align": "right",
@@ -217,14 +250,14 @@
       "title": "Summary"
     }
   },
-  "foo": {
+  "podge": {
     "acl": [
-        "download_raw",
-        "list",
-        "read"
+      "download_raw",
+      "list",
+      "read"
     ],
     "all_known": {
-      "node_test": [],
+      "divisors": [],
       "status": [
         "error",
         "missing",
@@ -328,12 +361,27 @@
             "value_type": "datetime"
           },
           {
-            "constraints": [],
-            "key": "node_test",
+            "constraints": null,
+            "key": "time_mtime",
             "operators": [
-              "any"
+              "lt",
+              "le",
+              "eq",
+              "ne",
+              "ge",
+              "gt"
             ],
-            "title": "Test node",
+            "title": "Mtime",
+            "value_type": "datetime"
+          },
+          {
+            "constraints": [],
+            "key": "divisors",
+            "operators": [
+              "any",
+              "all"
+            ],
+            "title": "Divisors",
             "value_type": "subset"
           }
         ],
@@ -386,12 +434,12 @@
               "title": "Added"
             },
             {
-              "align": "right",
-              "formatter": "int",
-              "id": "node_test",
+              "align": "left",
+              "formatter": "datetime",
+              "id": "time_mtime",
               "list": false,
               "sortkey": null,
-              "title": "Test"
+              "title": "Mtime"
             }
           ],
           "rows": [],

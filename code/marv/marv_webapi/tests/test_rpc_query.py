@@ -30,7 +30,7 @@ async def test_rpc_query(site, client):
         'discarded': 0,
         'id': 1,
         'name': 'hodge_0001',
-        'setid': 'tv43di37ggabzui2m4dpwqgwxu',
+        'setid': 'aaaaaaaaaaaaaaaaaaaaaaaaqa',
         'status': 0,
         'time_added': 1400000000000,
         'timestamp': 1200000000000,

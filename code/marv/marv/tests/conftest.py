@@ -1,7 +1,9 @@
 # Copyright 2016 - 2019  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-import random
+import datetime
+import json
+import os
 from itertools import count
 from logging import getLogger
 from pathlib import Path
@@ -23,7 +25,7 @@ log = getLogger(__name__)
 COLLECTION_CONF = """
 [collection {name}]
 scanner = marv.tests.conftest:scanner
-scanroots = ./scanroots/{name}
+scanroots = /dev/null/{name}
 nodes =
     marv_nodes:dataset
     marv_nodes:meta_table
@@ -68,6 +70,20 @@ collections = {collection_names}
 """
 
 
+def recorded(data, path):
+    """Assert data corresponds to recorded data.
+
+    Record data if RECORD is set. Return True on success to enable
+    being used as ``assert recorded()`` for nicer readability.
+
+    """
+    if os.environ.get('MARV_TESTING_RECORD'):
+        path.write_text(json.dumps(data, sort_keys=True, indent=2))
+    recorded_data = json.loads(path.read_text())
+    assert recorded_data == data, path
+    return True
+
+
 def scanner(directory, subdirs, filenames):  # pylint: disable=unused-argument
     root = Path(directory).name
     return [
@@ -109,6 +125,7 @@ def section_test(node):
 
 @pytest.fixture(scope='function')
 async def site(loop, request, tmpdir):  # pylint: disable=unused-argument
+    # pylint: disable=too-many-locals
     collection_names = ('hodge', 'podge')
     add_nodes = '\n'.join([
         '    marv.tests.conftest:node_test',
@@ -131,21 +148,34 @@ async def site(loop, request, tmpdir):  # pylint: disable=unused-argument
     ])
     marv_conf = (tmpdir / 'marv.conf')
     mark = {x.name: x.kwargs for x in request.node.iter_markers()}
-    acl_name = mark.get('site_acl', {}).get('name', 'marv_webapi.acls:public')
-    marv_conf.write(MARV_CONF.format(acl_name=acl_name,
+    site_cfg = mark.get('marv', {}).get('site', {})
+    marv_conf.write(MARV_CONF.format(acl_name=site_cfg.get('acl', 'marv_webapi.acls:public'),
                                      collection_names=' '.join(collection_names),
                                      collections=collections))
 
-    site = await Site.create(str(marv_conf), init=True)  # pylint: disable=redefined-outer-name
-    await site.db.user_add('test', password='test_pw', realm='marv', realmuid='')
-    await site.db.user_add('adm', password='adm_pw', realm='marv', realmuid='')
-    await site.db.group_adduser(groupname='admin', username='adm')
+    def create_datemock():
+        vanilla_datetime = datetime.datetime
+        side_effect = count(6000)
+
+        class DatetimeMeta(type):
+            @classmethod
+            def __instancecheck__(cls, obj):
+                return isinstance(obj, vanilla_datetime)
+
+        class DatetimeBase(vanilla_datetime):
+            @classmethod
+            def utcnow(cls):
+                ret = vanilla_datetime.fromtimestamp(next(side_effect))
+                return ret
+
+        return DatetimeMeta('datetime', (DatetimeBase,), {})
 
     def walker(path):
         collection = Path(path).name
         assert collection in collection_names, 'TEST SETUP ERROR: basename must match a collection!'
         idx = collection_names.index(collection)
-        return ((path, [], [f'{x+1:04d}' for x in range((idx + 1) * 50)]),)
+        size = site_cfg.get('size', 50)
+        return ((path, [], [f'{x+1:04d}' for x in range((idx + 1) * size)]),)
 
     def stat(path):
         filename = Path(path).name
@@ -156,14 +186,32 @@ async def site(loop, request, tmpdir):  # pylint: disable=unused-argument
             st_size = idx
         return Stat()
 
+    site = await Site.create(str(marv_conf), init=True)  # pylint: disable=redefined-outer-name
     try:
-        with mock.patch('marv.utils.mtime', side_effect=count(1200000000)),\
-             mock.patch('marv.utils.stat', wraps=stat),\
-             mock.patch('marv.utils.now', side_effect=count(1400000000, 12 * 3600)),\
-             mock.patch('marv.utils.walk', wraps=walker),\
-             mock.patch('os.path.isdir', return_value=True):
-            random.seed(42)
-            await site.scan()
+        if not site_cfg.get('empty', False):
+            with mock.patch('bcrypt.gensalt', return_value=b'$2b$12$k67acf6S32i3nW0c7ycwe.'), \
+                    mock.patch.object(datetime, 'datetime', create_datemock()), \
+                    mock.patch('marv_node.setid.SetID.random', side_effect=count(2**127)), \
+                    mock.patch('marv.utils.mtime', side_effect=count(1200000000)), \
+                    mock.patch('marv.utils.stat', wraps=stat), \
+                    mock.patch('marv.utils.now', side_effect=count(1400000000, 12 * 3600)), \
+                    mock.patch('marv.utils.walk', wraps=walker), \
+                    mock.patch('os.path.isdir', return_value=True), \
+                    mock.patch('secrets.choice', return_value='#'):
+                await site.db.user_add('test', password='test_pw', realm='marv', realmuid='',
+                                       time_created=0xdead0001, time_updated=0xdead0002)
+                await site.db.user_add('adm', password='adm_pw', realm='marv', realmuid='',
+                                       time_created=0xdead0003, time_updated=0xdead0004)
+                await site.db.group_adduser(groupname='admin', username='adm')
+
+                prescan = site_cfg.get('prescan', None)
+                if prescan:
+                    await prescan(site)
+                await site.scan()
+                postscan = site_cfg.get('postscan', None)
+                if postscan:
+                    await postscan(site)
+
         yield site
     finally:
         await site.destroy()

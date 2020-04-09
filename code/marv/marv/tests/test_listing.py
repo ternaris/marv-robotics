@@ -112,18 +112,16 @@ async def test_listing(site):
 
     # substring
     res = await site.db.get_filtered_listing(descs, [
-        ('setid', '43', 'substring', 'string'),
+        ('setid', 'eaa', 'substring', 'string'),
     ])
-    assert len(res) == 2
-    assert res[0]['id'] == 25
-    assert res[1]['id'] == 1
+    assert sorted(x['id'] for x in res) == [2, 10, 18, 26, 33, 34, 42, 50]
 
     # startswith
     res = await site.db.get_filtered_listing(descs, [
-        ('setid', 'tv43', 'startswith', 'string'),
+        ('setid', 'feaa', 'startswith', 'string'),
     ])
     assert len(res) == 1
-    assert res[0]['id'] == 1
+    assert res[0]['id'] == 42
 
     # lt
     res = await site.db.get_filtered_listing(descs, [('size', 10, 'lt', 'int')])
