@@ -186,9 +186,10 @@ async def site(loop, request, tmpdir):  # pylint: disable=unused-argument
             st_size = idx
         return Stat()
 
-    site = await Site.create(str(marv_conf), init=True)  # pylint: disable=redefined-outer-name
+    cls = site_cfg.get('cls', Site)
+    site = await cls.create(str(marv_conf), init=True)  # pylint: disable=redefined-outer-name
     try:
-        if not site_cfg.get('empty', False):
+        if not site_cfg.get('empty'):
             with mock.patch('bcrypt.gensalt', return_value=b'$2b$12$k67acf6S32i3nW0c7ycwe.'), \
                     mock.patch.object(datetime, 'datetime', create_datemock()), \
                     mock.patch('marv_node.setid.SetID.random', side_effect=count(2**127)), \

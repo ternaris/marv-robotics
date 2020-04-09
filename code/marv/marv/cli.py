@@ -21,7 +21,7 @@ from tortoise.exceptions import DoesNotExist
 
 import marv.app
 from marv.db import DBError, USERGROUP_REGEX
-from marv.site import Site, UnknownNode, load_sitepackages, make_config
+from marv.site import UnknownNode, load_sitepackages, make_config
 from marv.utils import echo, err, find_obj, within_pyinstaller_bundle
 from marv_cli import PDB
 from marv_cli import marv as marvcli
@@ -30,8 +30,10 @@ from marv_store import DirectoryAlreadyExists
 
 try:
     import marv_ee
+    from marv_ee.site import Site
 except ImportError:
     marv_ee = None
+    from marv.site import Site
 
 log = getLogger(__name__)
 
