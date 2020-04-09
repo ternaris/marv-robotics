@@ -11,7 +11,6 @@ from logging import getLogger
 from pathlib import Path
 from uuid import uuid4
 
-import tortoise
 from pkg_resources import resource_filename
 
 from marv_node.run import run_nodes
@@ -19,7 +18,7 @@ from marv_store import Store
 from . import utils
 from .collection import Collections
 from .config import Config
-from .db import Database, scoped_session
+from .db import Database, Tortoise, scoped_session
 from .model import Acn, Collection, Dataset, Group, User
 
 
@@ -176,11 +175,10 @@ class Site:
             site.init_directory()
 
         # Generate all dynamic models
-        from . import model  # pylint: disable=import-outside-toplevel
-        model.__models__ += (y for x in site.collections.values() for y in x.model)
+        models = site.db.MODELS + [y for x in site.collections.values() for y in x.model]
 
         assert site.config.marv.dburi.startswith('sqlite://')
-        await tortoise.Tortoise.init(config={
+        await Tortoise.init(config={
             'connections': {
                 'default': {
                     'engine': 'tortoise.backends.sqlite',
@@ -192,7 +190,7 @@ class Site:
             },
             'apps': {
                 'models': {
-                    'models': ['marv.model'],
+                    'models': models,
                 },
             },
         })
@@ -216,7 +214,7 @@ class Site:
 
     async def destroy(self):
         await self.db.close_connections()
-        await tortoise.Tortoise.close_connections()
+        await Tortoise.close_connections()
 
     def load_for_web(self):
         _ = [getattr(x, y) and None for x, y, in product(
@@ -265,7 +263,7 @@ class Site:
             for table in sorted(tables, key=len, reverse=True):
                 await txn.execute_query(f'DROP TABLE {table};')
 
-        await tortoise.Tortoise.generate_schemas()
+        await Tortoise.generate_schemas()
 
         async with scoped_session(self.db) as txn:
             for name in ('marv:user:anonymous', 'marv:users', 'admin'):

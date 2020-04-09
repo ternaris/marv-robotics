@@ -20,7 +20,7 @@ from logging import getLogger
 import bcrypt
 from pypika import JoinType, Order, SQLLiteQuery as Query, Table, Tables, Tuple, functions as fn
 from pypika.terms import AggregateFunction, Criterion, EmptyCriterion, ValueWrapper
-from tortoise import Tortoise
+from tortoise import Tortoise as _Tortoise
 from tortoise.exceptions import DoesNotExist, IntegrityError
 from tortoise.transactions import current_transaction_map
 
@@ -195,7 +195,7 @@ OPS = {
 }
 
 
-def resolve_filter(table, fltr):  # noqa: C901
+def resolve_filter(table, fltr, models):  # noqa: C901
     if not isinstance(fltr, dict):
         raise FilterError(f'Expected dict not {fltr!r}')
 
@@ -207,14 +207,14 @@ def resolve_filter(table, fltr):  # noqa: C901
 
     value = fltr.get('value')
     name = fltr.get('name')
-    tablemeta = findfirst(lambda x: x._meta.table == table._table_name, MODELS)._meta
+    tablemeta = findfirst(lambda x: x._meta.table == table._table_name, models)._meta
 
     if operator == 'and':
-        return reduce(lambda x, y: x & resolve_filter(table, y), value, EmptyCriterion())
+        return reduce(lambda x, y: x & resolve_filter(table, y, models), value, EmptyCriterion())
     if operator == 'or':
-        return reduce(lambda x, y: x | resolve_filter(table, y), value, EmptyCriterion())
+        return reduce(lambda x, y: x | resolve_filter(table, y, models), value, EmptyCriterion())
     if operator == 'not':
-        return resolve_filter(table, value).negate()
+        return resolve_filter(table, value, models).negate()
 
     if not isinstance(name, str):
         raise FilterError(f"Missing 'name' in {fltr!r}")
@@ -224,7 +224,8 @@ def resolve_filter(table, fltr):  # noqa: C901
         if fieldname in tablemeta.backward_fk_fields:
             field = tablemeta.fields_map[fieldname]
             subtable = Table(field.model_class._meta.table)
-            resolved = resolve_filter(subtable, {'op': operator, 'name': subname, 'value': value})
+            resolved = resolve_filter(subtable, {'op': operator, 'name': subname, 'value': value},
+                                      models)
             return getattr(table, 'id').isin(Query.from_(subtable)
                                              .select(getattr(subtable, field.relation_field))
                                              .where(resolved))
@@ -233,7 +234,8 @@ def resolve_filter(table, fltr):  # noqa: C901
             field = tablemeta.fields_map[fieldname]
             through = Table(field.through)
             rel = Table(field.model_class._meta.table)
-            resolved = resolve_filter(rel, {'op': operator, 'name': subname, 'value': value})
+            resolved = resolve_filter(rel, {'op': operator, 'name': subname, 'value': value},
+                                      models)
             return getattr(table, 'id').isin(Query.from_(through)
                                              .join(rel)
                                              .on(getattr(through, field.forward_key) == rel.id)
@@ -470,6 +472,14 @@ async def restore_datasets(site, dct, txn):
         await site.collections[key].restore_datasets(sets, txn)
 
 
+class Tortoise(_Tortoise):
+    @classmethod
+    def _discover_models(cls, model, app_label):  # pylint: disable=arguments-differ
+        model._meta.app = app_label
+        model._meta.finalise_pk()
+        return [model]
+
+
 class Database:
     # pylint: disable=too-many-public-methods
 
@@ -488,6 +498,8 @@ class Database:
         ({'leafs'}, restore_leafs),
         ({'datasets'}, restore_datasets),
     )
+
+    MODELS = MODELS
 
     def __init__(self):
         self.connections = []
@@ -1385,7 +1397,7 @@ class Database:
         result = {}
         table = Table(model)
         try:
-            tablemeta = [x for x in MODELS if x._meta.table == model][0]._meta
+            tablemeta = [x for x in self.MODELS if x._meta.table == model][0]._meta
         except IndexError:
             raise ValueError(f'there is no model "{model}"')
 
@@ -1402,7 +1414,7 @@ class Database:
         query = Query.from_(table).select(*select)
 
         for filt in filters:
-            query = query.where(resolve_filter(table, filt))
+            query = query.where(resolve_filter(table, filt, self.MODELS))
 
         def customize_query(query, model, table, through=None):
             if model in ['collection', 'dataset']:
