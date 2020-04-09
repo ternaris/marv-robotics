@@ -22,8 +22,6 @@ from tortoise.models import Model
 from . import model_fields as custom
 from .utils import underscore_to_camelCase
 
-_LISTING_PREFIX = ''  # Only for testing
-
 STATUS = OrderedDict((
     ('error', 'ERROR: One or more errors occured while processing this dataset'),
     ('missing', 'MISSING: One or more files of this dataset are missing'),
@@ -182,7 +180,7 @@ ListingDescriptor = namedtuple('ListingDescriptor', 'table key through rel_id li
 
 def make_listing_model(name, filter_specs):
     models = []
-    listing_name = f'{_LISTING_PREFIX}l_{name}'
+    listing_name = f'l_{name}'
     listing_model_name = underscore_to_camelCase(listing_name)
 
     def generate_relation(fname):

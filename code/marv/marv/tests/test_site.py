@@ -11,7 +11,6 @@ from logging import getLogger
 
 import pytest
 
-import marv.model
 from marv.db import scoped_session
 from marv.site import Site
 from marv.utils import echo
@@ -58,8 +57,6 @@ async def site(loop):  # pylint: disable=unused-argument
     with open(siteconf, 'w') as fobj:
         fobj.write(inspect.cleandoc(CONFIG))
 
-    prefix = f'test{next(COUNTER)}_'
-    marv.model._LISTING_PREFIX = prefix  # pylint: disable=protected-access
     site_ = await Site.create(siteconf, init=True)
     site_.scanroot_ = scanroot
     yield site_
@@ -67,7 +64,7 @@ async def site(loop):  # pylint: disable=unused-argument
     async with scoped_session(site_.db) as connection:
         tables = (await connection
                   .execute_query('SELECT name FROM sqlite_master WHERE type="table"'))[1]
-        tables = (x['name'] for x in tables if x['name'].startswith(prefix))
+        tables = (x['name'] for x in tables if x['name'].startswith('l_'))
         for table in sorted(tables, key=len, reverse=True):
             await connection.execute_query(f'DROP TABLE {table}')
     await site_.destroy()
