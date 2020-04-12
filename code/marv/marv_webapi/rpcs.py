@@ -46,8 +46,9 @@ async def rpc_entry(request):  # noqa: C901
             limit = payload.get('limit')
             offset = payload.get('offset')
             # v1 keeps collection
-            if 'collection' in attrs:
-                attrs['collection_id'] = attrs.pop('collection')
+            if model == 'dataset':
+                if 'collection' in attrs:
+                    attrs['collection_id'] = attrs.pop('collection')
             # /v1 keeps collection
             try:
                 result = await request.app['site'].db.rpc_query(model, filters, attrs,
@@ -68,7 +69,7 @@ async def rpc_entry(request):  # noqa: C901
                             )['collection']
                         }
                         for value in values:
-                            if 'collection_id' in value:
+                            if 'collection_id' in value and value['collection_id'] in collections:
                                 value['collection'] = collections[value.pop('collection_id')]
                     except (OperationalError, ValueError) as err:
                         # raise web.HTTPBadRequest(text=json.dumps({'errors': [str(err)]}))
