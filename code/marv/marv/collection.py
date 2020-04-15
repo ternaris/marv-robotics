@@ -431,10 +431,10 @@ class Collection:
 
     async def _add_tags(self, connection, data):
         add = [(tag, dataset.id) for dataset, tags in data for tag in tags]
-        await self.site.db.bulk_tag(add, [], transaction=connection)
+        await self.site.db.bulk_tag(add, [], txn=connection)
         data[:] = []
 
-    async def _upsert_listing(self, transaction, log, batch, update=False):
+    async def _upsert_listing(self, txn, log, batch, update=False):
         descs = self.table_descriptors
         rendered = [(dataset.id, *self.render_listing(dataset)) for dataset in batch]
         listing_values = ((id, rowdumps(row), *fields.values()) for id, row, fields, _ in rendered)
@@ -443,11 +443,11 @@ class Collection:
                            for key, values in relfields.items()
                            for value in values)
 
-        await transaction.execute_query(Query.into(descs[0].table)
-                                        .columns('id', 'row', *rendered[0][2].keys())
-                                        .insert(*listing_values)
-                                        .ignore()
-                                        .get_sql().replace('IGNORE', 'OR REPLACE'))
+        await txn.execute_query(Query.into(descs[0].table)
+                                .columns('id', 'row', *rendered[0][2].keys())
+                                .insert(*listing_values)
+                                .ignore()
+                                .get_sql().replace('IGNORE', 'OR REPLACE'))
 
         for key, group in groupby(relvalues, key=lambda x: x[0]):
             group = list(group)
@@ -455,8 +455,7 @@ class Collection:
             relations = [(x[1], x[2]) for x in group]
 
             desc = [x for x in descs if x.key == key][0]
-            await self.site.db.update_listing_relations(desc, values, relations,
-                                                        transaction=transaction)
+            await self.site.db.update_listing_relations(desc, values, relations, txn=txn)
 
         for dataset in batch:
             log.info(f'{"updated" if update else "added"} %r', dataset)
@@ -567,9 +566,9 @@ class Collection:
 
         return row, fields, relfields
 
-    async def update_listings(self, datasets, transaction=None):
+    async def update_listings(self, datasets, txn=None):
         assert datasets
 
         log = getLogger('.'.join([__name__, self.name]))
-        async with scoped_session(self.site.db, transaction) as transaction:
-            await self._upsert_listing(transaction, log, datasets, update=True)
+        async with scoped_session(self.site.db, txn) as txn:
+            await self._upsert_listing(txn, log, datasets, update=True)

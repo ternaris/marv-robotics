@@ -201,11 +201,9 @@ class Site:
             if init:
                 await site.init_database()
 
-            async with scoped_session(site.db) as transaction:
+            async with scoped_session(site.db) as txn:
                 try:
-                    await transaction.execute_query(
-                        'SELECT name FROM sqlite_master WHERE type="table"',
-                    )
+                    await txn.execute_query('SELECT name FROM sqlite_master WHERE type="table"')
                 except ValueError:
                     raise DBNotInitialized()
         except BaseException:
@@ -252,25 +250,25 @@ class Site:
                 raise
 
     async def init_database(self):
-        async with scoped_session(self.db) as transaction:
+        async with scoped_session(self.db) as txn:
             prefixes = [f'l_{col}' for col in self.collections.keys()]
             tables = {
                 name for name in [
-                    x['name'] for x in (await transaction.execute_query(
+                    x['name'] for x in (await txn.execute_query(
                         'SELECT name FROM sqlite_master WHERE type="table"',
                     ))[1]
                 ]
                 if any(name.startswith(prefix) for prefix in prefixes)
             }
             for table in sorted(tables, key=len, reverse=True):
-                await transaction.execute_query(f'DROP TABLE {table};')
+                await txn.execute_query(f'DROP TABLE {table};')
 
         await tortoise.Tortoise.generate_schemas()
 
-        async with scoped_session(self.db) as transaction:
+        async with scoped_session(self.db) as txn:
             for name in ('admin', ):
-                if not await Group.filter(name=name).using_db(transaction).count():
-                    await Group.create(name=name, using_db=transaction)
+                if not await Group.filter(name=name).using_db(txn).count():
+                    await Group.create(name=name, using_db=txn)
 
             log.verbose('Initialized database %s', self.config.marv.dburi)
             for col, collection in self.collections.items():
@@ -279,7 +277,7 @@ class Site:
                 # TODO: increase verbosity and probably introduce --reinit
                 while True:
                     batch = await Dataset.filter(collection__name=col)\
-                                         .using_db(transaction)\
+                                         .using_db(txn)\
                                          .prefetch_related('files')\
                                          .limit(batchsize)\
                                          .offset(batchsize*next(loop))\
@@ -287,7 +285,7 @@ class Site:
                     for dataset in batch:
                         collection.render_detail(dataset)
                     if batch:
-                        await collection.update_listings(batch, transaction=transaction)
+                        await collection.update_listings(batch, txn=txn)
                     if len(batch) < batchsize:
                         break
         log.info('Initialized from %s', self.config.filename)
@@ -332,10 +330,10 @@ class Site:
         assert not force_dependent or selected_nodes
 
         excluded_nodes = set(excluded_nodes or [])
-        async with scoped_session(self.db) as transaction:
+        async with scoped_session(self.db) as txn:
             dataset = await Dataset.get(setid=setid)\
                                    .prefetch_related('collection', 'files')\
-                                   .using_db(transaction)
+                                   .using_db(txn)
         collection = self.collections[dataset.collection.name]
         selected_nodes = set(selected_nodes or [])
         if not (selected_nodes or update_listing or update_detail):
