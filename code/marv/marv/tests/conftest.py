@@ -247,11 +247,15 @@ async def client(aiohttp_client, app):  # pylint: disable=redefined-outer-name
 
     async def get_json(*args, **kw):
         resp = await client.get(*args, headers=headers, **kw)
-        return await resp.json()
+        if resp.status < 300:
+            return await resp.json()
+        return resp
 
     async def post_json(*args, **kw):
         resp = await client.post(*args, headers=headers, **kw)
-        return await resp.json()
+        if resp.status < 300:
+            return await resp.json()
+        return resp
 
     client.headers = headers
     client.authenticate = authenticate
