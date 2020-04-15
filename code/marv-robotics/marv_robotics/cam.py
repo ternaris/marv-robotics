@@ -42,7 +42,7 @@ def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):  # pylint:
     name = f"{stream.topic.replace('/', '_')[1:]}.webm"
     video = yield marv.make_file(name)
     duration = (stream.end_time - stream.start_time) * 1e-9
-    framerate = stream.msg_count / duration
+    framerate = (stream.msg_count / duration) if duration else 1
 
     pytype = get_message_type(stream)
     rosmsg = pytype()
