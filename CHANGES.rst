@@ -35,6 +35,7 @@ Removed
 
 Fixed
 ~~~~~
+- Fix color conversion for bayer mask images
 - Fix marv discard argument parsing
 - Fix queries for outdated datasets
 - Fix documentation for widget pre
