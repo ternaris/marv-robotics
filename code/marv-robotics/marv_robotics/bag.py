@@ -4,7 +4,6 @@
 import re
 import sys
 from collections import defaultdict, namedtuple
-from functools import reduce
 from itertools import groupby
 
 import capnp  # pylint: disable=unused-import
@@ -234,9 +233,9 @@ def read_messages(paths, topics=None, start_time=None, end_time=None):
                 del gens[key]
         if not msgs:
             break
-        next_key = reduce(lambda x, y: x if x[0] < y[0] else y, msgs.items())[0]
+        next_key = min(msgs.items(), key=lambda x: x[1][0])[0]
         next_time, next_msg = msgs.pop(next_key)
-        assert next_time >= prev_time
+        assert next_time >= prev_time, (repr(next_time), repr(prev_time))
         yield next_msg
         prev_time = next_time
 
