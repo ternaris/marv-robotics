@@ -40,7 +40,8 @@ ignored-modules=capnp.lib.capnp,
                 cv2,
                 marv_detail.types_capnp,
                 marv_nodes.types_capnp,
-                marv_pycapnp.types_capnp
+                marv_pycapnp.types_capnp,
+                pydantic
 
 
 [CLASSES]
