@@ -29,6 +29,8 @@ Changed
 - Improved map layer controls
 - Prepare for asynchronous node execution in multiple processes
 - Simplify node testing by introducing a wrapper for run_nodes
+- Start moving code from marv into newly introduced marv_api
+- Use DAG based on pydantic models to represent node graph
 
 Deprecated
 ~~~~~~~~~~
