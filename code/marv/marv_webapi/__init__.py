@@ -6,7 +6,7 @@ from pkg_resources import iter_entry_points
 from .auth import auth
 from .collection import collection, meta
 from .comment import comment
-from .dataset import dataset
+from .dataset import dataset as dataset_api
 from .delete import delete
 from .rpcs import rpcs
 from .tag import tag
@@ -21,7 +21,7 @@ def webapi(_):
 # Groups and endpoints are all the same for now
 webapi.add_endpoint(auth)
 webapi.add_endpoint(comment)
-webapi.add_endpoint(dataset)
+webapi.add_endpoint(dataset_api)
 webapi.add_endpoint(delete)
 webapi.add_endpoint(collection)
 webapi.add_endpoint(meta)
