@@ -8,63 +8,12 @@ Deployment
 
 MARV's frontend uses a service worker, which requires HTTPS for non-localhost access. You can either use a self-signed certificate or Let's Encrypt. The latter only if your webserver is accessible from the internet.
 
-For production usage we strongly recommend to use nginx as a reverse-proxy. The increased setup overhead is justified by greatly increased performance for serving large files.
+For production usage we **strongly recommend** to use nginx as a reverse-proxy. The increased setup overhead is justified by greatly increased performance for serving large files.
 
 Two deployments are described here in short:
 
-- Gunicorn with a self-signed certificate, and
-- nginx as a proper front-facing webserver with a Let's Encrypt certificate
-
-
-Gunicorn with self-signed certificate
--------------------------------------
-
-Gunicorn supports HTTPS out of the box with the limitation that it cannot serve HTTP and HTTPS simultaneously. To activate HTTPS mode you only need to provide Gunicorn with a certificate and corresponding keyfile.
-
-Generate self-signed certificate
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-::
-
-   openssl genrsa -out sites/example/gunicorn-ssl.key 2048
-   openssl req -new -key sites/example/gunicorn-ssl.key \
-       -out sites/example/gunicorn-ssl.csr
-
-::
-
-   openssl x509 -req -days 3650 \
-       -in sites/example/gunicorn-ssl.csr \
-       -signkey sites/example/gunicorn-ssl.key \
-       -out sites/example/gunicorn-ssl.crt
-
-Adjust gunicorn_cfg.py
-^^^^^^^^^^^^^^^^^^^^^^
-
-Enable https in ``sites/example/gunicorn_cfg.py`` by adding.
-
-::
-
-   ...
-   certfile = 'gunicorn-ssl.crt'
-   keyfile = 'gunicorn-ssl.key'
-   ...
-
-
-Restart Gunicorn.
-
-::
-
-   (venv) $ gunicorn --config sites/example/gunicorn_cfg.py marv.app.wsgi:create_app
-
-
-Errors
-^^^^^^
-
-::
-
-   ValueError: certfile "gunicorn-ssl.crt" does not exist
-
-This means Gunicorn could not find the SSL certificate which should be right next to ``sites/example/gunicorn_cfg.py`` (see above).
+- NGINX as a reverse proxy with a Let's Encrypt certificate (recommended)
+- Gunicorn with a self-signed certificate (development only)
 
 
 .. _deploy_nginx:
@@ -82,7 +31,7 @@ When working behind a revese proxy MARV's default Gunicorn config will work with
 
 nginx config
 ^^^^^^^^^^^^
-Nginx allows marv to offload serving data from disk which is especially useful for large files. Adjust the paths of the nested internal location block to point to your store, within the docker container and outside of the docker container, under the assumption, that nginx is running directly on your host system. In case you are running marv in a virtual environment also directly on the host system, the paths are identical. For a **self-signed certificate** create it as above, remove ``ssl_trusted_certificate`` below and adjust ``ssl_certificate`` and ``ssl_certificate_key`` below accordingly.
+Nginx allows marv to offload serving data from disk which is especially useful for large files. Adjust the paths of the nested internal location block to point to your store, within the docker container and outside of the docker container, under the assumption, that nginx is running directly on your host system. In case you are running marv in a virtual environment also directly on the host system, the paths are identical.
 
 .. code-block:: nginx
 
@@ -135,3 +84,40 @@ Nginx allows marv to offload serving data from disk which is especially useful f
        proxy_pass 127.0.0.1:8000;
      }
    }
+
+For a **self-signed certificate** (see steps below) remove ``ssl_trusted_certificate`` and adjust ``ssl_certificate`` and ``ssl_certificate_key`` accordingly.
+
+
+.. _deploy_gunicorn:
+
+Gunicorn with self-signed certificate
+-------------------------------------
+
+Note: Use this mode of deploymeny for development setups only.
+
+Gunicorn supports HTTPS out of the box with the limitation that it cannot serve HTTP and HTTPS simultaneously. To activate HTTPS mode you only need to provide Gunicorn with a certificate and corresponding keyfile.
+
+Generate self-signed certificate
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+   openssl genrsa -out sites/example/gunicorn-ssl.key 2048
+   openssl req -new -key sites/example/gunicorn-ssl.key \
+       -out sites/example/gunicorn-ssl.csr
+
+::
+
+   openssl x509 -req -days 3650 \
+       -in sites/example/gunicorn-ssl.csr \
+       -signkey sites/example/gunicorn-ssl.key \
+       -out sites/example/gunicorn-ssl.crt
+
+Pass certificate files to MARV
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Use the ``--keyfile`` and ``--certfile`` options to enable the HTTPS mode. The following example makes MARV run on the default HTTPS port:
+
+::
+
+   (venv) $ marv serve --port 443 --certfile gunicorn-ssl.crt --keyfile gunicorn-ssl.key
