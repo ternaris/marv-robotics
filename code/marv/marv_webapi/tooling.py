@@ -4,6 +4,7 @@
 import math
 import time
 from collections import OrderedDict
+from pathlib import Path
 
 import jwt
 from aiohttp import web
@@ -44,6 +45,16 @@ def generate_token(username, key):
         'iat': now,
         'sub': username,
     }, key, algorithm='HS256')
+
+
+def safejoin(basepath, rel):
+    rel = Path(rel)
+    if rel.anchor:
+        raise web.HTTPForbidden
+    fullpath = (basepath / rel).resolve()
+    if basepath.resolve() not in fullpath.parents:
+        raise web.HTTPForbidden
+    return fullpath
 
 
 class APIEndpoint:

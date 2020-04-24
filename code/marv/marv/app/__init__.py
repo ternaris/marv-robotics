@@ -4,10 +4,12 @@
 import base64
 import os
 from logging import getLogger
+from pathlib import Path
 
 from aiohttp import web
 
 import marv_webapi
+from marv_webapi.tooling import safejoin
 
 
 LOADED = False
@@ -45,14 +47,11 @@ def create_app(site, app_root='', middlewares=None):  # noqa: C901  # pylint: di
     with open(site.config.marv.sessionkey_file) as f:
         app['config']['SECRET_KEY'] = f.read()
 
-    staticdir = site.config.marv.staticdir
-    with open(os.path.join(staticdir, 'index.html')) as f:
-        index_html = f.read().replace('MARV_APP_ROOT', app_root or '')
+    staticdir = Path(site.config.marv.staticdir)
+    index_html = (staticdir / 'index.html').read_text().replace('MARV_APP_ROOT', app_root or '')
 
-    customjs = os.path.join(site.config.marv.frontenddir, 'custom.js')
     try:
-        with(open(customjs)) as f:
-            data = base64.b64encode(f.read())
+        data = base64.b64encode(Path(site.config.marv.frontenddir, 'custom.js').read_text())
     except IOError:
         pass
     else:
@@ -66,10 +65,8 @@ def create_app(site, app_root='', middlewares=None):  # noqa: C901  # pylint: di
             1,
         )
 
-    customcss = os.path.join(site.config.marv.frontenddir, 'custom.css')
     try:
-        with(open(customcss)) as f:
-            data = base64.b64encode(f.read())
+        data = base64.b64encode(Path(site.config.marv.frontenddir, 'custom.css').read_text())
     except IOError:
         pass
     else:
@@ -83,34 +80,29 @@ def create_app(site, app_root='', middlewares=None):  # noqa: C901  # pylint: di
             1,
         )
 
-    customdir = os.path.join(site.config.marv.frontenddir, 'custom')
-    @app.route('/custom/{path}')
+    nocache = {'Cache-Control': 'no-cache'}
+
+    customdir = Path(site.config.marv.frontenddir, 'custom')
+    @app.route('/custom/{path:.*}')
     async def custom(request):  # pylint: disable=unused-variable
         path = request.match_info['path']
-        return web.FileResponse(os.path.join(customdir, path), headers={
-            'Cache-Control': 'no-cache',
-        })
+        fullpath = safejoin(customdir, path)
+        if not fullpath.is_file():
+            raise web.HTTPNotFound
+        return web.FileResponse(fullpath, headers=nocache)
 
     @app.route('/{path:.*}')
     async def assets(request):  # pylint: disable=unused-variable
-        path = request.match_info['path']
-        if not path:
-            path = 'index.html'
-
+        path = request.match_info['path'] or 'index.html'
         if path == 'index.html':
             return web.Response(text=index_html, headers={
                 'Content-Type': 'text/html',
-                'Cache-Control': 'no-cache',
+                **nocache,
             })
 
-        if path == 'docs':
-            raise web.HTTPMovedPermanently(f'{request.base_url}/')
-
-        if path == 'docs/':
-            path = 'docs/index.html'
-
-        return web.FileResponse(os.path.join(staticdir, path), headers={
-            'Cache-Control': 'no-cache',
-        })
+        fullpath = safejoin(staticdir, path)
+        if not fullpath.is_file():
+            raise web.HTTPNotFound
+        return web.FileResponse(fullpath, headers=nocache)
 
     return app

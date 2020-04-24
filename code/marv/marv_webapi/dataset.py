@@ -1,14 +1,14 @@
-# Copyright 2016 - 2018  Ternaris.
+# Copyright 2016 - 2020  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import json
 import mimetypes
-import pathlib
+from pathlib import Path
 
 from aiohttp import web
 
 from marv_node.setid import SetID
-from .tooling import api_group as marv_api_group
+from .tooling import api_group as marv_api_group, safejoin
 
 
 @marv_api_group()
@@ -69,39 +69,32 @@ async def detail(request):
     except TypeError:
         raise web.HTTPNotFound()
 
-    setdir = pathlib.Path(request.app['site'].config.marv.storedir) / setid
+    setdir = Path(request.app['site'].config.marv.storedir) / setid
 
     if path == 'detail.json':
         return await _send_detail_json(request, setid, setdir)
 
     if path.isdigit():
-        pathstr = await request.app['site'].db.get_filepath_by_setid_idx(setid, int(path))
-        path = pathlib.Path(pathstr)
+        path = Path(await request.app['site'].db.get_filepath_by_setid_idx(setid, int(path)))
     else:
-        path = setdir / path
-        if '..' in path.parts:
-            raise web.HTTPBadRequest()
+        path = safejoin(setdir, path)
 
-    # Make sure path exists and is safe
-    if not path.is_absolute() \
-       or not path.is_file():
+    if not path.is_file():
         raise web.HTTPNotFound()
+
+    headers = {
+        'Cache-Control': 'no-cache',
+        'Content-Disposition': f'attachment; filename={path.name}',
+    }
 
     if request.app['site'].config.marv.reverse_proxy == 'nginx':
-        mime = mimetypes.guess_type(str(path))
+        mime = mimetypes.guess_type(str(path))[0]
         approot = request.path.split('/marv/api/dataset/')[0]
         return web.Response(headers={
-            'content-type': mime[0] if mime[0] else 'application/octet-stream',
-            'cache-control': 'no-cache',
-            'x-accel-buffering': 'no',
-            'x-accel-redirect': f'{approot}{str(path)}',
-            'Content-Disposition': f'attachment; filename={path.name}',
+            'Content-Type': mime or 'application/octet-stream',
+            'X-Accel-Buffering': 'no',
+            'X-Accel-Redirect': f'{approot}{str(path)}',
+            **headers,
         })
 
-    try:
-        return web.FileResponse(path, headers={
-            'Cache-Control': 'no-cache',
-            'Content-Disposition': f'attachment; filename={path.name}',
-        })
-    except ValueError:
-        raise web.HTTPNotFound()
+    return web.FileResponse(path, headers=headers)

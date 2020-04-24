@@ -6,7 +6,7 @@ import pathlib
 from aiohttp import web
 from pkg_resources import resource_filename
 
-from marv_webapi.tooling import api_group as marv_api_group
+from marv_webapi.tooling import api_group as marv_api_group, safejoin
 
 
 DOCS = pathlib.Path(resource_filename('marv_robotics', 'docs'))
@@ -17,4 +17,4 @@ def robotics(app):
     @app.route(r'/docs{_:/?}{path:((?<=/).*)?}')
     async def docs(request):  # pylint: disable=unused-variable
         path = request.match_info['path'] or 'index.html'
-        return web.FileResponse(DOCS / path, headers={'Cache-Control': 'no-cache'})
+        return web.FileResponse(safejoin(DOCS, path), headers={'Cache-Control': 'no-cache'})

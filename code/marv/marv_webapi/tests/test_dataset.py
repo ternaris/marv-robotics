@@ -18,6 +18,10 @@ async def test_dataset(site, client):
     res = await client.get(f'/marv/api/dataset/{sets[0]}/0')
     assert res.status == 404
 
+    # 403 for absolute file
+    res = await client.get(f'/marv/api/dataset/{sets[0]}//absolute')
+    assert res.status == 403
+
     # filelist
     res = await client.post('/marv/api/file-list', headers=client.headers, json=[])
     assert res.status == 400
