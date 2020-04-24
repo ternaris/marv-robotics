@@ -24,7 +24,7 @@ cd $MARV_SITE
 if [[ -n "$MARV_INIT" ]] || [[ ! -e db ]]; then
     su - marv -p -c '/opt/marv/bin/marv --config "$MARV_CONFIG" init'
 fi
-su - marv -p -c '/opt/marv/bin/marv --config "$MARV_CONFIG" serve --approot "${MARV_APPLICATION_ROOT:-/}"' &
+su - marv -p -c '/opt/marv/bin/marv --config "$MARV_CONFIG" serve --host 0.0.0.0 --approot "${MARV_APPLICATION_ROOT:-/}"' &
 
 echo 'Container startup complete.'
 exec "$@"

@@ -137,7 +137,7 @@ def marvcli_develop_server(port, public):
 
 
 @marvcli.command('serve')
-@click.option('--host', default='0.0.0.0', help='Host to bind to')
+@click.option('--host', default='127.0.0.1', help='Host to bind to')
 @click.option('--port', default=8000, help='Port to listen on')
 @click.option('--certfile', default=None, help='SSL certificate')
 @click.option('--keyfile', default=None, help='SSL keyfile')
