@@ -7,9 +7,9 @@ bcrypt
 configparser
 gunicorn
 jinja2
-pendulum
+pendulum!=2.1.0
 pycapnp-for-marv==0.6.3
 pypika
 setproctitle
-tortoise-orm
+tortoise-orm==0.15.*
 uvloop

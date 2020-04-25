@@ -2,7 +2,7 @@
 lz4
 matplotlib
 pillow<7.0.0  # leads to matplotlib not supporting jpg
-pretty-bad-protocol  # aka: gnupg
-pycrypto
+pycryptodome
+python-gnupg
 pyyaml
 utm
