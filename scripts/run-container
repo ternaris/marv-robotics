@@ -65,6 +65,7 @@ docker run \
        -e "DEVELOP=${DEVELOP:+/home/marv/code}" \
        -e DEBUG \
        -e MARV_APPLICATION_ROOT \
+       -e MARV_ARGS \
        -e MARV_INIT \
        -e TERM \
        -e TIMEZONE \
