@@ -327,7 +327,7 @@ class Site:
     async def run(self, setid, selected_nodes=None, deps=None, force=None, keep=None,
                   force_dependent=None, update_detail=None, update_listing=None,
                   excluded_nodes=None, cachesize=None):
-        # pylint: disable=too-many-arguments,too-many-locals
+        # pylint: disable=too-many-arguments,too-many-locals,too-many-branches
 
         assert not force_dependent or selected_nodes
 
@@ -365,6 +365,12 @@ class Site:
                                           deps=deps, cachesize=cachesize)
         finally:
             if not keep:
+                for stream in store.pending:
+                    if stream.streamfile:
+                        stream.streamfile.close()
+                for stream in store.readstreams:
+                    if stream.streamfile:
+                        stream.streamfile.close()
                 for tmpdir, tmpdir_fd in store.pending.values():
                     store.logdebug('Cleaning up %r', tmpdir)
                     shutil.rmtree(tmpdir)

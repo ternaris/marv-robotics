@@ -27,6 +27,7 @@ class Store(Mapping, LoggerMixin):
         self.path = path
         self.pending = {}
         self.nodes = nodes
+        self.readstreams = []
         self.name_by_node = {v: k for k, v in nodes.items()}
 
     def has_setid(self, setid):
@@ -47,7 +48,9 @@ class Store(Mapping, LoggerMixin):
             streams = json.load(f)
         if handle.name != 'default':
             streams = streams['streams'][handle.name]
-        return ReadStream(handle, streamdir, setdir, info=streams)
+        stream = ReadStream(handle, streamdir, setdir, info=streams)
+        self.readstreams.append(stream)
+        return stream
 
     def __iter__(self):
         raise NotImplementedError()
