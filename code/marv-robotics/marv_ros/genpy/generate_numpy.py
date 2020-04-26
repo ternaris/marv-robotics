@@ -30,15 +30,13 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-"""
-numpy support
-"""
+"""Numpy support."""
 
 from . generate_struct import serialize
 
 # this could obviously be directly generated, but it's nice to abstract
 
-## maps ros msg types to numpy types
+# maps ros msg types to numpy types
 NUMPY_DTYPE = {
     'float32': 'numpy.float32',
     'float64': 'numpy.float64',
@@ -52,20 +50,21 @@ NUMPY_DTYPE = {
     'uint32': 'numpy.uint32',
     'uint64': 'numpy.uint64',
     # deprecated type
-    'char' : 'numpy.uint8',
-    'byte' : 'numpy.int8',
+    'char': 'numpy.uint8',
+    'byte': 'numpy.int8',
     }
+
+
 # TODO: this doesn't explicitly specify little-endian byte order on the numpy data instance
 def unpack_numpy(var, count, dtype, buff):
-    """
-    create numpy deserialization code
-    """
-    return var + " = numpy.frombuffer(%s, dtype=%s, count=%s)"%(buff, dtype, count)
+    """Create numpy deserialization code."""
+    return var + ' = numpy.frombuffer(%s, dtype=%s, count=%s)' % (buff, dtype, count)
+
 
 def pack_numpy(var):
     """
-    create numpy serialization code
+    Create numpy serialization code.
+
     :param vars: name of variables to pack
     """
-    return serialize("%s.tostring()"%var)
-
+    return serialize('%s.tostring()' % var)

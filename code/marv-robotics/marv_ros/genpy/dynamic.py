@@ -30,16 +30,14 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-"""
-dynamic generation of deserializer
-"""
+"""Dynamic generation of deserializer."""
 
 from __future__ import print_function
 
 try:
-    from cStringIO import StringIO # Python 2.x
+    from cStringIO import StringIO  # Python 2.x
 except ImportError:
-    from io import StringIO # Python 3.x
+    from io import StringIO  # Python 3.x
 
 import atexit
 import os
@@ -54,71 +52,77 @@ from ..genmsg import MsgContext, MsgGenerationException
 
 from . generator import msg_generator
 
+
 def _generate_dynamic_specs(msg_context, specs, dep_msg):
     """
+    Dynamically generate message specificition.
+
     :param dep_msg: text of dependent .msg definition, ``str``
     :returns: type name, message spec, ``str, MsgSpec``
     :raises: MsgGenerationException If dep_msg is improperly formatted
     """
     line1 = dep_msg.find('\n')
     msg_line = dep_msg[:line1]
-    if not msg_line.startswith("MSG: "):
+    if not msg_line.startswith('MSG: '):
         raise MsgGenerationException("invalid input to generate_dynamic: dependent type is missing 'MSG:' type declaration header")
     dep_type = msg_line[5:].strip()
     dep_pkg, dep_base_type = genmsg.package_resource_name(dep_type)
     dep_spec = msg_loader.load_msg_from_string(msg_context, dep_msg[line1+1:], dep_type)
     return dep_type, dep_spec
-    
+
+
 def _gen_dyn_name(pkg, base_type):
     """
-    Modify pkg/base_type name so that it can safely co-exist with
-    statically generated files.
-    
-    :returns: name to use for pkg/base_type for dynamically generated message class. 
+    Modify pkg/base_type name so that it can safely co-exist with statically generated files.
+
+    :returns: name to use for pkg/base_type for dynamically generated message class.
     @rtype: str
     """
-    return "_%s__%s"%(pkg, base_type)
+    return '_%s__%s' % (pkg, base_type)
+
 
 def _gen_dyn_modify_references(py_text, current_type, types):
     """
-    Modify the generated code to rewrite names such that the code can
-    safely co-exist with messages of the same name.
-    
+    Modify the generated code to rewrite names such that the code can safely co-exist with messages of the same name.
+
     :param py_text: genmsg_py-generated Python source code, ``str``
     :returns: updated text, ``str``
     """
     for t in types:
         pkg, base_type = genmsg.package_resource_name(t)
         gen_name = _gen_dyn_name(pkg, base_type)
-        
+
         # Several things we have to rewrite:
         # - remove any import statements
-        py_text = py_text.replace("import %s.msg"%pkg, '')
+        py_text = py_text.replace('import %s.msg' % pkg, '')
         # - rewrite any references to class
-        py_text = re.sub(r"(?<!\w)%s\.msg\.%s(?!\w)"%(pkg, base_type), gen_name, py_text)
+        if '%s.msg.%s' % (pkg, base_type) in py_text:
+            # only call expensive re.sub if the class name is in the string
+            py_text = re.sub(r'(?<!\w)%s\.msg\.%s(?!\w)' % (pkg, base_type), gen_name, py_text)
 
     pkg, base_type = genmsg.package_resource_name(current_type)
     gen_name = _gen_dyn_name(pkg, base_type)
     # - class declaration
-    py_text = py_text.replace('class %s('%base_type, 'class %s('%gen_name)
+    py_text = py_text.replace('class %s(' % base_type, 'class %s(' % gen_name)
     # - super() references for __init__
-    py_text = py_text.replace('super(%s,'%base_type, 'super(%s,'%gen_name)
+    py_text = py_text.replace('super(%s,' % base_type, 'super(%s,' % gen_name)
     # std_msgs/Header also has to be rewritten to be a local reference
     py_text = py_text.replace('std_msgs.msg._Header.Header', _gen_dyn_name('std_msgs', 'Header'))
     return py_text
 
+
 def generate_dynamic(core_type, msg_cat):
     """
-    Dymamically generate message classes from msg_cat .msg text
-    gendeps dump. This method modifies sys.path to include a temp file
-    directory.
+    Dymamically generate message classes from msg_cat .msg text gendeps dump.
+
+    This method modifies sys.path to include a temp file directory.
     :param core_type str: top-level ROS message type of concatenated .msg text
     :param msg_cat str: concatenation of full message text (output of gendeps --cat)
     :raises: MsgGenerationException If dep_msg is improperly formatted
     """
     msg_context = MsgContext.create_default()
     core_pkg, core_base_type = genmsg.package_resource_name(core_type)
-    
+
     # REP 100: pretty gross hack to deal with the fact that we moved
     # Header. Header is 'special' because it can be used w/o a package
     # name, so the lookup rules end up failing. We are committed to
@@ -131,13 +135,13 @@ def generate_dynamic(core_type, msg_cat):
     deps_msgs = splits[1:]
 
     # create MsgSpec representations of .msg text
-    specs = { core_type: msg_loader.load_msg_from_string(msg_context, core_msg, core_type) }
+    specs = {core_type: msg_loader.load_msg_from_string(msg_context, core_msg, core_type)}
     # - dependencies
     for dep_msg in deps_msgs:
         # dependencies require more handling to determine type name
         dep_type, dep_spec = _generate_dynamic_specs(msg_context, specs, dep_msg)
         specs[dep_type] = dep_spec
-    
+
     # clear the message registration table and register loaded
     # types. The types have to be registered globally in order for
     # message generation of dependents to work correctly.
@@ -152,9 +156,9 @@ def generate_dynamic(core_type, msg_cat):
     for t, spec in specs.items():
         pkg, s_type = genmsg.package_resource_name(t)
         # dynamically generate python message code
-        for l in msg_generator(msg_context, spec, search_path):
-            l = _gen_dyn_modify_references(l, t, list(specs.keys()))
-            buff.write(l + '\n')
+        for line in msg_generator(msg_context, spec, search_path):
+            line = _gen_dyn_modify_references(line, t, list(specs.keys()))
+            buff.write(line + '\n')
     full_text = buff.getvalue()
 
     # Create a temporary directory
@@ -162,9 +166,9 @@ def generate_dynamic(core_type, msg_cat):
 
     # Afterwards, we are going to remove the directory so that the .pyc file gets cleaned up if it's still around
     atexit.register(shutil.rmtree, tmp_dir)
-    
+
     # write the entire text to a file and import it (it will get deleted when tmp_dir goes - above)
-    tmp_file = tempfile.NamedTemporaryFile(mode="w", suffix=".py", dir=tmp_dir, delete=False)
+    tmp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=tmp_dir, delete=False)
     tmp_file.file.write(full_text)
     tmp_file.file.close()
 
@@ -174,8 +178,8 @@ def generate_dynamic(core_type, msg_cat):
     # - strip the prefix to turn it into the python module name
     try:
         mod = __import__(os.path.basename(tmp_file.name)[:-3])
-    except:
-        #TODOXXX:REMOVE
+    except Exception:
+        # TODOXXX:REMOVE
         with open(tmp_file.name) as f:
             text = f.read()
             with open('/tmp/foo', 'w') as f2:
@@ -189,9 +193,7 @@ def generate_dynamic(core_type, msg_cat):
         try:
             messages[t] = getattr(mod, _gen_dyn_name(pkg, s_type))
         except AttributeError:
-            raise MsgGenerationException("cannot retrieve message class for %s/%s: %s"%(pkg, s_type, _gen_dyn_name(pkg, s_type)))
+            raise MsgGenerationException('cannot retrieve message class for %s/%s: %s' % (pkg, s_type, _gen_dyn_name(pkg, s_type)))
         messages[t]._spec = specs[t]
 
     return messages
-
-

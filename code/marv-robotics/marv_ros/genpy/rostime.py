@@ -30,13 +30,10 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-"""
-ROS Time representation, including Duration
-"""
+"""ROS Time representation, including Duration."""
 from __future__ import division
+
 import numbers
-import sys
-import warnings
 
 
 def _canon(secs, nsecs):
@@ -49,8 +46,9 @@ def _canon(secs, nsecs):
 
 class TVal(object):
     """
-    Base class of :class:`Time` and :class:`Duration` representations. Representation
-    is secs+nanoseconds since epoch.
+    Base class of :class:`Time` and :class:`Duration` representations.
+
+    Representation is secs+nanoseconds since epoch.
     """
 
     __slots__ = ['secs', 'nsecs']
@@ -58,7 +56,7 @@ class TVal(object):
     # mimic same API as messages when being introspected
     _slot_types = ['int32', 'int32']
 
-    def __init__(self, secs=0, nsecs=0):
+    def __init__(self, secs=0, nsecs=0):  # noqa: D205, D400
         """
         :param secs: seconds. If secs is a float, then nsecs must not be set or 0,
           larger seconds will be of type long on 32-bit systems, ``int/long/float``
@@ -67,7 +65,7 @@ class TVal(object):
         if not isinstance(secs, numbers.Integral):
             # float secs constructor
             if nsecs != 0:
-                raise ValueError("if secs is a float, nsecs cannot be set")
+                raise ValueError('if secs is a float, nsecs cannot be set')
             float_secs = secs
             secs = int(float_secs)
             nsecs = int((float_secs - secs) * 1000000000)
@@ -77,8 +75,7 @@ class TVal(object):
     @classmethod
     def from_sec(cls, float_secs):
         """
-        Create new TVal instance using time.time() value (float
-        seconds)
+        Create new TVal instance using time.time() value (float seconds).
 
         :param float_secs: time value in time.time() format, ``float``
         :returns: :class:`TVal` instance for specified time
@@ -87,16 +84,16 @@ class TVal(object):
         nsecs = int((float_secs - secs) * 1000000000)
         return cls(secs, nsecs)
 
-    def is_zero(self):
+    def is_zero(self):  # noqa: D200, D400, D401
         """
         :returns: ``True`` if time is zero (secs and nsecs are zero), ``bool``
         """
         return self.secs == 0 and self.nsecs == 0
-    
+
     def set(self, secs, nsecs):
         """
-        Set time using separate secs and nsecs values
-        
+        Set time using separate secs and nsecs values.
+
         :param secs: seconds since epoch, ``int``
         :param nsecs: nanoseconds since seconds, ``int``
         """
@@ -105,27 +102,30 @@ class TVal(object):
 
     def canon(self):
         """
-        Canonicalize the field representation in this instance.  should
-        only be used when manually setting secs/nsecs slot values, as
+        Canonicalize the field representation in this instance.
+
+        Should only be used when manually setting secs/nsecs slot values, as
         in deserialization.
         """
         self.secs, self.nsecs = _canon(self.secs, self.nsecs)
-        
-    def to_sec(self):
+
+    def to_sec(self):  # noqa: D200, D400, D401
         """
         :returns: time as float seconds (same as time.time() representation), ``float``
         """
         return float(self.secs) + float(self.nsecs) / 1e9
 
-    def to_nsec(self):
+    def to_nsec(self):  # noqa: D200, D400, D401
         """
         :returns: time as nanoseconds, ``long``
         """
         return self.secs * int(1e9) + self.nsecs
-        
+
     def __hash__(self):
         """
-        Time values are hashable. Time values with identical fields have the same hash.
+        Time values are hashable.
+
+        Time values with identical fields have the same hash.
         """
         return hash((self.secs, self.nsecs))
 
@@ -133,52 +133,47 @@ class TVal(object):
         return str(self.to_nsec())
 
     def __repr__(self):
-        return "genpy.TVal[%d]"%self.to_nsec()
+        return 'genpy.TVal[%d]' % self.to_nsec()
 
     def __nonzero__(self):
-        """
-        Return if time value is not zero
-        """
+        """Return if time value is not zero."""
         return self.secs != 0 or self.nsecs != 0
     __bool__ = __nonzero__
 
     def __lt__(self, other):
-        """
-        < test for time values
-        """
+        """< test for time values."""
         try:
             return self.__cmp__(other) < 0
         except TypeError:
             return NotImplemented
+
     def __le__(self, other):
-        """
-        <= test for time values
-        """
+        """<= test for time values."""
         try:
             return self.__cmp__(other) <= 0
         except TypeError:
             return NotImplemented
+
     def __gt__(self, other):
-        """
-        > test for time values
-        """
+        """> test for time values."""
         try:
             return self.__cmp__(other) > 0
         except TypeError:
             return NotImplemented
+
     def __ge__(self, other):
-        """
-        >= test for time values
-        """
+        """>= test for time values."""
         try:
             return self.__cmp__(other) >= 0
         except TypeError:
             return NotImplemented
+
     def __ne__(self, other):
         return not self.__eq__(other)
+
     def __cmp__(self, other):
         if not isinstance(other, TVal):
-            raise TypeError("Cannot compare to non-TVal")
+            raise TypeError('Cannot compare to non-TVal')
         a = self.to_nsec()
         b = other.to_nsec()
         return (a > b) - (a < b)
@@ -188,41 +183,42 @@ class TVal(object):
             return False
         return self.to_nsec() == other.to_nsec()
 
+
 class Time(TVal):
     """
-    Time contains the ROS-wide 'time' primitive representation, which
-    consists of two integers: seconds since epoch and nanoseconds since
+    Time contains the ROS-wide 'time' primitive representation.
+
+    It consists of two integers: seconds since epoch and nanoseconds since
     seconds. Time instances are mutable.
     """
+
     __slots__ = ['secs', 'nsecs']
+
     def __init__(self, secs=0, nsecs=0):
         """
-        Constructor: secs and nsecs are integers. You may prefer to use the static L{from_sec()} factory
-        method instead.
-        
+        Construct time where secs and nsecs are integers.
+
+        You may prefer to use the static L{from_sec()} factory method instead.
+
         :param secs: seconds since epoch, ``int``
         :param nsecs: nanoseconds since seconds (since epoch), ``int``
         """
         super(Time, self).__init__(secs, nsecs)
         if self.secs < 0:
-            raise TypeError("time values must be positive")
+            raise TypeError('time values must be positive')
 
     def __getstate__(self):
-        """
-        support for Python pickling
-        """
+        """Support for Python pickling."""
         return [self.secs, self.nsecs]
 
     def __setstate__(self, state):
-        """
-        support for Python pickling
-        """
+        """Support for Python pickling."""
         self.secs, self.nsecs = state
 
     def to_time(self):
         """
-        Get Time in time.time() format. alias of L{to_sec()}
-        
+        Get Time in time.time() format. alias of L{to_sec()}.
+
         :returns: time in floating point secs (time.time() format), ``float``
         """
         return self.to_sec()
@@ -231,12 +227,12 @@ class Time(TVal):
         return super(Time, self).__hash__()
 
     def __repr__(self):
-        return "genpy.Time[%d]"%self.to_nsec()
+        return 'genpy.Time[%d]' % self.to_nsec()
 
     def __add__(self, other):
         """
-        Add duration to this time
-        
+        Add duration to this time.
+
         :param other: :class:`Duration`
         """
         if not isinstance(other, Duration):
@@ -247,7 +243,8 @@ class Time(TVal):
 
     def __sub__(self, other):
         """
-        Subtract time or duration from this time
+        Subtract time or duration from this time.
+
         :param other: :class:`Duration`/:class:`Time`
         :returns: :class:`Duration` if other is a :class:`Time`, :class:`Time` if other is a :class:`Duration`
         """
@@ -260,34 +257,41 @@ class Time(TVal):
 
     def __cmp__(self, other):
         """
-        Compare to another time
+        Compare to another time.
+
         :param other: :class:`Time`
         """
         if not isinstance(other, Time):
-            raise TypeError("cannot compare to non-Time")
+            raise TypeError('cannot compare to non-Time')
         a = self.to_nsec()
         b = other.to_nsec()
         return (a > b) - (a < b)
 
     def __eq__(self, other):
         """
-        Equals test for Time. Comparison assumes that both time
-        instances are in canonical representation; only compares fields.
-        
+        Equal test for Time.
+
+        Comparison assumes that both time instances are in canonical
+        representation; only compares fields.
+
         :param other: :class:`Time`
         """
         if not isinstance(other, Time):
             return False
         return self.secs == other.secs and self.nsecs == other.nsecs
 
+
 class Duration(TVal):
     """
-    Duration represents the ROS 'duration' primitive, which consists
-    of two integers: seconds and nanoseconds. The Duration class
-    allows you to add and subtract Duration instances, including
-    adding and subtracting from :class:`Time` instances.
+    Duration represents the ROS 'duration' primitive.
+
+    It consists of two integers: seconds and nanoseconds.
+    The Duration class allows you to add and subtract Duration instances,
+    including adding and subtracting from :class:`Time` instances.
     """
+
     __slots__ = ['secs', 'nsecs']
+
     def __init__(self, secs=0, nsecs=0):
         """
         Create new Duration instance. secs and nsecs are integers and correspond to the ROS 'duration' primitive.
@@ -298,31 +302,27 @@ class Duration(TVal):
         super(Duration, self).__init__(secs, nsecs)
 
     def __getstate__(self):
-        """
-        support for Python pickling
-        """
+        """Support for Python pickling."""
         return [self.secs, self.nsecs]
 
     def __setstate__(self, state):
-        """
-        support for Python pickling
-        """
+        """Support for Python pickling."""
         self.secs, self.nsecs = state
 
     def __hash__(self):
         return super(Duration, self).__hash__()
 
     def __repr__(self):
-        return "genpy.Duration[%d]"%self.to_nsec()
+        return 'genpy.Duration[%d]' % self.to_nsec()
 
-    def __neg__(self):
-        """
-        :returns: Negative value of this :class:`Duration`
-        """
+    def __neg__(self):  # noqa: D400, D401
+        """:returns: Negative value of this :class:`Duration`"""
         return self.__class__(-self.secs, -self.nsecs)
+
     def __abs__(self):
         """
-        Absolute value of this duration
+        Absolute value of this duration.
+
         :returns: positive :class:`Duration`
         """
         if self.secs >= 0:
@@ -332,6 +332,7 @@ class Duration(TVal):
     def __add__(self, other):
         """
         Add duration to this duration, or this duration to a time, creating a new time value as a result.
+
         :param other: duration or time, ``Duration``/``Time``
         :returns: :class:`Duration` if other is a :class:`Duration`
           instance, :class:`Time` if other is a :class:`Time`
@@ -345,17 +346,19 @@ class Duration(TVal):
 
     def __sub__(self, other):
         """
-        Subtract duration from this duration, returning a new duration
+        Subtract duration from this duration, returning a new duration.
+
         :param other: duration
         :returns: :class:`Duration`
         """
         if not isinstance(other, Duration):
             return NotImplemented
-        return self.__class__(self.secs-other.secs, self.nsecs-other.nsecs)        
+        return self.__class__(self.secs-other.secs, self.nsecs-other.nsecs)
 
     def __mul__(self, val):
         """
-        Multiply this duration by an integer or float
+        Multiply this duration by an integer or float.
+
         :param val: multiplication factor, ``int/float``
         :returns: :class:`Duration` multiplied by val
         """
@@ -370,7 +373,8 @@ class Duration(TVal):
 
     def __floordiv__(self, val):
         """
-        Floor divide this duration by an integer or float
+        Floor divide this duration by an integer or float.
+
         :param val: division factor ``int/float``, or :class:`Duration` to divide by
         :returns: :class:`Duration` divided by val - a :class:`Duration` if divided by a number, or a number if divided by a duration
         """
@@ -383,7 +387,8 @@ class Duration(TVal):
 
     def __div__(self, val):
         """
-        Divide this duration by an integer or float
+        Divide this duration by an integer or float.
+
         :param val: division factor ``int/float``, or :class:`Duration` to divide by
         :returns: :class:`Duration` divided by val - a :class:`Duration` if divided by a number, or a number if divided by a duration
         """
@@ -396,7 +401,8 @@ class Duration(TVal):
 
     def __truediv__(self, val):
         """
-        Divide this duration by an integer or float
+        Divide this duration by an integer or float.
+
         :param val: division factor ``int/float``, or :class:`Duration` to divide by
         :returns: :class:`Duration` divided by val - a :class:`Duration` if divided by a number, or a number if divided by a duration
         """
@@ -409,7 +415,8 @@ class Duration(TVal):
 
     def __mod__(self, val):
         """
-        Find the remainder when dividing this Duration by another Duration
+        Find the remainder when dividing this Duration by another Duration.
+
         :returns: :class:`Duration` The remaining time after the division
         """
         if isinstance(val, Duration):
@@ -419,7 +426,8 @@ class Duration(TVal):
 
     def __divmod__(self, val):
         """
-        Implements the builtin divmod for a pair of Durations
+        Implement the builtin divmod for a pair of Durations.
+
         :returns: ``int`` The floored result of the division
         :returns: :class:`Duration` The remaining time after the division
         """
@@ -431,7 +439,7 @@ class Duration(TVal):
 
     def __cmp__(self, other):
         if not isinstance(other, Duration):
-            raise TypeError("Cannot compare to non-Duration")
+            raise TypeError('Cannot compare to non-Duration')
         a = self.to_nsec()
         b = other.to_nsec()
         return (a > b) - (a < b)
