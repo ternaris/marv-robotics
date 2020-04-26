@@ -18,9 +18,9 @@ log = getLogger(__name__)
 class ConfigError(Exception):
     def __str__(self):
         try:
-            section, key, message = self.args  # pylint: disable=unpacking-non-sequence
+            section, key, message = self.args  # pylint: disable=unbalanced-tuple-unpacking
         except ValueError:
-            section, key = self.args  # pylint: disable=unpacking-non-sequence
+            section, key = self.args  # pylint: disable=unbalanced-tuple-unpacking
             message = 'missing'
         return f'{section.filename} [{section.name}] {key}: {message}'
 

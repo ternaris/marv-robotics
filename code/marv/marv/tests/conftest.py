@@ -110,10 +110,10 @@ def section_test(node):
 @pytest.fixture(scope='function')
 async def site(loop, tmpdir):  # pylint: disable=unused-argument
     collection_names = ('hodge', 'podge')
-    add_nodes = (
-        '    marv.tests.conftest:node_test\n'
-        '    marv.tests.conftest:section_test\n'
-    )
+    add_nodes = '\n'.join([
+        '    marv.tests.conftest:node_test',
+        '    marv.tests.conftest:section_test',
+    ])
     add_filters = '    node_test | Test node | any | subset | (list (get "node_test.value" 0))'
     add_columns = '    node_test  | Test   | int      | (get "node_test.value" 0)'
     add_sections = '    section_test'

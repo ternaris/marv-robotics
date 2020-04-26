@@ -54,8 +54,8 @@ STATUS_JSON = [jsondumps({'icon': STATUS_ICON[i], 'title': x},
 # TODO: reconsider in case we get a couple of more states
 STATUS_STRS = {
     bitmask: ','.join(filter(None,
-                             [STATUS_JSON[i] if bitmask & 2**i else None
-                              for i in range(len(STATUS_JSON))]))
+                             (STATUS_JSON[i] if bitmask & 2**i else None
+                              for i in range(len(STATUS_JSON)))))
     for bitmask in range(2**(len(STATUS_JSON)))
 }
 

@@ -288,9 +288,9 @@ def modelize(items, relations):
     for _, group in groupby(items, lambda x: x[0]):
         group = list(group)
         related = [
-            sorted(set(filter(lambda x: x.id, [
+            sorted(set(filter(lambda x: x.id, (
                 x(*y[relidx[i+1]:relidx[i+2]]) for y in group
-            ])), key=lambda x: x.id)
+            ))), key=lambda x: x.id)
             for i, x in enumerate(types)
         ]
         res.append(dataset(*(cast_fields(keys[:relidx[1]], group[0]) + related)))
@@ -690,7 +690,7 @@ class Database:
                      .select('*')
         count = await transaction.exq(query, count=True)
         if count != len(comments):
-            raise DBError(f'Bulk commenting failed, users or datasets missing')
+            raise DBError('Bulk commenting failed, users or datasets missing')
 
     @run_in_transaction
     async def comment_by_setids(self, setids, author, text, transaction=None):
