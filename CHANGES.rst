@@ -15,6 +15,16 @@ If we're deprecating features you rely on, please speak up.
 Upcoming (unreleased)
 ^^^^^^^^^^^^^^^^^^^^^
 
+**This release contains import security fixes. We strongly recommend that all affected MARV installations be upgraded immediately.**
+
+Security
+~~~~~~~~
+
+- Fix directory traversal bug that allowed arbitrary filesystem reads when running without nginx. The faulty code got introduced with 19.09.0. Earlier versions and setups using nginx are not affected.
+- Upgrade tortoise-orm for `CVE-2020-11010`_
+
+.. _CVE-2020-11010: https://nvd.nist.gov/vuln/detail/CVE-2020-11010
+
 Added
 ~~~~~
 - Support uninstall of python packages in single binary mode (EE)
@@ -25,12 +35,14 @@ Added
 Changed
 ~~~~~~~
 - Update python dependencies and tooling
-- **BREAKING** Update to most recent tortoise-orm (see migration)
+- Update to most recent tortoise-orm, **needs migration:** :ref:`migrate-20.04.0`
 - Improved map layer controls
 - Prepare for asynchronous node execution in multiple processes
 - Simplify node testing by introducing a wrapper for run_nodes
 - Start moving code from marv into newly introduced marv_api
 - Use DAG based on pydantic models to represent node graph
+- Change marv serve to bind per default only to localhost for development
+- State clearly that gunicorn without nginx as reverse-proxy is only meant for development
 
 Deprecated
 ~~~~~~~~~~
@@ -52,20 +64,22 @@ Fixed
 - Fix documentation for widget pre
 - Fix pip dist-info discovery for packages contained in bundle (EE)
 - Fix position of CLI config option in docs
+- Fix time-wise sorting of messages from different bags
 - Run ffmpeg in sanitized environment to prevent exec errors in single binary mode (EE)
 - Load marv pip managed user site only when running from pyinstaller bundle (EE)
 - Remove distutils trove classifiers that are not applicable anymore
 - Warning when building documentation
 - Do not reset map zoom on window resize `#67`_
 - Properly shutdown node and driver generators upon driver restart
-
-
-Security
-~~~~~~~~
+- Support passing parameters to marv serve in docker setup `#74`
+- Properly close stream file handles before cleaning up temporary directories `#75`
 
 .. _#67: https://gitlab.com/ternaris/marv-robotics/issues/67
+.. _#74: https://gitlab.com/ternaris/marv-robotics/issues/74
+.. _#75: https://gitlab.com/ternaris/marv-robotics/issues/75
 
-.. _v19_11_1:
+
+.. _v19.11.1:
 
 19.11.1 (2019-12-13)
 ^^^^^^^^^^^^^^^^^^^^
@@ -76,7 +90,7 @@ Fixed
 - Let marv python see marv pip installed packages (EE)
 
 
-.. _v19_11_0:
+.. _v19.11.0:
 
 19.11.0 (2019-12-01)
 ^^^^^^^^^^^^^^^^^^^^
@@ -88,9 +102,9 @@ Added
 
 Changed
 ~~~~~~~
-- Provide marv serve cli to replace gunicorn (see migration)
+- Provide marv serve cli to replace gunicorn, **needs migration:** :ref:`migrate-19.11.0`
 - Speedup database queries
-- **BREAKING** Switch from sqlalchemy to tortoise-orm (see migration)
+- Switch from sqlalchemy to tortoise-orm, **needs migration:** :ref:`migrate-19.11.0`
 - Remove need for four slashes for absolute database URI `#68`_
 - Contribution guide to require contributions to documentation be licensed under CC-BY-4.0 instead of CC-BY-SA-4.0
 - Upgrade python gnupg library and silence log message upon import
@@ -112,7 +126,7 @@ Fixed
 .. _#70: https://gitlab.com/ternaris/marv-robotics/issues/70
 .. _#72: https://gitlab.com/ternaris/marv-robotics/issues/72
 
-.. _v19_09_0:
+.. _v19.09.0:
 
 19.09.0 (2019-09-09)
 ^^^^^^^^^^^^^^^^^^^^
@@ -137,7 +151,7 @@ Changed
 - Clean older changelog entries and add links to issues and MRs
 - Speed up rendering and sorting of tables with large number of rows
 - Drop flask-sqlalchemy in favour of plain sqlalchemy
-- **BREAKING** Switch from flask to aiohttp powered by gunicorn (see migration)
+- Switch from flask to aiohttp powered by gunicorn **needs migration:** :ref:`migrate-19.09.0`
 
 Removed
 ~~~~~~~
@@ -156,7 +170,7 @@ Security
 .. _#59: https://gitlab.com/ternaris/marv-robotics/issues/59
 .. _#60: https://gitlab.com/ternaris/marv-robotics/issues/60
 
-.. _v19_07_0:
+.. _v19.07.0:
 
 19.07.0 (2019-07-14)
 ^^^^^^^^^^^^^^^^^^^^
@@ -181,7 +195,7 @@ Fixed
 .. _#66: https://gitlab.com/ternaris/marv-robotics/issues/66
 .. _!65: https://gitlab.com/ternaris/marv-robotics/merge_requests/65
 
-.. _v19_04_0:
+.. _v19.04.0:
 
 19.04.0 (2019-04-30)
 ^^^^^^^^^^^^^^^^^^^^
@@ -234,7 +248,7 @@ Security
 .. _CVE-2018-18074: https://nvd.nist.gov/vuln/detail/CVE-2018-18074
 
 
-.. _v19_02_0:
+.. _v19.02.0:
 
 19.02.0 (2019-02-09)
 ^^^^^^^^^^^^^^^^^^^^
@@ -245,7 +259,7 @@ Changed
 - Improve testing and deployment infrastructure
 - Prepare migration to GitLab
 - Unify versioning of frontend and Python packages
-- Dropped ipdb in favour of pdbpp (see :ref:`migrate_18_07_to_19_02_0`)
+- Dropped ipdb in favour of pdbpp, **needs migration:** :ref:`migrate-19.02.0`
 
 Fixed
 ~~~~~
@@ -262,7 +276,7 @@ Fixed
 .. _#50: https://gitlab.com/ternaris/marv-robotics/issues/50
 
 
-.. _v18_07:
+.. _v18.07:
 
 18.07 (2018-07-22)
 ^^^^^^^^^^^^^^^^^^
@@ -278,7 +292,7 @@ Added
 Changed
 ~~~~~~~
 - Update Python dependencies, most notably latest pycapnp
-- Support streams of individual topics as optional inputs `#25`_ (see :ref:`migrate_18_05_to_18_07`)
+- Support streams of individual topics as optional inputs `#25`_, **needs migration:** :ref:`migrate-18.07`
 
 Fixed
 ~~~~~
@@ -295,7 +309,7 @@ Fixed
 .. _#39: https://gitlab.com/ternaris/marv-robotics/issues/39
 
 
-.. _v18_05_1:
+.. _v18.05.1:
 
 18.05.1 (2018-05-11)
 ^^^^^^^^^^^^^^^^^^^^
@@ -305,7 +319,7 @@ Fixed
 - Correct coordinate transformations for cached trajectories
 
 
-.. _v18_05:
+.. _v18.05:
 
 18.05 (2018-05-08)
 ^^^^^^^^^^^^^^^^^^
@@ -336,7 +350,7 @@ Fixed
 .. _#36: https://gitlab.com/ternaris/marv-robotics/issues/36
 
 
-.. _v18_04:
+.. _v18.04:
 
 18.04 (2018-04-30)
 ^^^^^^^^^^^^^^^^^^
@@ -356,7 +370,7 @@ Changed
 - Switch from nosetest to pytest and cleanup requirements
 - Drop Bootstrap v3 in favour of slim custom Bootstrap v4 derivate
 - Merge and cleanup individual repositories
-- Installation methods have significantly changed, reinstall is recommended (see :ref:`migrate_18_03_to_18_04`)
+- Installation methods have significantly changed, **reinstall is recommended:** :ref:`migrate-18.04`
 
 Fixed
 ~~~~~
@@ -365,7 +379,7 @@ Fixed
 - Fix color format for opencv bridge
 
 
-.. _v18_03:
+.. _v18.03:
 
 18.03 (2018-03-10)
 ^^^^^^^^^^^^^^^^^^
@@ -381,8 +395,7 @@ Added
 
 Changed
 ~~~~~~~
-- Changed GeoJSON property object needs rerender (see
-  :ref:`migrate_18_02_to_18_03`)
+- Changed GeoJSON property object needs rerender, **needs migration:** :ref:`migrate-18.03`
 
 Fixed
 ~~~~~
@@ -402,7 +415,7 @@ Fixed
 .. _#28: https://gitlab.com/ternaris/marv-robotics/issues/28
 
 
-.. _v18_02:
+.. _v18.02:
 
 18.02 (2018-02-05)
 ^^^^^^^^^^^^^^^^^^
@@ -419,7 +432,7 @@ Changed
 - Preliminary support for topics with mixed message types `#21`_
 - Speedup rendering in frontend
 - Colorize point clouds
-- Take message type definitions from bag files (needs migration, see :ref:`migrate_17_11_to_18_02`)
+- Take message type definitions from bag files, **needs migration:** :ref:`migrate-18.02`
 
 Fixed
 ~~~~~
@@ -433,7 +446,7 @@ Fixed
 .. _#21: https://gitlab.com/ternaris/marv-robotics/issues/21
 
 
-.. _v17_11:
+.. _v17.11:
 
 17.11 (2017-11-17)
 ^^^^^^^^^^^^^^^^^^
@@ -445,15 +458,15 @@ Added
 - Document HTTP API
 - Document migration from Community Edition 16.10
 - Support import of datasets from Community Edition 16.10
-- Co-release 17.11 community and enterprise edition
+- Co-release 17.11 Community and Enterprise Edition
 
 Changed
 ~~~~~~~
 - Improve s-expression functions for configuration file
-- Switch to flat store (needs migration, see :ref:`migrate_16_10_to_17_11`)
+- Switch to flat store, **needs migration:** :ref:`migrate-17.11`
 
 
-.. _v17_08:
+.. _v17.08:
 
 17.08 (2017-08-23)
 ^^^^^^^^^^^^^^^^^^
@@ -474,7 +487,7 @@ Fixed
 - Frontend bug and styling fixes
 
 
-.. _v17_06:
+.. _v17.06:
 
 17.06 (2017-06-16)
 ^^^^^^^^^^^^^^^^^^
@@ -501,7 +514,7 @@ Fixed
 - Render multi colored trajectories with markers correctly
 
 
-.. _v17_05:
+.. _v17.05:
 
 17.05 (2017-05-05)
 ^^^^^^^^^^^^^^^^^^
@@ -534,7 +547,7 @@ Changed
 .. _#4: https://gitlab.com/ternaris/marv-robotics/issues/4
 
 
-.. _v16_10:
+.. _v16.10:
 
 16.10 (2016-10-07)
 ^^^^^^^^^^^^^^^^^^

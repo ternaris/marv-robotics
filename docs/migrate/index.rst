@@ -6,14 +6,17 @@
 Migration
 =========
 
-Before doing any migration you might want to check the :ref:`config` and :ref:`deploy` sections.
+Listed here are all versions that necessitate migration. Depending on the version you are migrating from you might need to follow multiple migration steps.
 
+In case of database migrations it is sufficient to ``marv dump`` the database with the version you are currently using and ``marv restore`` with the latest version; marv is able to *dump* itself and *restore* any older version. In case this does not hold true ``marv restore`` will complain and provide instructions what to do.
 
-.. _migrate_19_11_0_to_20_01_0:
+.. _migrate-20.04.0:
 
-19.11.0 -> 20.01.0
-------------------
+20.04.0
+-------
 
+Database migration
+^^^^^^^^^^^^^^^^^^
 An updated version of tortoise-orm required changes to the database schemas. A migration of the MARV database is necessary. Export the database with your current version of MARV:
 
 .. code-block:: console
@@ -29,10 +32,10 @@ After updating MARV run:
    marv restore dump-1911.json
 
 
-.. _migrate_19_09_0_to_19_11_0:
+.. _migrate-19.11.0:
 
-19.09.0 -> 19.11.0
-------------------
+19.11.0
+-------
 
 The gunicorn configuration was simplified. Instead of providing ``gunicorn_cfg.py`` and running gunicorn manually, the ``marv serve`` cli was added. Check it out with ``marv serve --help``.
 
@@ -53,10 +56,10 @@ After updating MARV run:
    marv restore dump-1909.json
 
 
-.. _migrate_19_07_0_to_19_09_0:
+.. _migrate-19.09.0:
 
-19.07.0 -> 19.09.0
-------------------
+19.09.0
+-------
 
 Uwsgi was replaced in favour of Gunicorn. In your site directory, replace ``uwsgi.conf`` with a ``gunicorn_cfg.py``:
 
@@ -88,26 +91,26 @@ If you made any changes to your old ``uwsgi.conf`` please adjust the above confi
    +       proxy_pass 127.0.0.1:8000;
 
 
-.. _migrate_18_07_to_19_02_0:
+.. _migrate-19.02.0:
 
-18.07 -> 19.02.0
-----------------
+19.02.0
+-------
 
 Support for ipdb has been dropped in favour of `pdb++ <https://github.com/antocuni/pdb>`_. Use ``PDB=1 marv run`` instead of ``marv-ipdb run``. For more information see :ref:`debug`.
 
 
-.. _migrate_18_05_to_18_07:
+.. _migrate-18.07:
 
-18.05 -> 18.07
---------------
+18.07
+-----
 
 The way inputs are handled has changed. Inputs selecting an individual topic are now optional. See :ref:`optional_inputs` for more information.
 
 
-.. _migrate_18_03_to_18_04:
+.. _migrate-18.04:
 
-18.03 -> 18.04
---------------
+18.04
+-----
 
 The list of system dependencies is updated and the installation has significantly changed. We recommend that you re-read the :ref:`install` instructions. The database has not changed and existing sites continue to function without migration.
 
@@ -116,10 +119,10 @@ MARV now supports offloading the delivery of files to nginx. In case you are not
 MARV now supports access control lists (ACLs). The default ACL requires authentication to read anything, tag and comment; and only members of the group admin may discard datasets. For users of the Enterprise Edition this corresponds to the same behaviour as before. The :func:`marv_webapi.acls.public` closely resembles the previous Community Edition default, apart from requiring admin group membership to discard datasets. See :ref:`cfg_marv_acl` to change the effective ACL.
 
 
-.. _migrate_18_02_to_18_03:
+.. _migrate-18.03:
 
-18.02 -> 18.03
---------------
+18.03
+-----
 
 With this release:
 
@@ -132,10 +135,10 @@ To update the store to the new format rerun the trajectory nodes using:
    marv run --node trajectory --force --force-dependent --collection=*
 
 
-.. _migrate_17_11_to_18_02:
+.. _migrate-18.02:
 
-17.11 -> 18.02
---------------
+18.02
+-----
 
 With this release:
 
@@ -160,10 +163,10 @@ Now, nodes can be run, that were previously missing message type definitions. ``
    marv run --node gnss_plots --force --force-dependent --collection=*
 
 
-.. _migrate_16_10_to_17_11:
+.. _migrate-17.11:
 
-16.10 -> 17.11
---------------
+17.11
+-----
 
 In the old site:
 
