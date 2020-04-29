@@ -10,10 +10,10 @@ Changes necessitating migration reference the corresponding migration section. R
 If we're deprecating features you rely on, please speak up.
 
 
-.. _upcoming_changes:
+.. _v20_04_0:
 
-Upcoming (unreleased)
-^^^^^^^^^^^^^^^^^^^^^
+20.04.0 (2020-04-30)
+^^^^^^^^^^^^^^^^^^^^
 
 **This release contains import security fixes. We strongly recommend that all affected MARV installations be upgraded immediately.**
 
