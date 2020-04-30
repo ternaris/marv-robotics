@@ -64,15 +64,15 @@ fi'
 
 USER marv
 
-COPY requirements/* /requirements/
+COPY requirements/* /home/marv/requirements/
 RUN bash -c '\
 if [[ -n "$MARV_VENV" ]]; then \
     ${PYTHON} -m venv $MARV_VENV && \
     $MARV_VENV/bin/pip install -U pip==20.1 setuptools==46.1.3 wheel==0.34.2 && \
-    $MARV_VENV/bin/pip install -U -c /requirements/marv-robotics.txt cython && \
-    $MARV_VENV/bin/pip install -U -r /requirements/marv-robotics.txt && \
+    $MARV_VENV/bin/pip install -U -c /home/marv/requirements/marv-robotics.txt cython && \
+    $MARV_VENV/bin/pip install -U -r /home/marv/requirements/marv-robotics.txt && \
     $MARV_VENV/bin/pip install opencv-python-headless==4.1.1.26 && \
-    $MARV_VENV/bin/pip install -U -r /requirements/develop.txt; \
+    $MARV_VENV/bin/pip install -U -r /home/marv/requirements/develop.txt; \
 fi'
 
 ARG code=code
