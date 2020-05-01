@@ -15,10 +15,7 @@ async def tag(request):
 
     add = []
     remove = []
-    for collection, ops in changes.items():
-        if collection not in request.app['site'].collections:
-            raise web.HTTPBadRequest()
-
+    for ops in changes.values():
         for opname, target in (('add', add), ('remove', remove)):
             for tagname, ids in ops.get(opname, {}).items():
                 for id in ids:
