@@ -81,6 +81,16 @@ async def scoped_session(database, txn=None):
             await database.connection_queue.put(connection)
 
 
+async def create_or_ignore(tablename, txn, **kw):
+    table = Table(tablename)
+    query = Query.from_(table).select(table.star)
+    for col, value in kw.items():
+        query = query.where(getattr(table, col) == value)
+    rows = await txn.exq(query)
+    if not rows:
+        await txn.exq(Query.into(table).columns(*kw.keys()).insert(*kw.values()))
+
+
 def run_in_transaction(func):
     async def wrapper(database, *args, txn=None, **kwargs):
         async with scoped_session(database, txn=txn) as txn:

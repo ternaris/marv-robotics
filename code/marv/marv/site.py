@@ -18,8 +18,8 @@ from marv_store import Store
 from . import utils
 from .collection import Collections
 from .config import Config
-from .db import Database, Tortoise, scoped_session
-from .model import Acn, Collection, Dataset, Group, User
+from .db import Database, Tortoise, create_or_ignore, scoped_session
+from .model import Dataset, Group, User
 
 
 DEFAULT_NODES = """
@@ -277,9 +277,9 @@ class Site:
                     using_db=txn,
                 )
 
-            await Acn.get_or_create(id=1, using_db=txn)
+            await create_or_ignore('acn', id=1, txn=txn)
             for name in self.collections:
-                await Collection.get_or_create(name=name, acn_id=1, using_db=txn)
+                await create_or_ignore('collection', name=name, acn_id=1, txn=txn)
 
             log.verbose('Initialized database %s', self.config.marv.dburi)
             for col, collection in self.collections.items():
