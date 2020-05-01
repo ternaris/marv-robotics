@@ -21,12 +21,12 @@ async def test_id_helpers(site):
     assert await site.db.resolve_shortids(['aaaa', 'aaa']) == [setid1]
     assert await site.db.resolve_shortids(['aaaa', 'mmaa']) == sorted([setid1, setid100])
 
-    res1 = await site.db.get_datasets_by_setids([setid1, setid100], prefetch=[])
-    res2 = await site.db.get_datasets_by_dbids([1, 100], prefetch=[])
+    res1 = await site.db.get_datasets_by_setids([setid1, setid100], [], '::')
+    res2 = await site.db.get_datasets_by_dbids([1, 100], [], '::')
     assert {x.setid for x in res1} == {x.setid for x in res2}
 
-    res1 = await site.db.get_datasets_by_setids([setid1, setid100], prefetch=['files'])
-    res2 = await site.db.get_datasets_by_dbids([1, 100], prefetch=['files'])
+    res1 = await site.db.get_datasets_by_setids([setid1, setid100], ['files'], '::')
+    res2 = await site.db.get_datasets_by_dbids([1, 100], ['files'], '::')
     assert {x.files[0].path for x in res1} == {x.files[0].path for x in res2}
 
 
@@ -37,7 +37,7 @@ async def test_lookups(site):
     sets = await site.db.get_datasets_for_collections(['hodge'])
     assert len(sets) == 50
 
-    res = await site.db.get_filepath_by_setid_idx(sets[9], 0)
+    res = await site.db.get_filepath_by_setid_idx(sets[9], 0, '::')
     assert res.endswith('hodge/0010')
 
 
@@ -53,7 +53,7 @@ async def test_discard(site):
     rest = await site.db.get_datasets_for_collections(None)
     assert sets == rest
 
-    await site.db.discard_datasets_by_dbids([1])
+    await site.db.discard_datasets_by_dbids([1], True, '::')
     rest = await site.db.get_datasets_for_collections(None)
     assert set(sets) - set(rest) == {first}
 
@@ -71,11 +71,11 @@ async def test_discard(site):
 
 
 async def test_query(site):
-    await site.db.discard_datasets_by_dbids([50])
+    await site.db.discard_datasets_by_dbids([50], True, '::')
     res = await site.db.bulk_tag([
         ('foo', 1),
         ('foo', 2),
-    ], [])
+    ], [], '::')
 
     res = await site.db.query()
     assert len(res) == 149

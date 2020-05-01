@@ -13,7 +13,7 @@ async def delete(request):
     if not ids:
         raise web.HTTPBadRequest()
     try:
-        await request.app['site'].db.discard_datasets_by_dbids(ids, user=request['username'])
+        await request.app['site'].db.discard_datasets_by_dbids(ids, True, user=request['username'])
     except DBPermissionError:
         raise HTTPPermissionError(request)
     return web.json_response({})

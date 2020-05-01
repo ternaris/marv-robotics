@@ -8,7 +8,7 @@ async def test_collection(app, site, client):
     await site.db.bulk_tag([
         ('foo', 1),
         ('foo', 2),
-    ], [])
+    ], [], '::')
 
     res = await client.get('/marv/api/collection/notexist')
     assert res.status == 401

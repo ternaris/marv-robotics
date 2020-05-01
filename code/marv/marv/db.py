@@ -773,7 +773,7 @@ class Database:
         return Query.from_(model).select(model.id)
 
     @staticmethod
-    def get_resolve_value_query(rel, relations, user=None, action=None):
+    def get_resolve_value_query(rel, relations, user, action):
         # pylint: disable=unused-argument
         out, tmp = Tables('out', 'tmp')
         return Query.with_(Query.with_(Query.from_(ValuesTuple(*relations))
@@ -786,12 +786,12 @@ class Database:
                     .select(out.rel_id, out.back_id)
 
     @staticmethod
-    def id_crit(ids, user=None, action=None):  # pylint: disable=unused-argument
+    def id_crit(ids, user, action):  # pylint: disable=unused-argument
         dataset = Table('dataset')
         return dataset.id.isin(ids)
 
     @staticmethod
-    def setid_crit(ids, user=None, action=None):  # pylint: disable=unused-argument
+    def setid_crit(ids, user, action):  # pylint: disable=unused-argument
         dataset = Table('dataset')
         return dataset.setid.isin([str(x) for x in ids])
 
@@ -820,7 +820,7 @@ class Database:
         return sorted(setids)
 
     @run_in_transaction
-    async def get_collections(self, user=None, txn=None):  # pylint: disable=unused-argument
+    async def get_collections(self, user, txn=None):  # pylint: disable=unused-argument
         collection = Table('collection')
         return [
             {'id': x, 'name': y}
@@ -855,7 +855,7 @@ class Database:
         return modelize(items, prefetch)
 
     @run_in_transaction
-    async def get_datasets_by_setids(self, setids, prefetch, user=None, action=None, txn=None):
+    async def get_datasets_by_setids(self, setids, prefetch, user, action=None, txn=None):
         # pylint: disable=too-many-arguments
         ret = await self._get_datasets_by_crit(self.setid_crit(setids, user, action), prefetch, txn)
         if len(ret) != len(setids):
@@ -863,7 +863,7 @@ class Database:
         return ret
 
     @run_in_transaction
-    async def get_datasets_by_dbids(self, ids, prefetch, user=None, action=None, txn=None):
+    async def get_datasets_by_dbids(self, ids, prefetch, user, action=None, txn=None):
         # pylint: disable=too-many-arguments
         ret = await self._get_datasets_by_crit(self.id_crit(ids, user, action), prefetch, txn)
         if len(ret) != len(ids):
@@ -871,7 +871,7 @@ class Database:
         return ret
 
     @run_in_transaction
-    async def get_filepath_by_setid_idx(self, setid, idx, user=None, txn=None):
+    async def get_filepath_by_setid_idx(self, setid, idx, user, txn=None):
         dataset, file = Tables('dataset', 'file')
         res = await txn.exq(Query.from_(file)
                             .join(dataset)
@@ -905,10 +905,10 @@ class Database:
 
     @run_in_transaction
     async def discard_datasets_by_setids(self, setids, state=True, txn=None):
-        await self._set_dataset_discarded_by_crit(self.setid_crit(setids), state, txn)
+        await self._set_dataset_discarded_by_crit(self.setid_crit(setids, '::', None), state, txn)
 
     @run_in_transaction
-    async def discard_datasets_by_dbids(self, ids, state=True, user=None, txn=None):
+    async def discard_datasets_by_dbids(self, ids, state, user, txn=None):
         count = await self._set_dataset_discarded_by_crit(self.id_crit(ids, user, 'delete'),
                                                           state, txn)
         if count != len(ids):
@@ -956,7 +956,7 @@ class Database:
                               .delete())
 
     @run_in_transaction
-    async def bulk_comment(self, comments, user=None, txn=None):
+    async def bulk_comment(self, comments, user, txn=None):
         comment, dataset, tmp, user_t = Tables('comment', 'dataset', 'tmp', 'user')
         comments = [(x['dataset_id'], x['author'], x['time_added'], x['text']) for x in comments]
         query = Query.into(comment)\
@@ -1050,7 +1050,7 @@ class Database:
                       .delete())
 
     @run_in_transaction
-    async def bulk_tag(self, add, remove, user=None, txn=None):
+    async def bulk_tag(self, add, remove, user, txn=None):
         if add:
             await self._ensure_values('tag', [(x[0],) for x in add], user, txn)
             count = await self._ensure_refs('tag', 'dataset_tag', 'tag_id', 'dataset_id', add,
@@ -1078,7 +1078,7 @@ class Database:
                                .select(dataset.id))
         add = [(tag, colid['id']) for tag, colid in product(add, colids)]
         remove = [(tag, colid['id']) for tag, colid in product(remove, colids)]
-        await self.bulk_tag(add, remove, txn=txn)
+        await self.bulk_tag(add, remove, user='::', txn=txn)
 
     @run_in_transaction
     async def list_tags(self, collections=None, txn=None):
@@ -1160,7 +1160,7 @@ class Database:
         return [x['value'] for x in await txn.exq(query)]
 
     @run_in_transaction  # noqa: C901
-    async def get_filtered_listing(self, descs, filters, user=None, txn=None):  # noqa: C901
+    async def get_filtered_listing(self, descs, filters, user, txn=None):  # noqa: C901
         # pylint: disable=too-many-locals,too-many-branches,too-many-statements,unused-argument
         listing, dataset, dataset_tag, tag = \
             Tables(descs[0].table, 'dataset', 'dataset_tag', 'tag')
@@ -1387,12 +1387,12 @@ class Database:
         await txn.exq(Query.from_(through)
                       .where(backid.isin({x[1] for x in relations})
                              & ~Tuple(relid, backid).isin(
-                                 self.get_resolve_value_query(table, relations)))
+                                 self.get_resolve_value_query(table, relations, '::', None)))
                       .delete())
 
     @run_in_transaction  # noqa: C901
     async def rpc_query(self, model, filters, attrs, order, limit, offset,  # noqa: C901
-                        user=None, txn=None):
+                        user, txn=None):
         # pylint: disable=too-many-arguments, too-many-statements, too-many-locals, too-many-branches
         result = {}
         table = Table(model)

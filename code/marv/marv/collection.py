@@ -431,7 +431,7 @@ class Collection:
 
     async def _add_tags(self, connection, data):
         add = [(tag, dataset.id) for dataset, tags in data for tag in tags]
-        await self.site.db.bulk_tag(add, [], txn=connection)
+        await self.site.db.bulk_tag(add, [], '::', txn=connection)
         data[:] = []
 
     async def _upsert_listing(self, txn, log, batch, update=False):

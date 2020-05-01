@@ -32,7 +32,7 @@ async def test_comment(site):
     await site.db.bulk_comment([
         {'dataset_id': 1, 'author': 'test', 'text': 'consectetur', 'time_added': 1},
         {'dataset_id': 1, 'author': 'test', 'text': 'adipiscing', 'time_added': 1},
-    ])
+    ], '::')
     res = await site.db.get_comments_by_setids(sets[0:1])
     assert len(res) == 5
     assert res[3].text == 'consectetur'
@@ -41,11 +41,11 @@ async def test_comment(site):
     with pytest.raises(DBPermissionError):
         await site.db.bulk_comment([
             {'dataset_id': 9999999999, 'author': 'test', 'text': 'consectetur', 'time_added': 1},
-        ])
+        ], '::')
     with pytest.raises(DBPermissionError):
         await site.db.bulk_comment([
             {'dataset_id': 1, 'author': 'bad user', 'text': 'consectetur', 'time_added': 1},
-        ])
+        ], '::')
 
     # get all
     res = await site.db.get_comments_by_setids([])
@@ -95,13 +95,13 @@ async def test_tag(site):
     res = await site.db.bulk_tag([
         ('foo', 1),
         ('foo', 2),
-    ], [])
+    ], [], '::')
     res = await site.db.list_tags()
     assert res == ['bar', 'baz', 'foo']
 
     res = await site.db.bulk_tag([], [
         ('bar', 1),
-    ])
+    ], '::')
     res = await site.db.delete_tag_values_without_ref()
     res = await site.db.list_tags()
     assert res == ['bar', 'baz', 'foo']

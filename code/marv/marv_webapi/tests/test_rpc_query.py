@@ -301,7 +301,7 @@ async def test_rpc_query(site, client):
         ('important', 3),
         ('important', 150),
         ('check', 2),
-    ), ())
+    ), (), '::')
 
     res = await client.post_json('/marv/api/v1/rpcs', json=make_query(filters=[
         {'op': 'eq', 'name': 'tags.value', 'value': 'important'},

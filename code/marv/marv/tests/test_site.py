@@ -91,7 +91,7 @@ def generate_bar(scanroot, name):
 
 
 async def test_collections(site):  # pylint: disable=redefined-outer-name
-    collections = await site.db.get_collections()
+    collections = await site.db.get_collections('::')
     assert collections == [{'id': 2, 'name': 'bar'}, {'id': 1, 'name': 'foo'}]
 
 
