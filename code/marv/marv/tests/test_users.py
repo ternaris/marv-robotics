@@ -128,11 +128,11 @@ async def test_user(site):
 
     res = await site.db.get_user_by_name('admin', deep=True)
     assert res.name == 'admin'
-    assert [x.name for x in res.groups] == ['manage', 'marv:user:admin', 'marv:users']
+    assert sorted(x.name for x in res.groups) == ['manage', 'marv:user:admin', 'marv:users']
 
     res = await site.db.get_user_by_realmuid('marv', '', deep=True)
     assert res.name == 'marv:anonymous'
-    assert [x.name for x in res.groups] == ['marv:user:anonymous']
+    assert sorted(x.name for x in res.groups) == ['marv:user:anonymous']
 
     res = await site.db.get_user_by_realmuid('not an uid', '')
     assert not res
