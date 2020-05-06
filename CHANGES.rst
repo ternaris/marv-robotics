@@ -17,9 +17,17 @@ Upcoming (unreleased)
 
 Added
 ~~~~~
+- System user for unauthenticated requests
+- System groups for all unauthenticated users
+- Granular access control for collections and datasets (EE)
 
 Changed
 ~~~~~~~
+- Streamline action verbs supported by access control profiles, **needs migration:** :ref:`migrate-20.06.0`
+- Collections are reflected in the database schemas, **needs migration:** :ref:`migrate-20.06.0`
+- Publish permissions on a granular per resource basis
+- Improve test coverage of web APIs for site administration
+- Improve testing fixtures and general test coverage
 
 Deprecated
 ~~~~~~~~~~
@@ -39,7 +47,7 @@ Security
 20.04.0 (2020-04-30)
 ^^^^^^^^^^^^^^^^^^^^
 
-**This release contains import security fixes. We strongly recommend that all affected MARV installations be upgraded immediately.**
+**This release contains important security fixes. We strongly recommend that all affected MARV installations be upgraded immediately.**
 
 Security
 ~~~~~~~~
