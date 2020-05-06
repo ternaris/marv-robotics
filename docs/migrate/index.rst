@@ -10,6 +10,36 @@ Listed here are all versions that necessitate migration. Depending on the versio
 
 In case of database migrations it is sufficient to ``marv dump`` the database with the version you are currently using and ``marv restore`` with the latest version; marv is able to *dump* itself and *restore* any older version. In case this does not hold true ``marv restore`` will complain and provide instructions what to do.
 
+.. _migrate-20.06.0:
+
+20.06.0
+-------
+
+Changes to access control
+^^^^^^^^^^^^^^^^^^^^^^^^^
+MARV supports access control profiles (see :ref:`cfg_marv_acl`) that dictate who is permitted to perform what. Profiles map actions like ``comment`` or ``tag`` to lists of user groups that are permitted to perform these actions. This version of MARV cleans up and streamlines the list of supported verbs.
+
+If you created a custom profile, please refer to :mod:`marv_webapi.acls` as an example and make sure to adjust your custom profile to use the new action verbs.
+
+No migration is necessary for installations that use one of the two default profiles (``authenticated`` or ``public``).
+
+Database migration
+^^^^^^^^^^^^^^^^^^
+Changes to collection management required changes to database schemas. A migration of the MARV database is necessary. Export the database with your current version of MARV:
+
+.. code-block:: console
+
+   marv dump dump-2004.json
+   mv db/db.sqlite db/db.sqlite.2004
+
+After updating MARV run:
+
+.. code-block:: console
+
+   marv init
+   marv restore dump-2004.json
+
+
 .. _migrate-20.04.0:
 
 20.04.0
