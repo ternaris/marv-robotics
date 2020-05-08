@@ -31,13 +31,13 @@ async def rpc_entry(request):  # noqa: C901
     res = {'data': defaultdict(list)}
 
     for rpc in posted['rpcs']:
-        calls = list(rpc.items())
-        if len(calls) != 1:
+        try:
+            (func, payload), = rpc.items()
+        except ValueError:
             raise web.HTTPBadRequest(text=json.dumps({
                 'errors': ['rpc should be a single key value pair'],
             }))
 
-        func, payload = calls[0]
         if func == 'query':
             model = payload.get('model')
             filters = payload.get('filters', {})

@@ -74,9 +74,10 @@ def parse_filters(specs, filters):
 @marv_api_endpoint('/meta', force_acl=['__unauthenticated__', '__authenticated__'], acl_key='list')
 async def meta(request):
     site = request.app['site']
-    collections = await site.db.get_collections(user=request['username'])
     if not set(request['user_groups']).intersection(request.app['route_acl']['list']):
         collections = []
+    else:
+        collections = await site.db.get_collections(user=request['username'])
 
     resp = web.json_response({
         'acl': get_global_granted(request),
@@ -91,7 +92,7 @@ async def meta(request):
 @marv_api_endpoint('/collection{_:/?}{collection_id:((?<=/).*)?}', acl_key='read')  # noqa: C901
 async def collection(request):  # pylint: disable=too-many-locals  # noqa: C901
     site = request.app['site']
-    collection_id = request.match_info.get('collection_id') or site.collections.default_id
+    collection_id = request.match_info['collection_id'] or site.collections.default_id
 
     try:
         all_known = await site.db.get_all_known_for_collection(site.collections, collection_id,

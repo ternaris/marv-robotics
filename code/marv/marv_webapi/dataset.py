@@ -19,11 +19,13 @@ def dataset(_):
 
 @dataset.endpoint('/file-list', methods=['POST'], acl_key='download_raw')
 async def file_list(request):
-    ids = await request.json()
-    if not ids:
-        raise web.HTTPBadRequest()
+    try:
+        ids = await request.json()
+    except json.JSONDecodeError:
+        raise web.HTTPBadRequest
 
-    # TODO: remove scanroot prefix?
+    if not ids:
+        raise web.HTTPBadRequest
 
     try:
         datasets = await request.app['site'].db.get_datasets_by_dbids(
@@ -37,8 +39,6 @@ async def file_list(request):
 
     paths = sorted(x.path for dataset in datasets for x in dataset.files)
     urls = [f'dataset/{dataset.setid}/{x.idx}' for dataset in datasets for x in dataset.files]
-
-    # TODO: complain about invalid/unknown ids?
 
     return web.json_response({'paths': paths, 'urls': urls})
 
@@ -86,6 +86,7 @@ async def _get_filepath(request, setid, setdir, path):
         except DBPermissionError:
             raise HTTPPermissionError(request)
         path = Path(pathstr)
+
     else:
         try:
             await request.app['site'].db.get_datasets_by_setids([setid], [],
@@ -96,8 +97,7 @@ async def _get_filepath(request, setid, setdir, path):
         path = safejoin(setdir, path)
 
     # Make sure path exists and is safe
-    if not path.is_absolute() \
-       or not path.is_file():
+    if not path.is_absolute() or not path.is_file():
         raise web.HTTPNotFound()
     return path
 
@@ -108,7 +108,7 @@ async def detail(request):
     path = request.match_info['path'] or 'detail.json'
     try:
         setid = str(SetID(setid))
-    except TypeError:
+    except ValueError:
         raise web.HTTPBadRequest()
 
     setdir = Path(request.app['site'].config.marv.storedir) / setid
@@ -133,7 +133,4 @@ async def detail(request):
             **headers,
         })
 
-    try:
-        return web.FileResponse(path, headers=headers)
-    except ValueError:
-        raise web.HTTPNotFound()
+    return web.FileResponse(path, headers=headers)
