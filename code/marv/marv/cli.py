@@ -6,6 +6,7 @@ import code
 import datetime
 import functools
 import json
+import signal
 import sqlite3
 import sys
 from contextlib import asynccontextmanager
@@ -16,10 +17,10 @@ from pathlib import Path
 import click
 from aiohttp import web
 from gunicorn.app.base import BaseApplication
+from gunicorn.arbiter import Arbiter
 from jinja2 import Template
 from tortoise.exceptions import DoesNotExist
 
-import marv.app
 from marv.db import DBError, USERGROUP_REGEX
 from marv.site import UnknownNode, load_sitepackages, make_config
 from marv.utils import echo, err, find_obj, within_pyinstaller_bundle
@@ -30,9 +31,11 @@ from marv_store import DirectoryAlreadyExists
 
 try:
     import marv_ee
+    from marv_ee.app import App
     from marv_ee.site import Site
 except ImportError:
     marv_ee = None
+    from marv.app import App
     from marv.site import Site
 
 log = getLogger(__name__)
@@ -73,6 +76,40 @@ def click_async(func):
     def wrapper(*args, **kwargs):
         return asyncio.run(func(*args, **kwargs))
     return wrapper
+
+
+class NoSigintArbiter(Arbiter):
+    def handle_int(self):
+        signal.signal(signal.SIGINT, lambda *_: self.kill_workers(signal.SIGKILL))
+        super().handle_term()
+
+
+class GunicornApplication(BaseApplication):  # pylint: disable=abstract-method
+    def __init__(self, app_factory, bind, certfile, keyfile, *args, **kw):
+        # pylint: disable=too-many-arguments
+        self.app_factory = app_factory
+        self.bind = bind
+        self.certfile = certfile
+        self.keyfile = keyfile
+        super().__init__(*args, **kw)
+
+    def load_config(self):
+        self.cfg.set('proc_name', 'marvweb')
+        self.cfg.set('worker_class', 'aiohttp.GunicornUVLoopWebWorker')
+        self.cfg.set('bind', self.bind)
+        self.cfg.set('certfile', self.certfile)
+        self.cfg.set('keyfile', self.keyfile)
+        self.cfg.set('workers', 1)
+        self.cfg.set('graceful_timeout', 86400)
+
+    def load(self):
+        return self.app_factory
+
+    def run(self):
+        try:
+            NoSigintArbiter(self).run()
+        except RuntimeError as e:
+            err(f'\nERROR: {e}', exit=1)
 
 
 @marvcli.command('cleanup')
@@ -127,7 +164,7 @@ def marvcli_develop_server(port, public):
     async def create_app(middlewares=None):
         siteconf = get_site_config()
         site = await Site.create(siteconf)
-        return marv.app.create_app(site, middlewares=middlewares)
+        return App(site, middlewares=middlewares).aioapp
 
     loop = asyncio.get_event_loop()
     app = loop.run_until_complete(create_app(middlewares=middlewares))
@@ -149,27 +186,15 @@ def marvcli_serve(host, port, certfile, keyfile, approot):
 
     async def app_factory():
         try:
-            site = await marv.site.Site.create(config)
-            application = marv.app.create_app(site, app_root=approot)
+            site = await Site.create(config)
+            application = App(site, app_root=approot).aioapp
         except sqlite3.OperationalError as e:
             err(f'{e}\nDid you run marv init?', exit=1)
         except PermissionError as e:
             err(e, exit=1)
         return application
 
-    class GunicornApplication(BaseApplication):  # pylint: disable=abstract-method
-        def load_config(self):
-            self.cfg.set('proc_name', 'marvweb')
-            self.cfg.set('worker_class', 'aiohttp.GunicornUVLoopWebWorker')
-            self.cfg.set('bind', f'{host}:{port}')
-            self.cfg.set('certfile', certfile)
-            self.cfg.set('keyfile', keyfile)
-            self.cfg.set('workers', 1)
-
-        def load(self):
-            return app_factory
-
-    GunicornApplication().run()
+    GunicornApplication(app_factory, f'{host}:{port}', certfile, keyfile).run()
 
 
 @marvcli.command('discard')

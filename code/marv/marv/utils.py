@@ -21,7 +21,7 @@ def echo(*args, **kw):
 
 def err(*args, exit=None, **kw):
     """Print to stderr and optionally exit."""
-    print(*args, **kw, file=sys.stderr)  # noqa: T001
+    print(*args, **kw, file=sys.stderr, flush=True)  # noqa: T001
     if exit is not None:
         sys.exit(exit)
 

@@ -1,14 +1,17 @@
 # Copyright 2016 - 2019  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+import asyncio
 import base64
 import os
+from collections import namedtuple
 from logging import getLogger
 from pathlib import Path
 
 from aiohttp import web
 
 import marv_webapi
+from marv.collection import cached_property
 from marv_webapi.tooling import safejoin
 
 
@@ -16,93 +19,100 @@ LOADED = False
 log = getLogger(__name__)
 
 
-def create_app(site, app_root='', middlewares=None):  # noqa: C901  # pylint: disable=too-many-statements
-    app = web.Application(middlewares=middlewares or [])
-    app['route_acl'] = site.config.marv.acl()
-    app['api_endpoints'] = {}
-    app['config'] = {}
-    app['debug'] = False
-    app['site'] = site
+async def site_load_for_web(aioapp):
+    aioapp['site'].load_for_web()
 
-    app_root = app_root.rstrip('/')
 
-    # decorator for non api endpoint routes
-    def route(path):
+async def destroy_site(aioapp):
+    await aioapp['site'].destroy()
+
+
+class App():
+    STARTUP_FNS = (
+        site_load_for_web,
+    )
+
+    SHUTDOWN_FNS = (
+        destroy_site,
+    )
+
+    NOCACHE = {'Cache-Control': 'no-cache'}
+
+    def __init__(self, site, app_root='', middlewares=None):
+        self.aioapp = web.Application(middlewares=middlewares or [])
+        self.aioapp['api_endpoints'] = {}
+        self.aioapp['app_root'] = app_root.rstrip('/')
+        self.aioapp['config'] = {
+            'SECRET_KEY': Path(site.config.marv.sessionkey_file).read_text(),
+        }
+        self.aioapp['debug'] = False
+        self.aioapp['route_acl'] = site.config.marv.acl()
+        self.aioapp['site'] = site
+        self.aioapp.route = self.route
+
+        for func in self.STARTUP_FNS:
+            self.aioapp.on_startup.append(func)
+
+        for func in self.SHUTDOWN_FNS:
+            self.aioapp.on_shutdown.append(func)
+
+        self.initialize_routes()
+
+    def route(self, path):
         def dec(func):
-            app.add_routes([web.route('GET', f'{app_root}{path}', func)])
+            self.aioapp.add_routes([web.route('GET', f'{self.aioapp["app_root"]}{path}', func)])
         return dec
-    app.route = route
 
-    site.load_for_web()
+    @cached_property
+    def index_html(self):
+        path = Path(self.aioapp['site'].config.marv.staticdir, 'index.html')
+        index_html = path.read_text().replace('MARV_APP_ROOT', self.aioapp['app_root'] or '')
 
-    async def shutdown(app):  # pylint: disable=unused-argument
-        await site.destroy()
-    app.on_shutdown.append(shutdown)
-    global LOADED  # pylint: disable=global-statement
-    if not LOADED:
-        marv_webapi.load_entry_points()
-        LOADED = True
-    marv_webapi.webapi.init_app(app, url_prefix='/marv/api', app_root=app_root)
+        frontenddir = Path(self.aioapp['site'].config.marv.frontenddir)
+        for ext in ('css', 'js'):
+            try:
+                data = base64.b64encode((frontenddir / f'custom.{ext}').read_bytes())
+            except IOError:
+                pass
+            else:
+                placeholder = f'<!--custom.{ext}-->'
+                assert placeholder in index_html
+                script = f'<script src="data:text/javascript;base64,{data}"></script>' \
+                         if ext == 'js' else \
+                         f'<link rel="stylesheet" href="data:text/css;base64,{data}" />'
+                index_html = index_html.replace(placeholder, script, 1)
+        return index_html
 
-    with open(site.config.marv.sessionkey_file) as f:
-        app['config']['SECRET_KEY'] = f.read()
+    def initialize_routes(self):
+        global LOADED  # pylint: disable=global-statement
+        if not LOADED:
+            marv_webapi.load_entry_points()
+            LOADED = True
+        marv_webapi.webapi.init_app(self.aioapp, url_prefix='/marv/api',
+                                    app_root=self.aioapp['app_root'])
 
-    staticdir = Path(site.config.marv.staticdir)
-    index_html = (staticdir / 'index.html').read_text().replace('MARV_APP_ROOT', app_root or '')
+        customdir = Path(self.aioapp['site'].config.marv.frontenddir, 'custom')
+        staticdir = Path(self.aioapp['site'].config.marv.staticdir)
 
-    try:
-        data = base64.b64encode(Path(site.config.marv.frontenddir, 'custom.js').read_text())
-    except IOError:
-        pass
-    else:
-        assert '<script async src="main-built.js"></script>' in index_html
-        index_html = index_html.replace(
-            '<script async src="main-built.js"></script>',
-            (
-                f'<script src="data:text/javascript;base64,{data}"></script>\n'
-                '<script async src="main-built.js"></script>'
-            ),
-            1,
-        )
+        # decorator for non api endpoint routes
+        @self.route('/custom/{path:.*}')
+        async def custom(request):  # pylint: disable=unused-variable
+            path = request.match_info['path']
+            fullpath = safejoin(customdir, path)
+            if not fullpath.is_file():
+                raise web.HTTPNotFound
+            return web.FileResponse(fullpath, headers=self.NOCACHE)
 
-    try:
-        data = base64.b64encode(Path(site.config.marv.frontenddir, 'custom.css').read_text())
-    except IOError:
-        pass
-    else:
-        assert '<link async rel="stylesheet" href="main-built.css" />' in index_html
-        index_html = index_html.replace(
-            '<link async rel="stylesheet" href="main-built.css" />',
-            (
-                '<link async rel="stylesheet" href="main-built.css" />'
-                f'<link rel="stylesheet" href="data:text/css;base64,{data}" />'
-            ),
-            1,
-        )
+        @self.route('/{path:.*}')
+        async def assets(request):  # pylint: disable=unused-variable
+            path = request.match_info['path'] or 'index.html'
+            if path == 'index.html':
+                return web.Response(text=self.index_html, headers={
+                    'Content-Type': 'text/html',
+                    **self.NOCACHE,
+                })
 
-    nocache = {'Cache-Control': 'no-cache'}
-
-    customdir = Path(site.config.marv.frontenddir, 'custom')
-    @app.route('/custom/{path:.*}')
-    async def custom(request):  # pylint: disable=unused-variable
-        path = request.match_info['path']
-        fullpath = safejoin(customdir, path)
-        if not fullpath.is_file():
-            raise web.HTTPNotFound
-        return web.FileResponse(fullpath, headers=nocache)
-
-    @app.route('/{path:.*}')
-    async def assets(request):  # pylint: disable=unused-variable
-        path = request.match_info['path'] or 'index.html'
-        if path == 'index.html':
-            return web.Response(text=index_html, headers={
-                'Content-Type': 'text/html',
-                **nocache,
-            })
-
-        fullpath = safejoin(staticdir, path)
-        if not fullpath.is_file():
-            raise web.HTTPNotFound
-        return web.FileResponse(fullpath, headers=nocache)
-
-    return app
+            fullpath = safejoin(staticdir, path)
+            if not fullpath.is_file():
+                raise web.HTTPNotFound
+            return web.FileResponse(fullpath, headers=self.NOCACHE)

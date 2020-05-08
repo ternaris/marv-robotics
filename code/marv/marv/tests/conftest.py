@@ -13,7 +13,7 @@ import pytest
 
 import marv.model
 import marv_api as marv
-from marv.app import create_app
+from marv.app import App
 from marv.site import Site
 from marv.types import Int8Value, Section, Words
 from marv_nodes import dataset as dataset_node
@@ -219,9 +219,11 @@ async def site(loop, request, tmpdir):  # pylint: disable=unused-argument
 
 
 @pytest.fixture(scope='function')
-def app(site):  # pylint: disable=redefined-outer-name
-    app_ = create_app(site)
-    app_.on_shutdown.clear()
+def app(site, request):  # pylint: disable=redefined-outer-name
+    mark = {x.name: x.kwargs for x in request.node.iter_markers()}
+    app_cfg = mark.get('marv', {}).get('app', {})
+    cls = app_cfg.get('cls', App)
+    app_ = cls(site).aioapp
     yield app_
 
 
