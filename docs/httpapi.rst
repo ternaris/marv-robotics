@@ -403,3 +403,54 @@ Tag
    {}
 
 Tagging is idempotent, missing tags are created, unused tags are not automatically cleaned up (see :ref:`maintenance`).
+
+.. _httpapi_trigger:
+
+Trigger Actions (EE)
+--------------------
+
+The trigger API allows to schedule actions. In case no action is running a triggered action will start immediately, otherwise right after the running action has finished. In both cases the HTTP request will remain open until the action has finished. There are two actions ``scan`` and ``run``, which wrap the corresponding CLI commands and return a mapping with ``returncode``, ``stdout``, and ``stderr``; ``returncode == 0`` means success. In case of server-side errors only an ``error`` field is returned.
+
+
+Scan
+^^^^
+
+The scan action schedules a scan of all configured scanroots.
+
+.. code-block:: bash
+
+   curl -X POST \
+        -H "Authorization: Bearer $TOKEN" \
+        -H "Content-Type: application/json" \
+	-d '{"action": "scan"}' \
+	$MARV_API/v1/trigger
+
+Example output:
+
+.. code-block:: python
+
+   {"returncode": 0, "stdout": "...", "stderr": ""}
+
+The ``stdout`` field will contain the same MARV log messages a scan on the CLI would produce.
+
+
+Run
+^^^
+
+The run action schedules a run of all configured nodes on a specific dataset.
+
+.. code-block:: bash
+
+   curl -X POST \
+        -H "Authorization: Bearer $TOKEN" \
+        -H "Content-Type: application/json" \
+	-d '{"action": "run", "dataset": "xy5ba2hy2hr5453m6ftokk6kdq"}' \
+	$MARV_API/v1/trigger
+
+Example output:
+
+.. code-block:: python
+
+   {"returncode": 0, "stdout": "...", "stderr": ""}
+
+If all nodes have already been run on this dataset the action does nothing and returns immediately indicating successful completion.
