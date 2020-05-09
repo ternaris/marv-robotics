@@ -34,6 +34,23 @@ async def try_tag(client):
     })
 
 
+async def try_untag(client):
+    tag = f'tag{time.time()}'
+
+    auth = await client.unauthenticate()
+    await client.authenticate('adm', 'adm_pw')
+    await client.post('/marv/api/tag', headers=client.headers, json={
+        'hodge': {'add': {tag: [1]}},
+    })
+    await client.unauthenticate()
+    if auth:
+        client.headers['Authorization'] = auth
+
+    return await client.post('/marv/api/tag', headers=client.headers, json={
+        'hodge': {'remove': {tag: [1]}},
+    })
+
+
 @pytest.mark.marv(site={'acl': 'marv_webapi.acls:public'})
 async def test_profile_public(client):  # pylint: disable=too-many-statements
     expected_acls = {
@@ -68,6 +85,8 @@ async def test_profile_public(client):  # pylint: disable=too-many-statements
     assert res.status == 401
     res = await try_tag(client)
     assert res.status == 401
+    res = await try_untag(client)
+    assert res.status == 401
     res = await try_delete(client)
     assert res.status == 401
 
@@ -107,6 +126,8 @@ async def test_profile_public(client):  # pylint: disable=too-many-statements
     assert res.status == 200
     res = await try_tag(client)
     assert res.status == 200
+    res = await try_untag(client)
+    assert res.status == 200
     res = await try_delete(client)
     assert res.status == 403
 
@@ -134,6 +155,8 @@ async def test_profile_public(client):  # pylint: disable=too-many-statements
     res = await try_comment(client)
     assert res.status == 200
     res = await try_tag(client)
+    assert res.status == 200
+    res = await try_untag(client)
     assert res.status == 200
     res = await try_delete(client)
     assert res.status == 200
@@ -165,6 +188,8 @@ async def test_profile_authenticated(client):  # pylint: disable=too-many-statem
     assert res.status == 401
     res = await try_tag(client)
     assert res.status == 401
+    res = await try_untag(client)
+    assert res.status == 401
     res = await try_delete(client)
     assert res.status == 401
 
@@ -204,6 +229,8 @@ async def test_profile_authenticated(client):  # pylint: disable=too-many-statem
     assert res.status == 200
     res = await try_tag(client)
     assert res.status == 200
+    res = await try_untag(client)
+    assert res.status == 200
     res = await try_delete(client)
     assert res.status == 403
 
@@ -231,6 +258,8 @@ async def test_profile_authenticated(client):  # pylint: disable=too-many-statem
     res = await try_comment(client)
     assert res.status == 200
     res = await try_tag(client)
+    assert res.status == 200
+    res = await try_untag(client)
     assert res.status == 200
     res = await try_delete(client)
     assert res.status == 200

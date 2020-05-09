@@ -243,7 +243,7 @@ async def client(aiohttp_client, app):  # pylint: disable=redefined-outer-name
         headers['Authorization'] = f'Bearer {resp["access_token"]}'
 
     async def unauthenticate():
-        headers.pop('Authorization', '')
+        return headers.pop('Authorization', '')
 
     async def get_json(*args, **kw):
         resp = await client.get(*args, headers=headers, **kw)
