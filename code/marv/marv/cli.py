@@ -23,9 +23,10 @@ from tortoise.exceptions import DoesNotExist
 
 from marv.db import USERGROUP_REGEX, DBError, DBNotInitialized, DBVersionError
 from marv.site import UnknownNode, load_sitepackages, make_config
-from marv.utils import find_obj, within_pyinstaller_bundle
-from marv_api.utils import echo, err
-from marv_cli import PDB, marv as marvcli
+from marv.utils import within_pyinstaller_bundle
+from marv_api.utils import echo, err, find_obj
+from marv_cli import PDB
+from marv_cli import marv as marvcli
 from marv_node.stream import RequestedMessageTooOld
 from marv_store import DirectoryAlreadyExists
 

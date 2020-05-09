@@ -11,10 +11,9 @@ from functools import partial
 from inspect import getmembers
 from logging import getLogger
 
-from marv_api.utils import echo
+from marv_api.utils import echo, find_obj
 
 from . import sexp
-from .utils import find_obj
 
 log = getLogger(__name__)
 

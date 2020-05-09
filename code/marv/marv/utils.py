@@ -10,7 +10,7 @@ from datetime import tzinfo as tzinfo_base
 from itertools import islice
 from subprocess import Popen as _Popen
 
-from marv_api.utils import NOTSET, find_obj  # pylint: disable=unused-import
+from marv_api.utils import NOTSET
 from marv_node.setid import decode_setid, encode_setid  # pylint: disable=unused-import
 
 

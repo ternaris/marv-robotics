@@ -8,7 +8,7 @@ import shutil
 from collections.abc import Mapping
 from pathlib import Path
 
-from marv.utils import NOTSET
+from marv_api.utils import NOTSET
 from marv_node.mixins import LoggerMixin
 from marv_pycapnp import Wrapper
 

@@ -16,10 +16,11 @@ from pkg_resources import resource_filename
 from pypika import SQLLiteQuery as Query
 from pypika import Table
 
+from marv.utils import within_pyinstaller_bundle
+from marv_api.utils import find_obj
 from marv_node.run import run_nodes
 from marv_store import Store
 
-from . import utils
 from .collection import Collections
 from .config import Config
 from .db import (Database, DBNotInitialized, DBVersionError, Tortoise, create_or_ignore,
@@ -169,7 +170,7 @@ class Site:
     @classmethod
     async def create(cls, siteconf, init=None):  # noqa: C901
         site = cls(siteconf)
-        if utils.within_pyinstaller_bundle():
+        if within_pyinstaller_bundle():
             load_sitepackages(site.config.marv.sitepackages)
 
         assert site.config.marv.dburi.startswith('sqlite://')
@@ -378,7 +379,7 @@ class Site:
             selected_nodes.update(collection.detail_deps)
         persistent = collection.nodes
         try:
-            nodes = {persistent[name] if ':' not in name else utils.find_obj(name)
+            nodes = {persistent[name] if ':' not in name else find_obj(name)
                      for name in selected_nodes
                      if name not in excluded_nodes
                      if name != 'dataset'}
