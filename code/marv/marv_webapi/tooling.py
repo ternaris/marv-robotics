@@ -75,9 +75,11 @@ def safejoin(basepath, rel):
     rel = Path(rel)
     if rel.anchor:
         raise web.HTTPForbidden
-    fullpath = (basepath / rel).resolve()
+
+    fullpath = basepath.joinpath(rel).resolve()
     if basepath.resolve() not in fullpath.parents:
         raise web.HTTPForbidden
+
     return fullpath
 
 
