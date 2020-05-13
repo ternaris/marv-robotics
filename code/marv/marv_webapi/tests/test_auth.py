@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import time
+from collections import namedtuple
 
 import pytest
 
@@ -51,218 +52,117 @@ async def try_untag(client):
     })
 
 
-@pytest.mark.marv(site={'acl': 'marv_webapi.acls:public'})
-async def test_profile_public(client):  # pylint: disable=too-many-statements
-    expected_acls = {
-        'auth_post',
-    }
-    forbidden_acls = {
-        'comment',
-        'delete',
-        'list',
-        'read',
-        'rpc_entry',
-        'tag',
-    }
+class AuthtestParams(namedtuple('Param', 'count expected forbidden local calls')):
+    def __new__(cls, *args):
+        assert len(args[-1]) == 7
+        return super().__new__(cls, *args)
 
+
+LOCAL_ACTIONS = {'comment', 'compare', 'delete', 'list', 'read', 'tag'}
+
+UNAUTH_PUBLIC = AuthtestParams(
+    2,
+    {'auth_post'},
+    {'rpc_entry'} | LOCAL_ACTIONS,
+    {'download_raw', 'list', 'read'},
+    [(200, try_listing),
+     (200, try_details),
+     (200, try_filelist),
+     (401, try_comment),
+     (401, try_tag),
+     (401, try_untag),
+     (401, try_delete)],
+)
+
+UNAUTH_AUTHENTICATED = AuthtestParams(
+    0,
+    {'auth_post'},
+    {'rpc_entry'} | LOCAL_ACTIONS,
+    set(),
+    [(401, try_listing),
+     (401, try_details),
+     (401, try_filelist),
+     (401, try_comment),
+     (401, try_tag),
+     (401, try_untag),
+     (401, try_delete)],
+)
+
+AUTH = AuthtestParams(
+    2,
+    {'rpc_entry'},
+    {'auth_post'} | LOCAL_ACTIONS,
+    {'download_raw', 'list', 'read', 'comment', 'compare', 'tag'},
+    [(200, try_listing),
+     (200, try_details),
+     (200, try_filelist),
+     (200, try_comment),
+     (200, try_tag),
+     (200, try_untag),
+     (403, try_delete)],
+)
+
+ADMIN = AuthtestParams(
+    2,
+    {'rpc_entry'},
+    {'auth_post'} | LOCAL_ACTIONS,
+    {'download_raw', 'list', 'read', 'comment', 'compare', 'tag', 'delete'},
+    [(200, try_listing),
+     (200, try_details),
+     (200, try_filelist),
+     (200, try_comment),
+     (200, try_tag),
+     (200, try_untag),
+     (200, try_delete)],
+)
+
+
+@pytest.mark.parametrize('auth, params', [
+    pytest.param(
+        None, UNAUTH_PUBLIC,
+        marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:public'}),
+    ),
+    pytest.param(
+        ('test', 'test_pw'), AUTH,
+        marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:public'}),
+    ),
+    pytest.param(
+        ('adm', 'adm_pw'), ADMIN,
+        marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:public'}),
+    ),
+    pytest.param(
+        None, UNAUTH_AUTHENTICATED,
+        marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:authenticated'}),
+    ),
+    pytest.param(
+        ('test', 'test_pw'), AUTH,
+        marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:authenticated'}),
+    ),
+    pytest.param(
+        ('adm', 'adm_pw'), ADMIN,
+        marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:authenticated'}),
+    ),
+])
+async def test_profiles(client, auth, params):
+    if auth:
+        await client.authenticate(*auth)
+
+    # check global permissions (non action routes) on meta
     res = await client.get_json('/marv/api/meta')
-    assert not expected_acls - set(res['acl'])
-    assert not forbidden_acls & set(res['acl'])
-    assert len(res['collections']) == 2
+    assert not params.expected - set(res['acl'])
+    assert not params.forbidden & set(res['acl'])
+    assert len(res['collections']) == params.count
+
+    # check local permissions on collection
     res = await client.get_json('/marv/api/collection')
-    assert res['acl'] == [
-        'download_raw',
-        'list',
-        'read',
-    ]
-    res = await try_listing(client)
-    assert res.status == 200
-    res = await try_details(client)
-    assert res.status == 200
-    res = await try_filelist(client)
-    assert res.status == 200
-    res = await try_comment(client)
-    assert res.status == 401
-    res = await try_tag(client)
-    assert res.status == 401
-    res = await try_untag(client)
-    assert res.status == 401
-    res = await try_delete(client)
-    assert res.status == 401
+    if params.local:
+        assert set(res['acl']) == params.local
+    else:
+        assert res.status == 401
 
-    await client.authenticate('test', 'test_pw')
-    expected_acls = {
-        'rpc_entry',
-    }
-    forbidden_acls = {
-        'auth_post',
-        'comment',
-        'delete',
-        'list',
-        'read',
-        'tag',
-    }
-
-    res = await client.get_json('/marv/api/meta')
-    assert not expected_acls - set(res['acl'])
-    assert not forbidden_acls & set(res['acl'])
-    assert len(res['collections']) == 2
-    res = await client.get_json('/marv/api/collection')
-    assert res['acl'] == [
-        'comment',
-        'compare',
-        'download_raw',
-        'list',
-        'read',
-        'tag',
-    ]
-    res = await try_listing(client)
-    assert res.status == 200
-    res = await try_details(client)
-    assert res.status == 200
-    res = await try_filelist(client)
-    assert res.status == 200
-    res = await try_comment(client)
-    assert res.status == 200
-    res = await try_tag(client)
-    assert res.status == 200
-    res = await try_untag(client)
-    assert res.status == 200
-    res = await try_delete(client)
-    assert res.status == 403
-
-    await client.authenticate('adm', 'adm_pw')
-    res = await client.get_json('/marv/api/meta')
-    assert not expected_acls - set(res['acl'])
-    assert not forbidden_acls & set(res['acl'])
-    assert len(res['collections']) == 2
-    res = await client.get_json('/marv/api/collection')
-    assert res['acl'] == [
-        'comment',
-        'compare',
-        'delete',
-        'download_raw',
-        'list',
-        'read',
-        'tag',
-    ]
-    res = await try_listing(client)
-    assert res.status == 200
-    res = await try_details(client)
-    assert res.status == 200
-    res = await try_filelist(client)
-    assert res.status == 200
-    res = await try_comment(client)
-    assert res.status == 200
-    res = await try_tag(client)
-    assert res.status == 200
-    res = await try_untag(client)
-    assert res.status == 200
-    res = await try_delete(client)
-    assert res.status == 200
-
-
-@pytest.mark.marv(site={'acl': 'marv_webapi.acls:authenticated'})
-async def test_profile_authenticated(client):  # pylint: disable=too-many-statements
-    expected_acls = {
-        'auth_post',
-    }
-    forbidden_acls = {
-        'comment',
-        'delete',
-        'list',
-        'read',
-        'rpc_entry',
-        'tag',
-    }
-
-    res = await client.get_json('/marv/api/meta')
-    assert len(res['collections']) == 0
-    res = await try_listing(client)
-    assert res.status == 401
-    res = await try_details(client)
-    assert res.status == 401
-    res = await try_filelist(client)
-    assert res.status == 401
-    res = await try_comment(client)
-    assert res.status == 401
-    res = await try_tag(client)
-    assert res.status == 401
-    res = await try_untag(client)
-    assert res.status == 401
-    res = await try_delete(client)
-    assert res.status == 401
-
-    await client.authenticate('test', 'test_pw')
-    expected_acls = {
-        'rpc_entry',
-    }
-    forbidden_acls = {
-        'auth_post',
-        'comment',
-        'delete',
-        'list',
-        'read',
-        'tag',
-    }
-
-    res = await client.get_json('/marv/api/meta')
-    assert not expected_acls - set(res['acl'])
-    assert not forbidden_acls & set(res['acl'])
-    assert len(res['collections']) == 2
-    res = await client.get_json('/marv/api/collection')
-    assert res['acl'] == [
-        'comment',
-        'compare',
-        'download_raw',
-        'list',
-        'read',
-        'tag',
-    ]
-    res = await try_listing(client)
-    assert res.status == 200
-    res = await try_details(client)
-    assert res.status == 200
-    res = await try_filelist(client)
-    assert res.status == 200
-    res = await try_comment(client)
-    assert res.status == 200
-    res = await try_tag(client)
-    assert res.status == 200
-    res = await try_untag(client)
-    assert res.status == 200
-    res = await try_delete(client)
-    assert res.status == 403
-
-    await client.authenticate('adm', 'adm_pw')
-    res = await client.get_json('/marv/api/meta')
-    assert not expected_acls - set(res['acl'])
-    assert not forbidden_acls & set(res['acl'])
-    assert len(res['collections']) == 2
-    res = await client.get_json('/marv/api/collection')
-    assert res['acl'] == [
-        'comment',
-        'compare',
-        'delete',
-        'download_raw',
-        'list',
-        'read',
-        'tag',
-    ]
-    res = await try_listing(client)
-    assert res.status == 200
-    res = await try_details(client)
-    assert res.status == 200
-    res = await try_filelist(client)
-    assert res.status == 200
-    res = await try_comment(client)
-    assert res.status == 200
-    res = await try_tag(client)
-    assert res.status == 200
-    res = await try_untag(client)
-    assert res.status == 200
-    res = await try_delete(client)
-    assert res.status == 200
+    # try accessing actions
+    for code, func in params.calls:
+        assert (await func(client)).status == code
 
 
 async def test_authentication(client, site):
