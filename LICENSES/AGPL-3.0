@@ -1,5 +1,5 @@
 Valid-License-Identifier: AGPL-3.0-only
-SPDX-URL: https://spdx.org/licenses/GPL-2.0.html
+SPDX-URL: https://spdx.org/licenses/AGPL-3.0.html
 Usage-Guide:
   To use this license in source code, put the following SPDX
   tag/value pair into a comment according to the placement
