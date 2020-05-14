@@ -20,6 +20,7 @@ Added
 - System user for unauthenticated requests
 - System groups for all unauthenticated users
 - Granular access control for collections and datasets (EE)
+- HTTP API to trigger scans and node runs (EE)
 
 Changed
 ~~~~~~~
