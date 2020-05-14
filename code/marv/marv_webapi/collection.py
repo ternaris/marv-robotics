@@ -118,6 +118,14 @@ async def collection(request):  # pylint: disable=too-many-locals  # noqa: C901
     except (KeyError, ValueError, UnknownOperator):
         raise web.HTTPBadRequest()
 
+    real_id = next(
+        x['id']
+        for x in await site.db.get_collections(user=request['username'])
+        if x['name'] == collection_id
+    )
+    acl = await site.db.get_acl('collection', real_id, request['username'],
+                                get_local_granted(request))
+
     filters = [
         {
             'key': x.name,
@@ -140,7 +148,7 @@ async def collection(request):  # pylint: disable=too-many-locals  # noqa: C901
                           .replace('"#STATUS#"', STATUS_STRS[row['status']])
                           for row in rows])
     dct = {
-        'acl': get_local_granted(request),
+        'acl': acl,
         'all_known': all_known,
         'compare': bool(collection.compare),
         'filters': {'title': 'Filter',

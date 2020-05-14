@@ -776,6 +776,11 @@ class Database:
         access_token = hashlib.sha256(clear_access_token.encode()).hexdigest()
         return await Leaf.filter(access_token=access_token).using_db(txn).first()
 
+    @run_in_transaction
+    async def get_acl(self, model, id, user, default, txn=None):
+        # pylint: disable=unused-argument, too-many-arguments
+        return default
+
     @staticmethod
     def get_actionable(modelname, user, action):
         # pylint: disable=unused-argument

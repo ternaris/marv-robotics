@@ -46,9 +46,11 @@ async def file_list(request):
 async def _send_detail_json(request, setid, setdir):
     site = request.app['site']
     try:
-        query = await site.db.get_datasets_by_setids((setid,), user=request['username'],
-                                                     action='read',
-                                                     prefetch=('collections', 'comments', 'tags'))
+        sets = await site.db.get_datasets_by_setids((setid,), user=request['username'],
+                                                    action='read',
+                                                    prefetch=('collections', 'comments', 'tags'))
+        acl = await site.db.get_acl('dataset', sets[0].id, request['username'],
+                                    get_local_granted(request))
     except DBPermissionError:
         raise HTTPPermissionError(request)
 
@@ -58,9 +60,9 @@ async def _send_detail_json(request, setid, setdir):
     except IOError:
         raise web.HTTPNotFound()
 
-    dataset = query[0]  # pylint: disable=redefined-outer-name
+    dataset = sets[0]  # pylint: disable=redefined-outer-name
     detail.update({
-        'acl': get_local_granted(request),
+        'acl': acl,
         'collection': dataset.collections[0].name,
         'id': dataset.id,
         'setid': str(dataset.setid),
