@@ -87,6 +87,7 @@ struct Widget {
   union {
     void @1 :Void;
     custom @12 :Custom;
+    dropdown @14 :Dropdown;
     gallery @2 :Gallery;
     image @3 :Image;
     keyval @4 :Keyval;
@@ -159,6 +160,10 @@ struct Widget {
       min @0 :Int8;
       max @1 :Int8;
     }
+  }
+
+  struct Dropdown {
+    widgets @0 :List(Widget);
   }
 
   struct Pre {

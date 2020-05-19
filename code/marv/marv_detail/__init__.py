@@ -86,6 +86,10 @@ def fixup_widget(dct):  # noqa: C901
         for action in data['actions']:
             action['data'] = json.loads(action['data'])
 
+    if hasattr(data, 'get'):
+        for widget in data.get('widgets', []):
+            fixup_widget(widget)
+
 
 def fixup_map(data):
     zoom = data['zoom']

@@ -58,6 +58,20 @@ Video
 Example: :func:`marv_robotics.detail.video_section`
 
 
+.. _widget_dropdown:
+
+Dropdown (EE)
+^^^^^^^^^^^^^
+.. code-block:: python
+
+   dropdown = {'dropdown': {'widgets': [
+       {'title': '/cam1', 'video': {'src': videofile.relpath}},
+       {'title': '/cam2', 'video': {'src': videofile.relpath}},
+   ]}}
+
+A dropdown menu selects one of a list of widgets to be displayed below; their titles are displayed in the dropdown.
+
+
 .. _widget_trajectory:
 
 Trajectory
