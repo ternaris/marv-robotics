@@ -21,6 +21,8 @@ Added
 - System groups for all unauthenticated users
 - Granular access control for collections and datasets (EE)
 - HTTP API to trigger scans and node runs (EE)
+- Support split bags without prefix
+- Dropdown container widget (EE)
 
 Changed
 ~~~~~~~
@@ -39,6 +41,7 @@ Removed
 Fixed
 ~~~~~
 - Handling of changed file mtimes in marv scan `#77`_
+- Handle exceptions for cli commands with uninitialised site
 
 Security
 ~~~~~~~~
