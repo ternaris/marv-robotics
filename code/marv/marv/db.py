@@ -5,6 +5,7 @@
 
 import asyncio
 import hashlib
+import json
 import re
 import secrets
 import string
@@ -81,6 +82,18 @@ async def scoped_session(database, txn=None):
             await database.connection_queue.put(connection)
 
 
+class JsonListAgg:
+    def __init__(self):
+        self.items = set()
+
+    def step(self, item):
+        if item is not None:
+            self.items.add(item)
+
+    def finalize(self):
+        return json.dumps(sorted(self.items))
+
+
 async def create_or_ignore(tablename, txn, **kw):
     table = Table(tablename)
     query = Query.from_(table).select(table.star)
@@ -134,6 +147,11 @@ class ValuesTuple(Tuple):
 class GroupConcat(AggregateFunction):
     def __init__(self, term, alias=None):
         super().__init__('GROUP_CONCAT', term, alias=alias)
+
+
+class JsonGroupArray(AggregateFunction):
+    def __init__(self, term, alias=None):
+        super().__init__('JSON_GROUP_ARRAY', term, alias=alias)
 
 
 class EscapableLikeCriterion(Criterion):
@@ -523,6 +541,12 @@ class Database:
             db_params['connection_name'] = name
             connection = defcon.__class__(defcon.filename, **db_params)
             await connection.create_connection(with_db=True)
+
+            await connection._connection._execute(  # pylint: disable=protected-access
+                connection._connection._conn.create_aggregate,  # pylint: disable=protected-access
+                'JSON_GROUP_ARRAY', 1, JsonListAgg,
+            )
+
             current_transaction_map[name] = ContextVar(name, default=connection)
             await self.connection_queue.put(connection)
             self.connections.append(connection)
