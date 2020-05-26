@@ -30,6 +30,8 @@ Removed
 Fixed
 ~~~~~
 
+* Fix embedding of custom.js and custom.css
+
 Security
 ~~~~~~~~
 

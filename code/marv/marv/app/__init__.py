@@ -51,22 +51,22 @@ def create_app(site, app_root='', middlewares=None):  # noqa: C901  # pylint: di
     index_html = (staticdir / 'index.html').read_text().replace('MARV_APP_ROOT', app_root or '')
 
     try:
-        data = base64.b64encode(Path(site.config.marv.frontenddir, 'custom.js').read_text())
+        data = base64.b64encode(Path(site.config.marv.frontenddir, 'custom.js').read_bytes()).decode()
     except IOError:
         pass
     else:
-        assert '<script async src="main-built.js"></script>' in index_html
+        tag = '<script async type="module" src="main-built.js"></script>'
+        assert tag in index_html
         index_html = index_html.replace(
-            '<script async src="main-built.js"></script>',
+            tag,
             (
-                f'<script src="data:text/javascript;base64,{data}"></script>\n'
-                '<script async src="main-built.js"></script>'
+                f'<script src="data:text/javascript;base64,{data}"></script>\n{tag}'
             ),
             1,
         )
 
     try:
-        data = base64.b64encode(Path(site.config.marv.frontenddir, 'custom.css').read_text())
+        data = base64.b64encode(Path(site.config.marv.frontenddir, 'custom.css').read_bytes()).decode()
     except IOError:
         pass
     else:
