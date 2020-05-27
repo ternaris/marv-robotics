@@ -382,8 +382,6 @@ output:
 
    {}
 
-Deletion is idempotent.
-
 
 .. _httpapi_tag:
 
@@ -402,7 +400,6 @@ Tag
 
    {}
 
-Tagging is idempotent, missing tags are created, unused tags are not automatically cleaned up (see :ref:`maintenance`).
 
 .. _httpapi_trigger:
 
