@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import json
-import mimetypes
 from pathlib import Path
 
 from aiohttp import web
 
 from marv.db import DBPermissionError
 from marv_node.setid import SetID
-from .tooling import HTTPPermissionError, api_group as marv_api_group, get_local_granted, safejoin
+from .tooling import HTTPPermissionError
+from .tooling import api_group as marv_api_group, get_local_granted, safejoin, sendfile
 
 
 @marv_api_group()
@@ -120,19 +120,5 @@ async def detail(request):
 
     path = await _get_filepath(request, setid, setdir, path)
 
-    headers = {
-        'Cache-Control': 'no-cache',
-        'Content-Disposition': f'attachment; filename={path.name}',
-    }
-
-    if request.app['site'].config.marv.reverse_proxy == 'nginx':
-        mime = mimetypes.guess_type(str(path))[0]
-        approot = request.path.split('/marv/api/dataset/')[0]
-        return web.Response(headers={
-            'Content-Type': mime or 'application/octet-stream',
-            'X-Accel-Buffering': 'no',
-            'X-Accel-Redirect': f'{approot}{str(path)}',
-            **headers,
-        })
-
-    return web.FileResponse(path, headers=headers)
+    return sendfile(path, request.path.split('/marv/api/dataset/')[0],
+                    request.app['site'].config.marv.reverse_proxy)

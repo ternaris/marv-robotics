@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import math
+import mimetypes
 import time
 from collections import OrderedDict
 from pathlib import Path
@@ -81,6 +82,25 @@ def safejoin(basepath, rel):
         raise web.HTTPForbidden
 
     return fullpath
+
+
+def sendfile(path, approot, reverse_proxy, filename=None):
+    headers = {
+        'Cache-Control': 'no-cache',
+        'Content-Disposition': f'attachment; filename={filename or path.name}',
+    }
+
+    if reverse_proxy == 'nginx':
+        mime = mimetypes.guess_type(str(path))[0]
+        return web.Response(headers={
+            'Content-Type': mime or 'application/octet-stream',
+            'X-Accel-Buffering': 'no',
+            'X-Accel-Redirect': f'{approot}{str(path)}',
+            **headers,
+        })
+
+    assert not reverse_proxy, f'Unknown reverse_proxy {reverse_proxy}'
+    return web.FileResponse(path, headers=headers)
 
 
 class APIEndpoint:
