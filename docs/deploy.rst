@@ -54,6 +54,11 @@ Nginx allows marv to offload serving data from disk which is especially useful f
      ssl_certificate /etc/letsencrypt/live/example.com/fullchain.pem;
 
      location / {
+       # Attachments are EE-only, but the rule won't hurt CE
+       location /docker/container/path/to/attachments {
+         internal;
+         alias /host/path/to/attachments;
+       }
        location /docker/container/path/to/store {
          internal;
          alias /host/path/to/store;
@@ -74,6 +79,11 @@ Nginx allows marv to offload serving data from disk which is especially useful f
        proxy_pass http://127.0.0.1:8000;
      }
      location /native_instance {
+       # Attachments are EE-only, but the rule won't hurt CE
+       location /native_instance/path/to/attachments {
+         internal;
+         alias /path/to/attachments;
+       }
        location /native_instance/path/to/store {
          internal;
          alias /path/to/store;

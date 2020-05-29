@@ -131,6 +131,7 @@ If you created a custom profile, please refer to :mod:`marv_webapi.acls` as an e
 
 No migration is necessary for installations that use one of the two default profiles (``authenticated`` or ``public``).
 
+
 Database migration
 ^^^^^^^^^^^^^^^^^^
 Changes to collection management required changes to database schemas. A migration of the MARV database is necessary. Export the database with your current version of MARV:
