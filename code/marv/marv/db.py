@@ -63,6 +63,10 @@ class DBPermissionError(Exception):
     pass
 
 
+class DBConflictError(Exception):
+    pass
+
+
 @asynccontextmanager
 async def scoped_session(database, txn=None):
     """Transaction scope for database operations."""
