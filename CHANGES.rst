@@ -42,6 +42,8 @@ Fixed
 ~~~~~
 - Handling of changed file mtimes in marv scan `#77`_
 - Handle exceptions for cli commands with uninitialised site
+- Styling for table action responses
+- Download permissions for dataset files; erroneously no access was given (EE)
 
 Security
 ~~~~~~~~
