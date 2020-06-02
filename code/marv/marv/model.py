@@ -119,6 +119,12 @@ class File(Model):
         return f"<{type(self).__name__} '{self.path}'>"
 
 
+class Metadata(Model):
+    id = IntField(pk=True)
+    key = CharField(max_length=32, unique=True)
+    value = TextField()
+
+
 class Comment(Model):
     id = IntField(pk=True)
     dataset = ForeignKeyField('models.Dataset', related_name='comments')
@@ -169,6 +175,7 @@ __models__ = [
     File,
     Group,
     Leaf,
+    Metadata,
     Tag,
     User,
 ]

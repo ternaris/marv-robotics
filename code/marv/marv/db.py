@@ -67,6 +67,14 @@ class DBConflictError(Exception):
     pass
 
 
+class DBVersionError(Exception):
+    pass
+
+
+class DBNotInitialized(Exception):
+    pass
+
+
 @asynccontextmanager
 async def scoped_session(database, txn=None):
     """Transaction scope for database operations."""
@@ -477,6 +485,10 @@ async def dump_datasets(tables, dump, txn):
     assert not tags, tags
 
 
+async def dump_metadata(tables, dump, txn):  # pylint: disable=unused-argument
+    tables.pop('metadata')
+
+
 async def restore_users(site, dct, txn):
     users = dct.pop('users')
     for user in users or []:
@@ -515,6 +527,8 @@ class Tortoise(_Tortoise):
 class Database:
     # pylint: disable=too-many-public-methods
 
+    VERSION = '20.06'
+
     EXPORT_HANDLERS = (
         ({'group', 'user', 'user_group'}, dump_users_groups),
         ({'leaf'}, dump_leafs),
@@ -523,6 +537,7 @@ class Database:
         ({'file'}, dump_files),
         ({'tag', 'dataset_tag'}, dump_tags),
         ({'dataset', 'collection'}, dump_datasets),
+        ({'metadata'}, dump_metadata),
     )
 
     IMPORT_HANDLERS = (

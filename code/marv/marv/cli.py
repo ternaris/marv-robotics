@@ -21,7 +21,7 @@ from gunicorn.arbiter import Arbiter
 from jinja2 import Template
 from tortoise.exceptions import DoesNotExist
 
-from marv.db import DBError, USERGROUP_REGEX
+from marv.db import DBError, DBNotInitialized, DBVersionError, USERGROUP_REGEX
 from marv.site import UnknownNode, load_sitepackages, make_config
 from marv.utils import echo, err, find_obj, within_pyinstaller_bundle
 from marv_cli import PDB
@@ -66,10 +66,14 @@ async def create_site(init=None):
     siteconf = get_site_config()
     try:
         site = await Site.create(siteconf, init=init)
-    except sqlite3.OperationalError as exc:
+    except (sqlite3.OperationalError, DBNotInitialized) as exc:
         if PDB:
             raise
         err(f'{exc!r}\n\nDid you run marv init?\n', exit=1)
+    except DBVersionError as exc:
+        err(f'{exc!r}\n\n'
+            'Existing database is not compatible with this version of MARV. '
+            'Check the migration instructions.', exit=1)
     try:
         yield site
     finally:
@@ -193,8 +197,12 @@ def marvcli_serve(host, port, certfile, keyfile, approot):
         try:
             site = await Site.create(config)
             application = App(site, app_root=approot).aioapp
-        except sqlite3.OperationalError as e:
-            err(f'{e}\nDid you run marv init?', exit=1)
+        except (sqlite3.OperationalError, DBNotInitialized) as e:
+            err(f'{e!r}\nDid you run marv init?', exit=1)
+        except DBVersionError as e:
+            err(f'{e!r}\n'
+                'Existing database is not compatible with this version of MARV. '
+                'Check the migration instructions.', exit=1)
         except PermissionError as e:
             err(e, exit=1)
         return application

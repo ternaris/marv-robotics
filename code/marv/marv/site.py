@@ -4,6 +4,7 @@
 import fcntl
 import os
 import shutil
+import sqlite3
 import sys
 import sysconfig
 from itertools import count, product
@@ -12,12 +13,14 @@ from pathlib import Path
 from uuid import uuid4
 
 from pkg_resources import resource_filename
+from pypika import SQLLiteQuery as Query, Table
 
 from marv_node.run import run_nodes
 from marv_store import Store
 from . import utils
 from .collection import Collections
 from .config import Config
+from .db import DBNotInitialized, DBVersionError
 from .db import Database, Tortoise, create_or_ignore, scoped_session
 from .model import Dataset, Group, User
 
@@ -129,10 +132,6 @@ def make_config(siteconf):
                             required=required, schema=schema)
 
 
-class DBNotInitialized(Exception):
-    pass
-
-
 def load_sitepackages(sitepackages):
     import site  # pylint: disable=import-outside-toplevel
     site.USER_SITE = sitepackages
@@ -164,6 +163,7 @@ class Site:
         }
         self.collections = Collections(config=self.config, site=self)
         self.db = self.Database()  # pylint: disable=invalid-name
+        self.createdb = True
 
     @classmethod
     async def create(cls, siteconf, init=None):
@@ -171,19 +171,26 @@ class Site:
         if utils.within_pyinstaller_bundle():
             load_sitepackages(site.config.marv.sitepackages)
 
+        assert site.config.marv.dburi.startswith('sqlite://')
+        dbpath = Path(site.config.marv.dburi.split('://', 1)[1])
+        site.createdb = not dbpath.exists()
+        if not site.createdb:
+            site.check_db_version()
+        elif not init:
+            raise DBNotInitialized('There is no marv database.')
+
         if init:
             site.init_directory()
 
         # Generate all dynamic models
         models = site.db.MODELS + [y for x in site.collections.values() for y in x.model]
 
-        assert site.config.marv.dburi.startswith('sqlite://')
         await Tortoise.init(config={
             'connections': {
                 'default': {
                     'engine': 'tortoise.backends.sqlite',
                     'credentials': {
-                        'file_path': site.config.marv.dburi[9:],
+                        'file_path': dbpath,
                         'foreign_keys': 1,
                     },
                 },
@@ -205,7 +212,7 @@ class Site:
                 try:
                     await txn.execute_query('SELECT name FROM sqlite_master WHERE type="table"')
                 except ValueError:
-                    raise DBNotInitialized()
+                    raise DBNotInitialized
         except BaseException:
             await site.destroy()
             raise
@@ -249,19 +256,51 @@ class Site:
             if e.errno != 17:
                 raise
 
+    def check_db_version(self):
+        dbpath = Path(self.config.marv.dburi.split('://', 1)[1])
+        metadata = Table('metadata')
+        required = self.db.VERSION
+        try:
+            conn = sqlite3.connect(f'file:{dbpath}?mode=ro', uri=True)
+            with conn:
+                have = conn.execute(Query.from_(metadata)
+                                    .select(metadata.value)
+                                    .where(metadata.key == 'database_version')
+                                    .get_sql())\
+                           .fetchone()[0]
+                if have != required:
+                    raise DBVersionError(
+                        f'DB version on disk "{have}", but "{required}" required.',
+                    )
+        except (sqlite3.OperationalError, TypeError):
+            raise DBVersionError(
+                'DB version is unknown, metadata table or version entry missing.',
+            )
+        finally:
+            conn.close()
+
+    async def store_db_version(self, txn):
+        metadata = Table('metadata')
+        await txn.exq(Query.into(metadata)
+                      .columns(metadata.key, metadata.value)
+                      .insert('database_version', self.db.VERSION))
+
+    async def drop_listings(self, txn):
+        prefixes = [f'l_{col}' for col in self.collections.keys()]
+        tables = {
+            name for name in [
+                x['name'] for x in (await txn.execute_query(
+                    'SELECT name FROM sqlite_master WHERE type="table"',
+                ))[1]
+            ]
+            if any(name.startswith(prefix) for prefix in prefixes)
+        }
+        for table in sorted(tables, key=len, reverse=True):
+            await txn.execute_query(f'DROP TABLE {table};')
+
     async def init_database(self):
         async with scoped_session(self.db) as txn:
-            prefixes = [f'l_{col}' for col in self.collections.keys()]
-            tables = {
-                name for name in [
-                    x['name'] for x in (await txn.execute_query(
-                        'SELECT name FROM sqlite_master WHERE type="table"',
-                    ))[1]
-                ]
-                if any(name.startswith(prefix) for prefix in prefixes)
-            }
-            for table in sorted(tables, key=len, reverse=True):
-                await txn.execute_query(f'DROP TABLE {table};')
+            await self.drop_listings(txn)
 
         await Tortoise.generate_schemas()
 
@@ -276,6 +315,9 @@ class Site:
                     await Group.get(name=name.replace(':', ':user:')).using_db(txn),
                     using_db=txn,
                 )
+
+            if self.createdb:
+                await self.store_db_version(txn)
 
             await create_or_ignore('acn', id=1, txn=txn)
             for name in self.collections:
