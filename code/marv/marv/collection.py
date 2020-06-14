@@ -353,6 +353,7 @@ class Collection:
                             check_outdated = True
                         await file.save(connection)
                     if check_outdated:
+                        await dataset.fetch_related('files', using_db=connection)
                         self._check_outdated(dataset)
                     dataset.time_updated = int(utils.now())
                     await dataset.save(connection)
