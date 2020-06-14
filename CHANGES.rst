@@ -104,8 +104,8 @@ Fixed
 - Warning when building documentation
 - Do not reset map zoom on window resize `#67`_
 - Properly shutdown node and driver generators upon driver restart
-- Support passing parameters to marv serve in docker setup `#74`
-- Properly close stream file handles before cleaning up temporary directories `#75`
+- Support passing parameters to marv serve in docker setup `#74`_
+- Properly close stream file handles before cleaning up temporary directories `#75`_
 
 .. _#67: https://gitlab.com/ternaris/marv-robotics/issues/67
 .. _#74: https://gitlab.com/ternaris/marv-robotics/issues/74
