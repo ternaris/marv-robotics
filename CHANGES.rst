@@ -38,9 +38,13 @@ Removed
 
 Fixed
 ~~~~~
+- Handling of changed file mtimes in marv scan `#77`_
 
 Security
 ~~~~~~~~
+
+
+.. _#77: https://gitlab.com/ternaris/marv-robotics/issues/77
 
 
 .. _v20_04_0:
