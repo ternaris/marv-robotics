@@ -919,7 +919,8 @@ class Database:
         res = await txn.exq(Query.from_(file)
                             .join(dataset)
                             .on(file.dataset_id == dataset.id)
-                            .where((file.idx == idx) & self.setid_crit([setid], user, 'download'))
+                            .where((file.idx == idx)
+                                   & self.setid_crit([setid], user, 'download_raw'))
                             .select('path'))
         if not res:
             raise DBPermissionError
@@ -1422,7 +1423,7 @@ class Database:
     async def update_listing_relations(self, desc, values, relations, txn=None):
         await self._ensure_values(desc.table, values, None, txn)
         await self._ensure_refs(desc.table, desc.through, desc.rel_id, desc.listing_id, relations,
-                                None, None, txn=txn)
+                                '::', None, txn=txn)
 
         table, through = Tables(desc.table, desc.through)
         relid = getattr(through, desc.rel_id)
