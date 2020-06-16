@@ -23,6 +23,7 @@ Added
 - HTTP API to trigger scans and node runs (EE)
 - Support split bags without prefix
 - Dropdown container widget (EE)
+- Database version checks on marv startup
 
 Changed
 ~~~~~~~
