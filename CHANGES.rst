@@ -32,6 +32,7 @@ Changed
 - Publish permissions on a granular per resource basis
 - Improve test coverage of web APIs for site administration
 - Improve testing fixtures and general test coverage
+- Update mpld3 version (EE)
 
 Deprecated
 ~~~~~~~~~~
