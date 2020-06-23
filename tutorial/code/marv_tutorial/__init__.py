@@ -8,7 +8,7 @@ import cv2
 import matplotlib.pyplot as plt
 import mpld3
 
-import marv
+import marv_api as marv
 from marv_detail.types_capnp import Section, Widget  # pylint: disable=no-name-in-module
 from marv_nodes.types_capnp import File  # pylint: disable=no-name-in-module
 from marv_robotics.bag import get_message_type, raw_messages
