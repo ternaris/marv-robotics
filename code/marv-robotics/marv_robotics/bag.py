@@ -1,9 +1,11 @@
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+import heapq
 import re
 import sys
 from collections import defaultdict, namedtuple
+from contextlib import ExitStack
 from itertools import groupby
 from pathlib import Path
 
@@ -267,28 +269,15 @@ def bagmeta(dataset):
 
 def read_messages(paths, topics=None, start_time=None, end_time=None):
     """Iterate chronologically raw BagMessage for topic from paths."""
-    bags = {path: rosbag.Bag(path) for path in paths}
-    gens = {
-        path: bag.read_messages(topics=topics, start_time=start_time, end_time=end_time, raw=True)
-        for path, bag in bags.items()
-    }
-    msgs = {}
-    prev_time = genpy.Time(0)
-    while True:
-        for key in gens.keys() - msgs.keys():
-            try:
-                msgs[key] = next(gens[key])
-            except StopIteration:
-                bags[key].close()
-                del bags[key]
-                del gens[key]
-        if not msgs:
-            break
-        next_key = min(msgs.items(), key=lambda x: x[1][0])[0]
-        next_time, next_msg = msgs.pop(next_key)
-        assert next_time >= prev_time, (repr(next_time), repr(prev_time))
-        yield next_msg
-        prev_time = next_time
+    with ExitStack() as stack:
+        bags = [stack.enter_context(rosbag.Bag(path)) for path in paths]
+        gens = [bag.read_messages(topics=topics, start_time=start_time, end_time=end_time, raw=True)
+                for bag in bags]
+        prev_time = genpy.Time(0)
+        for time, msg in heapq.merge(*gens, key=lambda x: x[0]):
+            assert time >= prev_time, (repr(time), repr(prev_time))
+            yield msg
+            prev_time = time
 
 
 @marv.node(Message, group='ondemand')
