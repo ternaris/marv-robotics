@@ -8,7 +8,7 @@ from collections import OrderedDict
 from setuptools import find_packages, setup
 
 NAME = 'marv-robotics'
-VERSION = '20.04.0'
+VERSION = '20.06.0'
 DESCRIPTION = 'Data management platform for robot logs'
 ENTRY_POINTS = {
     'marv_webapi': [

@@ -10,10 +10,10 @@ Changes necessitating migration reference the corresponding migration section. R
 If we're deprecating features you rely on, please speak up.
 
 
-.. _upcoming_changes:
+.. _v20_06_0:
 
-Upcoming (unreleased)
-^^^^^^^^^^^^^^^^^^^^^
+20.06.0 (2020-06-29)
+^^^^^^^^^^^^^^^^^^^^
 
 Added
 ~~~~~
@@ -34,12 +34,6 @@ Changed
 - Improve testing fixtures and general test coverage
 - Update mpld3 version (EE)
 
-Deprecated
-~~~~~~~~~~
-
-Removed
-~~~~~~~
-
 Fixed
 ~~~~~
 - Fix embedding of custom.js and custom.css
@@ -47,10 +41,6 @@ Fixed
 - Handle exceptions for cli commands with uninitialised site
 - Styling for table action responses
 - Download permissions for dataset files; erroneously no access was given (EE)
-
-Security
-~~~~~~~~
-
 
 .. _#77: https://gitlab.com/ternaris/marv-robotics/issues/77
 
