@@ -71,7 +71,7 @@ class App():
         frontenddir = Path(self.aioapp['site'].config.marv.frontenddir)
         for ext in ('css', 'js'):
             try:
-                data = base64.b64encode((frontenddir / f'custom.{ext}').read_bytes())
+                data = base64.b64encode((frontenddir / f'custom.{ext}').read_bytes()).decode()
             except IOError:
                 pass
             else:

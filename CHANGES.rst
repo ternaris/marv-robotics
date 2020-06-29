@@ -42,6 +42,7 @@ Removed
 
 Fixed
 ~~~~~
+- Fix embedding of custom.js and custom.css
 - Handling of changed file mtimes in marv scan `#77`_
 - Handle exceptions for cli commands with uninitialised site
 - Styling for table action responses
