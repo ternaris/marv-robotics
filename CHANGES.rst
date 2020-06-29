@@ -17,6 +17,7 @@ Upcoming (unreleased)
 
 Added
 ~~~~~
+- Plotly widget (EE)
 
 Changed
 ~~~~~~~
