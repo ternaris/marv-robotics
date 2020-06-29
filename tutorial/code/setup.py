@@ -14,6 +14,7 @@ setup(name='marv-tutorial-code',
       install_requires=['marv',
                         'marv-robotics',
                         'matplotlib',
-                        'mpld3'],
+                        'mpld3',
+                        'plotly'],
       include_package_data=True,
       zip_safe=False)

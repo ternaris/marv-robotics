@@ -99,6 +99,7 @@ struct Widget {
     table @8 :Table;
     pointcloud @9 :Pointcloud;
     video @10 :Video;
+    plotly @15: Text;  # marv-partial
   }
 
   struct Custom {

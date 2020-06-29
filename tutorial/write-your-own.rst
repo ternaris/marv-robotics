@@ -74,7 +74,7 @@ For sake of simplicity, we are placing all code directly into the package's ``__
 **marv_tutorial/__init__.py**
 
 .. literalinclude:: code/marv_tutorial/__init__.py
-    :lines: 7-18
+    :lines: 4-16
 .. literalinclude:: code/marv_tutorial/__init__.py
     :pyobject: image
 
@@ -90,7 +90,7 @@ Declare image node
 
 .. literalinclude:: code/marv_tutorial/__init__.py
     :pyobject: image
-    :lines: -11
+    :lines: -12
 
 We are declaring a ``marv.node`` using `decorator syntax <https://www.python.org/dev/peps/pep-0318/#motivation>`_ based on a function named ``image``, which becomes also the name of the node. The node will output ``File`` messages and consume a selected topic of raw messages as input stream ``cam``. According to the docstring it will return the first image of this stream. The docstring is following the `Google Python Style Guide <http://google.github.io/styleguide/pyguide.html>`_ which is understood by `Sphinx <http://www.sphinx-doc.org/en/stable/>`_ using `Napoleon <https://sphinxcontrib-napoleon.readthedocs.io/en/latest/>`_ to generate documentation.
 
@@ -100,7 +100,7 @@ Yield to interact with marv
 
 .. literalinclude:: code/marv_tutorial/__init__.py
     :pyobject: image
-    :lines: 12-16
+    :lines: 13-17
 
 The input stream's topic is set as title for the image node's output stream and we are pulling the first message from the input stream. In case there is none, we simply return without publishing anything.
 
@@ -112,7 +112,7 @@ Deserialize raw message
 
 .. literalinclude:: code/marv_tutorial/__init__.py
     :pyobject: image
-    :lines: 18-21
+    :lines: 19-22
 
 The ``raw_messages`` node pushes raw ROS messages, which have to be deserialized using the correct message type returned by :any:`get_message_type`.
 
@@ -122,7 +122,7 @@ Write image to file
 
 .. literalinclude:: code/marv_tutorial/__init__.py
     :pyobject: image
-    :lines: 23-
+    :lines: 24-
 
 Define name for the image file and instruct marv to create a file in its store. Then transform the ros image message into an opencv image and save it to the file. Finally, push the file to the output stream for consumers of our image node to pull it.
 
@@ -226,6 +226,8 @@ Et voilà. Reload your browser (http://localhost:8000) and you should see the ga
 Let's move to the final piece of this tutorial: a section combining multiple widgets and introducing two more widget types: tables and plots.
 
 
+.. _tutorial_combined:
+
 Combined: table, plot and gallery
 ---------------------------------
 
@@ -239,8 +241,14 @@ In the final section we want to display a table that lists name and size of the 
 
 .. literalinclude:: code/marv_tutorial/__init__.py
     :pyobject: filesize_plot
+    :emphasize-lines: 12-33, 35-46
 
-We use `matplotlib <https://matplotlib.org/>`_ to create plots and `mpld3 <http://mpld3.github.io/>`_ for serialization to a file and visualization in the browser (EE-only, for CE use the image widget, see above). The file is referenced by the ``mpld3`` widget using ``marv-partial``. This reduces the size of the detail view as the plot data is only loaded once the contents of the section referencing it are displayed. An alternative would be to embed the plot data directlt into the plot. This is the only mode of operation for the ``mpld3`` widget and it is the only widget supporting this feature so far.
+Here, we use `matplotlib <https://matplotlib.org/>`_ to create plots and `mpld3 <http://mpld3.github.io/>`_ for serialization to a file and visualization in the browser (EE-only, for CE use the image widget, see above). The file is referenced by the ``mpld3`` widget using ``marv-partial``. This reduces the size of the detail view as the plot data is only loaded once the contents of the section referencing it are displayed. An alternative would be to embed the plot data directly into the plot. This is the only mode of operation for the ``mpld3`` widget and it is the only widget supporting this feature so far.
+
+.. note::
+
+   For `plotly <https://plotly.com/python/>`_ as an alternative see :ref:`widget_plotly`.
+
 
 .. literalinclude:: code/marv_tutorial/__init__.py
     :pyobject: combined_section

@@ -2,11 +2,12 @@
 # SPDX-License-Identifier: CC0-1.0
 
 import json
-import os
+from pathlib import Path
 
 import cv2
 import matplotlib.pyplot as plt
 import mpld3
+import plotly.graph_objects as go
 
 import marv_api as marv
 from marv_detail.types_capnp import Section, Widget  # pylint: disable=no-name-in-module
@@ -171,31 +172,53 @@ def filesize_plot(filesizes):
             break
         sizes.append(size)
 
-    # plot
+    # plot with mpld3
     fig = plt.figure()
     axis = fig.add_subplot(1, 1, 1)
     axis.plot(sizes, 'bo')
 
-    # EE: save figure to file
-    plotfile = yield marv.make_file('filesizes.json')
-    with open(plotfile.path, 'w') as f:
-        json.dump(mpld3.fig_to_dict(fig), f)
+    # CE: save plot as image
+    plotfile = yield marv.make_file('filesizes.jpg')
+    fig.savefig(plotfile.path)
+    widget_image = {
+        'title': 'Filesizes (image)',
+        'image': {'src': plotfile.relpath},
+    }
 
-    # EE: create plot widget referencing file
-    widget = {
-        'title': 'Filesizes',
+    # EE: save mpld3 figure to file
+    plotfile = yield marv.make_file('filesizes_mpld3.json')
+    Path(plotfile.path).write_text(json.dumps(mpld3.fig_to_dict(fig)))
+
+    # EE: create mpld3 plot widget referencing file
+    widget_mpld3 = {
+        'title': 'Filesizes (mpld3)',
         'mpld3': f'marv-partial:{plotfile.relpath}',
     }
 
-    # Alternative code for community edition:
-    # plotfile = yield marv.make_file('filesizes.jpg')
-    # fig.savefig(plotfile.path)
-    # widget = {
-    #     'title': 'Filesizes',
-    #     'image': {'src': plotfile.relpath},
-    # }
+    # EE: plot with plotly
+    fig = go.Figure(data=go.Scatter(y=sizes))
 
-    yield marv.push(widget)
+    # EE: save plotly figure to file
+    plotfile = yield marv.make_file('filesizes_plotly.json')
+    Path(plotfile.path).write_text(fig.to_json())
+
+    # EE: create plotly widget referencing file
+    widget_plotly = {
+        'title': 'Filesizes (plotly)',
+        'plotly': f'marv-partial:{plotfile.relpath}',
+    }
+
+    # Let the user choose which widget to show with a dropdown
+    yield marv.push({
+        'title': 'Filesize plots',
+        'dropdown': {
+            'widgets': [
+                widget_image,
+                widget_mpld3,
+                widget_plotly,
+            ],
+        },
+    })
 
 
 @marv.node(Section)
@@ -222,7 +245,7 @@ def combined_section(title, images, filesizes, filesize_plot):
         imgs.append({'src': img.relpath})
         rows.append({'cells': [
             {'link': {'href': img.relpath,
-                      'title': os.path.basename(img.relpath)}},
+                      'title': Path(img.relpath).name}},
             {'uint64': filesize},
         ]})
 

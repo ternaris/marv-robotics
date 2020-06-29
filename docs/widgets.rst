@@ -72,6 +72,33 @@ Dropdown (EE)
 A dropdown menu selects one of a list of widgets to be displayed below; their titles are displayed in the dropdown.
 
 
+.. _widget_plotly:
+
+Interactive Plots (EE)
+^^^^^^^^^^^^^^^^^^^^^^
+
+There are two options for plotting:
+  - `matplotlib <https://matplotlib.org/>`_ with `mpld3 <https://mpld3.github.io/>`_; see :ref:`tutorial_combined`
+  - `plotly <https://plotly.com/python/>`_ see below
+
+.. code-block:: python
+
+    import plotly.graph_objects as go
+
+    # plot into figure with plotly
+    fig = go.Figure(data=go.Scatter(y=distances))
+
+    # save plotly figure to file
+    plotfile = yield marv.make_file('distances.json')
+    Path(plotfile.path).write_text(fig.to_json())
+
+    # create plotly widget referencing file
+    yield marv.push({
+        'title': 'Distance driven',
+        'plotly': f'marv-partial:{plotfile.relpath}',
+    })
+
+
 .. _widget_trajectory:
 
 Trajectory
