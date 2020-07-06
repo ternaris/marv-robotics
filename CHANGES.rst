@@ -20,6 +20,7 @@ Added
 
 Changed
 ~~~~~~~
+- Replace custom rosbag merge sort with heapq.merge
 
 Deprecated
 ~~~~~~~~~~
