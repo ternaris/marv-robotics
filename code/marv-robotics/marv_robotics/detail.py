@@ -58,14 +58,28 @@ def bagmeta_table(bagmeta, dataset):
         {'title': 'Duration', 'formatter': 'timedelta'},
         {'title': 'Message count', 'align': 'right'},
     ]
-    rows = [{'id': idx, 'cells': [
-        {'link': {'href': f'{idx}', 'title': os.path.basename(f.path)}},
-        {'uint64': f.size},
-        {'timestamp': bag.start_time},
-        {'timestamp': bag.end_time},
-        {'timedelta': bag.duration},
-        {'uint64': bag.msg_count},
-    ]} for idx, (bag, f) in enumerate(zip(bagmeta.bags, dataset.files))]
+    rows = []
+    bags = bagmeta.bags[:]
+    for idx, file in enumerate(dataset.files):
+        if file.path.endswith('.bag'):
+            bag = bags.pop(0)
+            rows.append({'id': idx, 'cells': [
+                {'link': {'href': f'{idx}', 'title': os.path.basename(file.path)}},
+                {'uint64': file.size},
+                {'timestamp': bag.start_time},
+                {'timestamp': bag.end_time},
+                {'timedelta': bag.duration},
+                {'uint64': bag.msg_count},
+            ]})
+        else:
+            rows.append({'id': idx, 'cells': [
+                {'link': {'href': f'{idx}', 'title': os.path.basename(file.path)}},
+                {'uint64': file.size},
+                {'void': None},
+                {'void': None},
+                {'void': None},
+                {'void': None},
+            ]})
     yield marv.push({'table': {'columns': columns, 'rows': rows}})
 
 
