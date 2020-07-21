@@ -24,12 +24,14 @@ if [[ -n "$DEBUG" ]]; then
     set -x
 fi
 
-cd "$(dirname "$(realpath "$0")")"/..
-
 SITE="$1"; shift || usage
+[[ -e "$SITE"/marv.conf ]] || usage
 SCANROOT="$1"; shift || usage
 [[ -d "$SCANROOT" ]] || usage
+SITE="$(realpath "$SITE")"
 SCANROOT="$(realpath "$SCANROOT")"
+
+cd "$(dirname "$(realpath "$0")")"/..
 
 BASENAME="$(basename "$PWD" |tr '[:upper:]' '[:lower:]')"
 NAME="${MARV_CONTAINER_NAME:-$BASENAME}"
@@ -47,8 +49,8 @@ fi
 get_timezone() {
     tz=$(cat /etc/timezone 2>/dev/null|| true)
     if [[ -z "$tz" ]]; then
-	link=$(realpath /etc/localtime)
-	tz="$(basename "$(dirname "$link")")/$(basename "$link")"
+        link=$(realpath /etc/localtime)
+        tz="$(basename "$(dirname "$link")")/$(basename "$link")"
     fi
     echo $tz
 }
