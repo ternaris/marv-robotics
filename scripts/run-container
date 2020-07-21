@@ -72,6 +72,7 @@ docker run \
        -e TERM \
        -e TIMEZONE \
        -p "$HTTP:8000" \
+       -v "$PWD/.docker/entrypoint.sh:/marv_entrypoint.sh" \
        -v "$PWD/code:/home/marv/code" \
        -v "$PWD/docs:/home/marv/docs" \
        -v "$PWD/requirements:/home/marv/requirements" \
