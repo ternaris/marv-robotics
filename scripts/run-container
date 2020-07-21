@@ -9,7 +9,7 @@ usage() {
     echo
     echo "Usage: run-container SITE SCANROOT [EXTRA_OPTS ...]"
     echo
-    echo "The site is expected to contain marv.conf and gunicorn_cfg.py."
+    echo "The site is expected to contain marv.conf."
     echo "It is mounted inside the container at /home/marv/site."
     echo
     echo "The scanroot contains the log files for one or more collections."
