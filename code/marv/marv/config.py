@@ -33,6 +33,7 @@ def make_funcs(dataset, setdir, store):
         'detail_route': detail_route,
         'format': lambda fmt, *args: fmt.format(*args),
         'get': partial(getnode, dataset, setdir, store),
+        'getitem': lambda x, y: x[y] if x is not None else None,
         'join': lambda sep, *args: sep.join([x for x in args if x]),
         'len': len,
         'link': (lambda href, title, target=None:
@@ -42,6 +43,8 @@ def make_funcs(dataset, setdir, store):
         'list': lambda *x: filter(None, list(x)),
         'max': max,
         'min': min,
+        'rsplit': lambda x, *args: x.rsplit(*args) if x else None,
+        'split': lambda x, *args: x.split(*args) if x else None,
         'status': lambda: ['#STATUS#'],
         'sum': sum,
         'tags': lambda: ['#TAGS#'],

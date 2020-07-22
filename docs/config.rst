@@ -528,6 +528,17 @@ The specifier starts with the nodes name. A ``.`` performs dictionary key lookup
 scope: :ref:`cfg_c_filters`, :ref:`cfg_c_listing_columns`
 
 
+``getitem``
+~~~~~~~~~~~
+Get an item from a list or dictionary.
+
+.. code-block:: lisp
+
+   (getitem (split (get "foo.bar") "/" 1) 0)
+
+scope: :ref:`cfg_c_filters`, :ref:`cfg_c_listing_columns`
+
+
 ``join``
 ~~~~~~~~
 Wrapper for ``joinstr.join(args)``. First argument is the join string remaining arguments are joined with.
@@ -581,6 +592,20 @@ Examples:
    (sum (rows "size" 0))
 
 scope: :ref:`cfg_c_listing_summary`
+
+
+``rsplit``
+~~~~~~~~~~
+Split string from the right. First argument is the string, further arguments are passed to python's string rsplit method.
+
+scope: :ref:`cfg_c_filters`, :ref:`cfg_c_listing_columns`
+
+
+``split``
+~~~~~~~~~
+Split string. First argument is the string, further arguments are passed to python's string split method.
+
+scope: :ref:`cfg_c_filters`, :ref:`cfg_c_listing_columns`
 
 
 ``sum``
