@@ -15,11 +15,27 @@ If we're deprecating features you rely on, please speak up.
 Upcoming (unreleased)
 ^^^^^^^^^^^^^^^^^^^^^
 
+**This release contains security fixes. We strongly recommend that all affected MARV installations be upgraded immediately and migration instructions be followed.**
+
 Added
 ~~~~~
+- Automatically install custom python packages in site/code (CE)
+- Bagmeta_table supports datasets with bags and non-bag files
+- Support passing nodes to clone without wrapping with marv.select
+- Make DAG nodes hashable to use them as dictionary keys and to create sets of them
+- Support selecting multiple topics and message types by comma-separated selectors
+- Add support for finding and reading rosbag2 datasets (CE)
+- GNSS, fulltext and trajectory nodes also process rosbag2 datasets (CE)
 
 Changed
 ~~~~~~~
+- Improve formatting of null values in listing and table widget
+- Use docker entry point from checkout without rebuilding image
+- Support all json literals in config file s-expressions and relax whitespace handling
+- Update all python dependencies
+- Cleanup home directoy cache in docker images (CE)
+- Switch to Python 3.8 while keeping support for Python 3.7
+- Create marv user upon startup with uid and gid of user starting it; remove the need to rebuild image to that end
 
 Deprecated
 ~~~~~~~~~~
@@ -29,9 +45,22 @@ Removed
 
 Fixed
 ~~~~~
+- Sort order of table columns containing links **needs migration:** :ref:`migrate-20.07.0`
+- Execution of run-container from outside repository root
+- Pushing of false values and values with ambiguous truth
+- Running dependent nodes by marv run --force-dependent
+- Adjusting marv run cache size via the --cachesize option
+- Edge case where nodes would run out-of-sync and requesting messages were not available anymore
 
 Security
 ~~~~~~~~
+- Tighten file permissions for session key file, was readable for all users on host system **needs migration:** :ref:`migrate-20.08.0`
+- Update Pillow for `CVE-2020-10177`_, `CVE-2020-10379`_, `CVE-2020-10994`_, `CVE-2020-11538`_
+
+.. _CVE-2020-10177: https://nvd.nist.gov/vuln/detail/CVE-2020-10177
+.. _CVE-2020-10379: https://nvd.nist.gov/vuln/detail/CVE-2020-10379
+.. _CVE-2020-10994: https://nvd.nist.gov/vuln/detail/CVE-2020-10994
+.. _CVE-2020-11538: https://nvd.nist.gov/vuln/detail/CVE-2020-11538
 
 
 .. _v20_06_0:
