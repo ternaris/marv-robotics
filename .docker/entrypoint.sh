@@ -21,6 +21,11 @@ fi
 
 export HOME=/home/marv
 cd $MARV_SITE
+
+if [[ -d code ]]; then
+    find code -maxdepth 2 -name setup.py -execdir su -c "$MARV_VENV/bin/pip install -e ." marv \;
+fi
+
 if [[ -n "$MARV_INIT" ]] || [[ ! -e db ]]; then
     su - marv -p -c '/opt/marv/bin/marv --config "$MARV_CONFIG" init'
 fi
