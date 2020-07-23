@@ -194,6 +194,7 @@ struct Widget {
       align @1 :Align;
       formatter @2 :Formatter;
       list @3 :Bool;
+      sortkey @4 :Text;
     }
 
     struct Row {

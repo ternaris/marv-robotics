@@ -51,7 +51,7 @@ def bagmeta_table(bagmeta, dataset):
     """
     dataset, bagmeta = yield marv.pull_all(dataset, bagmeta)
     columns = [
-        {'title': 'Name', 'formatter': 'rellink'},
+        {'title': 'Name', 'formatter': 'rellink', 'sortkey': 'title'},
         {'title': 'Size', 'formatter': 'filesize'},
         {'title': 'Start time', 'formatter': 'datetime'},
         {'title': 'End time', 'formatter': 'datetime'},

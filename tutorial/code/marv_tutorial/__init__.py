@@ -210,7 +210,7 @@ def combined_section(title, images, filesizes, filesize_plot):
 
     # A table with two columns
     rows = []
-    columns = [{'title': 'Name', 'formatter': 'rellink'},
+    columns = [{'title': 'Name', 'formatter': 'rellink', 'sortkey': 'title'},
                {'title': 'Size', 'formatter': 'filesize'}]
     table = {'table': {'columns': columns, 'rows': rows}}
 

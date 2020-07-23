@@ -8,36 +8,42 @@
           "align": "left",
           "formatter": "rellink",
           "list": false,
+          "sortkey": "title",
           "title": "Name"
         },
         {
           "align": "left",
           "formatter": "filesize",
           "list": false,
+          "sortkey": "",
           "title": "Size"
         },
         {
           "align": "left",
           "formatter": "datetime",
           "list": false,
+          "sortkey": "",
           "title": "Start time"
         },
         {
           "align": "left",
           "formatter": "datetime",
           "list": false,
+          "sortkey": "",
           "title": "End time"
         },
         {
           "align": "left",
           "formatter": "timedelta",
           "list": false,
+          "sortkey": "",
           "title": "Duration"
         },
         {
           "align": "right",
           "formatter": "string",
           "list": false,
+          "sortkey": "",
           "title": "Message count"
         }
       ],

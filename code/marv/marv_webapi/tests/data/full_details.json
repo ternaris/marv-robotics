@@ -51,12 +51,14 @@
                 "align": "left",
                 "formatter": "rellink",
                 "list": false,
+                "sortkey": "title",
                 "title": "Name"
               },
               {
                 "align": "left",
                 "formatter": "filesize",
                 "list": false,
+                "sortkey": "",
                 "title": "Size"
               }
             ],
@@ -139,12 +141,14 @@
                 "align": "left",
                 "formatter": "rellink",
                 "list": false,
+                "sortkey": "title",
                 "title": "Name"
               },
               {
                 "align": "left",
                 "formatter": "filesize",
                 "list": false,
+                "sortkey": "",
                 "title": "Size"
               }
             ],
@@ -201,12 +205,14 @@
                 "align": "left",
                 "formatter": "rellink",
                 "list": false,
+                "sortkey": "title",
                 "title": "Name"
               },
               {
                 "align": "left",
                 "formatter": "filesize",
                 "list": false,
+                "sortkey": "",
                 "title": "Size"
               }
             ],
@@ -266,12 +272,14 @@
                 "align": "left",
                 "formatter": "rellink",
                 "list": false,
+                "sortkey": "title",
                 "title": "Name"
               },
               {
                 "align": "left",
                 "formatter": "filesize",
                 "list": false,
+                "sortkey": "",
                 "title": "Size"
               }
             ],
@@ -327,12 +335,14 @@
                 "align": "left",
                 "formatter": "rellink",
                 "list": false,
+                "sortkey": "title",
                 "title": "Name"
               },
               {
                 "align": "left",
                 "formatter": "filesize",
                 "list": false,
+                "sortkey": "",
                 "title": "Size"
               }
             ],
@@ -386,12 +396,14 @@
                 "align": "left",
                 "formatter": "rellink",
                 "list": false,
+                "sortkey": "title",
                 "title": "Name"
               },
               {
                 "align": "left",
                 "formatter": "filesize",
                 "list": false,
+                "sortkey": "",
                 "title": "Size"
               }
             ],

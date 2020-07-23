@@ -68,7 +68,7 @@ def summary_keyval(dataset):  # pylint: disable=redefined-outer-name
 def meta_table(dataset):  # pylint: disable=redefined-outer-name
     dataset = yield marv.pull(dataset)
     columns = [
-        {'title': 'Name', 'formatter': 'rellink'},
+        {'title': 'Name', 'formatter': 'rellink', 'sortkey': 'title'},
         {'title': 'Size', 'formatter': 'filesize'},
     ]
     # dataset.id is setid here

@@ -11,30 +11,35 @@
               "align": "left",
               "formatter": "string",
               "list": false,
+              "sortkey": "",
               "title": "Topic"
             },
             {
               "align": "left",
               "formatter": "string",
               "list": false,
+              "sortkey": "",
               "title": "Type"
             },
             {
               "align": "left",
               "formatter": "string",
               "list": false,
+              "sortkey": "",
               "title": "MD5"
             },
             {
               "align": "left",
               "formatter": "string",
               "list": false,
+              "sortkey": "",
               "title": "Latching"
             },
             {
               "align": "right",
               "formatter": "string",
               "list": false,
+              "sortkey": "",
               "title": "Message count"
             }
           ],

@@ -10,6 +10,25 @@ Listed here are all versions that necessitate migration. Depending on the versio
 
 In case of database migrations it is sufficient to ``marv dump`` the database with the version you are currently using and ``marv restore`` with the latest version; marv is able to *dump* itself and *restore* any older version. In case this does not hold true ``marv restore`` will complain and provide instructions what to do.
 
+
+.. _migrate-20.07.0:
+
+20.07.0
+-------
+
+Table column sorting
+^^^^^^^^^^^^^^^^^^^^
+Table columns containing links use dictionaries instead of plain values and the sort order of these will seem random. Use ``sortkey`` on table columns to define the dictionary key for sorting (see :ref:`widget_table` for more information).
+
+In case you are using :func:`marv_robotics.detail.bagmeta_table` and have datasets with multiple files, you might want to run:
+
+.. code-block:: sh
+
+   marv run --node bagmeta_table --force --col=*
+
+Likewise for :func:`marv_nodes.meta_table`.
+
+
 .. _migrate-20.06.0:
 
 20.06.0
