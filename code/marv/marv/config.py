@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 """Marv config parsing."""
+
 import os
 import sys
 from collections.abc import Mapping
@@ -10,6 +11,7 @@ from functools import partial
 from inspect import getmembers
 from logging import getLogger
 
+from . import sexp
 from .utils import echo, find_obj
 
 log = getLogger(__name__)
@@ -23,6 +25,10 @@ class ConfigError(Exception):
             section, key = self.args  # pylint: disable=unbalanced-tuple-unpacking
             message = 'missing'
         return f'{section.filename} [{section.name}] {key}: {message}'
+
+
+class InvalidToken(Exception):
+    pass
 
 
 def make_funcs(dataset, setdir, store):
@@ -172,43 +178,23 @@ def print_trace(args):
     return args
 
 
-def parse_function(string, pos=0):
-    assert string[pos] == '(', string
-    start = pos + 1
-    end = len(string) - 1
-    try:
-        pos = string.index(' ', start)
-    except ValueError:
-        pos = end
-    name = string[start:pos]
-    pos += 1
+def _parse_list(node):
+    assert isinstance(node, sexp.List), node
+    assert isinstance(node.args[0], sexp.Identifier), node.args[0]
     args = []
-    functree = (name, args)
-    while string[pos] != ')' and pos < end:
-        if string[pos] == '(':
-            func, pos = parse_function(string, pos)
-            args.append(func)
-        elif string[pos:pos+2] == '[]':
-            args.append([])
-            pos += 2
-        elif string[pos] == '"':
-            start = pos + 1
-            pos = string.index('"', start)
-            args.append(string[start:pos])
-            pos += 1
-        elif string[pos] == "'":
-            start = pos + 1
-            pos = string.index("'", start)
-            args.append(string[start:pos])
-            pos += 1
-        elif string[pos] == '0':
-            args.append(0)
-            pos += 1
-        elif string[pos] == ' ':
-            pos += 1
+    for token in node.args[1:]:
+        if isinstance(token, sexp.List):
+            args.append(_parse_list(token))
+        elif isinstance(token, sexp.Literal):
+            args.append(token.value)
         else:
-            raise RuntimeError(pos, string[pos:])
-    return functree, pos + 1
+            raise InvalidToken(token)
+    return (node.args[0].name, args)
+
+
+def parse_function(string):
+    tree = sexp.scan(string)
+    return _parse_list(tree), tree.stop + 1  # pylint: disable=no-member
 
 
 class Section(Mapping):

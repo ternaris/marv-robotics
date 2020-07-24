@@ -472,16 +472,20 @@ S-Expressions are used in the config file to create small functions that extract
    (get "dataset.name")
    (get "dataset.files[:].path")
    (sum (get "dataset.files[:].size"))
-   (tags )
-   (comments )
+   (tags)
+   (comments)
 
 The first element of a list is the name of a function. Any additional arguments are passed as arguments to the function and the list defining a function is replaced with its return value.
 
 Valid arguments are:
 
-- strings enclosed in ``""``
 - functions enclosed in ``()``
-- ``0`` number, literal zero
+- all json literals
+  - ``null``
+  - ``true``, ``false``
+  - integers ``-17``, ``42``, ...
+  - floats ``1.2``, ``-1e10``
+  - ``"strings with escape sequences \u0022 \" \\ \b \f \n \r \t"``
 
 
 Functions

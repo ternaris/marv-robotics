@@ -35,9 +35,9 @@ DEFAULT_FILTERS = """
 name       | Name       | substring         | string   | (get "dataset.name")
 setid      | Set Id     | startswith        | string   | (get "dataset.id")
 size       | Size       | lt le eq ne ge gt | filesize | (sum (get "dataset.files[:].size"))
-status     | Status     | any all           | subset   | (status )
-tags       | Tags       | any all           | subset   | (tags )
-comments   | Comments   | substring         | string   | (comments )
+status     | Status     | any all           | subset   | (status)
+tags       | Tags       | any all           | subset   | (tags)
+comments   | Comments   | substring         | string   | (comments)
 files      | File paths | substring_any     | string[] | (get "dataset.files[:].path")
 time_added | Added      | lt le eq ne ge gt | datetime | (get "dataset.time_added")
 """
@@ -45,13 +45,13 @@ time_added | Added      | lt le eq ne ge gt | datetime | (get "dataset.time_adde
 DEFAULT_LISTING_COLUMNS = """
 name       | Name   | route    | (detail_route (get "dataset.id") (get "dataset.name"))
 size       | Size   | filesize | (sum (get "dataset.files[:].size"))
-status     | Status | icon[]   | (status )
-tags       | Tags   | pill[]   | (tags )
+status     | Status | icon[]   | (status)
+tags       | Tags   | pill[]   | (tags)
 time_added | Added  | datetime | (get "dataset.time_added")
 """
 
 DEFAULT_LISTING_SUMMARY = """
-datasets | datasets | int       | (len (rows ))
+datasets | datasets | int       | (len (rows))
 size     | size     | filesize  | (sum (rows "size" 0))
 """
 

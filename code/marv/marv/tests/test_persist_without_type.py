@@ -37,8 +37,8 @@ nodes =
 listing_columns =
     name       | Name   | route    | (detail_route (get "dataset.id") (get "dataset.name"))
     size       | Size   | filesize | (sum (get "dataset.files[:].size"))
-    status     | Status | icon[]   | (status )
-    tags       | Tags   | pill[]   | (tags )
+    status     | Status | icon[]   | (status)
+    tags       | Tags   | pill[]   | (tags)
     notype     | NoType | datetime | (get "notype.value")
 """
 
