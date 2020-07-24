@@ -112,7 +112,7 @@ class Driver(Keyed, AGenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-
                 output = request
 
             # process
-            if output:
+            if output is not None:
                 # pylint: disable=protected-access
                 if not self.stream.cache:
                     yield self.stream.handle.msg(self.stream.handle)
