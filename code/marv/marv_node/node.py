@@ -12,6 +12,8 @@ from . import io
 from .io import get_logger, pull
 from .mixins import Keyed
 
+NODE_CACHE = {}
+
 
 class InputSpec(Keyed, namedtuple('InputSpec', ('name', 'value', 'foreach'))):
     @property
@@ -64,6 +66,13 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
             dnode = func.__marv_node__
         else:
             dnode = func
+            func = None
+
+        node = NODE_CACHE.get(dnode)
+        if node is not None:
+            return node
+
+        if func is None:
             func = find_obj(dnode.function)
         namespace, name = dnode.function.rsplit('.', 1)
         schema = find_obj(dnode.message_schema) if dnode.message_schema is not None else None
@@ -84,6 +93,7 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
                    specs=specs,
                    group=dnode.group,
                    dag_node=dnode)
+        NODE_CACHE[dnode] = node
         return node
 
     def __init__(self, func, schema=None, version=None,
