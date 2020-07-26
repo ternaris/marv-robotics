@@ -18,6 +18,13 @@ class BaseModel(_BaseModel):
         extra = Extra.forbid
         allow_mutation = False
 
+    def __hash__(self):
+        dct = self.__dict__
+        return hash(tuple(
+            tuple(v) if isinstance(v, list) else v
+            for v in (dct[x] for x in self.__fields__)
+        ))
+
 
 class Inputs(BaseModel):
     """Base class for node input configuration models.
@@ -57,6 +64,10 @@ class Node(BaseModel):  # pylint: disable=too-few-public-methods
         inputs = self.inputs.dict(exclude_unset=True, exclude_defaults=True)
         inputs.update(kw)
         return self.copy(update={'inputs': type(self.inputs).parse_obj(inputs)})
+
+    def __hash__(self):
+        # Derived from function and therefore ignore: message_schema, group, version, forach
+        return hash((self.function, self.inputs))
 
 
 class Stream(BaseModel):
