@@ -7,6 +7,8 @@ import capnp  # pylint: disable=unused-import
 import pytest
 
 import marv_api as marv
+from marv_api.dag import Stream
+from marv_api.decorators import NOTSET, getdag
 from .types_capnp import Test  # pylint: disable=import-error
 
 
@@ -27,10 +29,37 @@ def test():
     assert node.function == 'marv_api.tests.test_decorators.test.<locals>.consumer'
     assert node.inputs.__fields__.keys() == {'foo', 'bar', 'baz', 'qux'}
     assert node.inputs.__annotations__ == {'bar': int}
+    assert node.inputs.foo == 1
+    assert node.inputs.bar == NOTSET
+    assert node.inputs.baz == Stream(node=getdag(source))
+    assert node.inputs.qux == Stream(node=getdag(source), name='stream')
     assert node.message_schema == 'marv_api.tests.types_capnp:Test'
     assert node.group == 'ondemand'
     assert node.version == 1
     assert node.foreach == 'qux'
+
+
+def test_clone():
+    @marv.node()
+    def source1():
+        yield  # pragma: nocoverage
+
+    @marv.node()
+    def source2():
+        yield  # pragma: nocoverage
+
+    @marv.node()
+    @marv.input('foo', default=1)
+    @marv.input('stream', default=source1)
+    def consumer(foo, stream):
+        yield  # pragma: nocoverage
+
+    clone = consumer.clone(foo=10, stream=source2)
+    assert clone.inputs.foo == 10
+    assert clone.inputs.stream == Stream(node=getdag(source2))
+
+    clone = consumer.clone(stream=marv.select(source2, 'foo'))
+    assert clone.inputs.stream == Stream(node=getdag(source2), name='foo')
 
 
 def test_duplicate_input_fails():

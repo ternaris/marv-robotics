@@ -15,7 +15,8 @@ from pydantic import (
 
 class BaseModel(_BaseModel):
     class Config:
-        extra: Extra.forbid
+        extra = Extra.forbid
+        allow_mutation = False
 
 
 class Inputs(BaseModel):
@@ -28,6 +29,13 @@ class Inputs(BaseModel):
     @classmethod
     def subclass(cls, __module__, **kw):
         return create_model('Inputs', __base__=Inputs, __module__=__module__, **kw)
+
+    @validator('*', pre=True)
+    def streamify(cls, value):
+        """Turn Node inputs into streams."""
+        if hasattr(value, '__marv_node__'):
+            return Stream(node=value.__marv_node__)
+        return value
 
 
 class Node(BaseModel):  # pylint: disable=too-few-public-methods
@@ -45,7 +53,10 @@ class Node(BaseModel):  # pylint: disable=too-few-public-methods
         return value
 
     def clone(self, **kw):
-        return self.copy(update={'inputs': self.inputs.copy(update=kw)})
+        # Send inputs through validation
+        inputs = self.inputs.dict(exclude_unset=True, exclude_defaults=True)
+        inputs.update(kw)
+        return self.copy(update={'inputs': type(self.inputs).parse_obj(inputs)})
 
 
 class Stream(BaseModel):

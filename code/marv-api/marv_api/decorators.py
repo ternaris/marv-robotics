@@ -137,3 +137,8 @@ def select(node, name):  # pylint: disable=redefined-outer-name
 
     """
     return Stream(node=node.__marv_node__, name=name)
+
+
+# NOTE: Strictly speaking not a decorator but related to decoration of node functions
+def getdag(node):  # pylint: disable=redefined-outer-name
+    return node.__marv_node__
