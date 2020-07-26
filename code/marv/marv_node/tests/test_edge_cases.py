@@ -1,22 +1,33 @@
 # Copyright 2016 - 2020  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+# pylint: disable=invalid-name
+
 from ..testing import make_dataset, marv, run_nodes
 
 DATASET = make_dataset()
 SETID = DATASET.setid
 
 
+@marv.node(group=True)
+def source():
+    a = yield marv.create_stream('a')
+    b = yield marv.create_stream('b')
+    yield a.msg(0)
+    yield b.msg(10)
+
+
 @marv.node()
-@marv.input('stream', foreach=[0, 10])
+@marv.input('stream', foreach=source)
 def images(stream):
-    """Produce 2 streams each with two messages."""
-    yield marv.set_header(title=stream)
-    yield marv.push(1+stream)
-    yield marv.push(2+stream)
-    yield marv.push(3+stream)
-    yield marv.push(4+stream)
-    yield marv.push(5+stream)
+    """Produce 2 streams each with 5 messages."""
+    offset = yield marv.pull(stream)
+    yield marv.set_header(title=offset)
+    yield marv.push(1 + offset)
+    yield marv.push(2 + offset)
+    yield marv.push(3 + offset)
+    yield marv.push(4 + offset)
+    yield marv.push(5 + offset)
 
 
 @marv.node()
