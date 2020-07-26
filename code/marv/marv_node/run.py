@@ -303,7 +303,7 @@ async def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=N
                 logger.noisy('-> %d %s%s',
                              msg.idx,
                              msg.handle.name,
-                             ' DONE' if msg.data == THEEND else '')
+                             ' DONE' if msg.data is THEEND else '')
             stream = streams[msg.handle]
             stream.add_msg(msg)
 
