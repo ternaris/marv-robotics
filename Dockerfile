@@ -73,6 +73,7 @@ if [[ -n "$MARV_VENV" ]]; then \
     $MARV_VENV/bin/pip install -U -r /home/marv/requirements/marv-robotics.txt && \
     $MARV_VENV/bin/pip install opencv-python-headless==4.1.1.26 && \
     $MARV_VENV/bin/pip install -U -r /home/marv/requirements/develop.txt; \
+    rm -rf /home/marv/.cache/pip && rmdir /home/marv/.cache || (ls -la /home/marv/.cache; exit 1); \
 fi'
 
 ARG code=code
@@ -114,7 +115,8 @@ if [[ -n "$MARV_VENV" ]]; then \
         ${MARV_VENV}/bin/pip install ${pypi_install_args} /home/marv/code/marv-robotics && \
         (source $MARV_VENV/bin/activate && /home/marv/scripts/build-docs) && \
         ${MARV_VENV}/bin/pip install -U --no-deps /home/marv/code/marv-robotics; \
-    fi \
+    fi; \
+    rm -rf /home/marv/.cache/pip && rmdir /home/marv/.cache || (ls -la /home/marv/.cache; exit 1); \
 fi'
 
 USER root
