@@ -111,6 +111,7 @@ def profile(func, sort='cumtime'):
     import pstats
     from cProfile import Profile
     _profile = Profile()
+
     @functools.wraps(func)
     def profiled(*args, **kw):
         _profile.enable()
