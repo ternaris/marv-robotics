@@ -1,7 +1,7 @@
 -r marv.in
 lz4
-matplotlib
-pillow<7.0.0  # leads to matplotlib not supporting jpg
+matplotlib==3.2.*  # TODO: 3.3 breaks in bundle
+pillow
 pycryptodome
 python-gnupg
 pyyaml

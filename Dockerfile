@@ -71,7 +71,7 @@ if [[ -n "$MARV_VENV" ]]; then \
     $MARV_VENV/bin/pip install -U -r /home/marv/requirements/venv.txt; \
     $MARV_VENV/bin/pip install -U -c /home/marv/requirements/marv-robotics.txt cython && \
     $MARV_VENV/bin/pip install -U -r /home/marv/requirements/marv-robotics.txt && \
-    $MARV_VENV/bin/pip install opencv-python-headless==4.1.1.26 && \
+    $MARV_VENV/bin/pip install opencv-python-headless==4.3.0.36 && \
     $MARV_VENV/bin/pip install -U -r /home/marv/requirements/develop.txt; \
     rm -rf /home/marv/.cache/pip && rmdir /home/marv/.cache || (ls -la /home/marv/.cache; exit 1); \
 fi'

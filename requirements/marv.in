@@ -2,14 +2,14 @@
 -r marv-cli.in
 PyJWT
 aiohttp
-aiosqlite
+aiosqlite==0.12.0  # TODO: bundle breaks at least with 0.16.0
 bcrypt
 configparser
 gunicorn
 jinja2
 pendulum!=2.1.0
 pycapnp-for-marv==0.6.3
-pypika
+pypika==0.37.1  # TODO: tortoise breaks at least with 0.37.16
 setproctitle
 tortoise-orm==0.15.*
 uvloop
