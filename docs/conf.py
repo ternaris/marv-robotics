@@ -17,7 +17,7 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 # import os
-# import sys
+import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
 
@@ -40,7 +40,8 @@ extensions = ['sphinx.ext.autodoc',
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
-intersphinx_mapping = {'python': ('https://docs.python.org/3.7', None)}
+pyver = f'{sys.version_info.major}.{sys.version_info.minor}'
+intersphinx_mapping = {'python': (f'https://docs.python.org/{pyver}', None)}
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:

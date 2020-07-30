@@ -1,9 +1,9 @@
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-FROM ubuntu:bionic
+FROM ubuntu:focal
 
-ARG PYTHON=python3.7
+ARG PYTHON=python3.8
 
 # This warning can simply be ignore:
 # debconf: delaying package configuration, since apt-utils is not installed
