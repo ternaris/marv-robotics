@@ -5,8 +5,10 @@ import re
 import sys
 from collections import defaultdict, namedtuple
 from itertools import groupby
+from pathlib import Path
 
 import capnp  # pylint: disable=unused-import
+import yaml
 
 import marv_api as marv
 import marv_nodes
@@ -38,6 +40,20 @@ class Baginfo(namedtuple('Baginfo', 'filename basename prefix timestamp idx')):
         else:
             prefix = None
         return cls(filename, basename, prefix, timestamp, idx)
+
+
+def _scan_rosbag2(dirpath, filenames):
+    if 'metadata.yaml' not in filenames:
+        return None
+
+    dirpath = Path(dirpath)
+    dct = yaml.safe_load((dirpath / 'metadata.yaml').read_text())
+    try:
+        info = dct['rosbag2_bagfile_information']
+    except KeyError:
+        return None
+
+    return DatasetInfo(dirpath.name, ['metadata.yaml'] + info['relative_file_paths'])
 
 
 def scan(dirpath, dirnames, filenames):  # pylint: disable=unused-argument
@@ -94,6 +110,11 @@ def scan(dirpath, dirnames, filenames):  # pylint: disable=unused-argument
     See :ref:`cfg_c_scanner` config key.
 
     """
+    dataset = _scan_rosbag2(dirpath, filenames)
+    if dataset:
+        dirnames[:] = []
+        return [dataset]
+
     groups = groupby([Baginfo.parse(x) for x in reversed(filenames) if x.endswith('.bag')],
                      lambda x: x.prefix)
     bags = []
