@@ -33,6 +33,7 @@ struct Connection {
   msgDef @3 :Text;
   msgCount @4 :UInt64;
   latching @5 :Bool;
+  serializationFormat @6 :Text;
 }
 
 struct MsgType {

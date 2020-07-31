@@ -142,6 +142,32 @@ def scan(dirpath, dirnames, filenames):  # pylint: disable=unused-argument
     return datasets
 
 
+def _read_bagmeta2(path):
+    dct = yaml.safe_load(Path(path).read_text())
+    try:
+        info = dct['rosbag2_bagfile_information']
+    except KeyError:
+        return None
+    start_time = info['starting_time']['nanoseconds_since_epoch']
+    duration = info['duration']['nanoseconds']
+    connections = [
+        {'topic': x['topic_metadata']['name'],
+         'datatype': x['topic_metadata']['type'],
+         'msg_count': x['message_count'],
+         'serialization_format': x['topic_metadata']['serialization_format']}
+        for x in info['topics_with_message_count']
+    ]
+    return {
+        'start_time': start_time,
+        'end_time': start_time + duration,
+        'duration': duration,
+        'msg_count': info['message_count'],
+        'msg_types': sorted({x['datatype'] for x in connections}),
+        'topics': sorted({x['topic'] for x in connections}),
+        'connections': connections,
+    }
+
+
 @marv.node(Bagmeta)
 @marv.input('dataset', marv_nodes.dataset)
 def bagmeta(dataset):
@@ -156,7 +182,14 @@ def bagmeta(dataset):
     # pylint: disable=too-many-locals
 
     dataset = yield marv.pull(dataset)
-    paths = [x.path for x in dataset.files if x.path.endswith('.bag')]
+    files = dataset.files[:]
+    if files[0].path.endswith('metadata.yaml'):
+        meta = _read_bagmeta2(files[0].path)
+        if meta:
+            yield marv.push(meta)
+            return
+
+    paths = [x.path for x in files if x.path.endswith('.bag')]
 
     bags = []
     start_time = sys.maxsize

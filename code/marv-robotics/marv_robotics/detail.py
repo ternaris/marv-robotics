@@ -59,7 +59,7 @@ def bagmeta_table(bagmeta, dataset):
         {'title': 'Message count', 'align': 'right'},
     ]
     rows = []
-    bags = bagmeta.bags[:]
+    bags = list(bagmeta.bags)
     for idx, file in enumerate(dataset.files):
         if file.path.endswith('.bag'):
             bag = bags.pop(0)
