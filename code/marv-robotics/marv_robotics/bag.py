@@ -285,68 +285,68 @@ def read_messages(paths, topics=None, start_time=None, end_time=None):
 @marv.node(Message, group='ondemand')
 @marv.input('dataset', marv_nodes.dataset)
 @marv.input('bagmeta', bagmeta)
-def raw_messages(dataset, bagmeta):  # pylint: disable=redefined-outer-name
+def raw_messages(dataset, bagmeta):  # noqa: C901  # pylint: disable=redefined-outer-name,too-many-branches,too-many-statements
     """Stream messages from a set of bag files."""
     # pylint: disable=too-many-locals
 
     bagmeta, dataset = yield marv.pull_all(bagmeta, dataset)
-    bagtopics = bagmeta.topics
     connections = bagmeta.connections
-    paths = [x.path for x in dataset.files if x.path.endswith('.bag')]
     requested = yield marv.get_requested()
 
-    alltopics = set()
-    bytopic = defaultdict(list)
-    groups = {}
-    for name in [x.name for x in requested if ':' in x.name]:
-        reqtop, reqtype = name.split(':')
-        # BUG: topic with more than one type is not supported
-        topics = [
-            con.topic for con in connections
-            if reqtop in ('*', con.topic) and reqtype in ('*', con.datatype)
-        ]
-        group = groups[name] = yield marv.create_group(name)
-        create_stream = group.create_stream
+    # Selectors are:
+    # - '/topic' -> one individual stream, no group
+    # - '/topic1,/topic2' -> one group with two streams
+    # - '*:sensor_msgs/Imu' -> one group with one stream per matching connection
+    # - '*:sensor_msgs/Imu,*:sensor_msgs/msg/Imu'
+    #    -> one group with one stream per matching connection
 
-        for topic in topics:
-            # BUG: topic with more than one type is not supported
-            # pylint: disable=stop-iteration-return
-            con = next(x for x in connections if x.topic == topic)
-            # TODO: start/end_time per topic?
-            header = {'start_time': bagmeta.start_time,
-                      'end_time': bagmeta.end_time,
-                      'msg_count': con.msg_count,
-                      'msg_type': con.datatype,
-                      'msg_type_def': con.msg_def,
-                      'msg_type_md5sum': con.md5sum,
-                      'topic': topic}
-            stream = yield create_stream(topic, **header)
-            bytopic[topic].append(stream)
-        alltopics.update(topics)
-        if group:
-            yield group.finish()
+    individuals = []
+    groups = []
+    for name in (x.name for x in requested):
+        if re.search(r'[:,]', name):
+            groups.append(name)
+        else:
+            individuals.append(name)
 
-    for topic in [x.name for x in requested if ':' not in x.name]:
-        if topic in alltopics:
-            continue
-
-        # BUG: topic with more than one type is not supported
+    def make_header(topic):
+        # TODO: topic with more than one type is not supported
         con = next((x for x in connections if x.topic == topic), None)
         # TODO: start/end_time per topic?
-        header = {'start_time': bagmeta.start_time,
-                  'end_time': bagmeta.end_time,
-                  'msg_count': con.msg_count if con else 0,
-                  'msg_type': con.datatype if con else '',
-                  'msg_type_def': con.msg_def if con else '',
-                  'msg_type_md5sum': con.md5sum if con else '',
-                  'topic': topic}
-        stream = yield marv.create_stream(topic, **header)
+        return {'start_time': bagmeta.start_time,
+                'end_time': bagmeta.end_time,
+                'msg_count': con.msg_count if con else 0,
+                'msg_type': con.datatype if con else '',
+                'msg_type_def': con.msg_def if con else '',
+                'msg_type_md5sum': con.md5sum if con else '',
+                'topic': topic}
+
+    bytopic = defaultdict(list)
+    for name in groups:
+        topics = []
+        for selector in name.split(','):
+            try:
+                reqtop, reqtype = selector.split(':')
+            except ValueError:
+                reqtop, reqtype = selector, '*'
+            # TODO: topic with more than one type is not supported
+            topics.extend(
+                con.topic for con in connections
+                if reqtop in ('*', con.topic) and reqtype in ('*', con.datatype)
+            )
+        group = yield marv.create_group(name)
+        for topic in topics:
+            stream = yield group.create_stream(f'{name}.{topic}', **make_header(topic))
+            bytopic[topic].append(stream)
+        yield group.finish()
+
+    bagtopics = bagmeta.topics
+    for topic in individuals:
+        stream = yield marv.create_stream(topic, **make_header(topic))
         if topic not in bagtopics:
             yield stream.finish()
         bytopic[topic].append(stream)
-        alltopics.add(topic)
 
-    if not alltopics:
+    if not bytopic:
         return
 
     # BUG: topic with more than one type is not supported
