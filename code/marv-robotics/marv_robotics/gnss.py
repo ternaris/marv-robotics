@@ -13,7 +13,7 @@ from matplotlib import pyplot as plt
 
 import marv_api as marv
 from marv.types import File
-from .bag import get_message_type, messages
+from .bag import get_float_seconds, get_message_type, make_deserialize, messages
 
 
 def yaw_angle(frame):
@@ -40,11 +40,11 @@ def yaw_angle(frame):
 
 
 @marv.node()
-@marv.input('stream', foreach=marv.select(messages, '*:sensor_msgs/NavSatFix'))
+@marv.input('stream', foreach=marv.select(messages, ('*:sensor_msgs/NavSatFix,'
+                                                     '*:sensor_msgs/msg/NavSatFix')))
 def positions(stream):
     yield marv.set_header(title=stream.topic)
-    pytype = get_message_type(stream)
-    rosmsg = pytype()
+    deserialize = make_deserialize(stream)
     erroneous = 0
     e_offset = None
     n_offset = None
@@ -54,7 +54,8 @@ def positions(stream):
         msg = yield marv.pull(stream)
         if msg is None:
             break
-        rosmsg.deserialize(msg.data)
+        rosmsg = deserialize(msg.data)
+
         if not hasattr(rosmsg, 'status') or \
            np.isnan(rosmsg.longitude) or \
            np.isnan(rosmsg.latitude) or \
@@ -73,7 +74,7 @@ def positions(stream):
         u = rosmsg.altitude - u_offset
 
         # TODO: why do we accumulate?
-        positions.append([rosmsg.header.stamp.to_sec(),
+        positions.append([get_float_seconds(rosmsg.header.stamp),
                           rosmsg.latitude,
                           rosmsg.longitude,
                           rosmsg.altitude,
@@ -88,24 +89,25 @@ def positions(stream):
 
 
 @marv.node()
-@marv.input('stream', foreach=marv.select(messages, '*:sensor_msgs/Imu'))
+@marv.input('stream', foreach=marv.select(messages, ('*:sensor_msgs/Imu,'
+                                                     '*:sensor_msgs/msg/Imu')))
 def imus(stream):
     yield marv.set_header(title=stream.topic)
-    pytype = get_message_type(stream)
-    rosmsg = pytype()
+    deserialize = make_deserialize(stream)
     erroneous = 0
     imus = []
     while True:
         msg = yield marv.pull(stream)
         if msg is None:
             break
-        rosmsg.deserialize(msg.data)
+        rosmsg = deserialize(msg.data)
         if np.isnan(rosmsg.orientation.x):
             erroneous += 1
             continue
 
         # TODO: why do we accumulate?
-        imus.append([rosmsg.header.stamp.to_sec(), yaw_angle(rosmsg.orientation)])
+        imus.append([get_float_seconds(rosmsg.header.stamp),
+                     yaw_angle(rosmsg.orientation)])
     if erroneous:
         log = yield marv.get_logger()
         log.warning('skipped %d erroneous messages', erroneous)

@@ -5,32 +5,34 @@ import numpy as np
 
 import marv_api as marv
 from marv.types import GeoJson
-from .bag import get_message_type, messages
+from .bag import get_float_seconds, make_deserialize, messages
 
 
 @marv.node()
-@marv.input('stream', foreach=marv.select(messages, '*:sensor_msgs/NavSatFix'))
+@marv.input('stream', foreach=marv.select(messages, ('*:sensor_msgs/NavSatFix,'
+                                                     '*:sensor_msgs/msg/NavSatFix')))
 def navsatfix(stream):
     yield marv.set_header(title=stream.topic)
-    pytype = get_message_type(stream)
-    rosmsg = pytype()
+    deserialize = make_deserialize(stream)
     erroneous = 0
     while True:
         msg = yield marv.pull(stream)
         if msg is None:
             break
-        rosmsg.deserialize(msg.data)
+        rosmsg = deserialize(msg.data)
+
         if not hasattr(rosmsg, 'status') or \
            np.isnan(rosmsg.longitude) or \
            np.isnan(rosmsg.latitude) or \
            np.isnan(rosmsg.altitude):
             erroneous += 1
             continue
+
         # TODO: namedtuple?
         out = {'status': rosmsg.status.status,
                'lon': rosmsg.longitude,
                'lat': rosmsg.latitude,
-               'timestamp': rosmsg.header.stamp.to_time()}
+               'timestamp': get_float_seconds(rosmsg.header.stamp)}
         yield marv.push(out)
     if erroneous:
         log = yield marv.get_logger()
