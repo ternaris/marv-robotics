@@ -18,6 +18,15 @@ from marv_ros import rosbag
 from marv_ros.rosbag import _get_message_type
 from .bag_capnp import Bagmeta, Message  # pylint: disable=import-error
 
+try:
+    import rosbag2_py as rosbag2
+except ImportError:
+    rosbag2 = None
+
+if rosbag2 is not None:
+    from rclpy.serialization import deserialize_message  # pylint: disable=import-error
+    from rosidl_runtime_py.utilities import get_message  # pylint: disable=import-error
+
 
 class Baginfo(namedtuple('Baginfo', 'filename basename prefix timestamp idx')):
     @classmethod
@@ -290,6 +299,11 @@ def raw_messages(dataset, bagmeta):  # noqa: C901  # pylint: disable=redefined-o
     # pylint: disable=too-many-locals
 
     bagmeta, dataset = yield marv.pull_all(bagmeta, dataset)
+
+    rosbag2_metayaml = Path(dataset.files[0].path)
+    if rosbag2_metayaml.name != 'metadata.yaml':
+        rosbag2_metayaml = False
+
     connections = bagmeta.connections
     requested = yield marv.get_requested()
 
@@ -318,6 +332,7 @@ def raw_messages(dataset, bagmeta):  # noqa: C901  # pylint: disable=redefined-o
                 'msg_type': con.datatype if con else '',
                 'msg_type_def': con.msg_def if con else '',
                 'msg_type_md5sum': con.md5sum if con else '',
+                'rosbag2': bool(rosbag2_metayaml),
                 'topic': topic}
 
     bytopic = defaultdict(list)
@@ -349,9 +364,38 @@ def raw_messages(dataset, bagmeta):  # noqa: C901  # pylint: disable=redefined-o
     if not bytopic:
         return
 
-    # BUG: topic with more than one type is not supported
-    for topic, raw, timestamp in read_messages(paths, topics=list(alltopics)):
-        dct = {'data': raw[1], 'timestamp': timestamp.to_nsec()}
+    if not rosbag2_metayaml:
+        paths = [x.path for x in dataset.files if x.path.endswith('.bag')]
+        # TODO: topic with more than one type is not supported
+        for topic, raw, timestamp in read_messages(paths, topics=list(bytopic)):
+            dct = {'data': raw[1], 'timestamp': timestamp.to_nsec()}
+            for stream in bytopic[topic]:
+                yield stream.msg(dct)
+        return
+
+    meta = yaml.safe_load(rosbag2_metayaml.read_text())['rosbag2_bagfile_information']
+
+    # TODO: workaround for older rosbag2 format versions
+    if meta['version'] < 4:
+        assert len(meta['relative_file_paths']) == 1
+        uri = str(rosbag2_metayaml.parent / meta['relative_file_paths'][0])
+    else:
+        uri = str(rosbag2_metayaml.parent)
+
+    storage_options = rosbag2.StorageOptions()
+    storage_options.uri = uri
+    storage_options.storage_id = meta['storage_identifier']
+
+    reader = rosbag2.SequentialReader()
+    reader.open(storage_options, rosbag2.ConverterOptions())
+
+    storage_filter = rosbag2.StorageFilter()
+    storage_filter.topics = list(bytopic)
+    reader.set_filter(storage_filter)
+
+    while reader.has_next():
+        (topic, data, timestamp) = reader.read_next()
+        dct = {'data': data, 'timestamp': timestamp}
         for stream in bytopic[topic]:
             yield stream.msg(dct)
 
@@ -369,3 +413,35 @@ def get_message_type(stream):
                                msg_def=stream.msg_type_def)
         return _get_message_type(info)
     return None
+
+
+def make_deserialize(stream):
+    """Create appropriate deserialize function for rosbag1 and 2."""
+    if stream.rosbag2:
+        if rosbag2 is None:
+            raise RuntimeError('rosbag2_py is needed to process rosbag2')
+
+        pytype = get_message(stream.msg_type)
+
+        def deserialize_ros2(data):
+            return deserialize_message(data, pytype)
+
+        return deserialize_ros2
+
+    pytype = get_message_type(stream)
+    if pytype is None:
+        raise marv.Abort()
+
+    def deserialize_ros1(data):
+        rosmsg = pytype()
+        rosmsg.deserialize(data)
+        return rosmsg
+
+    return deserialize_ros1
+
+
+def get_float_seconds(stamp):
+    """Get floating point seconds from ros1 and ros2 message header stamp."""
+    if hasattr(stamp, 'to_sec'):
+        return stamp.to_sec()
+    return stamp.sec + stamp.nanosec * 1e-9
