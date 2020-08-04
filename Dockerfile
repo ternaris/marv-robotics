@@ -117,6 +117,14 @@ if [[ -z "$scripts" ]]; then \
     rm /home/marv/scripts; \
 fi'
 
+ARG dist=
+
+COPY --chown=marv:marv ${dist:-CHANGES.rst} /home/marv/dist
+RUN bash -c '\
+if [[ -z "$dist" ]]; then \
+    rm /home/marv/dist; \
+fi'
+
 ARG version=
 ARG pypi_install_args=
 
@@ -130,7 +138,9 @@ if [[ -n "$MARV_VENV" ]]; then \
         (source $MARV_VENV/bin/activate && /home/marv/scripts/build-docs) && \
         ${MARV_VENV}/bin/pip install -U --no-deps /home/marv/code/marv-robotics; \
     fi; \
-    rm -rf /home/marv/.cache/pip && rmdir /home/marv/.cache || (ls -la /home/marv/.cache; exit 1); \
+    if [[ -d /home/marv/.cache ]]; then \
+        rm -rf /home/marv/.cache/pip && rmdir /home/marv/.cache || (ls -la /home/marv/.cache; exit 1); \
+    fi; \
 fi'
 
 USER root
