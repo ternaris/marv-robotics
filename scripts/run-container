@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright 2016 - 2018  Ternaris.
+# Copyright 2016 - 2020  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 set -e
@@ -69,6 +69,8 @@ docker run \
        -e MARV_APPLICATION_ROOT \
        -e MARV_ARGS \
        -e MARV_INIT \
+       -e MARV_UID="${MARV_UID:-$(id -u)}" \
+       -e MARV_GID="${MARV_GID:-$(id -g)}" \
        -e TERM \
        -e TIMEZONE \
        -p "$HTTP:8000" \
@@ -79,6 +81,7 @@ docker run \
        -v "$PWD/scripts:/home/marv/scripts" \
        -v "$PWD/tutorial:/home/marv/tutorial" \
        -v "$PWD/CHANGES.rst:/home/marv/CHANGES.rst" \
+       -v "$PWD/CONTRIBUTING.rst:/home/marv/CONTRIBUTING.rst" \
        -v "$(realpath "$SITE"):/home/marv/site" \
        -v "$(realpath "$SCANROOT"):/scanroot:ro" \
        "$@" \

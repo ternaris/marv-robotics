@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright 2016 - 2018  Ternaris.
+# Copyright 2016 - 2020  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 source /etc/profile.d/marv_env.sh
@@ -15,8 +15,22 @@ echo "$TIMEZONE" > /etc/timezone
 ln -sf /usr/share/zoneinfo/"$TIMEZONE" /etc/localtime
 dpkg-reconfigure -f noninteractive tzdata
 
+groupadd -g $MARV_GID marv || true
+useradd -M -u $MARV_UID -g $MARV_GID --shell /bin/bash marv
+chown $MARV_UID:$MARV_GID /home/marv
+chown -R $MARV_UID:$MARV_GID $MARV_VENV
+
+for x in /etc/skel/.*; do
+    target="/home/marv/$(basename "$x")"
+    if [[ ! -e "$target" ]]; then
+        cp -a "$x" "$target"
+        chown -R $MARV_UID:$MARV_GID "$target"
+    fi
+done
+
 if [[ -n "$DEVELOP" ]]; then
-    find "$DEVELOP" -maxdepth 2 -name setup.py -execdir su -c "$MARV_VENV/bin/pip install -e ." marv \;
+    find "$DEVELOP" -maxdepth 2 -name setup.py \
+        -execdir su -c "$MARV_VENV/bin/pip install -e ." marv \;
 fi
 
 export HOME=/home/marv

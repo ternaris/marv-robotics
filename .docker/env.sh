@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 #
-# Copyright 2016 - 2018  Ternaris.
+# Copyright 2016 - 2020  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 if [ -z "$CENV" ]; then
+    set -e
     export CENV=1
     source /opt/ros/${ROS_DISTRO}/setup.bash
     source /opt/rosbag2/setup.bash
@@ -15,4 +16,5 @@ if [ -z "$CENV" ]; then
         export MARV_CONFIG="$MARV_SITE/marv.conf"
     fi
     cd
+    set +e
 fi

@@ -33,20 +33,6 @@ Building your own image is as simple as running ``./scripts/build-image``.
 The basename of your checkout of MARV Robotics will be used as image name and subsequently also as container name. That way it is possible to have multiple containers based on different images running side-by-side.
 
 
-Marv user uid and gid
-^^^^^^^^^^^^^^^^^^^^^
-
-If the primary uid and gid of the user you are using to start the docker container is not 1000, you need to build a custom image with adjusted uid and gid.
-
-::
-
-   $ ./scripts/build-image --build-arg MARV_UID=1234 --build-arg MARV_GID=5678
-
-Failure to do so can lead to::
-
-  [Errno 13] Permission denied: '/home/marv/site/sessionkey'
-
-
 Community Edition: Official MARV Robotics CE Image
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
