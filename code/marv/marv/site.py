@@ -166,7 +166,7 @@ class Site:
         self.createdb = True
 
     @classmethod
-    async def create(cls, siteconf, init=None):
+    async def create(cls, siteconf, init=None):  # noqa: C901
         site = cls(siteconf)
         if utils.within_pyinstaller_bundle():
             load_sitepackages(site.config.marv.sitepackages)
@@ -181,6 +181,17 @@ class Site:
 
         if init:
             site.init_directory()
+
+        try:
+            fd = os.open(site.config.marv.sessionkey_file,
+                         os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+        except OSError as e:
+            if e.errno != 17:
+                raise
+        else:
+            with os.fdopen(fd, 'w') as f:
+                f.write(str(uuid4()))
+            log.verbose('Generated %s', site.config.marv.sessionkey_file)
 
         # Generate all dynamic models
         models = site.db.MODELS + [y for x in site.collections.values() for y in x.model]
@@ -230,17 +241,6 @@ class Site:
              'sortcolumn', 'sortorder', 'summary_items'))]
 
     def init_directory(self):
-        try:
-            fd = os.open(self.config.marv.sessionkey_file,
-                         os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o666)
-        except OSError as e:
-            if e.errno != 17:
-                raise
-        else:
-            with os.fdopen(fd, 'w') as f:
-                f.write(str(uuid4()))
-            log.verbose('Generated %s', self.config.marv.sessionkey_file)
-
         try:
             os.mkdir(self.config.marv.storedir)
             log.verbose('Created %s', self.config.marv.storedir)

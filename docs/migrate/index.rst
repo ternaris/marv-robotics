@@ -16,6 +16,16 @@ In case of database migrations it is sufficient to ``marv dump`` the database wi
 20.07.0
 -------
 
+Session key file
+^^^^^^^^^^^^^^^^
+
+A marv site contains a session key file used in authenticating marv users. This file was previously readable by all users of the host system. We recommend to delete the file and restart marv to recreate it automatically. All marv users will have to relogin.
+
+.. code-block:: sh
+
+   rm site/sessionkey
+
+
 Table column sorting
 ^^^^^^^^^^^^^^^^^^^^
 Table columns containing links use dictionaries instead of plain values and the sort order of these will seem random. Use ``sortkey`` on table columns to define the dictionary key for sorting (see :ref:`widget_table` for more information).
