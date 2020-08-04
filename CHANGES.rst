@@ -10,10 +10,10 @@ Changes necessitating migration reference the corresponding migration section. R
 If we're deprecating features you rely on, please speak up.
 
 
-.. _upcoming_changes:
+.. _v20_08_0:
 
-Upcoming (unreleased)
-^^^^^^^^^^^^^^^^^^^^^
+20.08.0 (2020-08-09)
+^^^^^^^^^^^^^^^^^^^^
 
 **This release contains security fixes. We strongly recommend that all affected MARV installations be upgraded immediately and migration instructions be followed.**
 
@@ -37,15 +37,9 @@ Changed
 - Switch to Python 3.8 while keeping support for Python 3.7
 - Create marv user upon startup with uid and gid of user starting it; remove the need to rebuild image to that end
 
-Deprecated
-~~~~~~~~~~
-
-Removed
-~~~~~~~
-
 Fixed
 ~~~~~
-- Sort order of table columns containing links **needs migration:** :ref:`migrate-20.07.0`
+- Sort order of table columns containing links **needs migration:** :ref:`migrate-20.08.0`
 - Execution of run-container from outside repository root
 - Pushing of false values and values with ambiguous truth
 - Running dependent nodes by marv run --force-dependent

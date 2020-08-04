@@ -11,9 +11,9 @@ Listed here are all versions that necessitate migration. Depending on the versio
 In case of database migrations it is sufficient to ``marv dump`` the database with the version you are currently using and ``marv restore`` with the latest version; marv is able to *dump* itself and *restore* any older version. In case this does not hold true ``marv restore`` will complain and provide instructions what to do.
 
 
-.. _migrate-20.07.0:
+.. _migrate-20.08.0:
 
-20.07.0
+20.08.0
 -------
 
 Session key file
