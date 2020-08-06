@@ -39,8 +39,8 @@ async def run_nodes(dataset, nodes, store, persistent=None, force=None, deps=Non
 
     if cachesize is not None:
         import marv_node  # pylint: disable=import-outside-toplevel
-        marv_node.stream.CACHESIZE
-        marv_node.stream.CACHESIZE = cachesize
+        marv_node.stream.Stream.CACHESIZE
+        marv_node.stream.Stream.CACHESIZE = cachesize
 
     queue = []
     ret = await run_nodes_async(dataset=dataset, nodes=nodes, store=store,
