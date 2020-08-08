@@ -360,7 +360,7 @@ async def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=N
                 raise
 
             if send is not None:
-                queue_back(current, send)
+                queue_front(current, send)
                 return await loop()
 
             # Request has to wait
