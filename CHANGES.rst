@@ -10,6 +10,30 @@ Changes necessitating migration reference the corresponding migration section. R
 If we're deprecating features you rely on, please speak up.
 
 
+.. _upcoming_changes:
+
+Upcoming (unreleased)
+^^^^^^^^^^^^^^^^^^^^^
+
+Added
+~~~~~
+
+Changed
+~~~~~~~
+
+Deprecated
+~~~~~~~~~~
+
+Removed
+~~~~~~~
+
+Fixed
+~~~~~
+
+Security
+~~~~~~~~
+
+
 .. _v20_08_0:
 
 20.08.0 (2020-08-09)
