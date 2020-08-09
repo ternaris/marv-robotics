@@ -49,9 +49,9 @@ ENV LANGUAGE en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
 
 RUN cd /opt && \
-    curl -sL https://github.com/ternaris/rosbag2/archive/marv-2020-07-30.zip > rosbag2.zip && \
+    curl -sL https://github.com/ternaris/rosbag2/archive/marv-2020-08-09.zip > rosbag2.zip && \
     unzip rosbag2.zip && rm rosbag2.zip && \
-    mkdir -p ws/src && mv rosbag2-marv-2020-07-30 ws/src/rosbag2 && \
+    mkdir -p ws/src && mv rosbag2-marv-2020-08-09 ws/src/rosbag2 && \
     bash -c ' \
         source /opt/ros/${ROS_DISTRO}/setup.bash && \
         cd ws && \
