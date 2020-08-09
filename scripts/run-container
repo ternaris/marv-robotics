@@ -83,6 +83,6 @@ docker run \
        -v "$PWD/CHANGES.rst:/home/marv/CHANGES.rst" \
        -v "$PWD/CONTRIBUTING.rst:/home/marv/CONTRIBUTING.rst" \
        -v "$(realpath "$SITE"):/home/marv/site" \
-       -v "$(realpath "$SCANROOT"):/scanroot:ro" \
+       -v "$(realpath "$SCANROOT"):/scanroot" \
        "$@" \
        "$IMAGE"
