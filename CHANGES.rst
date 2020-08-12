@@ -21,7 +21,9 @@ Added
 
 Changed
 ~~~~~~~
-- Replace custom rosbag merge sort with heapq.merge
+- Replace custom rosbag merge sort with heapq.merge `#72`_
+- Use heapq.merge to read from multiple bags in parallel `#72`_
+- Mount scanroot with write permissions into docker container to work around limitation in current rosbag2 implementation (CE)
 
 Deprecated
 ~~~~~~~~~~
@@ -34,6 +36,9 @@ Fixed
 
 Security
 ~~~~~~~~
+
+
+.. _#72: https://gitlab.com/ternaris/marv-robotics/issues/72
 
 
 .. _v20_08_0:
