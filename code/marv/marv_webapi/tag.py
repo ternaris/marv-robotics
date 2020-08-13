@@ -9,7 +9,7 @@ from marv.db import DBPermissionError
 from .tooling import HTTPPermissionError, api_endpoint as marv_api_endpoint
 
 
-@marv_api_endpoint('/tag', methods=['POST'])  # noqa: C901
+@marv_api_endpoint('/tag', methods=['POST'])
 async def tag(request):  # noqa: C901
     try:
         changes = await request.json()

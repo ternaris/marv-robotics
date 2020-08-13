@@ -589,8 +589,8 @@ class Database:
             return False
         return bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8'))
 
-    @run_in_transaction   # noqa: C901
-    async def bulk_um(self, users_add, users_remove, groups_add, groups_remove,    # noqa: C901
+    @run_in_transaction
+    async def bulk_um(self, users_add, users_remove, groups_add, groups_remove,  # noqa: C901
                       groups_add_users, groups_remove_users, txn=None):
         # pylint: disable=too-many-arguments
         try:
@@ -1218,7 +1218,7 @@ class Database:
                      .orderby(tag.value)
         return [x['value'] for x in await txn.exq(query)]
 
-    @run_in_transaction  # noqa: C901
+    @run_in_transaction
     async def get_filtered_listing(self, descs, filters, user, txn=None):  # noqa: C901
         # pylint: disable=too-many-locals,too-many-branches,too-many-statements,unused-argument
         listing, dataset, dataset_tag, tag = \
@@ -1449,7 +1449,7 @@ class Database:
                                  self.get_resolve_value_query(table, relations, '::', None)))
                       .delete())
 
-    @run_in_transaction  # noqa: C901
+    @run_in_transaction
     async def rpc_query(self, model, filters, attrs, order, limit, offset,  # noqa: C901
                         user, txn=None):
         # pylint: disable=too-many-arguments, too-many-statements, too-many-locals, too-many-branches

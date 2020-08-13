@@ -363,7 +363,7 @@ async def marvcli_query(ctx, list_tags, collections, discarded,
             click.echo(sep.join(str(x) for x in setids), nl=not null)
 
 
-@marvcli.command('run', short_help='Run nodes for DATASETS')  # noqa: C901
+@marvcli.command('run', short_help='Run nodes for DATASETS')
 @click.option(
     '--node', 'selected_nodes', multiple=True,
     help=(

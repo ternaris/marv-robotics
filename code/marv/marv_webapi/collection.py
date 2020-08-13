@@ -89,7 +89,7 @@ async def meta(request):
     return resp
 
 
-@marv_api_endpoint('/collection{_:/?}{collection_id:((?<=/).*)?}', acl_key='read')  # noqa: C901
+@marv_api_endpoint('/collection{_:/?}{collection_id:((?<=/).*)?}', acl_key='read')
 async def collection(request):  # pylint: disable=too-many-locals  # noqa: C901
     site = request.app['site']
     collection_id = request.match_info['collection_id'] or site.collections.default_id
