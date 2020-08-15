@@ -6,13 +6,11 @@ import os
 import shutil
 import sqlite3
 import sys
-import sysconfig
 from itertools import count, product
 from logging import getLogger
 from pathlib import Path
 from uuid import uuid4
 
-from pkg_resources import resource_filename
 from pypika import SQLLiteQuery as Query
 from pypika import Table
 
@@ -27,41 +25,6 @@ from .db import (Database, DBNotInitialized, DBVersionError, Tortoise, create_or
                  scoped_session)
 from .model import Dataset, Group, User
 
-DEFAULT_NODES = """
-marv_nodes:dataset
-marv_nodes:meta_table
-marv_nodes:summary_keyval
-"""
-
-DEFAULT_FILTERS = """
-name       | Name       | substring         | string   | (get "dataset.name")
-setid      | Set Id     | startswith        | string   | (get "dataset.id")
-size       | Size       | lt le eq ne ge gt | filesize | (sum (get "dataset.files[:].size"))
-status     | Status     | any all           | subset   | (status)
-tags       | Tags       | any all           | subset   | (tags)
-comments   | Comments   | substring         | string   | (comments)
-files      | File paths | substring_any     | string[] | (get "dataset.files[:].path")
-time_added | Added      | lt le eq ne ge gt | datetime | (get "dataset.time_added")
-"""
-
-DEFAULT_LISTING_COLUMNS = """
-name       | Name   | route    | (detail_route (get "dataset.id") (get "dataset.name"))
-size       | Size   | filesize | (sum (get "dataset.files[:].size"))
-status     | Status | icon[]   | (status)
-tags       | Tags   | pill[]   | (tags)
-time_added | Added  | datetime | (get "dataset.time_added")
-"""
-
-DEFAULT_LISTING_SUMMARY = """
-datasets | datasets | int       | (len (rows))
-size     | size     | filesize  | (sum (rows "size" 0))
-"""
-
-DEFAULT_DETAIL_SUMMARY_WIDGETS = """
-summary_keyval
-meta_table
-"""
-
 log = getLogger(__name__)
 
 
@@ -70,68 +33,7 @@ class UnknownNode(Exception):
 
 
 def make_config(siteconf):
-    sitedir = Path(siteconf).parent
-    py_ver = sysconfig.get_python_version()
-    defaults = {
-        'marv': {
-            'acl': 'marv_webapi.acls:authenticated',
-            'dburi': 'sqlite://' + str(sitedir / 'db' / 'db.sqlite'),
-            'frontenddir': str(sitedir / 'frontend'),
-            'oauth': '',
-            'reverse_proxy': None,
-            'sessionkey_file': str(sitedir / 'sessionkey'),
-            'staticdir': str(sitedir / resource_filename('marv_ludwig', 'static')),
-            'storedir': str(sitedir / 'store'),
-            'upload_checkpoint_commands': '',
-            'venv': str(sitedir / 'venv'),
-            'sitepackages': str(sitedir / 'venv' / 'lib' / f'python{py_ver}' / 'site-packages'),
-            'window_title': '',
-        },
-        'collection': {
-            'compare': None,
-            'detail_summary_widgets': DEFAULT_DETAIL_SUMMARY_WIDGETS,
-            'detail_sections': '',
-            'detail_title': '(get "dataset.name")',
-            'filters': DEFAULT_FILTERS,
-            'listing_columns': DEFAULT_LISTING_COLUMNS,
-            'listing_sort': '| ascending',
-            'listing_summary': DEFAULT_LISTING_SUMMARY,
-            'nodes': DEFAULT_NODES,
-        },
-    }
-    required = {
-        'marv': [
-            'collections',
-        ],
-        'collection': [
-            'scanner',
-            'scanroots',
-        ],
-    }
-    schema = {
-        'marv': {
-            'acl': 'find_obj',
-            'collections': 'space_separated_list',
-            'oauth': 'lines',
-            'staticdir': 'path',
-            'storedir': 'path',
-            'upload_checkpoint_commands': 'cmd_lines',
-        },
-        'collection': {
-            'compare': 'find_obj',
-            'detail_title': 'function',
-            'detail_summary_widgets': 'lines',
-            'detail_sections': 'lines',
-            'filters': 'lines',
-            'listing_columns': 'lines',
-            'listing_sort': 'pipe_separated_list',
-            'listing_summary': 'lines',
-            'nodes': 'lines',
-            'scanroots': 'path_lines',
-        },
-    }
-    return Config.from_file(siteconf, defaults=defaults,
-                            required=required, schema=schema)
+    return Config.from_file(siteconf)
 
 
 def load_sitepackages(sitepackages):
@@ -158,11 +60,6 @@ class Site:
 
     def __init__(self, siteconf):
         self.config = make_config(siteconf)
-        # TODO: maybe ordereddict for meta, or generate multiple keys
-        self.config.marv.oauth = {
-            line.split(' ', 1)[0]: [field.strip() for field in line.split('|')]
-            for line in self.config.marv.oauth
-        }
         self.collections = Collections(config=self.config, site=self)
         self.db = self.Database()  # pylint: disable=invalid-name
         self.createdb = True

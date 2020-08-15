@@ -3,13 +3,16 @@
 
 """Marv config parsing."""
 
-import os
 import sys
-from collections.abc import Mapping
+import sysconfig
 from configparser import ConfigParser
 from functools import partial
-from inspect import getmembers
 from logging import getLogger
+from pathlib import Path
+from typing import Dict, Optional, Tuple
+
+from pkg_resources import resource_filename
+from pydantic import BaseModel, Extra, validator
 
 from marv_api.utils import echo, find_obj
 
@@ -198,119 +201,185 @@ def parse_function(string):
     return _parse_list(tree), tree.stop + 1  # pylint: disable=no-member
 
 
-class Section(Mapping):
-    def __init__(self, name, dct, filename, defaults=None, schema=None):
-        # pylint: disable=too-many-arguments
-        self.name = name
-        self._configdir = os.path.dirname(filename)
-        self.filename = filename
-        self._dct = dct
-        self._defaults = defaults or {}
-        self._schema = schema or {}
+# pylint: disable=too-few-public-methods,no-self-argument,no-self-use
 
-    def __dir__(self):
-        return list(self._dct.keys()
-                    | self.__dict__.keys()
-                    | {x[0] for x in getmembers(type(self))})
 
-    def __getattr__(self, name):
-        return self[name]
+class Model(BaseModel):
+    class Config:
+        allow_mutation = False
+        extra = Extra.forbid
 
-    def __getitem__(self, key):
-        try:
-            value = self._dct[key]
-        except KeyError:
-            value = self._defaults[key]
-        if value is None:
-            return None
-        value = value.strip()
-        value_type = self._schema.get(key)
-        if value_type is not None:
-            value = self._parse(value, value_type)
+
+class MarvConfig(Model):
+    sitedir: Path  # TODO: workaround
+    collections: str
+    acl: Optional[str] = 'marv_webapi.acls:authenticated'
+    dburi: Optional[str] = 'sqlite://db/db.sqlite'
+    frontenddir: Optional[str] = 'frontend'
+    oauth: Dict[str, Tuple[str, ...]] = ''
+    reverse_proxy: Optional[str] = None
+    sessionkey_file: Optional[str] = 'sessionkey'
+    staticdir: Optional[str] = None
+    storedir: Optional[str] = 'store'
+    upload_checkpoint_commands: Optional[str] = ''
+    venv: Optional[str] = 'venv'
+    sitepackages: Optional[str] = None
+    window_title: Optional[str] = ''
+
+    @validator('acl', always=True)
+    def find_obj(cls, value):
+        return find_obj(value)
+
+    @validator('collections', always=True)
+    def space_separated_list(cls, value):
+        if value is not None:
+            return value.split()
+        return None
+
+    @validator('oauth', always=True, pre=True)
+    def oauth_split(cls, value):
+        if value is not None:
+            return {
+                line.split(' ', 1)[0]: [field.strip() for field in line.split('|')]
+                for line in [x.strip() for x in value.splitlines()]
+            }
+        return None
+
+    @validator('upload_checkpoint_commands', always=True)
+    def cmd_lines(cls, value):
+        if value is not None:
+            return [x.split() for x in value.splitlines()]
+        return None
+
+    @validator('dburi', always=True)
+    def dburi_prepend_sitedir(cls, value, values):
+        if value.startswith('sqlite:///'):
+            return value
+        if value.startswith('sqlite://'):
+            return f"sqlite://{values.get('sitedir')}/{value[9:]}"
+        raise ValueError(f'Invalid dburi {value!r}')
+
+    @validator('staticdir', pre=True)
+    def staticdir_default(cls, value):
+        if not value:
+            return resource_filename('marv_ludwig', 'static')
         return value
 
-    def __iter__(self):
-        return iter(self._dct.keys() | self._defaults.keys())
+    @validator('sitepackages', pre=True)
+    def sitepackages_default(cls, value):
+        if not value:
+            return f'venv/lib/python{sysconfig.get_python_version()}/site-packages'
+        return value
 
-    def __len__(self):
-        return len(self._dct.keys() | self._defaults.keys())
-
-    def _parse(self, value, value_type):
-        if value_type == 'function':
-            # TODO: lookup node to fail early
-            func, pos = parse_function(value)
-            assert pos == len(value)
-            result = func
-        elif value_type == 'find_obj':
-            result = find_obj(value)
-        elif value_type == 'lines':
-            result = [x.strip() for x in value.splitlines()]
-        elif value_type == 'cmd_lines':
-            result = [x.split() for x in value.splitlines()]
-        elif value_type == 'nodes':
-            result = [find_obj(x.strip()) for x in value.splitlines()]
-        elif value_type == 'path':
-            result = self._abspath(value)
-        elif value_type == 'path_lines':
-            result = [self._abspath(x.strip()) for x in value.splitlines()]
-        elif value_type == 'pipe_separated_list':
-            result = [x.strip() for x in value.split('|')]
-        elif value_type == 'space_separated_list':
-            result = value.split()
-        else:
-            raise ValueError('Unknown value_type %r' % value_type)
-        return result
-
-    def _abspath(self, value):
-        if os.path.isabs(value):
+    @validator('frontenddir', 'sessionkey_file', 'staticdir', 'storedir', 'venv', 'sitepackages',
+               always=True)
+    def prepend_sitedir(cls, value, values):
+        if Path(value).is_absolute():
             return value
-        return os.path.realpath(os.path.join(self._configdir, value))
+        sitedir = values.get('sitedir')
+        assert sitedir.is_absolute()
+        return str(sitedir / value)
+
+    @validator('sitedir', pre=True)
+    def resolve_paths(cls, value):
+        if value is not None:
+            return Path(value).resolve()
+        return None
 
 
-class Config(Mapping):
-    def __init__(self, filename, sections):
-        assert os.path.isabs(filename), filename
-        self.filename = filename
-        self._dct = sections
+class CollectionConfig(Model):
+    sitedir: Path  # TODO: workaround
+    scanner: str
+    scanroots: Tuple[str, ...]
+    compare: Optional[str] = None
+    detail_summary_widgets: Tuple[str, ...] = """
+    summary_keyval
+    meta_table
+    """
+    detail_sections: Tuple[str, ...] = ''
+    detail_title: str = '(get "dataset.name")'
+    filters: Tuple[str, ...] = """
+    name       | Name       | substring         | string   | (get "dataset.name")
+    setid      | Set Id     | startswith        | string   | (get "dataset.id")
+    size       | Size       | lt le eq ne ge gt | filesize | (sum (get "dataset.files[:].size"))
+    status     | Status     | any all           | subset   | (status)
+    tags       | Tags       | any all           | subset   | (tags)
+    comments   | Comments   | substring         | string   | (comments)
+    files      | File paths | substring_any     | string[] | (get "dataset.files[:].path")
+    time_added | Added      | lt le eq ne ge gt | datetime | (get "dataset.time_added")
+    """
+    listing_columns: Tuple[str, ...] = """
+    name       | Name   | route    | (detail_route (get "dataset.id") (get "dataset.name"))
+    size       | Size   | filesize | (sum (get "dataset.files[:].size"))
+    status     | Status | icon[]   | (status)
+    tags       | Tags   | pill[]   | (tags)
+    time_added | Added  | datetime | (get "dataset.time_added")
+    """
+    listing_sort: Tuple[str, ...] = '| ascending'
+    listing_summary: Tuple[str, ...] = """
+    datasets | datasets | int       | (len (rows))
+    size     | size     | filesize  | (sum (rows "size" 0))
+    """
+    nodes: Tuple[str, ...] = """
+    marv_nodes:dataset
+    marv_nodes:meta_table
+    marv_nodes:summary_keyval
+    """
+
+    @validator('compare', 'scanner')
+    def find_obj(cls, value):
+        if value:
+            return find_obj(value)
+        return None
+
+    @validator('detail_title', always=True)
+    def function(cls, value):
+        # TODO: lookup node to fail early
+        func, pos = parse_function(value)
+        assert pos == len(value)
+        return func
+
+    @validator('detail_sections', 'detail_summary_widgets', 'filters', 'listing_columns',
+               'listing_summary', 'nodes', always=True, pre=True)
+    def lines(cls, value):
+        if value is not None:
+            return [x for x in [x.strip() for x in value.splitlines()] if x]
+        return None
+
+    @validator('listing_sort', always=True, pre=True)
+    def pipe_separated_list(cls, value):
+        if value is not None:
+            return [x.strip() for x in value.split('|')]
+        return None
+
+    @validator('scanroots', always=True, pre=True)
+    def path_lines(cls, value, values):
+        if value:
+            return [str(values.get('sitedir') / x.strip()) for x in value.splitlines()]
+        return None
+
+
+class Config(Model):
+    filename: Path
+    marv: MarvConfig
+    collections: Dict[str, CollectionConfig]
 
     @classmethod
-    def from_file(cls, filename, defaults=None, required=None, schema=None):
-        assert os.path.isabs(filename), filename
-        defaults = defaults or {}
-        schema = schema or {}
-
-        # TODO: replace by own parser supporting line numbers
+    def from_file(cls, path):
+        path = Path(path).resolve()
+        sitedir = path.parent
         parser = ConfigParser()
-        with open(filename) as f:
+        with path.open() as f:
             parser.read_file(f)
 
-        sections = {
-            k: Section(name=k, dct=v, filename=filename,
-                       defaults=defaults.get(k) or defaults.get(k.split(None, 1)[0]),
-                       schema=(schema.get(k) or schema.get(k.split(None, 1)[0])))
-            for k, v in parser._sections.items()  # pylint: disable=protected-access
+        dct = {
+            'collections': {},
+            'filename': path,
         }
-        if required:
-            for name, section in sections.items():
-                reqs = required.get(name) or required.get(name.split(None, 1)[0], [])
-                for req in reqs:
-                    if req not in section:
-                        raise ConfigError(section, req)
-        return cls(filename, sections)
-
-    def __dir__(self):
-        return list(self._dct.keys()
-                    | self.__dict__.keys()
-                    | {x[0] for x in getmembers(type(self))})
-
-    def __getattr__(self, name):
-        return self[name]
-
-    def __getitem__(self, key):
-        return self._dct[key]
-
-    def __iter__(self):
-        return iter(self._dct)
-
-    def __len__(self):
-        return len(self._dct)
+        for name, section in parser._sections.items():  # pylint: disable=protected-access
+            section['sitedir'] = sitedir
+            if name.startswith('collection'):
+                dct['collections'][name.split(None, 1)[1]] = section
+            else:
+                dct[name] = section
+        return cls.parse_obj(dct)

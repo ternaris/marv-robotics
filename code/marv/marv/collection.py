@@ -163,7 +163,6 @@ class Collection:
 
     @property
     def compare(self):
-        # TODO: should we load?
         return self.section.compare
 
     @cached_property
@@ -263,7 +262,7 @@ class Collection:
 
     @property
     def scanner(self):
-        return find_obj(self.section.scanner)
+        return self.section.scanner
 
     @property
     def scanroots(self):
@@ -299,7 +298,7 @@ class Collection:
 
     @property
     def section(self):
-        return self.config[f'collection {self.name}']
+        return self.config.collections[self.name]
 
     def __init__(self, config, name, site):
         self.config = config
