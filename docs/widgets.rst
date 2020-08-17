@@ -58,6 +58,15 @@ Video
 Example: :func:`marv_robotics.detail.video_section`
 
 
+.. _widget_pdf:
+
+PDF (EE)
+^^^^^^^^
+.. code-block:: python
+
+   pdf = {'pdf': {'src': pdffile.relpath}}
+
+
 .. _widget_dropdown:
 
 Dropdown (EE)

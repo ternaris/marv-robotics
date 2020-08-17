@@ -100,6 +100,7 @@ struct Widget {
     pointcloud @9 :Pointcloud;
     video @10 :Video;
     plotly @15: Text;  # marv-partial
+    pdf @16 :Pdf;  # marv-partial
   }
 
   struct Custom {
@@ -231,6 +232,10 @@ struct Widget {
   }
 
   struct Video {
+    src @0 :Text;
+  }
+
+  struct Pdf {
     src @0 :Text;
   }
 }
