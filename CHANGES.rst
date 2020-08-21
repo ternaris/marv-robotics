@@ -24,6 +24,7 @@ Changed
 - Replace custom rosbag merge sort with heapq.merge `#72`_
 - Use heapq.merge to read from multiple bags in parallel `#72`_
 - Mount scanroot with write permissions into docker container to work around limitation in current rosbag2 implementation (CE)
+- Serve documentation from marv core
 
 Deprecated
 ~~~~~~~~~~
