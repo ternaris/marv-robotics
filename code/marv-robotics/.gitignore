@@ -11,7 +11,5 @@ __pycache__/
 /cover
 /build
 /dist
-/docs/_build/
-/marv_robotics/docs/
 /marv_robotics/tests/data/
 /venv

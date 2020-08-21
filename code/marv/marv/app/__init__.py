@@ -9,12 +9,14 @@ from logging import getLogger
 from pathlib import Path
 
 from aiohttp import web
+from pkg_resources import resource_filename
 
 import marv_webapi
 from marv.collection import cached_property
 from marv_webapi.tooling import safejoin
 
 
+DOCS = Path(resource_filename('marv.app', 'docs'))
 LOADED = False
 log = getLogger(__name__)
 
@@ -102,6 +104,11 @@ class App():
             if not fullpath.is_file():
                 raise web.HTTPNotFound
             return web.FileResponse(fullpath, headers=self.NOCACHE)
+
+        @self.route(r'/docs{_:/?}{path:((?<=/).*)?}')
+        async def docs(request):  # pylint: disable=unused-variable
+            path = request.match_info['path'] or 'index.html'
+            return web.FileResponse(safejoin(DOCS, path), headers={'Cache-Control': 'no-cache'})
 
         @self.route('/{path:.*}')
         async def assets(request):  # pylint: disable=unused-variable

@@ -3,4 +3,3 @@ include *.rst
 include *.txt
 include marv_robotics/matplotlibrc
 recursive-include * *.capnp
-recursive-include marv_robotics/docs *
