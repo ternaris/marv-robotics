@@ -14,12 +14,8 @@ class Info:
     msg: str = None
 
 
-def dir_and_getattr(module, dunder_all, dct):
+def make_getattr(module, dct):
     assert all(x.module == module for x in dct.values())
-    allattrs = tuple(set(dunder_all) | dct.keys())
-
-    def __dir__():
-        return allattrs
 
     def __getattr__(name):
         info = dct.get(name)
@@ -33,4 +29,4 @@ def dir_and_getattr(module, dunder_all, dct):
         warnings.warn(msg, FutureWarning, stacklevel=2)
         return info.obj
 
-    return __dir__, __getattr__
+    return __getattr__
