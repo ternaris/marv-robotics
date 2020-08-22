@@ -32,7 +32,8 @@ export PIP_DISABLE_PIP_VERSION_CHECK=1
 
 python3.8 -m venv "$TARGET"
 "$TARGET"/bin/pip install -Ur requirements/venv.txt
-"$TARGET"/bin/pip install -Uc "$REQUIREMENTS" cython
+"$TARGET"/bin/pip install -Uc requirements/marv.txt cython
+"$TARGET"/bin/pip install -Ur requirements/marv.txt
 "$TARGET"/bin/pip install -Ur "$REQUIREMENTS"
 "$TARGET"/bin/pip install opencv-python-headless==4.3.0.36
 "$TARGET"/bin/pip install -Ur requirements/develop.txt
@@ -44,5 +45,5 @@ if [[ -n "$EXTRA_CODE" ]]; then
     find "$EXTRA_CODE" -maxdepth 2 -name setup.py -execdir "$TARGET"/bin/pip install --no-deps $PIP_ARGS . \;
 fi
 
-# marv-ludwig is installed from PyPI as a dependency of marv-robotics
-"$TARGET"/bin/pip install -e code/marv-robotics
+VERSION="$(grep 'release =' docs/conf.py |cut -d"'" -f2)"
+"$TARGET"/bin/pip install marv-ludwig=="${VERSION}"

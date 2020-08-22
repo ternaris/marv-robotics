@@ -25,7 +25,7 @@ with io.open('requirements.in', 'rt', encoding='utf8') as f:
         f'{os.path.basename(req.split()[1])[:-3]}=={VERSION}' if req.startswith('-r') else req
         for req in [line.strip() for line in f.readlines() if not line.startswith('#')]
         if req
-    ] + [f'marv-ludwig=={VERSION}']
+    ]
 
 setup(name=NAME,
       version=VERSION,

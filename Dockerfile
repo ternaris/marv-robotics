@@ -70,7 +70,8 @@ COPY requirements/* ${MARV_VENV}/requirements/
 RUN cd ${MARV_VENV} && \
     ${PYTHON} -m venv . && \
     ./bin/pip install -U -r requirements/venv.txt && \
-    ./bin/pip install -U -c requirements/marv-robotics.txt cython && \
+    ./bin/pip install -U -c requirements/marv.txt cython && \
+    ./bin/pip install -U -r requirements/marv.txt && \
     ./bin/pip install -U -r requirements/marv-robotics.txt && \
     ./bin/pip install opencv-python-headless==4.3.0.36 && \
     ./bin/pip install -U -r requirements/develop.txt && \
@@ -84,20 +85,23 @@ COPY code ${MARV_VENV}/code
 COPY docs ${MARV_VENV}/docs
 COPY scripts ${MARV_VENV}/scripts
 
+ARG version=
+
 # For internal usage only
 ARG dist=
-ARG version=
 COPY ${dist:-CHANGES.rst} ${MARV_VENV}/dist
 
 RUN bash -c '\
     set -e; \
     cd ${MARV_VENV} && \
     if [[ -n "${dist}" ]]; then \
-        ./bin/pip install --no-index -f ${MARV_VENV}/dist marv-robotics==${version}; \
+        ./bin/pip install --no-index -f ${MARV_VENV}/dist marv=="${version}"; \
+        ./bin/pip install --no-index -f ${MARV_VENV}/dist marv-ludwig=="${version}"; \
+        ./bin/pip install --no-index -f ${MARV_VENV}/dist marv-robotics=="${version}"; \
     else \
         rm ${MARV_VENV}/dist; \
         find code -maxdepth 2 -name setup.py -execdir ${MARV_VENV}/bin/pip install --no-deps . \; && \
-        ./bin/pip install marv-ludwig && \
+        ./bin/pip install marv-ludwig=="${version}" && \
         (source ./bin/activate && ./scripts/build-docs) && \
         ./bin/pip install -U --no-deps ./code/marv-robotics; \
     fi; \

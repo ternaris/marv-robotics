@@ -17,4 +17,6 @@ else
     IMAGE="$BASENAME"
 fi
 
-docker build -t "$IMAGE" "$@" .
+VERSION="$(grep 'release =' docs/conf.py |cut -d"'" -f2)"
+
+docker build --build-arg "version=${VERSION}" -t "$IMAGE" "$@" .
