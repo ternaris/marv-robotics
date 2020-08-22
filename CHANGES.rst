@@ -32,6 +32,8 @@ Deprecated
 
 Removed
 ~~~~~~~
+- Previously deprecated marv.api_endpoint and marv.api_group, deprecated in 20.04.0
+- All marv.* controls, available via marv_api since 20.04.0
 
 Fixed
 ~~~~~
