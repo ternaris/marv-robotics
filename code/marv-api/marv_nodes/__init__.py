@@ -2,12 +2,11 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import os
-import sys
 
 from capnp.lib.capnp import KjException
 
 import marv_api as marv
-from marv.utils import err
+from marv_api.utils import err
 from marv_detail import Widget
 from marv_node.setid import SetID
 from marv_pycapnp import Wrapper

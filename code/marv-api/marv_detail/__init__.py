@@ -2,11 +2,10 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import json
-import sys
 
 import capnp  # pylint: disable=unused-import
 
-from marv.utils import err
+from marv_api.utils import err
 from marv_pycapnp import Wrapper
 
 from .types_capnp import Detail, Widget  # pylint: disable=import-error,unused-import

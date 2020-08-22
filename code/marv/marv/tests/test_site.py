@@ -13,7 +13,7 @@ import pytest
 
 from marv.db import scoped_session
 from marv.site import Site
-from marv.utils import echo
+from marv_api.utils import echo
 
 KEEP = os.environ.get('KEEP')
 log = getLogger(__name__)

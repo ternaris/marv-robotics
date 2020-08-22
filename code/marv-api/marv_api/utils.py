@@ -1,9 +1,22 @@
 # Copyright 2020  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+import sys
 from importlib import import_module
 
 NOTSET = type('NOTSET', (tuple,), {'__repr__': lambda x: '<NOTSET>'})()
+
+
+def echo(*args, **kw):
+    """Wrap print to let linter forbid print usage."""
+    print(*args, **kw)  # noqa: T001
+
+
+def err(*args, exit=None, **kw):
+    """Print to stderr and optionally exit."""
+    print(*args, **kw, file=sys.stderr, flush=True)  # noqa: T001
+    if exit is not None:
+        sys.exit(exit)
 
 
 def find_obj(objpath, name=False):
