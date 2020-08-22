@@ -8,9 +8,14 @@ import time
 from datetime import datetime, timedelta
 from datetime import tzinfo as tzinfo_base
 from itertools import islice
-from subprocess import Popen as _Popen
 
+from marv_api import deprecation
 from marv_api.utils import NOTSET
+from marv_api.utils import popen as _popen
+
+getattr__ = deprecation.make_getattr(__name__, {
+    'popen': deprecation.Info(__name__, '20.11', _popen),
+})
 
 
 def chunked(iterable, chunk_size):
@@ -112,26 +117,6 @@ def profile(func, sort='cumtime'):
 
 def underscore_to_camelCase(string):  # pylint: disable=invalid-name
     return ''.join(x.capitalize() for x in string.split('_'))
-
-
-def sanitize_env(env):
-    ld_library_path = env.get('LD_LIBRARY_PATH')
-    if ld_library_path:
-        clean_path = ':'.join([
-            x
-            for x in ld_library_path.split(':')
-            if not x.startswith('/tmp/_MEI')
-        ])
-        if clean_path:
-            env['LD_LIBRARY_PATH'] = clean_path
-        else:
-            del env['LD_LIBRARY_PATH']
-    return env
-
-
-def popen(*args, env=None, **kw):
-    env = sanitize_env(os.environ.copy() if env is None else env)
-    return _Popen(*args, env=env, **kw)
 
 
 def within_pyinstaller_bundle():

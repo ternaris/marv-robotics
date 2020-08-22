@@ -1,8 +1,10 @@
 # Copyright 2020  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+import os
 import sys
 from importlib import import_module
+from subprocess import Popen
 
 NOTSET = type('NOTSET', (tuple,), {'__repr__': lambda x: '<NOTSET>'})()
 
@@ -44,3 +46,23 @@ def popattr(obj, name, default=NOTSET):
         if default is NOTSET:
             raise
         return default
+
+
+def popen(*args, env=None, **kw):
+    env = sanitize_env(os.environ.copy() if env is None else env)
+    return Popen(*args, env=env, **kw)
+
+
+def sanitize_env(env):
+    ld_library_path = env.get('LD_LIBRARY_PATH')
+    if ld_library_path:
+        clean_path = ':'.join([
+            x
+            for x in ld_library_path.split(':')
+            if not x.startswith('/tmp/_MEI')
+        ])
+        if clean_path:
+            env['LD_LIBRARY_PATH'] = clean_path
+        else:
+            del env['LD_LIBRARY_PATH']
+    return env

@@ -9,7 +9,7 @@ import numpy
 
 import marv_api as marv
 from marv_api.types import File
-from marv.utils import popen
+from marv_api.utils import popen
 from marv_ros.img_tools import ImageConversionError, ImageFormatError, imgmsg_to_cv2
 
 from .bag import get_message_type, messages
