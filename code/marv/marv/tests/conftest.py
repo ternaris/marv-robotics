@@ -15,7 +15,7 @@ import marv.model
 import marv_api as marv
 from marv.app import App
 from marv.site import Site
-from marv.types import Int8Value, Section, Words
+from marv_api.types import Int8Value, Section, Words
 from marv_nodes import dataset as dataset_node
 
 log = getLogger(__name__)

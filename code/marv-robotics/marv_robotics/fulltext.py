@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import marv_api as marv
-from marv.types import Words
+from marv_api.types import Words
 
 from .bag import make_deserialize, messages
 
