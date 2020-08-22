@@ -7,6 +7,7 @@ persistent=no
 [MESSAGES CONTROL]
 disable=fixme,
         missing-docstring,
+        raise-missing-from,
         redefined-builtin,
         ungrouped-imports
 
