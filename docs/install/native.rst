@@ -37,7 +37,7 @@ In general, MARV Robotics works on any Linux system. For Ubuntu bionic the follo
                      libjpeg-dev \
                      liblz4-dev \
                      libpng-dev \
-		     libssl-dev \
+                     libssl-dev \
                      libz-dev \
                      python3.7 \
                      python3.7-dev \
