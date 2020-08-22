@@ -26,6 +26,8 @@ Changed
 - Mount scanroot with write permissions into docker container to work around limitation in current rosbag2 implementation (CE)
 - Serve documentation from marv core
 - Switch to isort for import order management
+- Deprecated module attributes are not displayed in module __dir__ anymore
+- Prepare to run nodes in dedicated environment with marv-api and marv-robotics nodes
 
 Deprecated
 ~~~~~~~~~~
@@ -34,6 +36,7 @@ Removed
 ~~~~~~~
 - Previously deprecated marv.api_endpoint and marv.api_group, deprecated in 20.04.0
 - All marv.* controls, available via marv_api since 20.04.0
+- Support to install via pypi; use ./scripts/setup-venv instead
 
 Fixed
 ~~~~~
