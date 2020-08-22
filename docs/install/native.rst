@@ -47,8 +47,6 @@ In general, MARV Robotics works on any Linux system. For Ubuntu bionic the follo
 MARV Robotics
 -------------
 
-MARV Robotics is a Python application `published on PyPI <https://pypi.org/project/marv-robotics/>`_ and a simple ``pip install marv-robotics`` should get you going. However, for increased reproducibility of installations we use and recommend a virtual python environment and a set of frozen requirements.
-
 For the following commands we assume you are within the directory of your checkout of MARV Robotics.
 
 Setup MARV Robotics in Python virtual environment and activate it:
