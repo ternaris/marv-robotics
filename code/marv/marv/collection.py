@@ -18,11 +18,11 @@ from marv.config import ConfigError, calltree, getdeps, make_funcs, parse_functi
 from marv.db import scoped_session
 from marv.model import Collection as CollectionModel
 from marv.model import Comment, Dataset, File, make_listing_model, make_table_descriptors
+from marv_api.setid import SetID
 from marv_api.utils import find_obj
 from marv_detail import FORMATTER_MAP, detail_to_dict
 from marv_detail.types_capnp import Detail  # pylint: disable=no-name-in-module
 from marv_node.node import Node
-from marv_node.setid import SetID
 from marv_store import Store
 
 FILTER_OPERATORS = \

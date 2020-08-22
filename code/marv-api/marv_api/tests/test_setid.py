@@ -3,7 +3,7 @@
 
 import unittest
 
-from ..setid import SetID
+from ..setid import SetID, decode_setid, encode_setid
 
 
 class TestCase(unittest.TestCase):
@@ -18,3 +18,10 @@ class TestCase(unittest.TestCase):
         self.assertEqual(int(setid), 42)
         self.assertEqual(SetID(42, 0), SetID(42))
         self.assertEqual(SetID(42, 1), SetID((1 << 64) + 42))
+
+    def test_encode_decode_setid(self):
+        setid = 2**128 - 1
+        encoded = encode_setid(setid)
+        decoded = decode_setid(encoded.lower())
+        self.assertEqual(encoded, '77777777777777777777777774')
+        self.assertEqual(decoded, setid)

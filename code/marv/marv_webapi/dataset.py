@@ -7,7 +7,7 @@ from pathlib import Path
 from aiohttp import web
 
 from marv.db import DBPermissionError
-from marv_node.setid import SetID
+from marv_api.setid import SetID
 
 from .tooling import HTTPPermissionError
 from .tooling import api_group as marv_api_group

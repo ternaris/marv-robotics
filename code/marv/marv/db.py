@@ -28,7 +28,7 @@ from tortoise import Tortoise as _Tortoise
 from tortoise.exceptions import DoesNotExist, IntegrityError
 from tortoise.transactions import current_transaction_map
 
-from marv_node.setid import SetID
+from marv_api.setid import SetID
 
 from . import utils
 from .model import STATUS, STATUS_MISSING, STATUS_OUTDATED, Group, Leaf, User

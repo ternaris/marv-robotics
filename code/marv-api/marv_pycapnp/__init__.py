@@ -6,7 +6,7 @@ from collections.abc import Mapping, Sequence
 
 from capnp.lib.capnp import _DynamicEnum, _DynamicListReader, _DynamicStructReader
 
-from marv_node.setid import SetID
+from marv_api.setid import SetID
 
 
 def _to_dict(value, field=None, field_type=None, which=False):

@@ -12,8 +12,8 @@ from collections import OrderedDict, deque
 from logging import getLogger
 from pprint import pformat
 
+from marv_api.setid import SetID
 from marv_node.node import Node
-from marv_node.setid import SetID
 from marv_nodes import dataset as _dataset_node
 from marv_store.streams import ReadStream
 

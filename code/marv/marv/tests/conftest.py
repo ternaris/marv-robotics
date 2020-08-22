@@ -191,7 +191,7 @@ async def site(loop, request, tmpdir):  # pylint: disable=unused-argument
         if not site_cfg.get('empty'):
             with mock.patch('bcrypt.gensalt', return_value=b'$2b$12$k67acf6S32i3nW0c7ycwe.'), \
                     mock.patch.object(datetime, 'datetime', create_datemock()), \
-                    mock.patch('marv_node.setid.SetID.random', side_effect=count(2**127)), \
+                    mock.patch('marv_api.setid.SetID.random', side_effect=count(2**127)), \
                     mock.patch('marv.utils.mtime', side_effect=count(1200000000)), \
                     mock.patch('marv.utils.stat', wraps=stat), \
                     mock.patch('marv.utils.now', side_effect=count(1400000000, 12 * 3600)), \

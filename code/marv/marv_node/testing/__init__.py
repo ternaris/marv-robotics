@@ -12,12 +12,12 @@ from contextlib import contextmanager
 from logging import getLogger
 
 import marv_api as marv  # pylint: disable=unused-import
+from marv_api.setid import SetID
 from marv_cli import create_loglevels
 from marv_node import run as marv_node_run
 from marv_node.node import Node
 
 from ..run import run_nodes as _run_nodes
-from ..setid import SetID
 
 create_loglevels()
 

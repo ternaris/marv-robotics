@@ -6,9 +6,9 @@ import os
 from capnp.lib.capnp import KjException
 
 import marv_api as marv
+from marv_api.setid import SetID
 from marv_api.utils import err
 from marv_detail import Widget
-from marv_node.setid import SetID
 from marv_pycapnp import Wrapper
 
 from .types_capnp import Dataset  # pylint: disable=import-error

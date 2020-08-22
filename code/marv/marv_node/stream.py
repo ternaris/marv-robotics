@@ -7,8 +7,9 @@ from collections import deque
 from itertools import count
 from numbers import Integral
 
+from marv_api.setid import SetID
+
 from .mixins import Keyed, LoggerMixin, Request, Task
-from .setid import SetID
 
 
 class RequestedMessageTooOld(Exception):

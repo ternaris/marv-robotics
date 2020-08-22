@@ -3,7 +3,7 @@
 
 from tortoise.fields import CharField
 
-from marv_node.setid import SetID
+from marv_api.setid import SetID
 
 
 class SetIDField(CharField):

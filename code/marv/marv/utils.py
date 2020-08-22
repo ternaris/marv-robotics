@@ -11,7 +11,6 @@ from itertools import islice
 from subprocess import Popen as _Popen
 
 from marv_api.utils import NOTSET
-from marv_node.setid import decode_setid, encode_setid  # pylint: disable=unused-import
 
 
 def chunked(iterable, chunk_size):
