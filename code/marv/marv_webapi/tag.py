@@ -6,7 +6,9 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from marv.db import DBPermissionError
-from .tooling import HTTPPermissionError, api_endpoint as marv_api_endpoint
+
+from .tooling import HTTPPermissionError
+from .tooling import api_endpoint as marv_api_endpoint
 
 
 @marv_api_endpoint('/tag', methods=['POST'])

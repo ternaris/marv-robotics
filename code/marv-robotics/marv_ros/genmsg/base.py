@@ -31,7 +31,11 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import print_function
-import os, sys
+
+import inspect
+import os
+import pprint
+import sys
 
 SEP = '/'
 
@@ -49,7 +53,6 @@ IODELIM   = '---'
 
 verbose = False
 
-import inspect, pprint
 
 def log_verbose(value):
     global verbose
@@ -72,4 +75,3 @@ class InvalidMsgSpec(Exception):
 
 class MsgGenerationException(Exception):
     pass
-

@@ -4,9 +4,7 @@
 import os
 from collections.abc import Mapping, Sequence
 
-from capnp.lib.capnp import _DynamicEnum
-from capnp.lib.capnp import _DynamicListReader
-from capnp.lib.capnp import _DynamicStructReader
+from capnp.lib.capnp import _DynamicEnum, _DynamicListReader, _DynamicStructReader
 
 from marv_node.setid import SetID
 

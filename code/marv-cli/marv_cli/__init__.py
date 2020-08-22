@@ -10,7 +10,6 @@ from pathlib import Path
 import click
 from pkg_resources import iter_entry_points
 
-
 FORMAT = os.environ.get('MARV_LOG_FORMAT', '%(asctime)s %(levelname).4s %(name)s %(message)s')
 PDB = None
 STATICX_PROG_PATH = os.environ.get('STATICX_PROG_PATH')

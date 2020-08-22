@@ -19,19 +19,21 @@ from itertools import groupby, product
 from logging import getLogger
 
 import bcrypt
-from pypika import JoinType, Order, SQLLiteQuery as Query, Table, Tables, Tuple, functions as fn
+from pypika import JoinType, Order
+from pypika import SQLLiteQuery as Query
+from pypika import Table, Tables, Tuple
+from pypika import functions as fn
 from pypika.terms import AggregateFunction, Criterion, EmptyCriterion, ValueWrapper
 from tortoise import Tortoise as _Tortoise
 from tortoise.exceptions import DoesNotExist, IntegrityError
 from tortoise.transactions import current_transaction_map
 
 from marv_node.setid import SetID
+
 from . import utils
-from .model import Group, Leaf, User
-from .model import STATUS, STATUS_MISSING, STATUS_OUTDATED
+from .model import STATUS, STATUS_MISSING, STATUS_OUTDATED, Group, Leaf, User
 from .model import __models__ as MODELS
 from .utils import findfirst
-
 
 log = getLogger(__name__)
 

@@ -34,11 +34,6 @@
 
 from __future__ import print_function
 
-try:
-    from cStringIO import StringIO  # Python 2.x
-except ImportError:
-    from io import StringIO  # Python 3.x
-
 import atexit
 import os
 import re
@@ -47,10 +42,16 @@ import sys
 import tempfile
 
 from .. import genmsg
-from ..genmsg import msg_loader
-from ..genmsg import MsgContext, MsgGenerationException
+from ..genmsg import MsgContext, MsgGenerationException, msg_loader
+from .generator import msg_generator
 
-from . generator import msg_generator
+try:
+    from cStringIO import StringIO  # Python 2.x
+except ImportError:
+    from io import StringIO  # Python 3.x
+
+
+
 
 
 def _generate_dynamic_specs(msg_context, specs, dep_msg):

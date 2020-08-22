@@ -12,7 +12,6 @@ from marv.site import Site
 from marv_api import DatasetInfo
 from marv_nodes import dataset as dataset_node
 
-
 DATADIR = Path(__file__).parent / 'data'
 RECORD = os.environ.get('MARV_TESTING_RECORD')
 SETIDS = [

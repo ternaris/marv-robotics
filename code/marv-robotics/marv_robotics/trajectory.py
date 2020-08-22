@@ -5,6 +5,7 @@ import numpy as np
 
 import marv_api as marv
 from marv.types import GeoJson
+
 from .bag import get_float_seconds, make_deserialize, messages
 
 

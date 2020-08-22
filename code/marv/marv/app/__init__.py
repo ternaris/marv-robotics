@@ -15,7 +15,6 @@ import marv_webapi
 from marv.collection import cached_property
 from marv_webapi.tooling import safejoin
 
-
 DOCS = Path(resource_filename('marv.app', 'docs'))
 LOADED = False
 log = getLogger(__name__)

@@ -32,17 +32,14 @@
 
 from __future__ import print_function
 
-
 import os
 import sys
 import traceback
 from optparse import OptionParser
 
 from .. import genmsg
-from ..genmsg import command_line
-from ..genmsg import MsgGenerationException
-
-from . generate_initpy import write_modules
+from ..genmsg import MsgGenerationException, command_line
+from .generate_initpy import write_modules
 
 
 def usage(progname):

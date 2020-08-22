@@ -8,8 +8,8 @@ import capnp  # pylint: disable=unused-import
 
 from marv.utils import err
 from marv_pycapnp import Wrapper
-from .types_capnp import Detail, Widget  # pylint: disable=import-error,unused-import
 
+from .types_capnp import Detail, Widget  # pylint: disable=import-error,unused-import
 
 FORMATTER_MAP = {
     'date': lambda ns: None if ns is None else int(ns / 10**6),

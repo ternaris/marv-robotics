@@ -30,11 +30,11 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from . base import MSG_DIR, SRV_DIR, EXT_MSG, EXT_SRV, SEP, log, plog, InvalidMsgSpec, log_verbose, MsgGenerationException
-from . gentools import compute_md5, compute_full_text, compute_md5_text
-from . names import resource_name_base, package_resource_name, is_legal_resource_base_name, \
-     resource_name_package, resource_name, is_legal_resource_name
-from . msgs import HEADER, TIME, DURATION, MsgSpec, Constant, Field
-from . msg_loader import MsgNotFound, MsgContext, load_depends, load_msg_by_type, load_srv_by_type
-from . srvs import SrvSpec
-
+from .base import (EXT_MSG, EXT_SRV, MSG_DIR, SEP, SRV_DIR, InvalidMsgSpec, MsgGenerationException,
+                   log, log_verbose, plog)
+from .gentools import compute_full_text, compute_md5, compute_md5_text
+from .msg_loader import MsgContext, MsgNotFound, load_depends, load_msg_by_type, load_srv_by_type
+from .msgs import DURATION, HEADER, TIME, Constant, Field, MsgSpec
+from .names import (is_legal_resource_base_name, is_legal_resource_name, package_resource_name,
+                    resource_name, resource_name_base, resource_name_package)
+from .srvs import SrvSpec

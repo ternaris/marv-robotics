@@ -9,6 +9,7 @@ import pytest
 import marv_api as marv
 from marv_api.dag import Stream
 from marv_api.decorators import NOTSET, getdag
+
 from .types_capnp import Test  # pylint: disable=import-error
 
 

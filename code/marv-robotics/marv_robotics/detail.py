@@ -8,6 +8,7 @@ import marv_api as marv
 import marv_nodes
 from marv.types import Section, Widget
 from marv_detail import make_map_dict
+
 from .bag import bagmeta
 from .cam import ffmpeg, images
 from .gnss import gnss_plots

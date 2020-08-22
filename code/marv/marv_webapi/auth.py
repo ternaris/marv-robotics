@@ -5,7 +5,8 @@ from json import JSONDecodeError
 
 from aiohttp import web
 
-from .tooling import api_group as marv_api_group, generate_token as gentoken
+from .tooling import api_group as marv_api_group
+from .tooling import generate_token as gentoken
 
 
 @marv_api_group()

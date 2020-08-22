@@ -5,12 +5,8 @@
 
 from typing import Optional, Union
 
-from pydantic import (
-    BaseModel as _BaseModel,
-    Extra,
-    create_model,
-    validator,
-)
+from pydantic import BaseModel as _BaseModel
+from pydantic import Extra, create_model, validator
 
 
 class BaseModel(_BaseModel):

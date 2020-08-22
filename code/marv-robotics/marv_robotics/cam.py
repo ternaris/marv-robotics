@@ -5,18 +5,19 @@ import math
 from itertools import count
 from subprocess import PIPE
 
-try:
-    import cv2
-except ImportError:
-    cv2 = None
-
 import numpy
 
 import marv_api as marv
 from marv.types import File
 from marv.utils import popen
 from marv_ros.img_tools import ImageConversionError, ImageFormatError, imgmsg_to_cv2
+
 from .bag import get_message_type, messages
+
+try:
+    import cv2
+except ImportError:
+    cv2 = None
 
 
 def ros2cv(msg, scale=1, offset=0):

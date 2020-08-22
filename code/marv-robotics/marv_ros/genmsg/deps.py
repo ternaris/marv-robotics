@@ -31,8 +31,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import os
+
 import marv_ros.genmsg.msg_loader as msg_loader
 from marv_ros import genmsg
+
 
 # pkg_name - string
 # msg_file - string full path

@@ -32,7 +32,7 @@
 
 """Numpy support."""
 
-from . generate_struct import serialize
+from .generate_struct import serialize
 
 # this could obviously be directly generated, but it's nice to abstract
 

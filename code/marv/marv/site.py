@@ -13,17 +13,18 @@ from pathlib import Path
 from uuid import uuid4
 
 from pkg_resources import resource_filename
-from pypika import SQLLiteQuery as Query, Table
+from pypika import SQLLiteQuery as Query
+from pypika import Table
 
 from marv_node.run import run_nodes
 from marv_store import Store
+
 from . import utils
 from .collection import Collections
 from .config import Config
-from .db import DBNotInitialized, DBVersionError
-from .db import Database, Tortoise, create_or_ignore, scoped_session
+from .db import (Database, DBNotInitialized, DBVersionError, Tortoise, create_or_ignore,
+                 scoped_session)
 from .model import Dataset, Group, User
-
 
 DEFAULT_NODES = """
 marv_nodes:dataset

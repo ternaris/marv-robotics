@@ -4,7 +4,7 @@
 import mock
 import pytest
 
-from marv.db import DBNotInitialized, DBVersionError, Database
+from marv.db import Database, DBNotInitialized, DBVersionError
 from marv.site import Site
 
 

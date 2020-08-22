@@ -8,7 +8,6 @@ import pytest
 from marv.tests.conftest import recorded
 from marv.tests.test_dump_restore import postscan
 
-
 DATADIR = Path(__file__).parent / 'data'
 
 

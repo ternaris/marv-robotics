@@ -15,9 +15,9 @@ import yaml
 import marv_api as marv
 import marv_nodes
 from marv_api import DatasetInfo
-from marv_ros import genpy
-from marv_ros import rosbag
+from marv_ros import genpy, rosbag
 from marv_ros.rosbag import _get_message_type
+
 from .bag_capnp import Bagmeta, Message  # pylint: disable=import-error
 
 try:

@@ -5,9 +5,8 @@ import math
 
 import pytest
 
-from marv.sexp import Identifier, List, Literal, scan
-from marv.sexp import InvalidNumber, InvalidStringEscape, SexpError, UnexpectedCharacter
-from marv.sexp import RESERVED_WORDS, ReservedWord
+from marv.sexp import (RESERVED_WORDS, Identifier, InvalidNumber, InvalidStringEscape, List,
+                       Literal, ReservedWord, SexpError, UnexpectedCharacter, scan)
 
 
 def test_parse_malformed():  # pylint: disable=too-many-statements

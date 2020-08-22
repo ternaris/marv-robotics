@@ -32,17 +32,20 @@
 
 from __future__ import print_function
 
+import os
+import sys
+
+from .base import EXT_MSG, MSG_DIR, SEP, InvalidMsgSpec, log
+from .names import (is_legal_resource_base_name, is_legal_resource_name, package_resource_name,
+                    resource_name)
+
 """
 ROS msg library for Python
 
 Implements: U{http://ros.org/wiki/msg}
 """
 
-import os
-import sys
 
-from . base import InvalidMsgSpec, EXT_MSG, MSG_DIR, SEP, log
-from . names import is_legal_resource_name, is_legal_resource_base_name, package_resource_name, resource_name
 
 #TODOXXX: unit test
 def bare_msg_type(msg_type):

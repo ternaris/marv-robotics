@@ -6,14 +6,13 @@ import capnp  # pylint: disable=unused-import
 # pylint: disable=no-name-in-module
 from marv_detail.types_capnp import Section, Widget
 from marv_nodes.types_capnp import Dataset, File, GeoJson, Words
-from marv_pycapnp.types_capnp import BoolValue, DataValue, TextValue
-from marv_pycapnp.types_capnp import Float32Value, Float64Value
-from marv_pycapnp.types_capnp import Int16Value, Int32Value, Int64Value, Int8Value
-from marv_pycapnp.types_capnp import TimedBool, TimedData, TimedText
-from marv_pycapnp.types_capnp import TimedFloat32, TimedFloat64
-from marv_pycapnp.types_capnp import TimedInt16, TimedInt32, TimedInt64, TimedInt8
-from marv_pycapnp.types_capnp import TimedUInt16, TimedUInt32, TimedUInt64, TimedUInt8
-from marv_pycapnp.types_capnp import UInt16Value, UInt32Value, UInt64Value, UInt8Value
+from marv_pycapnp.types_capnp import (BoolValue, DataValue, Float32Value, Float64Value, Int8Value,
+                                      Int16Value, Int32Value, Int64Value, TextValue, TimedBool,
+                                      TimedData, TimedFloat32, TimedFloat64, TimedInt8, TimedInt16,
+                                      TimedInt32, TimedInt64, TimedText, TimedUInt8, TimedUInt16,
+                                      TimedUInt32, TimedUInt64, UInt8Value, UInt16Value,
+                                      UInt32Value, UInt64Value)
+
 # pylint: enable=no-name-in-module
 
 __all__ = (

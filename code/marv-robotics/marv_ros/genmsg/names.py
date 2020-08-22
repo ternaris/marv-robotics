@@ -34,6 +34,7 @@ PRN_SEPARATOR = '/'
 
 import re
 
+
 def normalize_package_context(package_context):
     package_context = package_context.strip()
     while package_context.endswith(PRN_SEPARATOR):
@@ -142,4 +143,3 @@ def is_legal_resource_base_name(name):
         return False
     m = BASE_RESOURCE_NAME_LEGAL_CHARS_P.match(name)
     return m is not None and m.group(0) == name
-

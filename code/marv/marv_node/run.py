@@ -16,10 +16,10 @@ from marv_node.node import Node
 from marv_node.setid import SetID
 from marv_nodes import dataset as _dataset_node
 from marv_store.streams import ReadStream
+
 from .driver import Driver
 from .event import DefaultOrderedDict
-from .io import MsgRequest, Task
-from .io import NEXT, PAUSED, RESUME, THEEND
+from .io import NEXT, PAUSED, RESUME, THEEND, MsgRequest, Task
 from .stream import Handle, Msg, Stream, VolatileStream
 
 

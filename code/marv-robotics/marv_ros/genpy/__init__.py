@@ -30,8 +30,8 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from . rostime import Time, Duration, TVal
-from . message import Message, SerializationError, DeserializationError, MessageException, struct_I
+from .message import DeserializationError, Message, MessageException, SerializationError, struct_I
+from .rostime import Duration, Time, TVal
 
 __all__ = [
     'Time', 'Duration', 'TVal',

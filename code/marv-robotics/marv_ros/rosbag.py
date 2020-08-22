@@ -48,24 +48,23 @@ import struct
 import sys
 import threading
 import time
-import yaml
-
-from Crypto.Cipher import AES
-from Crypto.Random import get_random_bytes
 
 import gnupg
+import yaml
+from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
+from lz4.frame import decompress as lz4_decompress
+
+from . import genmsg, genpy
+from .genpy.dynamic import generate_dynamic
+from .genpy.message import get_message_class
 
 try:
     from cStringIO import StringIO  # Python 2.x
 except ImportError:
     from io import BytesIO as StringIO  # Python 3.x
 
-from lz4.frame import decompress as lz4_decompress
 
-from . import genmsg
-from . import genpy
-from .genpy.dynamic import generate_dynamic
-from .genpy.message import get_message_class
 
 
 # This is roslib.names.canonicalize_name()

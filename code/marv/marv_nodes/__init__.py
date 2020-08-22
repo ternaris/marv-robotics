@@ -11,6 +11,7 @@ from marv.utils import err
 from marv_detail import Widget
 from marv_node.setid import SetID
 from marv_pycapnp import Wrapper
+
 from .types_capnp import Dataset  # pylint: disable=import-error
 
 

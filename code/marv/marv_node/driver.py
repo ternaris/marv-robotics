@@ -8,11 +8,9 @@ from logging import getLogger
 from capnp.lib.capnp import KjException
 
 from marv_pycapnp import Wrapper
-from .io import Abort
-from .io import CreateStream, Fork, GetRequested, GetStream, SetHeader
-from .io import GetLogger, MakeFile, MsgRequest, Task
-from .io import NEXT, PAUSED, RESUME, THEEND, TheEnd
-from .io import Pull, PullAll, Push
+
+from .io import (NEXT, PAUSED, RESUME, THEEND, Abort, CreateStream, Fork, GetLogger, GetRequested,
+                 GetStream, MakeFile, MsgRequest, Pull, PullAll, Push, SetHeader, Task, TheEnd)
 from .mixins import AGenWrapperMixin, LoggerMixin
 from .node import Keyed
 from .stream import Handle, Msg

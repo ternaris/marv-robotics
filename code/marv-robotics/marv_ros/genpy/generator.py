@@ -55,30 +55,14 @@ import sys
 import traceback
 
 from .. import genmsg
-from ..genmsg import gentools
-from ..genmsg import msg_loader
+from ..genmsg import (InvalidMsgSpec, MsgContext, MsgGenerationException, MsgSpec, gentools,
+                      msg_loader)
 from ..genmsg import msgs as genmsg_msgs
-from ..genmsg import InvalidMsgSpec
-from ..genmsg import MsgContext
-from ..genmsg import MsgGenerationException
-from ..genmsg import MsgSpec
 from ..genmsg.base import log
-
-from . base import SIMPLE_TYPES  # noqa: F401
-from . base import is_simple
-from . generate_numpy import NUMPY_DTYPE
-from . generate_numpy import pack_numpy
-from . generate_numpy import unpack_numpy
-from . generate_struct import clear_patterns
-from . generate_struct import compute_struct_pattern
-from . generate_struct import get_patterns
-from . generate_struct import int32_pack
-from . generate_struct import int32_unpack
-from . generate_struct import pack
-from . generate_struct import pack2
-from . generate_struct import reduce_pattern
-from . generate_struct import unpack
-from . generate_struct import unpack2
+from .base import SIMPLE_TYPES, is_simple  # noqa: F401
+from .generate_numpy import NUMPY_DTYPE, pack_numpy, unpack_numpy
+from .generate_struct import (clear_patterns, compute_struct_pattern, get_patterns, int32_pack,
+                              int32_unpack, pack, pack2, reduce_pattern, unpack, unpack2)
 
 # indent width
 INDENT = '  '

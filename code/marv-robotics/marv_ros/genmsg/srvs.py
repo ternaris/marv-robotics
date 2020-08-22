@@ -38,7 +38,9 @@ Implements http://ros.org/wiki/srv
 import os
 import sys
 
-from . names import is_legal_resource_name, is_legal_resource_base_name, package_resource_name, resource_name
+from .names import (is_legal_resource_base_name, is_legal_resource_name, package_resource_name,
+                    resource_name)
+
 
 class SrvSpec(object):
     
@@ -75,4 +77,3 @@ class SrvSpec(object):
 
     def __repr__(self):
         return "SrvSpec[%s, %s]"%(repr(self.request), repr(self.response))
-    

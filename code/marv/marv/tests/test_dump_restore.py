@@ -8,7 +8,6 @@ import pytest
 
 from .conftest import recorded
 
-
 DATADIR = Path(__file__).parent / 'data'
 
 

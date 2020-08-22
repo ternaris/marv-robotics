@@ -21,7 +21,7 @@ from gunicorn.arbiter import Arbiter
 from jinja2 import Template
 from tortoise.exceptions import DoesNotExist
 
-from marv.db import DBError, DBNotInitialized, DBVersionError, USERGROUP_REGEX
+from marv.db import USERGROUP_REGEX, DBError, DBNotInitialized, DBVersionError
 from marv.site import UnknownNode, load_sitepackages, make_config
 from marv.utils import echo, err, find_obj, within_pyinstaller_bundle
 from marv_cli import PDB

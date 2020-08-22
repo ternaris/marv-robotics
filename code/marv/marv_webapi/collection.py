@@ -11,9 +11,10 @@ from marv.collection import Filter
 from marv.db import DBPermissionError, UnknownOperator
 from marv.model import STATUS
 from marv.utils import parse_datetime, parse_filesize, parse_timedelta
-from .tooling import HTTPPermissionError
-from .tooling import api_endpoint as marv_api_endpoint, get_global_granted, get_local_granted
 
+from .tooling import HTTPPermissionError
+from .tooling import api_endpoint as marv_api_endpoint
+from .tooling import get_global_granted, get_local_granted
 
 ALIGN = {
     'filesize': 'right',

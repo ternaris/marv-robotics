@@ -11,6 +11,7 @@ from pathlib import Path
 from marv.utils import NOTSET
 from marv_node.mixins import LoggerMixin
 from marv_pycapnp import Wrapper
+
 from .streams import PersistentStream, ReadStream
 
 

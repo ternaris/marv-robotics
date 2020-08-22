@@ -4,6 +4,7 @@
 import capnp  # pylint: disable=unused-import
 
 from marv_pycapnp import Wrapper
+
 from .test_wrapper_capnp import TestStruct  # pylint: disable=import-error
 
 

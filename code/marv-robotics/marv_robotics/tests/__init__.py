@@ -6,7 +6,6 @@ from importlib import import_module
 
 import marv_robotics
 
-
 for mod in (x for x in os.listdir(os.path.dirname(marv_robotics.__file__))
             if x.endswith('.py')):
     mod = '.' + mod[:-3]

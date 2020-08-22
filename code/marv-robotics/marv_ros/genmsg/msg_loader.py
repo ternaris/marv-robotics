@@ -32,6 +32,17 @@
 
 from __future__ import print_function
 
+import ast
+import os
+import sys
+
+from .base import COMMENTCHAR, CONSTCHAR, EXT_MSG, EXT_SRV, IODELIM, SEP, InvalidMsgSpec, log
+from .msgs import (DURATION, DURATION_MSG, HEADER, HEADER_FULL_NAME, TIME, TIME_MSG, Constant,
+                   Field, MsgSpec, bare_msg_type, is_builtin, is_valid_constant_type,
+                   is_valid_msg_field_name, is_valid_msg_type, resolve_type)
+from .names import normalize_package_context, package_resource_name
+from .srvs import SrvSpec
+
 """
 Loader for messages and :class:`MsgContext` that assumes a
 dictionary-based search path scheme (keys are the package/namespace,
@@ -39,21 +50,12 @@ values are the paths).  Compatible with ROS package system and other
 possible layouts.
 """
 
-import ast
-import os
-import sys
 
 try:
-    from cStringIO import StringIO # Python 2.x
+    from cStringIO import StringIO  # Python 2.x
 except ImportError:
-    from io import StringIO # Python 3.x
+    from io import StringIO  # Python 3.x
 
-from . base import InvalidMsgSpec, log, SEP, COMMENTCHAR, CONSTCHAR, IODELIM, EXT_MSG, EXT_SRV
-from . msgs import MsgSpec, TIME, TIME_MSG, DURATION, DURATION_MSG, HEADER, HEADER_FULL_NAME, \
-     is_builtin, is_valid_msg_field_name, is_valid_msg_type, bare_msg_type, is_valid_constant_type, \
-     Field, Constant, resolve_type
-from . names import normalize_package_context, package_resource_name
-from . srvs import SrvSpec
 
 class MsgNotFound(Exception):
 

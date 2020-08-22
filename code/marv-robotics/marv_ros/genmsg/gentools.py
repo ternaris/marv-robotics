@@ -40,21 +40,20 @@ md5sums and message definitions of classes.
 # NOTE: this should not contain any rospy-specific code. The rospy
 # generator library is rospy.genpy.
 
-import sys
 import hashlib
+import sys
+
+from . import base, msgs, names
+from .msg_loader import load_depends
+from .msgs import InvalidMsgSpec, MsgSpec, bare_msg_type, is_builtin
+from .srvs import SrvSpec
 
 try:
-    from cStringIO import StringIO # Python 2.x
+    from cStringIO import StringIO  # Python 2.x
 except ImportError:
-    from io import StringIO # Python 3.x
+    from io import StringIO  # Python 3.x
 
-from . import msgs
 
-from .msgs import InvalidMsgSpec, MsgSpec, bare_msg_type, is_builtin
-from .msg_loader import load_depends
-from .srvs import SrvSpec
-from . import names
-from . import base
 
 def compute_md5_text(msg_context, spec):
     """
@@ -172,4 +171,3 @@ def compute_full_type_name(package_name, file_name):
     else:
         raise base.MsgGenerationException("Processing file: '%s' - unknown file extension"% (file_name))
     return "%s/%s"%(package_name, short_name)
-

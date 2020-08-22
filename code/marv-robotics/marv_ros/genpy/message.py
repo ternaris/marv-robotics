@@ -42,14 +42,11 @@ import math
 import struct
 import sys
 
-from .. import genmsg
-
 import yaml
 
+from .. import genmsg
 from .base import is_simple
-from .rostime import Duration
-from .rostime import TVal
-from .rostime import Time
+from .rostime import Duration, Time, TVal
 
 try:
     reload  # Python 2
