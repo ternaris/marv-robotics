@@ -34,7 +34,7 @@ def collect(nooutput, chatter):  # pylint: disable=redefined-outer-name
 
 class TestCase(marv_node.testing.TestCase):
     # TODO: Generate bags instead, but with connection info!
-    BAGS = [resource_filename('marv_robotics.tests', 'data/test_0.bag')]
+    BAGS = [resource_filename('marv_node.testing._robotics_tests', 'data/test_0.bag')]
 
     async def test_node(self):
         with temporary_directory() as storedir:
