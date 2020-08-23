@@ -3,13 +3,14 @@ variables:
 
 
 stages:
-  - Checks
   - Image
+  - Check
 
 
 Sign-off check:
-  stage: Checks
+  stage: Check
   image: python:3.7-alpine
+  needs: []
   script:
     - apk add git
     - .gitlab-ci/signed-off-by-check > ${CI_PROJECT_DIR}/sign-off-report.xml
@@ -23,6 +24,7 @@ Sign-off check:
 Latest image:
   stage: Image
   image: docker:latest
+  needs: []
   services:
     - docker:dind
   before_script:
@@ -61,6 +63,7 @@ Release image:
 Keep images up-to-date:
   stage: Image
   image: docker:latest
+  needs: []
   services:
     - docker:dind
   script:
