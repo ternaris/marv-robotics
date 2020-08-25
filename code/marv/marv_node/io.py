@@ -4,8 +4,7 @@
 from collections import namedtuple
 from numbers import Integral
 
-from marv_api.iomsgs import (CreateStream, GetLogger, GetRequested, MakeFile, Pull, PullAll, Push,
-                             SetHeader)
+from marv_api.iomsgs import CreateStream, GetRequested, MakeFile, Pull, PullAll, Push, SetHeader
 
 from .mixins import Keyed, Request, Task
 
@@ -20,7 +19,6 @@ Request.register(SetHeader)
 
 Request.register(CreateStream)
 Request.register(Fork)
-Request.register(GetLogger)
 Request.register(GetRequested)
 Request.register(GetStream)
 Request.register(MakeFile)

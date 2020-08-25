@@ -6,10 +6,11 @@ import hashlib
 from base64 import b32encode
 from collections import OrderedDict, namedtuple
 from itertools import count, product
+from logging import getLogger
 
 from marv_api import dag
 from marv_api.ioctrl import NODE_SCHEMA, Abort
-from marv_api.ioctrl import get_logger, pull
+from marv_api.iomsgs import GetLogger
 from marv_api.utils import find_obj
 
 from . import io
@@ -142,7 +143,7 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
     def __call__(self, **inputs):
         return self.func(**inputs)
 
-    async def invoke(self, inputs=None):  # noqa: C901
+    async def invoke(self, key_abbrev, inputs=None):  # noqa: C901
         # pylint: disable=too-many-locals,too-many-branches
         # We must not write any instance variables, a node is running
         # multiple times in parallel.
@@ -163,7 +164,7 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
                 target.append((spec.name, value))
 
         if foreach_plain or foreach_stream:
-            log = yield get_logger()
+            log = getLogger(f'marv.node.{key_abbrev}')
             cross = product(*[[(k, x) for x in v] for k, v in foreach_plain])
             if foreach_stream:
                 assert len(foreach_stream) == 1, self  # FOR NOW
@@ -171,7 +172,7 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
                 name, stream = foreach_stream[0]
                 idx = count()
                 while True:
-                    value = yield pull(stream)
+                    value = yield io.Pull(stream, False)
                     if value is None:
                         log.noisy('finished forking')
                         break
@@ -196,7 +197,7 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
             if inputs is None:
                 inputs = dict(common)
             qout, qin = asyncio.Queue(), asyncio.Queue()
-            task = asyncio.create_task(self.execnode(inputs, qin=qout, qout=qin),
+            task = asyncio.create_task(self.execnode(key_abbrev, inputs, qin=qout, qout=qin),
                                        name=self.fullname)
             while True:
                 request = await qin.get()
@@ -206,7 +207,7 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
                 await qout.put(response)
             await task
 
-    async def execnode(self, inputs, qin, qout):
+    async def execnode(self, key_abbrev, inputs, qin, qout):
         NODE_SCHEMA.set(self.schema)
         gen = self.func(**inputs)
         assert hasattr(gen, 'send')
@@ -221,6 +222,10 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
             except BaseException:  # pylint: disable=broad-except
                 qout.put_nowait(None)
                 raise
+
+            if isinstance(request, GetLogger):
+                response = getLogger(f'marv.node.{key_abbrev}')
+                continue
 
             qout.put_nowait(request)
             response = await qin.get()

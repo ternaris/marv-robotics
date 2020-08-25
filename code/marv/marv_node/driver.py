@@ -3,12 +3,11 @@
 
 from collections import OrderedDict, defaultdict
 from itertools import count
-from logging import getLogger
 
 from marv_pycapnp import Wrapper
 
-from .io import (NEXT, PAUSED, RESUME, THEEND, CreateStream, Fork, GetLogger, GetRequested,
-                 GetStream, MakeFile, MsgRequest, Pull, PullAll, Push, SetHeader, Task)
+from .io import (NEXT, PAUSED, RESUME, THEEND, CreateStream, Fork, GetRequested, GetStream,
+                 MakeFile, MsgRequest, Pull, PullAll, Push, SetHeader, Task)
 from .mixins import AGenWrapperMixin, LoggerMixin
 from .node import Keyed
 from .stream import Handle, Msg
@@ -65,7 +64,7 @@ class Driver(Keyed, AGenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-
         # pylint: disable=too-many-statements,too-many-branches,too-many-locals
         self.started = True
 
-        agen = self._agen_node = self.node.invoke(self.inputs)
+        agen = self._agen_node = self.node.invoke(self.key_abbrev, self.inputs)
         assert hasattr(agen, 'asend'), agen
 
         yield  # Wait for start signal before returning anything notable
@@ -225,10 +224,6 @@ class Driver(Keyed, AGenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-
                 assert signal is RESUME
                 send = list(self._requested_streams)
                 self.stream_creation = False
-                continue
-
-            if isinstance(request, GetLogger):
-                send = getLogger(f'marv.node.{self.key_abbrev}')
                 continue
 
             raise RuntimeError(
