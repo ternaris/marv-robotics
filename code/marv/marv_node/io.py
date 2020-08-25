@@ -4,7 +4,6 @@
 from collections import namedtuple
 from numbers import Integral
 
-from marv_api.ioctrl import Abort  # pylint: disable=unused-import
 from marv_api.iomsgs import (CreateStream, GetLogger, GetRequested, MakeFile, Pull, PullAll, Push,
                              SetHeader)
 

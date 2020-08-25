@@ -8,7 +8,7 @@ from collections import OrderedDict, namedtuple
 from itertools import count, product
 
 from marv_api import dag
-from marv_api.ioctrl import NODE_SCHEMA
+from marv_api.ioctrl import NODE_SCHEMA, Abort
 from marv_api.ioctrl import get_logger, pull
 from marv_api.utils import find_obj
 
@@ -214,7 +214,8 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
         while True:
             try:
                 request = gen.send(response)
-            except StopIteration:
+            # TODO: Abort exception needs to invalidate previous node output
+            except (Abort, StopIteration):
                 qout.put_nowait(None)
                 return
             except BaseException:  # pylint: disable=broad-except

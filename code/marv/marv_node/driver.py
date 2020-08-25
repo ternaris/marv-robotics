@@ -7,7 +7,7 @@ from logging import getLogger
 
 from marv_pycapnp import Wrapper
 
-from .io import (NEXT, PAUSED, RESUME, THEEND, Abort, CreateStream, Fork, GetLogger, GetRequested,
+from .io import (NEXT, PAUSED, RESUME, THEEND, CreateStream, Fork, GetLogger, GetRequested,
                  GetStream, MakeFile, MsgRequest, Pull, PullAll, Push, SetHeader, Task)
 from .mixins import AGenWrapperMixin, LoggerMixin
 from .node import Keyed
@@ -79,7 +79,7 @@ class Driver(Keyed, AGenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-
         while not finished:
             try:
                 request = await agen.asend(send)
-            except (Abort, StopAsyncIteration):
+            except StopAsyncIteration:
                 finished = True
             else:
                 self.logdebug('got from node %s', type(request))
