@@ -7,7 +7,11 @@ from collections import deque
 from itertools import count
 from numbers import Integral
 
+from capnp.lib.capnp import KjException
+
 from marv_api.setid import SetID
+from marv_api.utils import NOTSET, err
+from marv_pycapnp import Wrapper
 
 from .mixins import Keyed, LoggerMixin, Request, Task
 
@@ -37,12 +41,27 @@ class Handle(Keyed):
         self.group = group if group is not None else self.node.group
         self._counter = count(-1)  # -1 will be the stream's handle
 
-    def msg(self, __msg=None, **kw):
-        from .io import THEEND
+    def msg(self, __msg=None, _schema=NOTSET, **kw):
+        from .io import TheEnd
         assert (__msg is not None) ^ bool(kw), (__msg, kw)
         data = kw if __msg is None else __msg
         if self.group:
-            assert isinstance(data, Handle) or data is THEEND, (self, data)
+            assert isinstance(data, (Handle, TheEnd)), (self, data)
+        elif not isinstance(data, (Wrapper, Handle, TheEnd)):
+            if _schema is NOTSET:
+                from marv_api.ioctrl import NODE_SCHEMA  # pylint: disable=import-outside-toplevel
+                schema = NODE_SCHEMA.get()
+            else:
+                schema = _schema
+            if schema is not None:
+                try:
+                    data = Wrapper.from_dict(schema, data)
+                except KjException:
+                    from pprint import pformat  # pylint: disable=import-outside-toplevel
+                    _node = schema.schema.node
+                    err(f'Schema violation for {_node.displayName} with data:\n'
+                        f'{pformat(data)}\nschema: {_node.displayName}')
+                    raise
         return Msg(next(self._counter), self, data)
 
     def finish(self):

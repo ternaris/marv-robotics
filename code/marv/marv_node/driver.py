@@ -5,12 +5,10 @@ from collections import OrderedDict, defaultdict
 from itertools import count
 from logging import getLogger
 
-from capnp.lib.capnp import KjException
-
 from marv_pycapnp import Wrapper
 
 from .io import (NEXT, PAUSED, RESUME, THEEND, Abort, CreateStream, Fork, GetLogger, GetRequested,
-                 GetStream, MakeFile, MsgRequest, Pull, PullAll, Push, SetHeader, Task, TheEnd)
+                 GetStream, MakeFile, MsgRequest, Pull, PullAll, Push, SetHeader, Task)
 from .mixins import AGenWrapperMixin, LoggerMixin
 from .node import Keyed
 from .stream import Handle, Msg
@@ -121,28 +119,16 @@ class Driver(Keyed, AGenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-
 
                 msg = output
                 if not isinstance(msg, Msg):
-                    msg = self.stream.handle.msg(msg)
+                    msg = self.stream.handle.msg(msg, _schema=self.node.schema)
                 else:
                     assert msg.handle.node is self.node
                     assert msg.handle.setid == self.setid
-                schema = self.node.schema
+
                 # TODO: handles should not be published by all?
                 # this got introduced for merging streams
                 if isinstance(msg._data, Handle):
                     # TODO: check that stream we are publishing to is a Group
                     assert self.node.group, self.node
-                if schema is not None and \
-                   not isinstance(msg._data, (Wrapper, Handle, TheEnd)):
-                    try:
-                        msg._data = Wrapper.from_dict(schema, msg._data)
-                    except KjException as e:
-                        from pprint import pformat  # pylint: disable=import-outside-toplevel
-                        self.logerror(
-                            'Schema violation for %s with data:\n%s\nschema: %s',
-                            schema.schema.node.displayName,
-                            pformat(msg._data),
-                            schema.schema.node.displayName)
-                        raise e
                 signal = yield msg
                 assert signal in (NEXT, RESUME), signal
                 continue

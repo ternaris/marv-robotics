@@ -1,12 +1,14 @@
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+import asyncio
 import hashlib
 from base64 import b32encode
 from collections import OrderedDict, namedtuple
 from itertools import count, product
 
 from marv_api import dag
+from marv_api.ioctrl import NODE_SCHEMA
 from marv_api.ioctrl import get_logger, pull
 from marv_api.utils import find_obj
 
@@ -193,15 +195,34 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
         else:
             if inputs is None:
                 inputs = dict(common)
-            gen = self.func(**inputs)
-            assert hasattr(gen, 'send')
-            response = None
+            qout, qin = asyncio.Queue(), asyncio.Queue()
+            task = asyncio.create_task(self.execnode(inputs, qin=qout, qout=qin),
+                                       name=self.fullname)
             while True:
-                try:
-                    request = gen.send(response)
-                except StopIteration:
-                    return
+                request = await qin.get()
+                if request is None:
+                    break
                 response = yield request
+                await qout.put(response)
+            await task
+
+    async def execnode(self, inputs, qin, qout):
+        NODE_SCHEMA.set(self.schema)
+        gen = self.func(**inputs)
+        assert hasattr(gen, 'send')
+        response = None
+        while True:
+            try:
+                request = gen.send(response)
+            except StopIteration:
+                qout.put_nowait(None)
+                return
+            except BaseException:  # pylint: disable=broad-except
+                qout.put_nowait(None)
+                raise
+
+            qout.put_nowait(request)
+            response = await qin.get()
 
     def __str__(self):
         return self.key

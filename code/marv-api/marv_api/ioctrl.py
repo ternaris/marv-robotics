@@ -1,8 +1,17 @@
 # Copyright 2016 - 2020  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+from contextvars import ContextVar
+
+from capnp.lib.capnp import KjException
+
+from marv_pycapnp import Wrapper
+
 from .iomsgs import (CreateStream, GetLogger, GetRequested, Handle, MakeFile, Pull, PullAll, Push,
                      SetHeader)
+from .utils import err
+
+NODE_SCHEMA = ContextVar('NODE_SCHEMA')
 
 
 class Abort(Exception):
@@ -72,6 +81,16 @@ def pull_all(*handles):
 
 
 def push(msg):
+    schema = NODE_SCHEMA.get()
+    if schema is not None:
+        try:
+            msg = Wrapper.from_dict(schema, msg)
+        except KjException:
+            from pprint import pformat  # pylint: disable=import-outside-toplevel
+            _node = schema.schema.node
+            err(f'Schema violation for {_node.displayName} with data:\n'
+                f'{pformat(msg)}\nschema: {_node.displayName}')
+            raise
     return Push(msg)
 
 
