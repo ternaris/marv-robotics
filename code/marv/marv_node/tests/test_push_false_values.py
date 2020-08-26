@@ -8,26 +8,32 @@ import pytest
 from ..testing import make_dataset, marv, run_nodes
 
 
-class FALSISH:
+class Falsish:
     def __bool__(self):
         return False
+
+    def __eq__(self, other):
+        return type(other) is type(self)
 
     def __repr__(self):
         return '<FALSISH>'
 
 
-FALSISH = FALSISH()
+FALSISH = Falsish()
 
 
-class DONTBOOLME:
+class DontBoolMe:
     def __bool__(self):
         raise Exception
+
+    def __eq__(self, other):
+        return type(other) is type(self)
 
     def __repr__(self):
         return '<DONTBOOLME>'
 
 
-DONTBOOLME = DONTBOOLME()
+DONTBOOLME = DontBoolMe()
 
 
 @marv.node()
