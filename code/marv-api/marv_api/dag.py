@@ -5,11 +5,10 @@
 
 from typing import Optional, Union
 
-from pydantic import BaseModel as _BaseModel
-from pydantic import Extra, create_model, validator
+from pydantic import BaseModel, Extra, create_model, validator
 
 
-class BaseModel(_BaseModel):
+class Model(BaseModel):
     class Config:
         extra = Extra.forbid
         allow_mutation = False
@@ -22,7 +21,7 @@ class BaseModel(_BaseModel):
         ))
 
 
-class Inputs(BaseModel):
+class Inputs(Model):
     """Base class for node input configuration models.
 
     The fields of its subclasses describe the input parameters to be
@@ -41,7 +40,7 @@ class Inputs(BaseModel):
         return value
 
 
-class Node(BaseModel):  # pylint: disable=too-few-public-methods
+class Node(Model):  # pylint: disable=too-few-public-methods
     function: str
     inputs: Optional[Inputs]
     message_schema: Optional[str]
@@ -66,6 +65,6 @@ class Node(BaseModel):  # pylint: disable=too-few-public-methods
         return hash((self.function, self.inputs))
 
 
-class Stream(BaseModel):
+class Stream(Model):
     node: Node
     name: Optional[str]
