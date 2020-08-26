@@ -3,10 +3,12 @@
 
 import os
 from collections.abc import Mapping, Sequence
+from pickle import PickleBuffer
 
 from capnp.lib.capnp import _DynamicEnum, _DynamicListReader, _DynamicStructReader
 
 from marv_api.setid import SetID
+from marv_api.utils import find_obj
 
 
 def _to_dict(value, field=None, field_type=None, which=False):
@@ -80,21 +82,43 @@ class ListWrapper:
 
 
 class Wrapper:
-    def __init__(self, struct_reader, streamdir, setdir):
+    def __init__(self, struct_reader, streamdir, setdir, storedir=None):
         assert isinstance(struct_reader, _DynamicStructReader), type(struct_reader)
         self._reader = struct_reader
         self._streamdir = streamdir  # HACK: overloaded
         self._setdir = setdir
-        self._storedir = None  # HACK: patched by compare
+        self._storedir = storedir  # HACK: patched by compare
 
     # @property
     # def path(self):  # HACK: overload
     #     return os.path.realpath(os.path.join(self._streamdir, self.name))
 
+    def __reduce_ex__(self, protocol):
+        if protocol < 5:
+            raise RuntimeError('Needs at least pickle protocol 5')
+
+        builder = self._reader.as_builder()
+        protoname = builder.schema.node.displayName.replace('/', '.')\
+                                                   .replace('.capnp:', '_capnp:')
+        meta = {
+            'protoname': protoname,
+            'streamdir': self._streamdir,
+            'setdir': self._setdir,
+            'storedir': self._storedir,
+        }
+        segments = builder.to_segments()
+        return (self.from_segments, (meta, *[PickleBuffer(x) for x in segments]))
+
     @property
     def relpath(self):  # HACK: overload
         path = os.path.relpath(self.path, self._setdir)
         return path.lstrip('.')
+
+    @classmethod
+    def from_segments(cls, meta, *segments):
+        schema = find_obj(meta.pop('protoname'))
+        struct_reader = schema.from_segments(segments)
+        return cls(struct_reader, **meta)
 
     @classmethod
     def from_dict(cls, schema, data):
