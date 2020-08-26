@@ -115,8 +115,10 @@ def node(schema=None, group=None, version=None):
         if unsupported:
             raise TypeError('Only positional arguments allowed in function signature')
 
+        func.__marv_inputs__ = Inputs.subclass(func.__module__, **inputs)
+        func.__marv_inputs__.__qualname__ = f'{func.__qualname__}.__marv_inputs__'
         func.__marv_node__ = Node(function=f'{func.__module__}.{func.__qualname__}',
-                                  inputs=Inputs.subclass(func.__module__, **inputs)(),
+                                  inputs=func.__marv_inputs__(),
                                   message_schema=schema,
                                   group=group,
                                   version=version,
