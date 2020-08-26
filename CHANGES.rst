@@ -29,6 +29,7 @@ Changed
 - Deprecated module attributes are not displayed in module __dir__ anymore
 - Prepare to run nodes in dedicated environment with marv-api and marv-robotics nodes
 - Use pydantic to model configuration
+- Validate node output on marv.push() to allow debugging of schema violations in node context
 
 Deprecated
 ~~~~~~~~~~
