@@ -224,7 +224,6 @@ class MarvConfig(Model):
     upload_checkpoint_commands: Optional[str] = ''
     venv: Optional[str] = 'venv'
     sitepackages: Optional[str] = None
-    window_title: Optional[str] = ''
 
     @validator('acl', always=True)
     def find_obj(cls, value):
