@@ -198,7 +198,8 @@ def _parse_list(node):
 
 def parse_function(string):
     tree = sexp.scan(string)
-    return _parse_list(tree), tree.stop + 1  # pylint: disable=no-member
+    assert tree.stop + 1 == len(string)
+    return _parse_list(tree)
 
 
 # pylint: disable=too-few-public-methods,no-self-argument,no-self-use

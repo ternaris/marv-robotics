@@ -82,8 +82,7 @@ def flatten_syntax(functree):
 def parse_summary(items):
     summary = []
     for item in items:
-        functree, pos = parse_function(item.function)
-        assert pos == len(item.function)
+        functree = parse_function(item.function)
         dct = item._asdict()
         functree = flatten_syntax(functree)
         dct['function'] = functree
@@ -194,8 +193,7 @@ class Collection:
         for spec in self.filter_specs.values():
             if spec.name in ('comments', 'status', 'tags'):
                 continue
-            functree, pos = parse_function(spec.function)
-            assert pos == len(spec.function)
+            functree = parse_function(spec.function)
             funcs.append((spec, functree))
         return funcs
 
@@ -223,8 +221,7 @@ class Collection:
     def listing_functions(self):
         funcs = []
         for col in self.listing_columns:
-            functree, pos = parse_function(col.function)
-            assert pos == len(col.function)
+            functree = parse_function(col.function)
             funcs.append((col, functree))
         return funcs
 
