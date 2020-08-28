@@ -13,6 +13,7 @@ from pkg_resources import resource_filename
 
 import marv_webapi
 from marv.collection import cached_property
+from marv_api.utils import find_obj
 from marv_webapi.tooling import safejoin
 
 DOCS = Path(resource_filename('marv.app', 'docs'))
@@ -47,7 +48,7 @@ class App():
             'SECRET_KEY': Path(site.config.marv.sessionkey_file).read_text(),
         }
         self.aioapp['debug'] = False
-        self.aioapp['route_acl'] = site.config.marv.acl()
+        self.aioapp['route_acl'] = find_obj(site.config.marv.acl)()
         self.aioapp['site'] = site
         self.aioapp.route = self.route
 

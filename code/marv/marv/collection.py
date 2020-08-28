@@ -162,7 +162,7 @@ class Collection:
 
     @property
     def compare(self):
-        return self.section.compare
+        return find_obj(self.section.compare) if self.section.compare else None
 
     @cached_property
     def detail_deps(self):
@@ -259,7 +259,7 @@ class Collection:
 
     @property
     def scanner(self):
-        return self.section.scanner
+        return find_obj(self.section.scanner)
 
     @property
     def scanroots(self):
@@ -357,6 +357,7 @@ class Collection:
             # Scan for new files
             batch = []
             for directory, subdirs, filenames in utils.walk(scanpath):
+                directory = str(directory)  # TODO: for now we don't pass Path into scanner
                 # Ignore directories containing a .marvignore file
                 if os.path.exists(os.path.join(directory, '.marvignore')):
                     subdirs[:] = []

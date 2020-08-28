@@ -831,7 +831,7 @@ def marvcli_pip_install(pipargs):
     load_sitepackages(sitepackages)
     ensure_python(siteconf, sitepackages)
     from pip._internal.main import main as pip_main  # pylint: disable=import-outside-toplevel
-    sys.argv = [sys.executable, 'install', '--prefix', config.marv.venv, *pipargs]
+    sys.argv = [sys.executable, 'install', '--prefix', str(config.marv.venv), *pipargs]
     sys.exit(pip_main())
 
 

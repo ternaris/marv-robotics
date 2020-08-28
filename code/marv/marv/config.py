@@ -6,15 +6,16 @@
 import sys
 import sysconfig
 from configparser import ConfigParser
+from enum import Enum
 from functools import partial
 from logging import getLogger
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from pkg_resources import resource_filename
 from pydantic import BaseModel, Extra, validator
 
-from marv_api.utils import echo, find_obj
+from marv_api.utils import echo
 
 from . import sexp
 
@@ -198,7 +199,7 @@ def _parse_list(node):
 
 def parse_function(string):
     tree = sexp.scan(string)
-    assert tree.stop + 1 == len(string)
+    assert tree.stop + 1 == len(string)  # pylint: disable=no-member
     return _parse_list(tree)
 
 
@@ -211,93 +212,124 @@ class Model(BaseModel):
         extra = Extra.forbid
 
 
+class ReverseProxyEnum(str, Enum):
+    nginx = 'nginx'
+
+
+def resolve_path(value):
+    if value is not None:
+        return Path(value).resolve()
+    return None
+
+
+def resolve_relto_site(value, values):
+    if value is not None:
+        sitedir = values['sitedir']
+        assert sitedir.is_absolute()
+        return (sitedir / value).resolve()
+    return None
+
+
+def split(value):
+    if value is not None:
+        return value.split()
+    return []
+
+
+def splitlines(value):
+    if value is not None:
+        return [stripped for x in value.splitlines() if (stripped := x.strip())]
+    return []
+
+
+def splitlines_relto_site(value, values):
+    if value is not None:
+        return [(values['sitedir'] / path).resolve()
+                for x in value.splitlines()
+                if (path := x.strip())]
+    return []
+
+
+def splitlines_split(value):
+    if value is not None:
+        return [stripped.split() for x in value.splitlines() if (stripped := x.strip())]
+    return []
+
+
+def splitpipe(value):
+    if value is not None:
+        return [x.strip() for x in value.split('|')]
+    return []
+
+
+def strip(value):
+    if value is not None:
+        return value.strip()
+    return None
+
+
+apvalidator = partial(validator, always=True, pre=True)
+reapvalidator = partial(validator, allow_reuse=True, always=True, pre=True)
+
+
 class MarvConfig(Model):
     sitedir: Path  # TODO: workaround
-    collections: str
-    acl: Optional[str] = 'marv_webapi.acls:authenticated'
-    dburi: Optional[str] = 'sqlite://db/db.sqlite'
-    frontenddir: Optional[str] = 'frontend'
-    oauth: Dict[str, Tuple[str, ...]] = ''
-    reverse_proxy: Optional[str] = None
-    sessionkey_file: Optional[str] = 'sessionkey'
-    staticdir: Optional[str] = None
-    storedir: Optional[str] = 'store'
-    upload_checkpoint_commands: Optional[str] = ''
-    venv: Optional[str] = 'venv'
-    sitepackages: Optional[str] = None
+    collections: Tuple[str, ...]
+    acl: str = 'marv_webapi.acls:authenticated'
+    dburi: str = 'sqlite://db/db.sqlite'
+    frontenddir: Path = 'frontend'
+    oauth: Dict[str, Tuple[str, ...]] = None
+    reverse_proxy: Optional[ReverseProxyEnum] = None
+    sessionkey_file: Path = 'sessionkey'
+    staticdir: Path = resource_filename('marv_ludwig', 'static')
+    storedir: Path = 'store'
+    upload_checkpoint_commands: Tuple[str, ...] = None
+    venv: Path = 'venv'
 
-    @validator('acl', always=True)
-    def find_obj(cls, value):
-        return find_obj(value)
+    @property
+    def sitepackages(self):
+        return self.venv / 'lib' / f'python{sysconfig.get_python_version()}' / 'site-packages'
 
-    @validator('collections', always=True)
-    def space_separated_list(cls, value):
-        if value is not None:
-            return value.split()
-        return None
+    _resolve_path = reapvalidator('sitedir')(resolve_path)
+    _resolve_relto_site = reapvalidator('frontenddir', 'sessionkey_file', 'staticdir', 'storedir',
+                                        'venv')(resolve_relto_site)
+    _split = reapvalidator('collections')(split)
+    _splitlines_split = reapvalidator('upload_checkpoint_commands')(splitlines_split)
+    _strip = reapvalidator('reverse_proxy')(strip)
 
-    @validator('oauth', always=True, pre=True)
+    @apvalidator('dburi')
+    def dburi_relto_site(cls, value, values):
+        if value and value.startswith('sqlite:///'):
+            return value
+        if value and value.startswith('sqlite://'):
+            return f"sqlite://{(values['sitedir'] / value[9:]).resolve()}"
+        raise ValueError(f'Invalid dburi {value!r}')
+
+    @apvalidator('oauth')
     def oauth_split(cls, value):
         if value is not None:
             return {
-                line.split(' ', 1)[0]: [field.strip() for field in line.split('|')]
-                for line in [x.strip() for x in value.splitlines()]
+                (fields := [x.strip() for x in line.split('|')])[0]: fields
+                for x in value.splitlines()
+                if (line := x.strip())
             }
-        return None
+        return {}
 
-    @validator('upload_checkpoint_commands', always=True)
-    def cmd_lines(cls, value):
-        if value is not None:
-            return [x.split() for x in value.splitlines()]
-        return None
 
-    @validator('dburi', always=True)
-    def dburi_prepend_sitedir(cls, value, values):
-        if value.startswith('sqlite:///'):
-            return value
-        if value.startswith('sqlite://'):
-            return f"sqlite://{values.get('sitedir')}/{value[9:]}"
-        raise ValueError(f'Invalid dburi {value!r}')
-
-    @validator('staticdir', pre=True)
-    def staticdir_default(cls, value):
-        if not value:
-            return resource_filename('marv_ludwig', 'static')
-        return value
-
-    @validator('sitepackages', pre=True)
-    def sitepackages_default(cls, value):
-        if not value:
-            return f'venv/lib/python{sysconfig.get_python_version()}/site-packages'
-        return value
-
-    @validator('frontenddir', 'sessionkey_file', 'staticdir', 'storedir', 'venv', 'sitepackages',
-               always=True)
-    def prepend_sitedir(cls, value, values):
-        if Path(value).is_absolute():
-            return value
-        sitedir = values.get('sitedir')
-        assert sitedir.is_absolute()
-        return str(sitedir / value)
-
-    @validator('sitedir', pre=True)
-    def resolve_paths(cls, value):
-        if value is not None:
-            return Path(value).resolve()
-        return None
+ParsedSexp = Tuple[str, Tuple[Any]]
 
 
 class CollectionConfig(Model):
     sitedir: Path  # TODO: workaround
     scanner: str
-    scanroots: Tuple[str, ...]
+    scanroots: Tuple[Path, ...]
     compare: Optional[str] = None
     detail_summary_widgets: Tuple[str, ...] = """
     summary_keyval
     meta_table
     """
     detail_sections: Tuple[str, ...] = ''
-    detail_title: str = '(get "dataset.name")'
+    detail_title: ParsedSexp = '(get "dataset.name")'
     filters: Tuple[str, ...] = """
     name       | Name       | substring         | string   | (get "dataset.name")
     setid      | Set Id     | startswith        | string   | (get "dataset.id")
@@ -326,37 +358,12 @@ class CollectionConfig(Model):
     marv_nodes:summary_keyval
     """
 
-    @validator('compare', 'scanner')
-    def find_obj(cls, value):
-        if value:
-            return find_obj(value)
-        return None
-
-    @validator('detail_title', always=True)
-    def function(cls, value):
-        # TODO: lookup node to fail early
-        func, pos = parse_function(value)
-        assert pos == len(value)
-        return func
-
-    @validator('detail_sections', 'detail_summary_widgets', 'filters', 'listing_columns',
-               'listing_summary', 'nodes', always=True, pre=True)
-    def lines(cls, value):
-        if value is not None:
-            return [x for x in [x.strip() for x in value.splitlines()] if x]
-        return None
-
-    @validator('listing_sort', always=True, pre=True)
-    def pipe_separated_list(cls, value):
-        if value is not None:
-            return [x.strip() for x in value.split('|')]
-        return None
-
-    @validator('scanroots', always=True, pre=True)
-    def path_lines(cls, value, values):
-        if value:
-            return [str(values.get('sitedir') / x.strip()) for x in value.splitlines()]
-        return None
+    _parse_func = reapvalidator('detail_title')(parse_function)
+    _strip = reapvalidator('scanner')(strip)
+    _splitlines = reapvalidator('detail_sections', 'detail_summary_widgets', 'filters',
+                                'listing_columns', 'listing_summary', 'nodes')(splitlines)
+    _splitlines_relto_site = reapvalidator('scanroots')(splitlines_relto_site)
+    _splitpipe = reapvalidator('listing_sort')(splitpipe)
 
 
 class Config(Model):
@@ -364,20 +371,29 @@ class Config(Model):
     marv: MarvConfig
     collections: Dict[str, CollectionConfig]
 
+    _resolve_path = reapvalidator('filename')(resolve_path)
+
+    @validator('collections')
+    def collections_missing(cls, value, values):
+        if missing := set(values['marv'].collections) - value.keys():
+            raise ValueError(f'Collection section missing for {sorted(missing)}')
+        return value
+
     @classmethod
     def from_file(cls, path):
-        path = Path(path).resolve()
-        sitedir = path.parent
         parser = ConfigParser()
-        with path.open() as f:
+        with Path(path).open() as f:
             parser.read_file(f)
+        return cls.from_parser(path, parser)
 
+    @classmethod
+    def from_parser(cls, path, parser):
         dct = {
             'collections': {},
             'filename': path,
         }
         for name, section in parser._sections.items():  # pylint: disable=protected-access
-            section['sitedir'] = sitedir
+            section['sitedir'] = str(Path(path).resolve().parent)
             if name.startswith('collection'):
                 dct['collections'][name.split(None, 1)[1]] = section
             else:
