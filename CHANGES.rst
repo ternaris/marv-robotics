@@ -18,6 +18,8 @@ Upcoming (unreleased)
 Added
 ~~~~~
 - Plotly widget (EE)
+- PDF widget (EE)
+- PDF section to display PDF files contained in dataset (EE)
 
 Changed
 ~~~~~~~
