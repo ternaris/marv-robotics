@@ -172,3 +172,11 @@ def test_unsupported_func_sig():
         def baz(abc: int):
             yield  # pragma: nocoverage
     assert einfo.match('Only positional')
+
+
+def test_not_called():
+    with pytest.raises(TypeError) as einfo:
+        @marv.node
+        def foo(*args):
+            yield  # pragma: nocoverage
+    assert einfo.match('must be called')

@@ -1,7 +1,7 @@
 # Copyright 2016 - 2020  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-from inspect import getfullargspec, isgeneratorfunction
+from inspect import getfullargspec, isfunction, isgeneratorfunction
 
 from pydantic import Field
 
@@ -89,6 +89,8 @@ def node(schema=None, group=None, version=None):
         # - marv_api.tests.types_capnp:Test
         schema = schema.schema.node.displayName.replace('.capnp', '_capnp')\
                                                .replace('/', '.')
+    elif isfunction(schema):
+        raise TypeError('Decorator must be called @marv.node() before being applied.')
 
     def deco(func):
         if hasattr(func, '__marv_node__'):
