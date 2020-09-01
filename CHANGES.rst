@@ -32,6 +32,7 @@ Changed
 - Prepare to run nodes in dedicated environment with marv-api and marv-robotics nodes
 - Use pydantic to model configuration
 - Validate node output on marv.push() to allow debugging of schema violations in node context
+- Check that @marv.node() decorator is called before being applied
 
 Deprecated
 ~~~~~~~~~~
