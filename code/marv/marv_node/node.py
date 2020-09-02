@@ -197,7 +197,7 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
         else:
             if inputs is None:
                 inputs = dict(common)
-            qout, qin = asyncio.Queue(), asyncio.Queue()
+            qout, qin = asyncio.Queue(1), asyncio.Queue(1)
             task = asyncio.create_task(self.execnode(key_abbrev, inputs, qin=qout, qout=qin),
                                        name=key_abbrev)
             while True:
@@ -212,7 +212,8 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
                     with suppress(asyncio.CancelledError):
                         await task
                     break
-                await qout.put(response)
+
+                qout.put_nowait(response)
 
     async def execnode(self, key_abbrev, inputs, qin, qout):
         NODE_SCHEMA.set(self.schema)
