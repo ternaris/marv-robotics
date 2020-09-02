@@ -115,7 +115,7 @@ async def detail(request):
     except ValueError:
         raise web.HTTPBadRequest()
 
-    setdir = Path(request.app['site'].config.marv.storedir) / setid
+    setdir = request.app['site'].config.marv.storedir / setid
 
     if path == 'detail.json':
         return await _send_detail_json(request, setid, setdir)

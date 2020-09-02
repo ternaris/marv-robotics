@@ -45,7 +45,7 @@ class App():
         self.aioapp['api_endpoints'] = {}
         self.aioapp['app_root'] = app_root.rstrip('/')
         self.aioapp['config'] = {
-            'SECRET_KEY': Path(site.config.marv.sessionkey_file).read_text(),
+            'SECRET_KEY': site.config.marv.sessionkey_file.read_text(),
         }
         self.aioapp['debug'] = False
         self.aioapp['route_acl'] = find_obj(site.config.marv.acl)()
@@ -67,10 +67,10 @@ class App():
 
     @cached_property
     def index_html(self):
-        path = Path(self.aioapp['site'].config.marv.staticdir, 'index.html')
+        path = self.aioapp['site'].config.marv.staticdir / 'index.html'
         index_html = path.read_text().replace('MARV_APP_ROOT', self.aioapp['app_root'] or '')
 
-        frontenddir = Path(self.aioapp['site'].config.marv.frontenddir)
+        frontenddir = self.aioapp['site'].config.marv.frontenddir
         for ext in ('css', 'js'):
             try:
                 data = base64.b64encode((frontenddir / f'custom.{ext}').read_bytes()).decode()
@@ -93,8 +93,8 @@ class App():
         marv_webapi.webapi.init_app(self.aioapp, url_prefix='/marv/api',
                                     app_root=self.aioapp['app_root'])
 
-        customdir = Path(self.aioapp['site'].config.marv.frontenddir, 'custom')
-        staticdir = Path(self.aioapp['site'].config.marv.staticdir)
+        customdir = self.aioapp['site'].config.marv.frontenddir / 'custom'
+        staticdir = self.aioapp['site'].config.marv.staticdir
 
         # decorator for non api endpoint routes
         @self.route('/custom/{path:.*}')

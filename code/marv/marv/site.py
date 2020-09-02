@@ -39,7 +39,6 @@ def make_config(siteconf):
 def load_sitepackages(sitepackages):
     import site  # pylint: disable=import-outside-toplevel
     site.USER_SITE = sitepackages
-    sitepackages = Path(sitepackages)
     sitepackages.mkdir(parents=True, exist_ok=True)
     if str(sitepackages) not in sys.path:
         sys.path.append(str(sitepackages))
