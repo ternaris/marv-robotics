@@ -21,6 +21,7 @@ from gunicorn.arbiter import Arbiter
 from jinja2 import Template
 from tortoise.exceptions import DoesNotExist
 
+import marv_node.run
 from marv.db import USERGROUP_REGEX, DBError, DBNotInitialized, DBVersionError
 from marv.site import UnknownNode, load_sitepackages, make_config
 from marv.utils import within_pyinstaller_bundle
@@ -499,6 +500,14 @@ async def marvcli_run(  # noqa: C901
         else:
             setids = await site.db.get_datasets_for_collections(collections)
 
+        if not PDB:
+            # TODO: Move signal handling into runner
+            def handle_abort(_1, _2):
+                marv_node.run.setabort()
+
+            signal.signal(signal.SIGINT, handle_abort)
+            signal.signal(signal.SIGTERM, handle_abort)
+
         for setid in setids:
             if PDB:
                 await site.run(setid, selected_nodes, deps, force, keep,
@@ -523,12 +532,10 @@ async def marvcli_run(  # noqa: C901
     See https://ternaris.com/marv-robotics/docs/patterns.html#reduce-separately
     """, err=True)
                     ctx.abort()
-                except BaseException as e:  # pylint: disable=broad-except
+                except marv_node.run.Aborted:
+                    ctx.abort()
+                except Exception as e:  # pylint: disable=broad-except
                     errors.append(setid)
-                    if isinstance(e, KeyboardInterrupt):
-                        log.warning('KeyboardInterrupt: aborting')
-                        raise
-
                     if isinstance(e, DirectoryAlreadyExists):
                         click.echo(f"""
     ERROR: Directory for node run already exists:

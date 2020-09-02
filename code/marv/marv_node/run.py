@@ -28,10 +28,21 @@ class UnmetDependency(Exception):
     pass
 
 
+ABORT = False
 DATASET_NODE = Node.from_dag_node(_dataset_node)
 PPINFO = os.environ.get('PPINFO')
 MARV_RUN_LOGBREAK = os.environ.get('MARV_RUN_LOGBREAK')
 RAISE_IF_UNFINISHED = False
+
+
+def setabort():
+    print('Aborting...')
+    global ABORT  # pylint: disable=global-statement
+    ABORT = True
+
+
+class Aborted(Exception):
+    pass
 
 
 async def run_nodes(dataset, nodes, store, persistent=None, force=None, deps=None, cachesize=None,
@@ -56,7 +67,7 @@ async def run_nodes(dataset, nodes, store, persistent=None, force=None, deps=Non
     done = False
     send_queue_empty = False
     try:
-        while not done:
+        while not done and not ABORT:
             # comment while for synchronous
             # while not done and not send_queue_empty:
             #     # additional random break
@@ -64,8 +75,14 @@ async def run_nodes(dataset, nodes, store, persistent=None, force=None, deps=Non
             # # random pick from queue
             current, task = queue.pop(0) if queue else (None, None)
             done, send_queue_empty = await process_task(current, task)
+    except BrokenPipeError:  # ffmpeg got killed during abort
+        if not ABORT:
+            raise
     finally:
         await after_loop()
+
+    if not done and ABORT:
+        raise Aborted
 
     return streams
 
