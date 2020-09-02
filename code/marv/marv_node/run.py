@@ -55,15 +55,17 @@ async def run_nodes(dataset, nodes, store, persistent=None, force=None, deps=Non
     # initialize nodes and get initial set of promises
     done = False
     send_queue_empty = False
-    while not done:
-        # comment while for synchronous
-        # while not done and not send_queue_empty:
-        #     # additional random break
-        #     done, send_queue_empty = process_task(None, None)
-        # # random pick from queue
-        current, task = queue.pop(0) if queue else (None, None)
-        done, send_queue_empty = await process_task(current, task)
-    await after_loop()
+    try:
+        while not done:
+            # comment while for synchronous
+            # while not done and not send_queue_empty:
+            #     # additional random break
+            #     done, send_queue_empty = process_task(None, None)
+            # # random pick from queue
+            current, task = queue.pop(0) if queue else (None, None)
+            done, send_queue_empty = await process_task(current, task)
+    finally:
+        await after_loop()
 
     return streams
 
