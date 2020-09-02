@@ -242,8 +242,6 @@ class Driver(Keyed, AGenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-
     async def destroy(self):
         await self._agen_node.aclose()
         await self._agen.aclose()
-        for stream in self.streams.values():
-            stream.destroy()
 
 
 Task.register(Driver)

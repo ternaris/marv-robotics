@@ -207,6 +207,3 @@ class VolatileStream(Stream):
         # TODO: check name collision?
         handle = Handle(self.setid, self.node, name, group=group, header=header)
         return type(self)(handle, parent=self)
-
-    def destroy(self):
-        pass

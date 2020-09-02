@@ -5,6 +5,7 @@ import asyncio
 import hashlib
 from base64 import b32encode
 from collections import OrderedDict, namedtuple
+from contextlib import suppress
 from itertools import count, product
 from logging import getLogger
 
@@ -144,7 +145,7 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
         return self.func(**inputs)
 
     async def invoke(self, key_abbrev, inputs=None):  # noqa: C901
-        # pylint: disable=too-many-locals,too-many-branches
+        # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         # We must not write any instance variables, a node is running
         # multiple times in parallel.
 
@@ -198,14 +199,20 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
                 inputs = dict(common)
             qout, qin = asyncio.Queue(), asyncio.Queue()
             task = asyncio.create_task(self.execnode(key_abbrev, inputs, qin=qout, qout=qin),
-                                       name=self.fullname)
+                                       name=key_abbrev)
             while True:
                 request = await qin.get()
                 if request is None:
+                    await task
                     break
-                response = yield request
+                try:
+                    response = yield request
+                except GeneratorExit:
+                    task.cancel()
+                    with suppress(asyncio.CancelledError):
+                        await task
+                    break
                 await qout.put(response)
-            await task
 
     async def execnode(self, key_abbrev, inputs, qin, qout):
         NODE_SCHEMA.set(self.schema)

@@ -6,6 +6,7 @@
 # pylint: disable=too-many-return-statements,too-many-branches,no-else-return,protected-access
 # flake8: noqa
 
+import asyncio
 import functools
 import os
 from collections import OrderedDict, deque
@@ -49,7 +50,7 @@ async def run_nodes(dataset, nodes, store, persistent=None, force=None, deps=Non
     if ret is None:
         return False
 
-    streams, loop, process_task, after = ret
+    streams, loop, process_task, after_loop = ret
 
     # initialize nodes and get initial set of promises
     done = False
@@ -62,7 +63,7 @@ async def run_nodes(dataset, nodes, store, persistent=None, force=None, deps=Non
         # # random pick from queue
         current, task = queue.pop(0) if queue else (None, None)
         done, send_queue_empty = await process_task(current, task)
-    after()
+    await after_loop()
 
     return streams
 
@@ -420,7 +421,7 @@ async def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=N
 
         return await loop()
 
-    def after_loop():
+    async def after_loop():
         if PPINFO:
             logdebug("state %s", ppinfo())
 
@@ -429,6 +430,8 @@ async def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=N
         unfinished = [(driver.key_abbrev, waitfor) for waitfor, lst in waiting.items()
                       for driver in lst
                       if driver in pulling or driver.node in persistent]
+
+        await asyncio.gather(*[x.destroy() for x in drivers.values()])
 
         if unfinished:
             logdebug("state %s", ppinfo())
