@@ -88,6 +88,7 @@ Fixed
 - Running dependent nodes by marv run --force-dependent
 - Adjusting marv run cache size via the --cachesize option
 - Edge case where nodes would run out-of-sync and requesting messages were not available anymore
+- Properly handle SIGINT and SIGTERM during marv run
 
 Security
 ~~~~~~~~
