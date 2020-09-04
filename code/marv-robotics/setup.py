@@ -59,7 +59,6 @@ setup(name=NAME,
       install_requires=INSTALL_REQUIRES,
       tests_require=[
           'pytest',
-          'mock',
           'testfixtures',
       ],
       setup_requires=['pytest-runner'],

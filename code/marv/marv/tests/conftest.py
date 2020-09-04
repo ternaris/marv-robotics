@@ -7,8 +7,8 @@ import os
 from itertools import count
 from logging import getLogger
 from pathlib import Path
+from unittest import mock
 
-import mock
 import pytest
 
 import marv.model

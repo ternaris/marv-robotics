@@ -13,7 +13,6 @@ flake8-quotes
 flake8-print
 flake8-tuple
 ipython
-mock
 pdbpp
 pip-tools
 pylint
