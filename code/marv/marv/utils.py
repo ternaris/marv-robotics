@@ -13,8 +13,8 @@ from marv_api import deprecation
 from marv_api.utils import NOTSET
 from marv_api.utils import popen as _popen
 
-getattr__ = deprecation.make_getattr(__name__, {
-    'popen': deprecation.Info(__name__, '20.11', _popen),
+__getattr__ = deprecation.make_getattr(__name__, {
+    'popen': deprecation.Info(__name__, '20.11', _popen, 'use marv_api.utils.popen instead.'),
 })
 
 

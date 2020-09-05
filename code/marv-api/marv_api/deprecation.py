@@ -22,10 +22,10 @@ def make_getattr(module, dct):
         if info is None:
             raise AttributeError(f'module {module} has no attribute {name}')
 
-        msg = ' '.join([
-            f'{module}.{name} will be removed in {info.version}.',
-            info.msg or ' Please let us know if this is an issue for you.',
-        ])
+        msg = (
+            f'{module}.{name} will be removed in {info.version}; '
+            f'{info.msg or "please let us know if this is an issue for you."}'
+        )
         warnings.warn(msg, FutureWarning, stacklevel=2)
         return info.obj
 
