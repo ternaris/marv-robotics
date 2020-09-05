@@ -36,6 +36,8 @@ Changed
 
 Deprecated
 ~~~~~~~~~~
+- 20.11 will remove marv.types, use marv_api.types instead
+- 20.11 will remove marv.utils.popen, use marv_api.utils.popen instead
 
 Removed
 ~~~~~~~
