@@ -28,6 +28,10 @@ from .model import Dataset, Group, User
 log = getLogger(__name__)
 
 
+class SiteError(Exception):
+    pass
+
+
 class UnknownNode(Exception):
     pass
 

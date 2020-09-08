@@ -23,7 +23,7 @@ from tortoise.exceptions import DoesNotExist
 
 import marv_node.run
 from marv.db import USERGROUP_REGEX, DBError, DBNotInitialized, DBVersionError
-from marv.site import UnknownNode, load_sitepackages, make_config
+from marv.site import SiteError, UnknownNode, load_sitepackages, make_config
 from marv.utils import within_pyinstaller_bundle
 from marv_api.utils import echo, err, find_obj
 from marv_cli import PDB
@@ -76,6 +76,8 @@ async def create_site(init=None):
         err(f'{exc!r}\n\n'
             'Existing database is not compatible with this version of MARV. '
             'Check the migration instructions.', exit=1)
+    except SiteError as exc:
+        err(f'ERROR: {exc}', exit=1)
     try:
         yield site
     finally:
