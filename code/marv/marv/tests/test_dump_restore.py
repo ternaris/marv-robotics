@@ -12,8 +12,6 @@ DATADIR = Path(__file__).parent / 'data'
 
 
 async def prescan(site):
-    await site.db.leaf_add('T800', time_created=4205, time_updated=4206)
-    await site.db.leaf_add('T1000', time_created=4207, time_updated=4208)
     await site.db.group_add('grp')
     await site.db.group_adduser('admin', 'adm')
     await site.db.group_adduser('grp', 'test')

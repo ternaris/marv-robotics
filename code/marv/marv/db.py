@@ -4,11 +4,8 @@
 # pylint: disable=too-many-lines
 
 import asyncio
-import hashlib
 import json
 import re
-import secrets
-import string
 import sys
 from collections import namedtuple
 from contextlib import asynccontextmanager
@@ -31,7 +28,7 @@ from tortoise.transactions import current_transaction_map
 from marv_api.setid import SetID
 
 from . import utils
-from .model import STATUS, STATUS_MISSING, STATUS_OUTDATED, Group, Leaf, User
+from .model import STATUS, STATUS_MISSING, STATUS_OUTDATED, Group, User
 from .model import __models__ as MODELS
 from .utils import findfirst
 
@@ -408,21 +405,6 @@ async def dump_users_groups(tables, dump, txn):
     assert not groups, groups
 
 
-async def dump_leafs(tables, dump, txn):
-    dump['leafs'] = leafs = []
-    if 'leaf' in tables:
-        leaf_t = tables.pop('leaf')
-        items = await get_items_for_query(Query.from_(leaf_t)
-                                          .select('*')
-                                          .orderby(leaf_t.name),
-                                          txn)
-        for leaf in items:
-            del leaf['id']
-            leaf['time_created'] = dt_to_sec(leaf['time_created'])
-            leaf['time_updated'] = dt_to_sec(leaf['time_updated'])
-            leafs.append(leaf)
-
-
 async def dump_acns(tables, dump, txn):  # pylint: disable=unused-argument
     del tables['acn']
 
@@ -510,12 +492,6 @@ async def restore_users(site, dct, txn):
                 await site.db.group_adduser(grp, user['name'], txn=txn)
 
 
-async def restore_leafs(site, dct, txn):
-    leafs = dct.pop('leafs')
-    for leaf in leafs or []:
-        await site.db.leaf_add(_restore=True, txn=txn, **leaf)
-
-
 async def restore_datasets(site, dct, txn):
     datasets = dct.pop('datasets')
     for key, sets in datasets.items():
@@ -537,7 +513,6 @@ class Database:
 
     EXPORT_HANDLERS = (
         ({'group', 'user', 'user_group'}, dump_users_groups),
-        ({'leaf'}, dump_leafs),
         ({'acn'}, dump_acns),
         ({'comment'}, dump_comments),
         ({'file'}, dump_files),
@@ -548,7 +523,6 @@ class Database:
 
     IMPORT_HANDLERS = (
         ({'users'}, restore_users),
-        ({'leafs'}, restore_leafs),
         ({'datasets'}, restore_datasets),
     )
 
@@ -767,64 +741,6 @@ class Database:
         if deep:
             query = query.prefetch_related('users')
         return await query
-
-    @run_in_transaction
-    async def leaf_add(self, name, access_token=None, refresh_token=None, time_created=None,
-                       time_updated=None, _restore=None, txn=None):
-        # pylint: disable=too-many-arguments
-        if _restore:
-            clear_access_token = None
-            clear_refresh_token = None
-        else:
-            alnum = string.ascii_letters + string.digits
-            clear_access_token = ''.join(secrets.choice(alnum) for i in range(20))
-            clear_refresh_token = ''.join(secrets.choice(alnum) for i in range(20))
-            access_token = hashlib.sha256(clear_access_token.encode()).hexdigest()
-            refresh_token = hashlib.sha256(clear_refresh_token.encode()).hexdigest()
-
-        now = datetime.utcnow()  # noqa: DTZ
-        time_created = datetime.utcfromtimestamp(time_created) if time_created else now
-        time_updated = datetime.utcfromtimestamp(time_updated) if time_updated else now
-        try:
-            leaf = await Leaf.create(name=name, access_token=access_token,
-                                     refresh_token=refresh_token, time_created=time_created,
-                                     time_updated=time_updated, using_db=txn)
-            if _restore:
-                leaf_t = Table('leaf')
-                await txn.exq(Query.update(leaf_t)
-                              .set(leaf_t.time_updated, time_updated)
-                              .where(leaf_t.name == name))
-        except IntegrityError:
-            raise ValueError(f'Recording unit {name} exists already')
-
-        return leaf
-
-    @run_in_transaction
-    async def leaf_regentoken(self, name, txn=None):
-        try:
-            leaf = await Leaf.get(name=name).using_db(txn)
-        except DoesNotExist:
-            raise ValueError(f'Recording unit {name} does not exist')
-
-        alnum = string.ascii_letters + string.digits
-        clear_access_token = ''.join(secrets.choice(alnum) for i in range(20))
-        clear_refresh_token = ''.join(secrets.choice(alnum) for i in range(20))
-        leaf.access_token = hashlib.sha256(clear_access_token.encode('utf8')).hexdigest()
-        leaf.refresh_token = hashlib.sha256(clear_refresh_token.encode('utf8')).hexdigest()
-        leaf.time_updated = int(utils.now())
-        await leaf.save(using_db=txn)
-        leaf.clear_access_token = clear_access_token
-        leaf.clear_refresh_token = clear_refresh_token
-        return leaf
-
-    @run_in_transaction
-    async def get_leafs(self, txn=None):
-        return await Leaf.all().using_db(txn).order_by('name')
-
-    @run_in_transaction
-    async def get_leaf_by_token(self, clear_access_token, txn=None):
-        access_token = hashlib.sha256(clear_access_token.encode()).hexdigest()
-        return await Leaf.filter(access_token=access_token).using_db(txn).first()
 
     @run_in_transaction
     async def get_acl(self, model, id, user, default, txn=None):
