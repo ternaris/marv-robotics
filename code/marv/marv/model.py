@@ -14,7 +14,7 @@ from . import model_fields as custom
 from .utils import underscore_to_camelCase
 
 STATUS = OrderedDict((
-    ('error', 'ERROR: One or more errors occured while processing this dataset'),
+    ('error', 'ERROR: One or more errors occurred while processing this dataset'),
     ('missing', 'MISSING: One or more files of this dataset are missing'),
     ('outdated', 'OUTDATED: There are outdated nodes for this dataset'),
     ('pending', 'PENDING: There are pending node runs'),

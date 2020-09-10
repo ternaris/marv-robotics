@@ -578,8 +578,8 @@ async def marvcli_run(  # noqa: C901
                         if not keep_going:
                             ctx.abort()
                     else:
-                        log.error('Exception occured for dataset %s:', setid, exc_info=True)
-                        log.error('Error occured for dataset %s: %s', setid, e)
+                        log.error('Exception occurred for dataset %s:', setid, exc_info=True)
+                        log.error('Error occurred for dataset %s: %s', setid, e)
                         if not keep_going:
                             ctx.exit(1)
         if errors:

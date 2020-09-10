@@ -5,7 +5,7 @@ FROM ubuntu:focal
 
 ARG PYTHON=python3.8
 
-# This warning can simply be ignore:
+# This warning can simply be ignored:
 # debconf: delaying package configuration, since apt-utils is not installed
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \

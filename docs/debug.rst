@@ -13,7 +13,7 @@ Given an exception during a node run:
    $ marv run --node bagmeta b563ng6y6d3 --force
    2018-02-01 09:58:10,552 INFO rospy.topics topicmanager initialized
    2018-02-01 09:58:10,984 INFO marv.run b563ng6y6d.bagmeta.dwz4xbykdt.default (bagmeta) started with force
-   2018-02-01 09:58:10,987 ERRO marv.cli Exception occured for dataset b563ng6y6d3pjf6ycx7t52pqae:
+   2018-02-01 09:58:10,987 ERRO marv.cli Exception occurred for dataset b563ng6y6d3pjf6ycx7t52pqae:
    Traceback (most recent call last):
      File "/webapp/marv/suite/marv/marv/cli.py", line 405, in marvcli_run
        excluded_nodes, cachesize=cachesize)
@@ -32,7 +32,7 @@ Given an exception during a node run:
      File "/webapp/marv/suite/robotics/marv_robotics/bag.py", line 171, in bagmeta
        xx
    NameError: global name 'xx' is not defined
-   2018-02-01 09:58:10,992 ERRO marv.cli Error occured for dataset b563ng6y6d3pjf6ycx7t52pqae: global name 'xx' is not defined
+   2018-02-01 09:58:10,992 ERRO marv.cli Error occurred for dataset b563ng6y6d3pjf6ycx7t52pqae: global name 'xx' is not defined
 
 one can enter pdbpp by running ``PDB=1 marv`` instead of ``marv``:
 

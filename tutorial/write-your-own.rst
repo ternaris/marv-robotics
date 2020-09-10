@@ -268,7 +268,7 @@ New is the ``table`` widget here, defined by ``rows`` and ``columns``. The colum
 
   $ marv run --collection=bags
   INFO marv.run qmflhjcp6j.combined_section.ft6zlxpbvn.default (combined_section) started
-  ERRO marv.cli Exception occured for SetID('qmflhjcp6j3hsq7e56xzktf3yq'):
+  ERRO marv.cli Exception occurred for SetID('qmflhjcp6j3hsq7e56xzktf3yq'):
   Traceback (most recent call last):
   ...
   marv_node.driver.MakeFileNotSupported: <VolatileStream qmflhjcp6j.filesize_plot.cpenbxihfq.default>
