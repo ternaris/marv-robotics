@@ -35,9 +35,9 @@ class Format(enum.IntEnum):
 
 
 CONVERSIONS = {
-    key: getattr(cv2, f'COLOR_{key[0].name}2{key[1].name}', None)
+    key: getattr(cv2, f'COLOR_{n1}2{n2}{dict(YUV="_Y422").get(n1, "")}', None)
     for key in itertools.product(*(2 * (list(Format)[1:], )))
-    if key[0] == key[1] or hasattr(cv2, f'COLOR_{key[0].name}2{key[1].name}')
+    if (n1 := key[0].name) == (n2 := key[1].name) or hasattr(cv2, f'COLOR_{n1}2{n2}')
 }
 
 DEPTHMAP = {'8U': 'uint8', '8S': 'int8', '16U': 'uint16', '16S': 'int16',
