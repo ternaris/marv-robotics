@@ -20,6 +20,7 @@ Added
 - Plotly widget (EE)
 - PDF widget (EE)
 - PDF section to display PDF files contained in dataset (EE)
+- Tests for image format conversions
 
 Changed
 ~~~~~~~
@@ -33,6 +34,7 @@ Changed
 - Use pydantic to model configuration
 - Validate node output on marv.push() to allow debugging of schema violations in node context
 - Check that @marv.node() decorator is called before being applied
+- Require Python 3.8 for new language features; if you need support for Python 3.7 please let us know
 
 Deprecated
 ~~~~~~~~~~
@@ -47,6 +49,7 @@ Removed
 
 Fixed
 ~~~~~
+- Conversion of YUV422 encoded images
 
 Security
 ~~~~~~~~
