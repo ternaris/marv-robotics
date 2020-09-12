@@ -220,11 +220,15 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
         gen = self.func(**inputs)
         assert hasattr(gen, 'send')
         response = None
+        log = getLogger(f'marv.node.{key_abbrev}')
         while True:
             try:
                 request = gen.send(response)
             # TODO: Abort exception needs to invalidate previous node output
-            except (Abort, StopIteration):
+            except (Abort, StopIteration) as exc:
+                msg = str(exc)
+                if msg:
+                    log.warning(msg)
                 qout.put_nowait(None)
                 return
             except BaseException:  # pylint: disable=broad-except
@@ -232,7 +236,7 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
                 raise
 
             if isinstance(request, GetLogger):
-                response = getLogger(f'marv.node.{key_abbrev}')
+                response = log
                 continue
 
             qout.put_nowait(request)
