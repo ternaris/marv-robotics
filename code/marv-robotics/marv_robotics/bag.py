@@ -401,6 +401,9 @@ def raw_messages(dataset, bagmeta):  # noqa: C901  # pylint: disable=redefined-o
                 yield stream.msg(dct)
         return
 
+    if rosbag2 is None:
+        raise marv.Abort('rosbag2_py is needed to process rosbag2')
+
     meta = yaml.safe_load(rosbag2_metayaml.read_text())['rosbag2_bagfile_information']
 
     # TODO: workaround for older rosbag2 format versions
@@ -447,7 +450,7 @@ def make_deserialize(stream):
     """Create appropriate deserialize function for rosbag1 and 2."""
     if stream.rosbag2:
         if rosbag2 is None:
-            raise RuntimeError('rosbag2_py is needed to process rosbag2')
+            raise marv.Abort('rosbag2_py is needed to process rosbag2')
 
         pytype = get_message(stream.msg_type)
 
