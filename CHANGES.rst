@@ -45,8 +45,8 @@ Deprecated
 
 Removed
 ~~~~~~~
-- Previously deprecated marv.api_endpoint and marv.api_group, deprecated in 20.04.0
-- All marv.* controls, available via marv_api since 20.04.0
+- Previously deprecated marv.api_endpoint and marv.api_group, deprecated in :ref:`v20.04.0`
+- All marv.* controls, available via marv_api since :ref:`v20.04.0`
 - Support to install via pypi; use ./scripts/setup-venv instead
 
 Fixed
@@ -60,7 +60,7 @@ Security
 .. _#72: https://gitlab.com/ternaris/marv-robotics/issues/72
 
 
-.. _v20_08_0:
+.. _v20.08.0:
 
 20.08.0 (2020-08-09)
 ^^^^^^^^^^^^^^^^^^^^
@@ -108,7 +108,7 @@ Security
 .. _CVE-2020-11538: https://nvd.nist.gov/vuln/detail/CVE-2020-11538
 
 
-.. _v20_06_0:
+.. _v20.06.0:
 
 20.06.0 (2020-06-29)
 ^^^^^^^^^^^^^^^^^^^^
@@ -143,7 +143,7 @@ Fixed
 .. _#77: https://gitlab.com/ternaris/marv-robotics/issues/77
 
 
-.. _v20_04_0:
+.. _v20.04.0:
 
 20.04.0 (2020-04-30)
 ^^^^^^^^^^^^^^^^^^^^
@@ -153,7 +153,7 @@ Fixed
 Security
 ~~~~~~~~
 
-- Fix directory traversal bug that allowed arbitrary filesystem reads when running without nginx. The faulty code got introduced with 19.09.0. Earlier versions and setups using nginx are not affected.
+- Fix directory traversal bug that allowed arbitrary filesystem reads when running without nginx. The faulty code got introduced with :ref:`v19.09.0`. Earlier versions and setups using nginx are not affected.
 - Upgrade tortoise-orm for `CVE-2020-11010`_
 
 .. _CVE-2020-11010: https://nvd.nist.gov/vuln/detail/CVE-2020-11010
