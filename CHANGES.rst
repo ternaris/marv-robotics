@@ -23,6 +23,8 @@ Added
 - Tests for image format conversions
 - Warnings if rosbag2 contains subdirectories or files not listed in metadata.yaml
 - Directory-based scanner as alternative to the default rosbag record set-based scanner
+- Support finding and reading metadata of rosbag2 datasets (EE); CE got support in :ref:`v20.08.0` already
+- Log warning message from node Abort exception
 
 Changed
 ~~~~~~~
