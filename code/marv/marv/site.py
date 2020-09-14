@@ -64,7 +64,7 @@ class Site:
     def __init__(self, siteconf):
         self.config = make_config(siteconf)
         self.collections = Collections(config=self.config, site=self)
-        self.db = self.Database()  # pylint: disable=invalid-name
+        self.db = self.Database([y for x in self.collections.values() for y in x.model])  # pylint: disable=invalid-name
         self.createdb = True
 
     @classmethod
@@ -96,7 +96,7 @@ class Site:
             log.verbose('Generated %s', site.config.marv.sessionkey_file)
 
         # Generate all dynamic models
-        models = site.db.MODELS + [y for x in site.collections.values() for y in x.model]
+        models = site.db.MODELS + site.db.listing_models
 
         await Tortoise.init(config={
             'connections': {
