@@ -38,6 +38,8 @@ For some API calls you need to be authenticated, let's get a token, and set hand
    echo $TOKEN
 
 
+.. _httpapi_query:
+
 Query
 -----
 
@@ -48,8 +50,8 @@ Database queries can be performed by posting a corresponding request to ``v1/rpc
    curl -X POST \
         -H "Authorization: Bearer $TOKEN" \
         -H "Content-Type: application/json" \
-	 -d '{"rpcs": []}' \
-	 $MARV_API/v1/rpcs
+        -d '{"rpcs": []}' \
+        $MARV_API/v1/rpcs
 
 .. code-block:: python
 
@@ -57,15 +59,15 @@ Database queries can be performed by posting a corresponding request to ``v1/rpc
      "data": {}
    }
 
-Query actions are represented by dictionaries with a key ``query``. The simplest query payload ``{"model": "dataset"}`` asks for all entries of a single entity, in this case dataset. The valid entities are ``dataset``, ``file``, ``comment``, ``tag``, ``user``, and ``group``. The complete HTTP request to get all datasets looks like:
+Query actions are represented by dictionaries with a key ``query``. The simplest query payload ``{"model": "dataset"}`` asks for all entries of a single entity, in this case dataset. The valid entities are ``dataset``, ``file``, ``comment``, ``tag``, ``user``, and ``group``. Additionally, the API supports querying collections using ``collection:<name>``, where ``<name>`` denotes configured collection name. The complete HTTP request to get all datasets looks like:
 
 .. code-block:: bash
 
    curl -X POST \
         -H "Authorization: Bearer $TOKEN" \
         -H "Content-Type: application/json" \
-	 -d '{"rpcs": [{"query": {"model": "dataset"}}]}' \
-	 $MARV_API/v1/rpcs
+        -d '{"rpcs": [{"query": {"model": "dataset"}}]}' \
+        $MARV_API/v1/rpcs
 
 .. code-block:: python
 
@@ -260,8 +262,114 @@ The API supports sorting and paging. To sort the results use the option ``order`
    }
 
 
-Listing (deprecated)
---------------------
+.. _httpapi_query_collection:
+
+Collection
+^^^^^^^^^^
+
+The filter fields of each collection are available on virtual models on the Query endpoint. Querying the virtual model of a collection is achieved by setting the model parameter to ``collection:<name>``. The following rpc query payload gets the ``bags`` collection:
+
+.. code-block:: python
+
+   {
+     "model": "collection:bags",
+   }
+
+Since each collection can have individually configured filters, the returned models will have different keys for different collections. All filter field names from the marv config are prefixed with ``f_`` in the query API. Depending on type of a filter its values are returned in one of two ways:
+
+- column on the virtual model, if the value is a single scalar per dataset,
+- relation to secondary model, if there can be multiple values per dataset (``string[]`` or ``subset`` filters).
+
+All fields of scalar type are directly embedded on the collection models in the query response.
+
+.. code-block:: python
+
+   {
+     "data": {
+       "collection:bags": [
+         {
+           "id": 1
+           "f_name": "laser",
+           "f_setid": "dbgjsro7vfazyrj2pavoouk3vq",
+           # other filter fields
+         },
+         # other items
+       ],
+     },
+   }
+
+Values of filter fields represented as a relation have to be requested specifically by name. If there is a field named ``topics``, it can be requested using the ``attrs`` key:
+
+.. code-block:: python
+
+   {
+     "model": "collection:bags",
+     "attrs": {"f_topics": true},
+   }
+
+The collection models in the response have a ``f_topics`` key, listing the related f_topic ids, and a top level ``f_topics`` list will contain the related values:
+
+.. code-block:: python
+
+   {
+     "data": {
+       "collection:bags": [
+         {
+           "id": 1
+           "f_topics": [1, 2],
+           # other filter fields
+         },
+         # other items
+       ],
+       "f_topics": [
+         {
+           "id": 1,
+           "value": "/camA/jai/nir/camera_info",
+         },
+         {
+           "id": 2,
+           "value": "/camA/jai/nir/image_raw",
+         },
+         # other items
+       ],
+     },
+   }
+
+Filtering works as with any other model. For example, to find a collection entry by setid use:
+
+   .. code-block:: python
+
+   {
+     "model": "collection:bags",
+     "filters": [{"op": "eq", "name": "f_setid", "value": "..."}]
+   }
+
+Multi-value fields can also be used in queries. For example, to find datasets including Image messages use:
+
+   .. code-block:: python
+
+   {
+     "model": "collection:bags",
+     "filters": [{"op": "eq", "name": "f_msg_types.value", "value": "sensor_msgs/Image"}]
+   }
+
+Each collection entry corresponds to one dataset. For filtering by and embedding of relations belonging to the dataset itself -- namely ``file``, ``comment``, and ``tag`` -- the API supports the ``dataset.`` prefix.
+
+   .. code-block:: python
+
+   {
+     "model": "collection:bags",
+     "filters": [
+       {"op": "substring", "name": "dataset.comments.text", "value": "failure"},
+       {"op": "eq", "name": "dataset.tags.value", "value": "autonomous"},
+     ]
+     "attrs": {"dataset.files"},
+   }
+
+
+
+Listing (deprecated, will be removed in 20.11)
+----------------------------------------------
 
 MARV knows two kind of ids for dataset.
 
