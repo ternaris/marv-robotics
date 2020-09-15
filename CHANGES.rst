@@ -21,6 +21,8 @@ Added
 - PDF widget (EE)
 - PDF section to display PDF files contained in dataset (EE)
 - Tests for image format conversions
+- Warnings if rosbag2 contains subdirectories or files not listed in metadata.yaml
+- Directory-based scanner as alternative to the default rosbag record set-based scanner
 
 Changed
 ~~~~~~~
