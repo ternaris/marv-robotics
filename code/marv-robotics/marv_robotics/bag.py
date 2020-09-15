@@ -76,6 +76,31 @@ def _scan_rosbag2(log, dirpath, dirnames, filenames):
     return DatasetInfo(dirpath.name, setfiles)
 
 
+def dirscan(dirpath, dirnames, filenames):
+    """Scan for directories containing bags (ROS1 and ROS2).
+
+    For rosbag2 datasets this scanner behaves identical to default :py:func:`scan` below.
+
+    For ROS1 bag files it looks for directories containing at least one bag file and will create a
+    dataset with all files contained, ignoring further subdirectories, including rosbag2 datasets;
+    warnings are logged if any such subdirectories are ignored.
+
+    """
+    log = getLogger(f'{__name__}.dirscan')
+    dataset = _scan_rosbag2(log, dirpath, dirnames, filenames)
+    if dataset:
+        return [dataset]
+
+    if not any(x.endswith('.bag') for x in filenames):
+        return []
+
+    if dirnames:
+        log.warning('Ignoring subdirectories of dataset %s: %r', dirpath, dirnames[:])
+        dirnames[:] = []
+
+    return [DatasetInfo(Path(dirpath).name, filenames)]
+
+
 def scan(dirpath, dirnames, filenames):  # pylint: disable=unused-argument
     """Scan for sets of ROS bag files (ROS1 and ROS2).
 

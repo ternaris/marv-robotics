@@ -7,7 +7,7 @@ from pathlib import Path
 import yaml
 
 from marv_api import DatasetInfo as DSI
-from marv_robotics.bag import scan
+from marv_robotics.bag import dirscan, scan
 
 
 def test_scan_nonbag():
@@ -198,3 +198,41 @@ def test_scan_not_a_rosbag2(caplog, tmpdir):
     assert len(rv) == 0
     assert dirnames == ['extradir']
     assert caplog.record_tuples == []
+
+
+def test_dirscan_with_rosbag2(caplog, tmpdir):
+    # subdirectories are recursed if no bag files exist in directory
+    dirnames = ['subdir']
+    rv = dirscan('/scanroot', dirnames, ['no_bag_file'])
+    assert len(rv) == 0
+    assert dirnames == ['subdir']
+
+    # subdirectories are not recursed if one bag in directory; additional files are included
+    # warning is triggered if subdirectories exist
+    dirnames = ['subdir']
+    with caplog.at_level(logging.WARNING):
+        rv = dirscan('/scanroot/bagdir', dirnames, ['one.bag', 'other.file'])
+    assert rv == [DSI('bagdir', ['one.bag', 'other.file'])]
+    assert dirnames == []
+    assert caplog.record_tuples == [
+        (f'{dirscan.__module__}.{dirscan.__name__}', logging.WARNING,
+         "Ignoring subdirectories of dataset /scanroot/bagdir: ['subdir']"),
+    ]
+
+    # Create one fake rosbag2, the yaml on filesystem will be opened by scanner;
+    scanroot = Path(tmpdir)
+    rb2 = (scanroot / 'rb2')
+    rb2.mkdir()
+    (rb2 / 'metadata.yaml').write_text(yaml.dump({
+        'rosbag2_bagfile_information': {
+            'relative_file_paths': [
+                'foo.db3',
+                'bar.db3',
+            ],
+        },
+    }))
+    dirnames = ['extradir']
+    with caplog.at_level(logging.WARNING):
+        rv = dirscan(rb2, dirnames, ['metadata.yaml', 'foo.db3', 'bar.db3'])
+    assert rv == [DSI('rb2', ['metadata.yaml', 'foo.db3', 'bar.db3'])]
+    assert dirnames == []

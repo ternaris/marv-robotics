@@ -6,7 +6,5 @@
 Scanner
 =======
 
-ROS bag file sets
------------------
-
+.. autofunction:: marv_robotics.bag.dirscan
 .. autofunction:: marv_robotics.bag.scan
