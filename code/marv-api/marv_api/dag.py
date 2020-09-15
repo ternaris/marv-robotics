@@ -15,7 +15,8 @@ class Model(BaseModel):
 
     def __hash__(self):
         dct = self.__dict__
-        return hash(tuple(
+        # Objects of same class with same values for fields have same hash
+        return hash((self.__class__,) + tuple(
             tuple(v) if isinstance(v, list) else v
             for v in (dct[x] for x in self.__fields__)
         ))
