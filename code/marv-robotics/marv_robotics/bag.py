@@ -7,6 +7,7 @@ import sys
 from collections import defaultdict, namedtuple
 from contextlib import ExitStack
 from itertools import groupby
+from logging import getLogger
 from pathlib import Path
 
 import capnp  # pylint: disable=unused-import
@@ -53,7 +54,7 @@ class Baginfo(namedtuple('Baginfo', 'filename basename prefix timestamp idx')):
         return cls(filename, basename, prefix, timestamp, idx)
 
 
-def _scan_rosbag2(dirpath, filenames):
+def _scan_rosbag2(log, dirpath, dirnames, filenames):
     if 'metadata.yaml' not in filenames:
         return None
 
@@ -64,11 +65,24 @@ def _scan_rosbag2(dirpath, filenames):
     except KeyError:
         return None
 
-    return DatasetInfo(dirpath.name, ['metadata.yaml'] + info['relative_file_paths'])
+    if dirnames:
+        log.warning('Ignoring subdirectories of dataset %s: %r', dirpath, dirnames[:])
+        dirnames[:] = []
+
+    setfiles = ['metadata.yaml'] + info['relative_file_paths']
+    if extra := set(filenames).difference(setfiles):
+        log.warning('Ignoring files not listed in metadata.yaml %s: %r', dirpath, sorted(extra))
+
+    return DatasetInfo(dirpath.name, setfiles)
 
 
 def scan(dirpath, dirnames, filenames):  # pylint: disable=unused-argument
-    """Scan for sets of ROS bag files.
+    """Scan for sets of ROS bag files (ROS1 and ROS2).
+
+    Find rosbag2 datasets and log warnings if they contain additional files, not listed in
+    metadata.yaml
+
+    The remainder is for sets of ROS1 bag files:
 
     Bags suffixed with a consecutive index are grouped into sets::
 
@@ -121,9 +135,9 @@ def scan(dirpath, dirnames, filenames):  # pylint: disable=unused-argument
     See :ref:`cfg_c_scanner` config key.
 
     """
-    dataset = _scan_rosbag2(dirpath, filenames)
+    log = getLogger(f'{__name__}.scan')
+    dataset = _scan_rosbag2(log, dirpath, dirnames, filenames)
     if dataset:
-        dirnames[:] = []
         return [dataset]
 
     groups = groupby([Baginfo.parse(x) for x in reversed(filenames) if x.endswith('.bag')],

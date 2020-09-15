@@ -1,6 +1,11 @@
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+import logging
+from pathlib import Path
+
+import yaml
+
 from marv_api import DatasetInfo as DSI
 from marv_robotics.bag import scan
 
@@ -126,3 +131,70 @@ def test_scan_missing_index():
         DSI(name='foo_0000-11-00-00-00-00', files=['foo_0000-11-00-00-00-00.bag']),
         DSI(name='foo_0000-22-00-00-00-00', files=['foo_0000-22-00-00-00-00.bag']),
     ]
+
+
+def test_scan_with_rosbag2(caplog, tmpdir):
+    # Scan normally traverses into subdirectories, details of bag detection handled above already
+    dirnames = ['subdir']
+    rv = scan('/scanroot', dirnames, ['foo.bag', 'bar.bag'])
+    assert dirnames == ['subdir']
+    assert len(rv) == 2
+
+    # Create one fake rosbag2, the yaml on filesystem will be opened by scanner;
+    # extradir and extrafile are not needed on filesystem as they are passed into scan function
+    scanroot = Path(tmpdir)
+    rb2 = (scanroot / 'rb2')
+    rb2.mkdir()
+    (rb2 / 'metadata.yaml').write_text(yaml.dump({
+        'rosbag2_bagfile_information': {
+            'relative_file_paths': [
+                'foo.db3',
+                'bar.db3',
+            ],
+        },
+    }))
+
+    # Extra dirs and files in rosbag2 are ignored and trigger warning
+    dirnames = ['extradir']
+    with caplog.at_level(logging.WARNING):
+        rv = scan(rb2, dirnames, ['metadata.yaml', 'foo.db3', 'bar.db3', 'extrafile'])
+    assert rv == [DSI('rb2', ['metadata.yaml', 'foo.db3', 'bar.db3'])]
+    assert dirnames == []
+    assert caplog.record_tuples == [
+        (f'{scan.__module__}.{scan.__name__}', logging.WARNING,
+         f"Ignoring subdirectories of dataset {rb2}: ['extradir']"),
+        (f'{scan.__module__}.{scan.__name__}', logging.WARNING,
+         f"Ignoring files not listed in metadata.yaml {rb2}: ['extrafile']"),
+    ]
+
+    # No reason for warnings
+    caplog.clear()
+    dirnames = []
+    with caplog.at_level(logging.WARNING):
+        rv = scan(rb2, dirnames, ['metadata.yaml', 'foo.db3', 'bar.db3'])
+    assert rv == [DSI('rb2', ['metadata.yaml', 'foo.db3', 'bar.db3'])]
+    assert caplog.record_tuples == []
+
+
+def test_scan_not_a_rosbag2(caplog, tmpdir):
+    # Create one rosbag2, the yaml on filesystem will be opened by scanner;
+    # extradir and extrafile are not needed on filesystem as they are passed into scan function
+    scanroot = Path(tmpdir)
+    rb2 = (scanroot / 'rb2')
+    rb2.mkdir()
+    (rb2 / 'metadata.yaml').write_text(yaml.dump({
+        'NOT_rosbag2': {
+            'relative_file_paths': [
+                'foo.db3',
+                'bar.db3',
+            ],
+        },
+    }))
+
+    # Extra dirs and files in rosbag2 are ignored and trigger warning
+    dirnames = ['extradir']
+    with caplog.at_level(logging.WARNING):
+        rv = scan(rb2, dirnames, ['metadata.yaml', 'foo.db3', 'bar.db3', 'extrafile'])
+    assert len(rv) == 0
+    assert dirnames == ['extradir']
+    assert caplog.record_tuples == []
