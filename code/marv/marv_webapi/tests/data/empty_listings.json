@@ -6,15 +6,15 @@
       "read"
     ],
     "all_known": {
-      "divisors": [],
-      "node_test": [],
-      "status": [
+      "f_divisors": [],
+      "f_node_test": [],
+      "f_status": [
         "error",
         "missing",
         "outdated",
         "pending"
       ],
-      "tags": []
+      "f_tags": []
     },
     "compare": false,
     "filters": {
@@ -23,7 +23,7 @@
         "filters": [
           {
             "constraints": null,
-            "key": "name",
+            "key": "f_name",
             "operators": [
               "substring"
             ],
@@ -32,7 +32,7 @@
           },
           {
             "constraints": null,
-            "key": "setid",
+            "key": "f_setid",
             "operators": [
               "startswith"
             ],
@@ -41,7 +41,7 @@
           },
           {
             "constraints": null,
-            "key": "size",
+            "key": "f_size",
             "operators": [
               "lt",
               "le",
@@ -60,7 +60,7 @@
               "outdated",
               "pending"
             ],
-            "key": "status",
+            "key": "f_status",
             "operators": [
               "any",
               "all"
@@ -70,7 +70,7 @@
           },
           {
             "constraints": [],
-            "key": "tags",
+            "key": "f_tags",
             "operators": [
               "any",
               "all"
@@ -80,7 +80,7 @@
           },
           {
             "constraints": null,
-            "key": "comments",
+            "key": "f_comments",
             "operators": [
               "substring"
             ],
@@ -89,7 +89,7 @@
           },
           {
             "constraints": null,
-            "key": "files",
+            "key": "f_files",
             "operators": [
               "substring_any"
             ],
@@ -98,7 +98,7 @@
           },
           {
             "constraints": null,
-            "key": "time_added",
+            "key": "f_time_added",
             "operators": [
               "lt",
               "le",
@@ -112,7 +112,7 @@
           },
           {
             "constraints": null,
-            "key": "time_mtime",
+            "key": "f_time_mtime",
             "operators": [
               "lt",
               "le",
@@ -126,7 +126,7 @@
           },
           {
             "constraints": [],
-            "key": "divisors",
+            "key": "f_divisors",
             "operators": [
               "any",
               "all"
@@ -136,7 +136,7 @@
           },
           {
             "constraints": [],
-            "key": "node_test",
+            "key": "f_node_test",
             "operators": [
               "any"
             ],
@@ -257,14 +257,14 @@
       "read"
     ],
     "all_known": {
-      "divisors": [],
-      "status": [
+      "f_divisors": [],
+      "f_status": [
         "error",
         "missing",
         "outdated",
         "pending"
       ],
-      "tags": []
+      "f_tags": []
     },
     "compare": false,
     "filters": {
@@ -273,7 +273,7 @@
         "filters": [
           {
             "constraints": null,
-            "key": "name",
+            "key": "f_name",
             "operators": [
               "substring"
             ],
@@ -282,7 +282,7 @@
           },
           {
             "constraints": null,
-            "key": "setid",
+            "key": "f_setid",
             "operators": [
               "startswith"
             ],
@@ -291,7 +291,7 @@
           },
           {
             "constraints": null,
-            "key": "size",
+            "key": "f_size",
             "operators": [
               "lt",
               "le",
@@ -310,7 +310,7 @@
               "outdated",
               "pending"
             ],
-            "key": "status",
+            "key": "f_status",
             "operators": [
               "any",
               "all"
@@ -320,7 +320,7 @@
           },
           {
             "constraints": [],
-            "key": "tags",
+            "key": "f_tags",
             "operators": [
               "any",
               "all"
@@ -330,7 +330,7 @@
           },
           {
             "constraints": null,
-            "key": "comments",
+            "key": "f_comments",
             "operators": [
               "substring"
             ],
@@ -339,7 +339,7 @@
           },
           {
             "constraints": null,
-            "key": "files",
+            "key": "f_files",
             "operators": [
               "substring_any"
             ],
@@ -348,7 +348,7 @@
           },
           {
             "constraints": null,
-            "key": "time_added",
+            "key": "f_time_added",
             "operators": [
               "lt",
               "le",
@@ -362,7 +362,7 @@
           },
           {
             "constraints": null,
-            "key": "time_mtime",
+            "key": "f_time_mtime",
             "operators": [
               "lt",
               "le",
@@ -376,7 +376,7 @@
           },
           {
             "constraints": [],
-            "key": "divisors",
+            "key": "f_divisors",
             "operators": [
               "any",
               "all"

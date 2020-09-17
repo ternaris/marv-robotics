@@ -22,7 +22,7 @@ async def test_collection(app, site, client):
     assert res.status == 400
 
     res = await client.get('/marv/api/collection/hodge', params={
-        'filter': json.dumps({'name': {'val': 42, 'op': 'not exist'}}),
+        'filter': json.dumps({'f_name': {'val': 42, 'op': 'not exist'}}),
     })
     assert res.status == 400
 
@@ -32,6 +32,6 @@ async def test_collection(app, site, client):
     assert res == res2
 
     res = await client.get('/marv/api/collection/hodge', params={
-        'filter': json.dumps({'name': {'val': 'filtér', 'op': 'eq'}}),
+        'filter': json.dumps({'f_name': {'val': 'filtér', 'op': 'eq'}}),
     })
     assert res.status == 200

@@ -64,10 +64,11 @@ STATUS_STRS = {
 
 def parse_filters(specs, filters):
     return [
-        Filter(k,
-               FILTER_PARSER[specs[k].value_type](v['val']),
+        # TODO: remove adding of f_ prefix after listing deprecation
+        Filter(k if k.startswith('f_') else f'f_{k}',
+               FILTER_PARSER[specs[k if k.startswith('f_') else f'f_{k}'].value_type](v['val']),
                v['op'],
-               specs[k].value_type)
+               specs[k if k.startswith('f_') else f'f_{k}'].value_type)
         for k, v in filters.items()
     ]
 

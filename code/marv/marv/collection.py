@@ -49,7 +49,7 @@ def make_filter_spec(line):
     fields = [x.strip() for x in line.split('|', 4)]
     name, title, ops, value_type, function = fields
     ops = ops.split()
-    return FilterSpec(name, title, ops, value_type, function)
+    return FilterSpec(f'f_{name}', title, ops, value_type, function)
 
 
 def make_listing_column(line):
@@ -191,7 +191,7 @@ class Collection:
     def filter_functions(self):
         funcs = []
         for spec in self.filter_specs.values():
-            if spec.name in ('comments', 'status', 'tags'):
+            if spec.name in ('f_comments', 'f_status', 'f_tags'):
                 continue
             functree = parse_function(spec.function)
             funcs.append((spec, functree))
@@ -202,8 +202,8 @@ class Collection:
         specs = [make_filter_spec(line) for line in self.section.filters]
         names = [x.name for x in specs]
         assert all(re.match('^[a-z0-9_]+$', x) for x in names)
-        assert 'setid' in names
-        assert 'tags' in names
+        assert 'f_setid' in names
+        assert 'f_tags' in names
         return OrderedDict((x.name, x) for x in specs)
 
     @cached_property

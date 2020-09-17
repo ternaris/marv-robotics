@@ -1199,8 +1199,8 @@ class Database:
             if {'any', 'all'}.intersection(collection.filter_specs[desc.key].operators)
         }
         all_known.update({
-            'status': list(STATUS),
-            'tags': await self.get_all_known_tags_for_collection(collection.name),
+            'f_status': list(STATUS),
+            'f_tags': await self.get_all_known_tags_for_collection(collection.name),
         })
         return all_known
 
@@ -1245,14 +1245,14 @@ class Database:
             if isinstance(value, int):
                 value = min(value, sys.maxsize)
 
-            if name == 'comments':
+            if name == 'f_comments':
                 comment = Table('comment')
                 query = query.where(listing.id.isin(Query.from_(comment)
                                                     .select(comment.dataset_id)
                                                     .where(escaped_contains(comment.text, value))))
                 continue
 
-            if name == 'status':
+            if name == 'f_status':
                 status_ids = list(STATUS.keys())
                 bitmasks = [2**status_ids.index(x) for x in value]
                 bitmask = sum(bitmasks)
@@ -1267,7 +1267,7 @@ class Database:
 
                 continue
 
-            if name == 'tags':
+            if name == 'f_tags':
                 if operator == 'any':
                     query = query.where(listing.id.isin(Query.from_(dataset_tag)
                                                         .join(tag)
