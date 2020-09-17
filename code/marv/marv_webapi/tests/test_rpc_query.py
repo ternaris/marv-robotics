@@ -417,3 +417,50 @@ async def test_rpc_query(site, client):
             {'groups': [], 'id': 2, 'name': 'test'},
         ],
     }
+
+    # check virtual collection: models
+    res = await client.post_json('/marv/api/v1/rpcs', json={'rpcs': [{'query': {
+        'model': 'collection:hodge',
+        'filters': [
+            {'op': 'endswith', 'name': 'dataset.files.path', 'value': '/0001'},
+        ],
+        'attrs': {
+            'dataset.files': True,
+        },
+    }}]})
+    assert res['data'] == {
+        'collection:hodge': [{'dataset.files': [1],
+                              'id': 1,
+                              'f_name': 'hodge_0001',
+                              'f_setid': 'aaaaaaaaaaaaaaaaaaaaaaaaqa',
+                              'f_size': 1,
+                              'f_time_added': 1400000000000,
+                              'f_time_mtime': 1200000000000}],
+        'dataset.files': [{'dataset_id': 1,
+                           'id': 1,
+                           'idx': 0,
+                           'missing': 0,
+                           'mtime': 1200000000000,
+                           'path': '/dev/null/hodge/0001',
+                           'size': 1}],
+    }
+
+    res = await client.post_json('/marv/api/v1/rpcs', json={'rpcs': [{'query': {
+        'model': 'collection:hodge',
+        'filters': [
+            {'op': 'endswith', 'name': 'dataset.files.path', 'value': '/0001'},
+        ],
+        'attrs': {
+            'f_divisors': True,
+        },
+    }}]})
+    assert res['data'] == {
+        'collection:hodge': [{'f_divisors': [1],
+                              'id': 1,
+                              'f_name': 'hodge_0001',
+                              'f_setid': 'aaaaaaaaaaaaaaaaaaaaaaaaqa',
+                              'f_size': 1,
+                              'f_time_added': 1400000000000,
+                              'f_time_mtime': 1200000000000}],
+        'f_divisors': [{'id': 1, 'value': 'div1'}],
+    }

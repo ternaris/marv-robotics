@@ -237,7 +237,7 @@ OPS = {
 }
 
 
-def resolve_filter(table, fltr, models):  # noqa: C901
+def resolve_filter(table, fltr, models):  # noqa: C901  pylint: disable=too-many-branches
     if not isinstance(fltr, dict):
         raise FilterError(f'Expected dict not {fltr!r}')
 
@@ -249,7 +249,6 @@ def resolve_filter(table, fltr, models):  # noqa: C901
 
     value = fltr.get('value')
     name = fltr.get('name')
-    tablemeta = findfirst(lambda x: x._meta.table == table._table_name, models)._meta
 
     if operator == 'and':
         return reduce(lambda x, y: x & resolve_filter(table, y, models), value, EmptyCriterion())
@@ -260,6 +259,12 @@ def resolve_filter(table, fltr, models):  # noqa: C901
 
     if not isinstance(name, str):
         raise FilterError(f"Missing 'name' in {fltr!r}")
+
+    if name.startswith('dataset.') and table._table_name.startswith('l_'):
+        name = name[8:]
+        tablemeta = findfirst(lambda x: x._meta.table == 'dataset', models)._meta
+    else:
+        tablemeta = findfirst(lambda x: x._meta.table == table._table_name, models)._meta
 
     if '.' in name:
         fieldname, subname = name.split('.', 1)
@@ -299,7 +304,7 @@ def resolve_filter(table, fltr, models):  # noqa: C901
 
 def cleanup_attrs(items):
     return [
-        {k: x[k] for k in x.keys() if k not in ['acn_id', 'password']}
+        {k: x[k] for k in x.keys() if k not in ['acn_id', 'password', 'row']}
         for x in items
     ]
 
@@ -1457,11 +1462,19 @@ class Database:
                         user, txn=None):
         # pylint: disable=too-many-arguments, too-many-statements, too-many-locals, too-many-branches
         result = {}
-        table = Table(model)
-        try:
-            tablemeta = [x for x in self.MODELS if x._meta.table == model][0]._meta
-        except IndexError:
-            raise ValueError(f'there is no model "{model}"')
+        if model.startswith('collection:'):
+            name = f'l_{model[11:]}'
+            table = Table(name)
+            try:
+                tablemeta = [x for x in self.listing_models if x._meta.table == name][0]._meta
+            except IndexError:
+                raise ValueError(f'there is no collection "{name}"')
+        else:
+            table = Table(model)
+            try:
+                tablemeta = [x for x in self.MODELS if x._meta.table == model][0]._meta
+            except IndexError:
+                raise ValueError(f'there is no model "{model}"')
 
         select = [
             getattr(table, k)
@@ -1476,7 +1489,7 @@ class Database:
         query = Query.from_(table).select(*select)
 
         for filt in filters:
-            query = query.where(resolve_filter(table, filt, self.MODELS))
+            query = query.where(resolve_filter(table, filt, self.MODELS + self.listing_models))
 
         def customize_query(query, model, table, through=None):
             if model in ['collection', 'dataset']:
@@ -1513,8 +1526,15 @@ class Database:
                 if 'id' not in select:
                     select.append('id')
 
-            if fieldname in tablemeta.backward_fk_fields:
-                field = tablemeta.fields_map[fieldname]
+            if model.startswith('collection:') and fieldname.startswith('dataset.'):
+                modelfieldname = fieldname[8:]
+                meta = [x for x in self.MODELS if x._meta.table == 'dataset'][0]._meta
+            else:
+                modelfieldname = fieldname
+                meta = tablemeta
+
+            if modelfieldname in meta.backward_fk_fields:
+                field = meta.fields_map[modelfieldname]
                 tablename = field.model_class._meta.table
                 subtable = Table(tablename)
                 if '*' not in select and field.relation_field not in select:
@@ -1530,10 +1550,14 @@ class Database:
                         for x in relres
                         if x[field.relation_field] == prime['id']
                     ]
-                result.setdefault(tablename, []).extend(cleanup_attrs(relres))
+                if model.startswith('collection:'):
+                    reskey = fieldname
+                else:
+                    reskey = tablename
+                result.setdefault(reskey, []).extend(cleanup_attrs(relres))
 
-            elif fieldname in tablemeta.m2m_fields:
-                field = tablemeta.fields_map[fieldname]
+            elif modelfieldname in meta.m2m_fields:
+                field = meta.fields_map[modelfieldname]
                 through = Table(field.through)
                 tablename = field.model_class._meta.table
                 rel = Table(tablename)
@@ -1550,15 +1574,19 @@ class Database:
                 relres = await txn.exq(query)
                 relids = [x['id'] for x in relres]
                 for prime in qres:
-                    prime[fieldname] = [
+                    prime[modelfieldname] = [
                         x[field.forward_key]
                         for x in refs
                         if x[field.backward_key] == prime['id'] and x[field.forward_key] in relids
                     ]
-                result.setdefault(tablename, []).extend(cleanup_attrs(relres))
+                if model.startswith('collection:'):
+                    reskey = fieldname
+                else:
+                    reskey = tablename
+                result.setdefault(reskey, []).extend(cleanup_attrs(relres))
 
             else:
-                raise ValueError(f'field {fieldname} not on model {model}')
+                raise ValueError(f'field {modelfieldname} not on model {model}')
 
         return result
 
