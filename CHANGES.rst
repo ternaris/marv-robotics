@@ -25,6 +25,7 @@ Added
 - Directory-based scanner as alternative to the default rosbag record set-based scanner
 - Support finding and reading metadata of rosbag2 datasets (EE); CE got support in :ref:`v20.08.0` already
 - Log warning message from node Abort exception
+- New collection query API
 
 Changed
 ~~~~~~~
@@ -44,6 +45,7 @@ Deprecated
 ~~~~~~~~~~
 - 20.11 will remove marv.types, use marv_api.types instead
 - 20.11 will remove marv.utils.popen, use marv_api.utils.popen instead
+- 20.11 will remove the deprecated HTTP listing API, query :ref:`httpapi_query_collection` instead
 
 Removed
 ~~~~~~~
@@ -54,12 +56,14 @@ Removed
 Fixed
 ~~~~~
 - Conversion of YUV422 encoded images
+- Return HTTP bad request from query API on unknown filter names `#83`_
 
 Security
 ~~~~~~~~
 
 
 .. _#72: https://gitlab.com/ternaris/marv-robotics/issues/72
+.. _#83: https://gitlab.com/ternaris/marv-robotics/issues/83
 
 
 .. _v20.08.0:
