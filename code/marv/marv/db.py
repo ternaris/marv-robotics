@@ -290,10 +290,10 @@ def resolve_filter(table, fltr, models):  # noqa: C901  pylint: disable=too-many
                                              .select(getattr(through, field.backward_key))
                                              .distinct())
 
-        raise FilterError(f'Field {fieldname!r} not on model {tablemeta.table}')
+        raise FilterError(f'Field {fieldname!r} not on model {tablemeta.table!r}')
 
     if name not in tablemeta.db_fields:
-        raise FilterError(f'Field {name!r} not on model {tablemeta.table}')
+        raise FilterError(f'Field {name!r} not on model {tablemeta.table!r}')
 
     if operator not in OPS:
         raise FilterError(f'Unknown operator {operator!r}')
@@ -1488,8 +1488,11 @@ class Database:
             select = [table.star]
         query = Query.from_(table).select(*select)
 
-        for filt in filters:
-            query = query.where(resolve_filter(table, filt, self.MODELS + self.listing_models))
+        try:
+            for filt in filters:
+                query = query.where(resolve_filter(table, filt, self.MODELS + self.listing_models))
+        except FilterError as e:
+            raise ValueError(*e.args)
 
         def customize_query(query, model, table, through=None):
             if model in ['collection', 'dataset']:
@@ -1586,7 +1589,7 @@ class Database:
                 result.setdefault(reskey, []).extend(cleanup_attrs(relres))
 
             else:
-                raise ValueError(f'field {modelfieldname} not on model {model}')
+                raise ValueError(f'Field {modelfieldname!r} not on model {model!r}')
 
         return result
 

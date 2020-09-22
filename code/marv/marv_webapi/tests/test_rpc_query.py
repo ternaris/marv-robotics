@@ -418,6 +418,25 @@ async def test_rpc_query(site, client):
         ],
     }
 
+    # unknown fieldnames return bad request
+    res = await client.post_json('/marv/api/v1/rpcs', json={'rpcs': [{'query': {
+        'model': 'dataset',
+        'attrs': {
+            'invalid attr name': True,
+        },
+    }}]})
+    assert res.status == 400
+    assert "'invalid attr name'" in await res.text()
+
+    res = await client.post_json('/marv/api/v1/rpcs', json={'rpcs': [{'query': {
+        'model': 'dataset',
+        'filters': [
+            {'op': 'eq', 'name': 'invalid attr name', 'value': 1},
+        ],
+    }}]})
+    assert res.status == 400
+    assert "'invalid attr name'" in await res.text()
+
     # check virtual collection: models
     res = await client.post_json('/marv/api/v1/rpcs', json={'rpcs': [{'query': {
         'model': 'collection:hodge',
