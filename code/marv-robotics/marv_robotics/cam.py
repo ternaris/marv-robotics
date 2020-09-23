@@ -10,9 +10,10 @@ import numpy
 import marv_api as marv
 from marv_api.types import File
 from marv_api.utils import popen
-from marv_ros.img_tools import ImageConversionError, ImageFormatError, imgmsg_to_cv2
+from marv_ros.img_tools import (ImageConversionError, ImageFormatError, compressed_imgmsg_to_cv2,
+                                imgmsg_to_cv2)
 
-from .bag import get_message_type, messages
+from .bag import make_deserialize, messages
 
 try:
     import cv2
@@ -20,7 +21,13 @@ except ImportError:
     cv2 = None
 
 
+IMAGE_MSG_TYPES = ','.join(['*:sensor_msgs/Image', '*:sensor_msgs/CompressedImage'])
+
+
 def ros2cv(msg, scale=1, offset=0):
+    if hasattr(msg, 'format'):
+        return compressed_imgmsg_to_cv2(msg)
+
     if 'FC' in msg.encoding:
         passimg = numpy.nan_to_num(imgmsg_to_cv2(msg))
         valscaled = cv2.convertScaleAbs(passimg, None, scale, offset)
@@ -31,7 +38,7 @@ def ros2cv(msg, scale=1, offset=0):
 
 
 @marv.node(File)
-@marv.input('stream', foreach=marv.select(messages, '*:sensor_msgs/Image'))
+@marv.input('stream', foreach=marv.select(messages, IMAGE_MSG_TYPES))
 @marv.input('speed', default=4)
 @marv.input('convert_32FC1_scale', default=1)
 @marv.input('convert_32FC1_offset', default=0)
@@ -45,15 +52,13 @@ def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):  # pylint:
     duration = (stream.end_time - stream.start_time) * 1e-9
     framerate = (stream.msg_count / duration) if duration else 1
 
-    pytype = get_message_type(stream)
-    rosmsg = pytype()
-
+    deserialize = make_deserialize(stream)
     encoder = None
     while True:
         msg = yield marv.pull(stream)
         if msg is None:
             break
-        rosmsg.deserialize(msg.data)
+        rosmsg = deserialize(msg.data)
         try:
             img = ros2cv(rosmsg, convert_32FC1_scale, convert_32FC1_offset)
         except (ImageFormatError, ImageConversionError) as err:
@@ -65,9 +70,9 @@ def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):  # pylint:
             ffargs = [
                 'ffmpeg',
                 '-f', 'rawvideo',
-                '-pixel_format', '%s' % 'gray' if len(img.shape) == 2 else 'bgr24',
-                '-video_size', '%dx%d' % (rosmsg.width, rosmsg.height),
-                '-framerate', '%s' % framerate,
+                '-pixel_format', 'gray' if len(img.shape) == 2 else 'bgr24',
+                '-video_size', f'{img.shape[1]}x{img.shape[0]}',
+                '-framerate', str(framerate),
                 '-i', '-',
                 '-c:v', 'libvpx-vp9',
                 '-pix_fmt', 'yuv420p',
@@ -87,7 +92,7 @@ def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):  # pylint:
 
 
 @marv.node(File)
-@marv.input('stream', foreach=marv.select(messages, '*:sensor_msgs/Image'))
+@marv.input('stream', foreach=marv.select(messages, IMAGE_MSG_TYPES))
 @marv.input('image_width', default=320)
 @marv.input('max_frames', default=50)
 @marv.input('convert_32FC1_scale', default=1)
@@ -106,8 +111,7 @@ def images(stream, image_width, max_frames, convert_32FC1_scale, convert_32FC1_o
     # pylint: disable=invalid-name,too-many-locals
 
     yield marv.set_header(title=stream.topic)
-    pytype = get_message_type(stream)
-    rosmsg = pytype()
+    deserialize = make_deserialize(stream)
     interval = int(math.ceil(stream.msg_count / max_frames))
     digits = int(math.ceil(math.log(stream.msg_count) / math.log(10)))
     name_template = '%s-{:0%sd}.jpg' % (stream.topic.replace('/', ':')[1:], digits)
@@ -120,7 +124,7 @@ def images(stream, image_width, max_frames, convert_32FC1_scale, convert_32FC1_o
         if idx % interval:
             continue
 
-        rosmsg.deserialize(msg.data)
+        rosmsg = deserialize(msg.data)
         try:
             img = ros2cv(rosmsg, convert_32FC1_scale, convert_32FC1_offset)
         except (ImageFormatError, ImageConversionError) as err:
