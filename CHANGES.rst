@@ -17,7 +17,7 @@ Upcoming (unreleased)
 
 Added
 ~~~~~
-- Plotly widget (EE)
+- Plotly widget
 - PDF widget (EE)
 - PDF section to display PDF files contained in dataset (EE)
 - Tests for image format conversions
