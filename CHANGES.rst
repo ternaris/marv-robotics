@@ -21,6 +21,7 @@ Added
 - PDF widget (EE)
 - PDF section to display PDF files contained in dataset (EE)
 - Tests for image format conversions
+- Support for sensor_msgs/CompressedImage in cam nodes `#78`_
 - Warnings if rosbag2 contains subdirectories or files not listed in metadata.yaml
 - Directory-based scanner as alternative to the default rosbag record set-based scanner
 - Support finding and reading metadata of rosbag2 datasets (EE); CE got support in :ref:`v20.08.0` already
@@ -63,6 +64,7 @@ Security
 
 
 .. _#72: https://gitlab.com/ternaris/marv-robotics/issues/72
+.. _#78: https://gitlab.com/ternaris/marv-robotics/issues/78
 .. _#83: https://gitlab.com/ternaris/marv-robotics/issues/83
 
 
