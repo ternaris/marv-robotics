@@ -131,7 +131,7 @@ def imgmsg_to_cv2(msg, dst_encoding=None):
 
 def compressed_imgmsg_to_cv2(msg, dst_encoding=None):
     """Convert sensor_msg/CompressedImage to cv2."""
-    img = cv2.imdecode(np.fromstring(msg.data, np.uint8), cv2.IMREAD_ANYCOLOR)
+    img = cv2.imdecode(np.frombuffer(msg.data, np.uint8), cv2.IMREAD_ANYCOLOR)
     if dst_encoding:
         return convert_color(img, 'bgr8', dst_encoding)
     return img
