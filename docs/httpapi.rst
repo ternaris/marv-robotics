@@ -337,7 +337,7 @@ The collection models in the response have a ``f_topics`` key, listing the relat
 
 Filtering works as with any other model. For example, to find a collection entry by setid use:
 
-   .. code-block:: python
+.. code-block:: python
 
    {
      "model": "collection:bags",
@@ -346,7 +346,7 @@ Filtering works as with any other model. For example, to find a collection entry
 
 Multi-value fields can also be used in queries. For example, to find datasets including Image messages use:
 
-   .. code-block:: python
+.. code-block:: python
 
    {
      "model": "collection:bags",
@@ -355,7 +355,7 @@ Multi-value fields can also be used in queries. For example, to find datasets in
 
 Each collection entry corresponds to one dataset. For filtering by and embedding of relations belonging to the dataset itself -- namely ``file``, ``comment``, and ``tag`` -- the API supports the ``dataset.`` prefix.
 
-   .. code-block:: python
+.. code-block:: python
 
    {
      "model": "collection:bags",
