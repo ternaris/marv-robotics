@@ -61,10 +61,6 @@ class Node(Model):  # pylint: disable=too-few-public-methods
         inputs.update(kw)
         return self.copy(update={'inputs': type(self.inputs).parse_obj(inputs)})
 
-    def __hash__(self):
-        # Derived from function and therefore ignore: message_schema, group, version, forach
-        return hash((self.function, self.inputs))
-
 
 class Stream(Model):
     node: Node
