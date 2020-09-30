@@ -34,11 +34,11 @@ class Inputs(Model):
         return create_model('Inputs', __base__=Inputs, __module__=__module__, **kw)
 
     @validator('*', pre=True)
-    def streamify(cls, value):
+    def streamify(cls, val):
         """Turn Node inputs into streams."""
-        if hasattr(value, '__marv_node__'):
-            return Stream(node=value.__marv_node__)
-        return value
+        if hasattr(val, '__marv_node__'):
+            return Stream(node=val.__marv_node__)
+        return val
 
 
 class Node(Model):  # pylint: disable=too-few-public-methods
@@ -50,10 +50,10 @@ class Node(Model):  # pylint: disable=too-few-public-methods
     foreach: Optional[str]
 
     @validator('function')
-    def function_needs_to_be_dotted_path(cls, value):
-        if '.' not in value:
-            raise ValueError(f'Expected dotted path to function, not: {value!r}')
-        return value
+    def function_needs_to_be_dotted_path(cls, val):
+        if '.' not in val:
+            raise ValueError(f'Expected dotted path to function, not: {val!r}')
+        return val
 
     def clone(self, **kw):
         # Send inputs through validation

@@ -216,55 +216,55 @@ class ReverseProxyEnum(str, Enum):
     nginx = 'nginx'
 
 
-def resolve_path(value):
-    if value is not None:
-        return Path(value).resolve()
+def resolve_path(val):
+    if val is not None:
+        return Path(val).resolve()
     return None
 
 
-def resolve_relto_site(value, values):
-    if value is not None:
+def resolve_relto_site(val, values):
+    if val is not None:
         sitedir = values['sitedir']
         assert sitedir.is_absolute()
-        return (sitedir / value).resolve()
+        return (sitedir / val).resolve()
     return None
 
 
-def split(value):
-    if value is not None:
-        return value.split()
+def split(val):
+    if val is not None:
+        return val.split()
     return []
 
 
-def splitlines(value):
-    if value is not None:
-        return [stripped for x in value.splitlines() if (stripped := x.strip())]
+def splitlines(val):
+    if val is not None:
+        return [stripped for x in val.splitlines() if (stripped := x.strip())]
     return []
 
 
-def splitlines_relto_site(value, values):
-    if value is not None:
+def splitlines_relto_site(val, values):
+    if val is not None:
         return [(values['sitedir'] / path).resolve()
-                for x in value.splitlines()
+                for x in val.splitlines()
                 if (path := x.strip())]
     return []
 
 
-def splitlines_split(value):
-    if value is not None:
-        return [stripped.split() for x in value.splitlines() if (stripped := x.strip())]
+def splitlines_split(val):
+    if val is not None:
+        return [stripped.split() for x in val.splitlines() if (stripped := x.strip())]
     return []
 
 
-def splitpipe(value):
-    if value is not None:
-        return [x.strip() for x in value.split('|')]
+def splitpipe(val):
+    if val is not None:
+        return [x.strip() for x in val.split('|')]
     return []
 
 
-def strip(value):
-    if value is not None:
-        return value.strip()
+def strip(val):
+    if val is not None:
+        return val.strip()
     return None
 
 
@@ -298,19 +298,19 @@ class MarvConfig(Model):
     _strip = reapvalidator('reverse_proxy')(strip)
 
     @apvalidator('dburi')
-    def dburi_relto_site(cls, value, values):
-        if value and value.startswith('sqlite:///'):
-            return value
-        if value and value.startswith('sqlite://'):
-            return f"sqlite://{(values['sitedir'] / value[9:]).resolve()}"
-        raise ValueError(f'Invalid dburi {value!r}')
+    def dburi_relto_site(cls, val, values):
+        if val and val.startswith('sqlite:///'):
+            return val
+        if val and val.startswith('sqlite://'):
+            return f"sqlite://{(values['sitedir'] / val[9:]).resolve()}"
+        raise ValueError(f'Invalid dburi {val!r}')
 
     @apvalidator('oauth')
-    def oauth_split(cls, value):
-        if value is not None:
+    def oauth_split(cls, val):
+        if val is not None:
             return {
                 (fields := [x.strip() for x in line.split('|')])[0]: fields
-                for x in value.splitlines()
+                for x in val.splitlines()
                 if (line := x.strip())
             }
         return {}
@@ -374,10 +374,10 @@ class Config(Model):
     _resolve_path = reapvalidator('filename')(resolve_path)
 
     @validator('collections')
-    def collections_missing(cls, value, values):
-        if missing := set(values['marv'].collections) - value.keys():
+    def collections_missing(cls, val, values):
+        if missing := set(values['marv'].collections) - val.keys():
             raise ValueError(f'Collection section missing for {sorted(missing)}')
-        return value
+        return val
 
     @classmethod
     def from_file(cls, path):
