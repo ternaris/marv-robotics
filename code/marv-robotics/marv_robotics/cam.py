@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import math
+from contextlib import ExitStack
 from itertools import count
 from subprocess import PIPE
 
@@ -53,41 +54,40 @@ def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):  # pylint:
     framerate = (stream.msg_count / duration) if duration else 1
 
     deserialize = make_deserialize(stream)
-    encoder = None
-    while True:
-        msg = yield marv.pull(stream)
-        if msg is None:
-            break
-        rosmsg = deserialize(msg.data)
-        try:
-            img = ros2cv(rosmsg, convert_32FC1_scale, convert_32FC1_offset)
-        except (ImageFormatError, ImageConversionError) as err:
-            log = yield marv.get_logger()
-            log.error('could not convert image from topic %s: %s ', stream.topic, err)
-            return
+    with ExitStack() as stack:
+        encoder = None
+        while True:
+            msg = yield marv.pull(stream)
+            if msg is None:
+                break
 
-        if not encoder:
-            ffargs = [
-                'ffmpeg',
-                '-f', 'rawvideo',
-                '-pixel_format', 'gray' if len(img.shape) == 2 else 'bgr24',
-                '-video_size', f'{img.shape[1]}x{img.shape[0]}',
-                '-framerate', str(framerate),
-                '-i', '-',
-                '-c:v', 'libvpx-vp9',
-                '-pix_fmt', 'yuv420p',
-                '-loglevel', 'error',
-                '-threads', '8',
-                '-speed', str(speed),
-                '-y',
-                video.path,
-            ]
-            encoder = popen(ffargs, stdin=PIPE)
+            rosmsg = deserialize(msg.data)
+            try:
+                img = ros2cv(rosmsg, convert_32FC1_scale, convert_32FC1_offset)
+            except (ImageFormatError, ImageConversionError) as err:
+                log = yield marv.get_logger()
+                log.error('could not convert image from topic %s: %s ', stream.topic, err)
+                return
 
-        encoder.stdin.write(img)
+            if not encoder:
+                ffargs = [
+                    'ffmpeg',
+                    '-f', 'rawvideo',
+                    '-pixel_format', 'gray' if len(img.shape) == 2 else 'bgr24',
+                    '-video_size', f'{img.shape[1]}x{img.shape[0]}',
+                    '-framerate', str(framerate),
+                    '-i', '-',
+                    '-c:v', 'libvpx-vp9',
+                    '-pix_fmt', 'yuv420p',
+                    '-loglevel', 'error',
+                    '-threads', '8',
+                    '-speed', str(speed),
+                    '-y',
+                    video.path,
+                ]
+                encoder = stack.enter_context(popen(ffargs, stdin=PIPE))
+            encoder.stdin.write(img)
 
-    encoder.stdin.close()
-    encoder.wait()
     yield video
 
 
