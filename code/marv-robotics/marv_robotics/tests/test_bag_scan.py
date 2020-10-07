@@ -151,6 +151,9 @@ def test_scan_with_rosbag2(caplog, tmpdir):
                 'foo.db3',
                 'bar.db3',
             ],
+            'storage_identifier': 'sqlite3',
+            'topics_with_message_count': [],
+            'version': 4,
         },
     }))
 
@@ -229,6 +232,9 @@ def test_dirscan_with_rosbag2(caplog, tmpdir):
                 'foo.db3',
                 'bar.db3',
             ],
+            'storage_identifier': 'sqlite3',
+            'topics_with_message_count': [],
+            'version': 4,
         },
     }))
     dirnames = ['extradir']

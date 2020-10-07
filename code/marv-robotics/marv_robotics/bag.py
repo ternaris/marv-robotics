@@ -11,7 +11,7 @@ from logging import getLogger
 from pathlib import Path
 
 import capnp  # pylint: disable=unused-import
-import yaml
+import rosbag2
 
 import marv_api as marv
 import marv_nodes
@@ -20,15 +20,6 @@ from marv_ros import genpy, rosbag
 from marv_ros.rosbag import _get_message_type
 
 from .bag_capnp import Bagmeta, Message  # pylint: disable=import-error
-
-try:
-    import rosbag2_py as rosbag2
-except ImportError:
-    rosbag2 = None
-
-if rosbag2 is not None:
-    from rclpy.serialization import deserialize_message  # pylint: disable=import-error
-    from rosidl_runtime_py.utilities import get_message  # pylint: disable=import-error
 
 
 class Baginfo(namedtuple('Baginfo', 'filename basename prefix timestamp idx')):
@@ -58,18 +49,16 @@ def _scan_rosbag2(log, dirpath, dirnames, filenames):
     if 'metadata.yaml' not in filenames:
         return None
 
-    dirpath = Path(dirpath)
-    dct = yaml.safe_load((dirpath / 'metadata.yaml').read_text())
     try:
-        info = dct['rosbag2_bagfile_information']
-    except KeyError:
+        reader = rosbag2.Reader(dirpath)
+    except rosbag2.ReaderError:
         return None
 
     if dirnames:
         log.warning('Ignoring subdirectories of dataset %s: %r', dirpath, dirnames[:])
         dirnames[:] = []
 
-    setfiles = ['metadata.yaml'] + info['relative_file_paths']
+    setfiles = ['metadata.yaml'] + [x.name for x in reader.paths]
     if extra := set(filenames).difference(setfiles):
         log.warning('Ignoring files not listed in metadata.yaml %s: %r', dirpath, sorted(extra))
 
@@ -193,28 +182,24 @@ def scan(dirpath, dirnames, filenames):  # pylint: disable=unused-argument
 
 
 def _read_bagmeta2(path):
-    dct = yaml.safe_load(Path(path).read_text())
-    try:
-        info = dct['rosbag2_bagfile_information']
-    except KeyError:
-        return None
-    start_time = info['starting_time']['nanoseconds_since_epoch']
-    duration = info['duration']['nanoseconds']
-    connections = [
-        {'topic': x['topic_metadata']['name'],
-         'datatype': x['topic_metadata']['type'],
-         'msg_count': x['message_count'],
-         'serialization_format': x['topic_metadata']['serialization_format']}
-        for x in info['topics_with_message_count']
-    ]
+    reader = rosbag2.Reader(Path(path).parent)
+
     return {
-        'start_time': start_time,
-        'end_time': start_time + duration,
-        'duration': duration,
-        'msg_count': info['message_count'],
-        'msg_types': sorted({x['datatype'] for x in connections}),
-        'topics': sorted({x['topic'] for x in connections}),
-        'connections': connections,
+        'start_time': reader.starting_time,
+        'end_time': reader.starting_time + reader.duration,
+        'duration': reader.duration,
+        'msg_count': reader.message_count,
+        'msg_types': sorted(set(reader.topics.values())),
+        'topics': sorted(reader.topics.keys()),
+        'connections': [
+            {
+                'topic': x['topic_metadata']['name'],
+                'datatype': x['topic_metadata']['type'],
+                'msg_count': x['message_count'],
+                'serialization_format': x['topic_metadata']['serialization_format'],
+            }
+            for x in reader.metadata['topics_with_message_count']
+        ],
     }
 
 
@@ -328,9 +313,10 @@ def raw_messages(dataset, bagmeta):  # noqa: C901  # pylint: disable=redefined-o
 
     bagmeta, dataset = yield marv.pull_all(bagmeta, dataset)
 
-    rosbag2_metayaml = Path(dataset.files[0].path)
-    if rosbag2_metayaml.name != 'metadata.yaml':
-        rosbag2_metayaml = False
+    try:
+        reader = rosbag2.Reader(Path(dataset.files[0].path).parent)
+    except rosbag2.ReaderError:
+        reader = None
 
     connections = bagmeta.connections
     requested = yield marv.get_requested()
@@ -360,7 +346,7 @@ def raw_messages(dataset, bagmeta):  # noqa: C901  # pylint: disable=redefined-o
                 'msg_type': con.datatype if con else '',
                 'msg_type_def': con.msg_def if con else '',
                 'msg_type_md5sum': con.md5sum if con else '',
-                'rosbag2': bool(rosbag2_metayaml),
+                'rosbag2': reader is not None,
                 'topic': topic}
 
     bytopic = defaultdict(list)
@@ -392,7 +378,7 @@ def raw_messages(dataset, bagmeta):  # noqa: C901  # pylint: disable=redefined-o
     if not bytopic:
         return
 
-    if not rosbag2_metayaml:
+    if not reader:
         paths = [x.path for x in dataset.files if x.path.endswith('.bag')]
         # TODO: topic with more than one type is not supported
         for topic, raw, timestamp in read_messages(paths, topics=list(bytopic)):
@@ -401,31 +387,7 @@ def raw_messages(dataset, bagmeta):  # noqa: C901  # pylint: disable=redefined-o
                 yield stream.msg(dct)
         return
 
-    if rosbag2 is None:
-        raise marv.Abort('rosbag2_py is needed to process rosbag2')
-
-    meta = yaml.safe_load(rosbag2_metayaml.read_text())['rosbag2_bagfile_information']
-
-    # TODO: workaround for older rosbag2 format versions
-    if meta['version'] < 4:
-        assert len(meta['relative_file_paths']) == 1
-        uri = str(rosbag2_metayaml.parent / meta['relative_file_paths'][0])
-    else:
-        uri = str(rosbag2_metayaml.parent)
-
-    storage_options = rosbag2.StorageOptions()
-    storage_options.uri = uri
-    storage_options.storage_id = meta['storage_identifier']
-
-    reader = rosbag2.SequentialReader()
-    reader.open(storage_options, rosbag2.ConverterOptions())
-
-    storage_filter = rosbag2.StorageFilter()
-    storage_filter.topics = list(bytopic)
-    reader.set_filter(storage_filter)
-
-    while reader.has_next():
-        (topic, data, timestamp) = reader.read_next()
+    for topic, _, timestamp, data in reader.messages(topics=bytopic.keys()):
         dct = {'data': data, 'timestamp': timestamp}
         for stream in bytopic[topic]:
             yield stream.msg(dct)
@@ -449,15 +411,10 @@ def get_message_type(stream):
 def make_deserialize(stream):
     """Create appropriate deserialize function for rosbag1 and 2."""
     if stream.rosbag2:
-        if rosbag2 is None:
-            raise marv.Abort('rosbag2_py is needed to process rosbag2')
+        deserialize = rosbag2.deserialize
+        typename = stream.msg_type
 
-        pytype = get_message(stream.msg_type)
-
-        def deserialize_ros2(data):
-            return deserialize_message(data, pytype)
-
-        return deserialize_ros2
+        return lambda data: deserialize(data, typename)
 
     pytype = get_message_type(stream)
     if pytype is None:
