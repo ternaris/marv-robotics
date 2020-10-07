@@ -58,6 +58,7 @@ Fixed
 ~~~~~
 - Conversion of YUV422 encoded images
 - Return HTTP bad request from query API on unknown filter names `#83`_
+- Authentication using OAuth2 webflow in Firefox (EE)
 
 Security
 ~~~~~~~~
