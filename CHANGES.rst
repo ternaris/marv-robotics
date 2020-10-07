@@ -25,6 +25,8 @@ Added
 - Warnings if rosbag2 contains subdirectories or files not listed in metadata.yaml
 - Directory-based scanner as alternative to the default rosbag record set-based scanner
 - Support finding and reading metadata of rosbag2 datasets (EE); CE got support in :ref:`v20.08.0` already
+- Pure-python rosbag2 reader
+- Support reading and deserializing of rosbag2 datasets (EE); CE got support in :ref:`v20.08.0` already
 - Log warning message from node Abort exception
 - New collection query API
 
@@ -32,7 +34,6 @@ Changed
 ~~~~~~~
 - Replace custom rosbag merge sort with heapq.merge `#72`_
 - Use heapq.merge to read from multiple bags in parallel `#72`_
-- Mount scanroot with write permissions into docker container to work around limitation in current rosbag2 implementation (CE)
 - Serve documentation from marv core
 - Switch to isort for import order management
 - Deprecated module attributes are not displayed in module __dir__ anymore
@@ -41,6 +42,7 @@ Changed
 - Validate node output on marv.push() to allow debugging of schema violations in node context
 - Check that @marv.node() decorator is called before being applied
 - Require Python 3.8 for new language features; if you need support for Python 3.7 please let us know
+- Switch CE docker image base to plain Ubuntu focal as we don't have any external ROS dependencies anymore
 
 Deprecated
 ~~~~~~~~~~
@@ -53,6 +55,7 @@ Removed
 - Previously deprecated marv.api_endpoint and marv.api_group, deprecated in :ref:`v20.04.0`
 - All marv.* controls, available via marv_api since :ref:`v20.04.0`
 - Support to install via pypi; use ./scripts/setup-venv instead
+- rosbag2_py from CE docker image in favor of pure-python rosbag2 contained in marv-robotics
 
 Fixed
 ~~~~~
