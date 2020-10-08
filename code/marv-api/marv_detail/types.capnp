@@ -8,6 +8,7 @@ using import "/marv_nodes/types.capnp".File;
 using import "/marv_nodes/types.capnp".GeoJson;
 using import "/marv_pycapnp/types.capnp".Timedelta;
 using import "/marv_pycapnp/types.capnp".Timestamp;
+using import "/marv_pycapnp/types.capnp".TimelineEvent;
 
 using Filesize = UInt64;
 using RowId = UInt64;
@@ -104,6 +105,7 @@ struct Widget {
     video @10 :Video;
     plotly @15: Text;  # marv-partial
     pdf @16 :Pdf;  # marv-partial
+    eventlist @17 :Eventlist;
   }
 
   struct Custom {
@@ -240,5 +242,10 @@ struct Widget {
 
   struct Pdf {
     src @0 :Text;
+  }
+
+  struct Eventlist {
+    subtype @0: Text;
+    events @1 :List(TimelineEvent);
   }
 }
