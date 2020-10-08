@@ -1,7 +1,7 @@
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-FROM ros:foxy-ros-base
+FROM ubuntu:focal
 
 ARG PYTHON=python3.8
 
@@ -30,7 +30,6 @@ RUN apt-get update && \
         lsof \
         man \
         python3-pip \
-        python3-pybind11 \
         ${PYTHON} \
         ${PYTHON}-dev \
         ${PYTHON}-venv \
@@ -47,22 +46,6 @@ RUN locale-gen en_US.UTF-8; dpkg-reconfigure -f noninteractive locales
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
-
-RUN cd /opt && \
-    curl -sL https://github.com/ternaris/rosbag2/archive/marv-2020-08-09.zip > rosbag2.zip && \
-    unzip rosbag2.zip && rm rosbag2.zip && \
-    mkdir -p ws/src && mv rosbag2-marv-2020-08-09 ws/src/rosbag2 && \
-    bash -c ' \
-        source /opt/ros/${ROS_DISTRO}/setup.bash && \
-        cd ws && \
-        colcon build --install /opt/rosbag2 --merge-install \
-            --cmake-args " -DBUILD_TESTING=OFF" --packages-up-to rosbag2_py \
-    ' && cd .. && rm -rf ws && \
-    bash -c ' \
-        source /opt/ros/${ROS_DISTRO}/setup.bash && \
-        source /opt/rosbag2/setup.bash && \
-        ${PYTHON} -c "import rosbag2_py" \
-    '
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV MARV_VENV=/opt/marv
