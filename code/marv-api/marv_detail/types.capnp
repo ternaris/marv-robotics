@@ -29,6 +29,9 @@ enum Formatter {
   timedelta @5;
   link @6;
   route @7;
+  distance @8;
+  speed @9;
+  acceleration @10;
 }
 
 

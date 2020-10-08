@@ -17,9 +17,13 @@ from .tooling import api_endpoint as marv_api_endpoint
 from .tooling import get_global_granted, get_local_granted
 
 ALIGN = {
+    'acceleration': 'right',
+    'distance': 'right',
     'filesize': 'right',
+    'float': 'right',
     'icon': 'center',
     'int': 'right',
+    'speed': 'right',
     'timedelta': 'right',
 }
 

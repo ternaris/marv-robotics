@@ -349,6 +349,12 @@ formatter
 Marv ships with a set of formatters. See :ref:`widget_custom` on how to override these and supply your own.
 
 
+``acceleration``
+''''''''''''''''
+Renders numeric value with unit. Unit can be chosen in frontend (EE).
+
+| extract: float (m/s^2)
+
 ``date``
 ''''''''
 | extract: int, nanoseconds since epoch
@@ -356,6 +362,12 @@ Marv ships with a set of formatters. See :ref:`widget_custom` on how to override
 ``datetime``
 ''''''''''''
 | extract: int, nanoseconds since epoch
+
+``distance``
+''''''''''''
+Renders numeric value with unit. Unit can be chosen in frontend (EE).
+
+| extract: float (m)
 
 ``float``
 '''''''''
@@ -384,6 +396,12 @@ Render a `glyphicon <https://getbootstrap.com/docs/3.3/components/#glyphicons>`_
 ``route``
 '''''''''
 Used only for the detail route so far in conjunction with :ref:`cfg_sexp_detail_route`.
+
+``speed``
+'''''''''
+Renders numeric value with unit. Unit can be chosen in frontend (EE).
+
+| extract: float (m/s)
 
 ``string``
 ''''''''''

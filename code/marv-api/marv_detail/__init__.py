@@ -11,8 +11,10 @@ from marv_pycapnp import Wrapper
 from .types_capnp import Detail, Widget  # pylint: disable=import-error,unused-import
 
 FORMATTER_MAP = {
+    'acceleration': lambda x: x,
     'date': lambda ns: None if ns is None else int(ns / 10**6),
     'datetime': lambda ns: None if ns is None else int(ns / 10**6),
+    'distance': lambda x: x,
     'filesize': lambda x: None if x is None else int(x),
     'float': float,
     'icon[]': lambda x: x,
@@ -21,6 +23,7 @@ FORMATTER_MAP = {
     'pill[]': lambda x: x,
     'rellink': lambda x: x,
     'route': lambda x: x,
+    'speed': lambda x: x,
     'string': lambda x: x,
     'timedelta': lambda ns: None if ns is None else int(ns / 10**6),
 }
