@@ -38,7 +38,7 @@ def ros2cv(msg, scale=1, offset=0):
     return imgmsg_to_cv2(msg, 'mono8' if mono else 'bgr8')
 
 
-@marv.node(File)
+@marv.node(File, version=1)
 @marv.input('stream', foreach=marv.select(messages, IMAGE_MSG_TYPES))
 @marv.input('speed', default=4)
 @marv.input('convert_32FC1_scale', default=1)
@@ -78,6 +78,9 @@ def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):  # pylint:
                     '-framerate', str(framerate),
                     '-i', '-',
                     '-c:v', 'libvpx-vp9',
+                    '-keyint_min', '25', '-g', '25',
+                    '-tile-columns', '4', '-frame-parallel', '1',
+                    '-an', '-f', 'webm', '-dash', '1',
                     '-pix_fmt', 'yuv420p',
                     '-loglevel', 'error',
                     '-threads', '8',
