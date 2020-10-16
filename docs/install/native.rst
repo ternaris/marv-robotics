@@ -6,9 +6,6 @@
 Native
 ======
 
-MARV Robotics is implemented in Python using the MARV framework. Most of its Python dependencies will be installed via Python's package management tools. Apart from these, ROS and some system libraries need to be installed, as outlined in the following section.
-
-
 Prerequisites
 -------------
 
@@ -16,15 +13,15 @@ Prerequisites
   <https://github.com/ternaris/marv-robotics>`_
 
 
-System dependenices
+System dependencies
 -------------------
 
-MARV Robotics needs Python 3.7 and ships all components to open bag files and process ROS messages. If you need any ROS libraries for your nodes, please let us know if we can assist making them available for Python 3.7.
+MARV Robotics needs Python 3.8 and ships all components to open bag files and process ROS messages (ROS1 and ROS2). On top of Ubuntu focal ROS1 and ROS2 releases are available using Python 3.8. Please let us know if you experience any issues or need support for an older version of Python.
 
-Ubuntu bionic
-^^^^^^^^^^^^^
+Ubuntu focal
+^^^^^^^^^^^^
 
-In general, MARV Robotics works on any Linux system. For Ubuntu bionic the following will install the necessary system dependencies.
+In general, MARV Robotics works on any Linux system. For Ubuntu focal the following will install the necessary system dependencies.
 
 .. code-block:: console
 
@@ -39,9 +36,10 @@ In general, MARV Robotics works on any Linux system. For Ubuntu bionic the follo
                      libpng-dev \
                      libssl-dev \
                      libz-dev \
-                     python3.7 \
-                     python3.7-dev \
-                     python3.7-venv
+                     python3.8 \
+                     python3.8-dev \
+                     python3.8-venv
+
 
 
 MARV Robotics
@@ -84,6 +82,6 @@ Let's switch to your `locally served documentation <http://localhost:8000/docs/i
 Summary
 -------
 
-Based on an existing ROS installation, you installed some system dependencies, created a virtual python environment, installed MARV Robotics into it, and started a webserver with marv and its documentation:
+You installed some system dependencies, created a virtual python environment, installed MARV Robotics into it, and started a webserver with marv and its documentation:
 
 Now you are ready to `setup a basic site <../tutorial/setup-basic-site.html>`_.
