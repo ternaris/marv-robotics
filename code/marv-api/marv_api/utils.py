@@ -3,6 +3,7 @@
 
 import os
 import sys
+from contextlib import contextmanager
 from importlib import import_module
 from subprocess import Popen
 
@@ -35,6 +36,27 @@ def exclusive_setitem(dct, key, value, exc_class=KeyError):
     if key in dct:
         raise exc_class(f'{key!r} already in dictionary')
     dct[key] = value
+
+
+@contextmanager
+def launch_pdb_on_exception(launch=True):
+    """Return contextmanager launching pdb on exception.
+
+    Example:
+      Toggle launch behavior via env variable::
+
+          with launch_pdb_on_exception(os.environ.get('PDB')):
+              cli()
+
+    """
+    if launch:
+        try:
+            yield
+        except Exception:  # pylint: disable=broad-except
+            import pdb  # pylint: disable=import-outside-toplevel
+            pdb.xpm()  # pylint: disable=no-member
+    else:
+        yield
 
 
 def popattr(obj, name, default=NOTSET):
