@@ -10,8 +10,8 @@ from marv_pycapnp.types_capnp import (BoolValue, DataValue, Float32Value, Float6
                                       Int16Value, Int32Value, Int64Value, TextValue, TimedBool,
                                       TimedData, TimedFloat32, TimedFloat64, TimedInt8, TimedInt16,
                                       TimedInt32, TimedInt64, TimedText, TimedUInt8, TimedUInt16,
-                                      TimedUInt32, TimedUInt64, UInt8Value, UInt16Value,
-                                      UInt32Value, UInt64Value)
+                                      TimedUInt32, TimedUInt64, TimelineEvent, Timeslice,
+                                      UInt8Value, UInt16Value, UInt32Value, UInt64Value)
 
 # pylint: enable=no-name-in-module
 
@@ -26,4 +26,5 @@ __all__ = (
     'TimedFloat32', 'TimedFloat64',
     'TimedInt8', 'TimedInt16', 'TimedInt32', 'TimedInt64',
     'TimedUInt8', 'TimedUInt16', 'TimedUInt32', 'TimedUInt64',
+    'TimelineEvent', 'Timeslice',
 )

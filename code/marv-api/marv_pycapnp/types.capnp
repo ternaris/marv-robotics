@@ -123,6 +123,18 @@ struct TimedData {
   timestamp @1 :Timestamp;
 }
 
+struct Timeslice {
+  start @0 :Timestamp;
+  # Start of slice
+  stop @1 :Timestamp;
+  # End of slice (exclusive)
+}
+
+struct TimelineEvent {
+  time @0 :Timestamp;
+  type @1 :Text;
+  payload @2 :Text;
+}
 
 
 # Below here unused so far
