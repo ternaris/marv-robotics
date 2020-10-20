@@ -18,17 +18,21 @@ Upcoming (unreleased)
 Added
 ~~~~~
 - Plotly widget
-- PDF widget (EE)
-- PDF section to display PDF files contained in dataset (EE)
 - Tests for image format conversions
 - Support for sensor_msgs/CompressedImage in cam nodes `#78`_
 - Warnings if rosbag2 contains subdirectories or files not listed in metadata.yaml
 - Directory-based scanner as alternative to the default rosbag record set-based scanner
-- Support finding and reading metadata of rosbag2 datasets (EE); CE got support in :ref:`v20.08.0` already
 - Pure-python rosbag2 reader
-- Support reading and deserializing of rosbag2 datasets (EE); CE got support in :ref:`v20.08.0` already
 - Log warning message from node Abort exception
 - New collection query API
+- Formatters for distance, speed, and acceleration
+- Nodes extracting basic motion parameters
+- PDF widget (EE)
+- PDF section to display PDF files contained in dataset (EE)
+- Support finding and reading metadata of rosbag2 datasets (EE); CE got support in :ref:`v20.08.0` already
+- Support reading and deserializing of rosbag2 datasets (EE); CE got support in :ref:`v20.08.0` already
+- Extraction and visualization of autonomous distance driven (Automotive)
+- Support for DMV reporting workflows (Automotive)
 
 Changed
 ~~~~~~~
@@ -43,6 +47,7 @@ Changed
 - Check that @marv.node() decorator is called before being applied
 - Require Python 3.8 for new language features; if you need support for Python 3.7 please let us know
 - Switch CE docker image base to plain Ubuntu focal as we don't have any external ROS dependencies anymore
+- Changed ffmpeg parameters to improve web streaming
 
 Deprecated
 ~~~~~~~~~~
@@ -62,6 +67,7 @@ Fixed
 - Conversion of YUV422 encoded images
 - Return HTTP bad request from query API on unknown filter names `#83`_
 - Pass user argument to database method from marv show cli command `#87`_
+- Enabled cloned nodes as input for cloning
 - Authentication using OAuth2 webflow in Firefox (EE)
 - Prevent worker from restarting in case of errors during marv serve startup
 - Let len, min, max, and sum config functions handle None values
