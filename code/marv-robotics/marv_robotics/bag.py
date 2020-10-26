@@ -62,7 +62,7 @@ def _scan_rosbag2(log, dirpath, dirnames, filenames):
     if extra := set(filenames).difference(setfiles):
         log.warning('Ignoring files not listed in metadata.yaml %s: %r', dirpath, sorted(extra))
 
-    return DatasetInfo(dirpath.name, setfiles)
+    return DatasetInfo(Path(dirpath).name, setfiles)
 
 
 def dirscan(dirpath, dirnames, filenames):

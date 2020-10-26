@@ -160,7 +160,7 @@ def test_scan_with_rosbag2(caplog, tmpdir):
     # Extra dirs and files in rosbag2 are ignored and trigger warning
     dirnames = ['extradir']
     with caplog.at_level(logging.WARNING):
-        rv = scan(rb2, dirnames, ['metadata.yaml', 'foo.db3', 'bar.db3', 'extrafile'])
+        rv = scan(str(rb2), dirnames, ['metadata.yaml', 'foo.db3', 'bar.db3', 'extrafile'])
     assert rv == [DSI('rb2', ['metadata.yaml', 'foo.db3', 'bar.db3'])]
     assert dirnames == []
     assert caplog.record_tuples == [
@@ -174,7 +174,7 @@ def test_scan_with_rosbag2(caplog, tmpdir):
     caplog.clear()
     dirnames = []
     with caplog.at_level(logging.WARNING):
-        rv = scan(rb2, dirnames, ['metadata.yaml', 'foo.db3', 'bar.db3'])
+        rv = scan(str(rb2), dirnames, ['metadata.yaml', 'foo.db3', 'bar.db3'])
     assert rv == [DSI('rb2', ['metadata.yaml', 'foo.db3', 'bar.db3'])]
     assert caplog.record_tuples == []
 
@@ -197,7 +197,7 @@ def test_scan_not_a_rosbag2(caplog, tmpdir):
     # Extra dirs and files in rosbag2 are ignored and trigger warning
     dirnames = ['extradir']
     with caplog.at_level(logging.WARNING):
-        rv = scan(rb2, dirnames, ['metadata.yaml', 'foo.db3', 'bar.db3', 'extrafile'])
+        rv = scan(str(rb2), dirnames, ['metadata.yaml', 'foo.db3', 'bar.db3', 'extrafile'])
     assert len(rv) == 0
     assert dirnames == ['extradir']
     assert caplog.record_tuples == []
@@ -239,6 +239,6 @@ def test_dirscan_with_rosbag2(caplog, tmpdir):
     }))
     dirnames = ['extradir']
     with caplog.at_level(logging.WARNING):
-        rv = dirscan(rb2, dirnames, ['metadata.yaml', 'foo.db3', 'bar.db3'])
+        rv = dirscan(str(rb2), dirnames, ['metadata.yaml', 'foo.db3', 'bar.db3'])
     assert rv == [DSI('rb2', ['metadata.yaml', 'foo.db3', 'bar.db3'])]
     assert dirnames == []
