@@ -38,6 +38,8 @@ class Inputs(Model):
         """Turn Node inputs into streams."""
         if hasattr(val, '__marv_node__'):
             return Stream(node=val.__marv_node__)
+        if isinstance(val, Node):
+            return Stream(node=val)
         return val
 
 
