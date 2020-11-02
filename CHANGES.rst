@@ -64,6 +64,7 @@ Fixed
 - Pass user argument to database method from marv show cli command `#87`_
 - Authentication using OAuth2 webflow in Firefox (EE)
 - Prevent worker from restarting in case of errors during marv serve startup
+- Let len, min, max, and sum config functions handle None values
 
 Security
 ~~~~~~~~
@@ -98,9 +99,9 @@ Changed
 - Use docker entry point from checkout without rebuilding image
 - Support all json literals in config file s-expressions and relax whitespace handling
 - Update all python dependencies
-- Cleanup home directoy cache in docker images (CE)
+- Cleanup home directory cache in docker images (CE)
 - Switch to Python 3.8 while keeping support for Python 3.7
-- Create marv user upon startup with uid and gid of user starting it; remove the need to rebuild image to that end
+- Create marv user upon startup with uid and gid of user starting it; remove the need to rebuild image to that end (CE)
 
 Fixed
 ~~~~~
