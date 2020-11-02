@@ -63,6 +63,7 @@ Fixed
 - Return HTTP bad request from query API on unknown filter names `#83`_
 - Pass user argument to database method from marv show cli command `#87`_
 - Authentication using OAuth2 webflow in Firefox (EE)
+- Prevent worker from restarting in case of errors during marv serve startup
 
 Security
 ~~~~~~~~
