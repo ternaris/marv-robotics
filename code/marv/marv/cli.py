@@ -9,6 +9,7 @@ import json
 import signal
 import sqlite3
 import sys
+import traceback
 from contextlib import asynccontextmanager
 from functools import reduce
 from logging import getLogger
@@ -198,17 +199,30 @@ def marvcli_serve(host, port, certfile, keyfile, approot):
     config = get_site_config()
 
     async def app_factory():
+        """App factory used inside of worker.
+
+        Note:
+            Terminates execution via sys.exit(4) to prevent master from restarting worker.
+
+        """
         try:
             site = await Site.create(config)
-            application = App(site, app_root=approot).aioapp
-        except (sqlite3.OperationalError, DBNotInitialized) as e:
-            err(f'{e!r}\nDid you run marv init?', exit=1)
-        except DBVersionError as e:
-            err(f'{e!r}\n'
+            try:
+                application = App(site, app_root=approot).aioapp
+            except Exception:  # pylint: disable=broad-except
+                await site.destroy()
+                raise
+        except (sqlite3.OperationalError, DBNotInitialized) as exc:
+            err(f'{exc!r}\nDid you run marv init?', exit=4)
+        except DBVersionError as exc:
+            err(f'{exc!r}\n'
                 'Existing database is not compatible with this version of MARV. '
-                'Check the migration instructions.', exit=1)
-        except PermissionError as e:
-            err(e, exit=1)
+                'Check the migration instructions.', exit=4)
+        except (PermissionError, SiteError) as exc:
+            err(exc, exit=4)
+        except Exception:  # pylint: disable=broad-except
+            traceback.print_exc()
+            sys.exit(4)
         return application
 
     GunicornApplication(app_factory, f'{host}:{port}', certfile, keyfile).run()
