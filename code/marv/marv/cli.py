@@ -645,7 +645,7 @@ async def marvcli_show(datasets):
       marv query --col=* | xargs marv show   # show all datasets
     """
     async with create_site() as site:
-        datasets = await site.db.get_datasets_by_setids(datasets, prefetch=['files'])
+        datasets = await site.db.get_datasets_by_setids(datasets, prefetch=['files'], user='::')
         yamldoc = SHOW_TEMPLATE.render(datasets=datasets)
         echo(yamldoc, end='')
 
