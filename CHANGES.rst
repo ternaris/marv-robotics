@@ -61,6 +61,7 @@ Fixed
 ~~~~~
 - Conversion of YUV422 encoded images
 - Return HTTP bad request from query API on unknown filter names `#83`_
+- Pass user argument to database method from marv show cli command `#87`_
 - Authentication using OAuth2 webflow in Firefox (EE)
 
 Security
@@ -70,6 +71,7 @@ Security
 .. _#72: https://gitlab.com/ternaris/marv-robotics/issues/72
 .. _#78: https://gitlab.com/ternaris/marv-robotics/issues/78
 .. _#83: https://gitlab.com/ternaris/marv-robotics/issues/83
+.. _#87: https://gitlab.com/ternaris/marv-robotics/issues/87
 
 
 .. _v20.08.0:
