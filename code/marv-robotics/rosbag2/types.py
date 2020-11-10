@@ -1531,6 +1531,444 @@ class autoware_auto_msgs__msg__VehicleControlCommand:
     rear_wheel_angle_rad: Any
 
 
+@dataclass
+class automotive_navigation_msgs__msg__CommandWithHandshake:
+    """Class for automotive_navigation_msgs/msg/CommandWithHandshake."""
+
+    header: Any
+    msg_counter: Any
+    command: Any
+
+
+@dataclass
+class automotive_navigation_msgs__msg__DesiredDestination:
+    """Class for automotive_navigation_msgs/msg/DesiredDestination."""
+
+    header: Any
+    msg_counter: Any
+    valid: Any
+    latitude: Any
+    longitude: Any
+
+
+@dataclass
+class automotive_navigation_msgs__msg__Direction:
+    """Class for automotive_navigation_msgs/msg/Direction."""
+
+    header: Any
+    direction: Any
+
+
+@dataclass
+class automotive_navigation_msgs__msg__DistanceToDestination:
+    """Class for automotive_navigation_msgs/msg/DistanceToDestination."""
+
+    header: Any
+    msg_counter: Any
+    distance: Any
+
+
+@dataclass
+class automotive_navigation_msgs__msg__LaneBoundary:
+    """Class for automotive_navigation_msgs/msg/LaneBoundary."""
+
+    style: Any
+    color: Any
+    line: Any
+
+
+@dataclass
+class automotive_navigation_msgs__msg__LaneBoundaryArray:
+    """Class for automotive_navigation_msgs/msg/LaneBoundaryArray."""
+
+    boundaries: Any
+
+
+@dataclass
+class automotive_navigation_msgs__msg__ModuleState:
+    """Class for automotive_navigation_msgs/msg/ModuleState."""
+
+    header: Any
+    name: Any
+    state: Any
+    info: Any
+
+
+@dataclass
+class automotive_navigation_msgs__msg__PointOfInterest:
+    """Class for automotive_navigation_msgs/msg/PointOfInterest."""
+
+    guid: Any
+    latitude: Any
+    longitude: Any
+    params: Any
+
+
+@dataclass
+class automotive_navigation_msgs__msg__PointOfInterestArray:
+    """Class for automotive_navigation_msgs/msg/PointOfInterestArray."""
+
+    header: Any
+    update_num: Any
+    point_list: Any
+
+
+@dataclass
+class automotive_navigation_msgs__msg__PointOfInterestRequest:
+    """Class for automotive_navigation_msgs/msg/PointOfInterestRequest."""
+
+    header: Any
+    name: Any
+    module_name: Any
+    request_id: Any
+    cancel: Any
+    update_num: Any
+    guid_valid: Any
+    guid: Any
+    tolerance: Any
+
+
+@dataclass
+class automotive_navigation_msgs__msg__PointOfInterestResponse:
+    """Class for automotive_navigation_msgs/msg/PointOfInterestResponse."""
+
+    header: Any
+    name: Any
+    module_name: Any
+    request_id: Any
+    update_num: Any
+    point_statuses: Any
+
+
+@dataclass
+class automotive_navigation_msgs__msg__PointOfInterestStatus:
+    """Class for automotive_navigation_msgs/msg/PointOfInterestStatus."""
+
+    guid: Any
+    distance: Any
+    heading: Any
+    x_position: Any
+    y_position: Any
+    params: Any
+
+
+@dataclass
+class automotive_navigation_msgs__msg__RoadNetworkBoundaries:
+    """Class for automotive_navigation_msgs/msg/RoadNetworkBoundaries."""
+
+    header: Any
+    road_network_boundaries: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__AdaptiveCruiseControlCommand:
+    """Class for automotive_platform_msgs/msg/AdaptiveCruiseControlCommand."""
+
+    header: Any
+    msg_counter: Any
+    set_speed: Any
+    set: Any
+    resume: Any
+    cancel: Any
+    speed_up: Any
+    slow_down: Any
+    further: Any
+    closer: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__AdaptiveCruiseControlSettings:
+    """Class for automotive_platform_msgs/msg/AdaptiveCruiseControlSettings."""
+
+    header: Any
+    set_speed: Any
+    following_spot: Any
+    min_percent: Any
+    step_percent: Any
+    cipv_percent: Any
+    max_distance: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__BlindSpotIndicators:
+    """Class for automotive_platform_msgs/msg/BlindSpotIndicators."""
+
+    header: Any
+    left: Any
+    right: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__BrakeCommand:
+    """Class for automotive_platform_msgs/msg/BrakeCommand."""
+
+    header: Any
+    brake_pedal: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__BrakeFeedback:
+    """Class for automotive_platform_msgs/msg/BrakeFeedback."""
+
+    header: Any
+    brake_pedal: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__CabinReport:
+    """Class for automotive_platform_msgs/msg/CabinReport."""
+
+    header: Any
+    door_open_front_right: Any
+    door_open_front_left: Any
+    door_open_rear_right: Any
+    door_open_rear_left: Any
+    hood_open: Any
+    trunk_open: Any
+    passenger_present: Any
+    passenger_airbag_enabled: Any
+    seatbelt_engaged_driver: Any
+    seatbelt_engaged_passenger: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__CurvatureFeedback:
+    """Class for automotive_platform_msgs/msg/CurvatureFeedback."""
+
+    header: Any
+    curvature: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__DriverCommands:
+    """Class for automotive_platform_msgs/msg/DriverCommands."""
+
+    msg_counter: Any
+    engage: Any
+    disengage: Any
+    speed_up: Any
+    slow_down: Any
+    further: Any
+    closer: Any
+    right_turn: Any
+    left_turn: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__Gear:
+    """Class for automotive_platform_msgs/msg/Gear."""
+
+    gear: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__GearCommand:
+    """Class for automotive_platform_msgs/msg/GearCommand."""
+
+    header: Any
+    command: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__GearFeedback:
+    """Class for automotive_platform_msgs/msg/GearFeedback."""
+
+    header: Any
+    current_gear: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__HillStartAssist:
+    """Class for automotive_platform_msgs/msg/HillStartAssist."""
+
+    header: Any
+    active: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__Speed:
+    """Class for automotive_platform_msgs/msg/Speed."""
+
+    header: Any
+    module_name: Any
+    speed: Any
+    acceleration_limit: Any
+    deceleration_limit: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__SpeedMode:
+    """Class for automotive_platform_msgs/msg/SpeedMode."""
+
+    header: Any
+    mode: Any
+    speed: Any
+    acceleration_limit: Any
+    deceleration_limit: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__SpeedPedals:
+    """Class for automotive_platform_msgs/msg/SpeedPedals."""
+
+    header: Any
+    mode: Any
+    throttle: Any
+    brake: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__Steer:
+    """Class for automotive_platform_msgs/msg/Steer."""
+
+    header: Any
+    module_name: Any
+    curvature: Any
+    max_curvature_rate: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__SteerMode:
+    """Class for automotive_platform_msgs/msg/SteerMode."""
+
+    header: Any
+    mode: Any
+    curvature: Any
+    max_curvature_rate: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__SteerWheel:
+    """Class for automotive_platform_msgs/msg/SteerWheel."""
+
+    header: Any
+    mode: Any
+    angle: Any
+    angle_velocity: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__SteeringCommand:
+    """Class for automotive_platform_msgs/msg/SteeringCommand."""
+
+    header: Any
+    steering_wheel_angle: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__SteeringFeedback:
+    """Class for automotive_platform_msgs/msg/SteeringFeedback."""
+
+    header: Any
+    steering_wheel_angle: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__ThrottleCommand:
+    """Class for automotive_platform_msgs/msg/ThrottleCommand."""
+
+    header: Any
+    throttle_pedal: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__ThrottleFeedback:
+    """Class for automotive_platform_msgs/msg/ThrottleFeedback."""
+
+    header: Any
+    throttle_pedal: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__TurnSignalCommand:
+    """Class for automotive_platform_msgs/msg/TurnSignalCommand."""
+
+    header: Any
+    mode: Any
+    turn_signal: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__UserInputADAS:
+    """Class for automotive_platform_msgs/msg/UserInputADAS."""
+
+    header: Any
+    btn_cc_on: Any
+    btn_cc_off: Any
+    btn_cc_on_off: Any
+    btn_cc_set_inc: Any
+    btn_cc_set_dec: Any
+    btn_cc_res: Any
+    btn_cc_cncl: Any
+    btn_cc_res_cncl: Any
+    btn_acc_gap_inc: Any
+    btn_acc_gap_dec: Any
+    btn_lka_on: Any
+    btn_lka_off: Any
+    btn_lka_on_off: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__UserInputMedia:
+    """Class for automotive_platform_msgs/msg/UserInputMedia."""
+
+    header: Any
+    btn_vol_up: Any
+    btn_vol_down: Any
+    btn_mute: Any
+    btn_next: Any
+    btn_prev: Any
+    btn_next_hang_up: Any
+    btn_prev_answer: Any
+    btn_hang_up: Any
+    btn_answer: Any
+    btn_play: Any
+    btn_pause: Any
+    btn_play_pause: Any
+    btn_mode: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__UserInputMenus:
+    """Class for automotive_platform_msgs/msg/UserInputMenus."""
+
+    header: Any
+    str_whl_left_btn_left: Any
+    str_whl_left_btn_down: Any
+    str_whl_left_btn_right: Any
+    str_whl_left_btn_up: Any
+    str_whl_left_btn_ok: Any
+    str_whl_right_btn_left: Any
+    str_whl_right_btn_down: Any
+    str_whl_right_btn_right: Any
+    str_whl_right_btn_up: Any
+    str_whl_right_btn_ok: Any
+    cntr_cons_btn_left: Any
+    cntr_cons_btn_down: Any
+    cntr_cons_btn_right: Any
+    cntr_cons_btn_up: Any
+    cntr_cons_btn_ok: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__VelocityAccel:
+    """Class for automotive_platform_msgs/msg/VelocityAccel."""
+
+    header: Any
+    velocity: Any
+    accleration: Any
+
+
+@dataclass
+class automotive_platform_msgs__msg__VelocityAccelCov:
+    """Class for automotive_platform_msgs/msg/VelocityAccelCov."""
+
+    header: Any
+    velocity: Any
+    accleration: Any
+    covariance: Any
+
+
 FIELDDEFS = {
     'builtin_interfaces/msg/Time': [
         ('sec', [1, 'int32']),
@@ -2411,5 +2849,279 @@ FIELDDEFS = {
         ('velocity_mps', [1, 'float32']),
         ('front_wheel_angle_rad', [1, 'float32']),
         ('rear_wheel_angle_rad', [1, 'float32']),
+    ],
+    'automotive_navigation_msgs/msg/CommandWithHandshake': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('msg_counter', [1, 'uint8']),
+        ('command', [1, 'int16']),
+    ],
+    'automotive_navigation_msgs/msg/DesiredDestination': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('msg_counter', [1, 'uint8']),
+        ('valid', [1, 'uint16']),
+        ('latitude', [1, 'float64']),
+        ('longitude', [1, 'float64']),
+    ],
+    'automotive_navigation_msgs/msg/Direction': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('direction', [1, 'int8']),
+    ],
+    'automotive_navigation_msgs/msg/DistanceToDestination': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('msg_counter', [1, 'uint8']),
+        ('distance', [1, 'float32']),
+    ],
+    'automotive_navigation_msgs/msg/LaneBoundary': [
+        ('style', [1, 'uint8']),
+        ('color', [1, 'uint8']),
+        ('line', [4, [2, 'geometry_msgs/msg/Point']]),
+    ],
+    'automotive_navigation_msgs/msg/LaneBoundaryArray': [
+        ('boundaries', [4, [2, 'automotive_navigation_msgs/msg/LaneBoundary']]),
+    ],
+    'automotive_navigation_msgs/msg/ModuleState': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('name', [1, 'string']),
+        ('state', [1, 'string']),
+        ('info', [1, 'string']),
+    ],
+    'automotive_navigation_msgs/msg/PointOfInterest': [
+        ('guid', [1, 'uint64']),
+        ('latitude', [1, 'float64']),
+        ('longitude', [1, 'float64']),
+        ('params', [1, 'string']),
+    ],
+    'automotive_navigation_msgs/msg/PointOfInterestArray': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('update_num', [1, 'uint16']),
+        ('point_list', [4, [2, 'automotive_navigation_msgs/msg/PointOfInterest']]),
+    ],
+    'automotive_navigation_msgs/msg/PointOfInterestRequest': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('name', [1, 'string']),
+        ('module_name', [1, 'string']),
+        ('request_id', [1, 'uint16']),
+        ('cancel', [1, 'uint16']),
+        ('update_num', [1, 'uint16']),
+        ('guid_valid', [1, 'uint16']),
+        ('guid', [1, 'uint64']),
+        ('tolerance', [1, 'float32']),
+    ],
+    'automotive_navigation_msgs/msg/PointOfInterestResponse': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('name', [1, 'string']),
+        ('module_name', [1, 'string']),
+        ('request_id', [1, 'uint16']),
+        ('update_num', [1, 'uint16']),
+        ('point_statuses', [4, [2, 'automotive_navigation_msgs/msg/PointOfInterestStatus']]),
+    ],
+    'automotive_navigation_msgs/msg/PointOfInterestStatus': [
+        ('guid', [1, 'uint64']),
+        ('distance', [1, 'float32']),
+        ('heading', [1, 'float32']),
+        ('x_position', [1, 'float32']),
+        ('y_position', [1, 'float32']),
+        ('params', [1, 'string']),
+    ],
+    'automotive_navigation_msgs/msg/RoadNetworkBoundaries': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('road_network_boundaries', [4, [2, 'automotive_navigation_msgs/msg/LaneBoundaryArray']]),
+    ],
+    'automotive_platform_msgs/msg/AdaptiveCruiseControlCommand': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('msg_counter', [1, 'uint8']),
+        ('set_speed', [1, 'float32']),
+        ('set', [1, 'uint16']),
+        ('resume', [1, 'uint16']),
+        ('cancel', [1, 'uint16']),
+        ('speed_up', [1, 'uint16']),
+        ('slow_down', [1, 'uint16']),
+        ('further', [1, 'uint16']),
+        ('closer', [1, 'uint16']),
+    ],
+    'automotive_platform_msgs/msg/AdaptiveCruiseControlSettings': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('set_speed', [1, 'float32']),
+        ('following_spot', [1, 'uint16']),
+        ('min_percent', [1, 'float32']),
+        ('step_percent', [1, 'float32']),
+        ('cipv_percent', [1, 'float32']),
+        ('max_distance', [1, 'float32']),
+    ],
+    'automotive_platform_msgs/msg/BlindSpotIndicators': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('left', [1, 'bool']),
+        ('right', [1, 'bool']),
+    ],
+    'automotive_platform_msgs/msg/BrakeCommand': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('brake_pedal', [1, 'float32']),
+    ],
+    'automotive_platform_msgs/msg/BrakeFeedback': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('brake_pedal', [1, 'float32']),
+    ],
+    'automotive_platform_msgs/msg/CabinReport': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('door_open_front_right', [1, 'bool']),
+        ('door_open_front_left', [1, 'bool']),
+        ('door_open_rear_right', [1, 'bool']),
+        ('door_open_rear_left', [1, 'bool']),
+        ('hood_open', [1, 'bool']),
+        ('trunk_open', [1, 'bool']),
+        ('passenger_present', [1, 'bool']),
+        ('passenger_airbag_enabled', [1, 'bool']),
+        ('seatbelt_engaged_driver', [1, 'bool']),
+        ('seatbelt_engaged_passenger', [1, 'bool']),
+    ],
+    'automotive_platform_msgs/msg/CurvatureFeedback': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('curvature', [1, 'float32']),
+    ],
+    'automotive_platform_msgs/msg/DriverCommands': [
+        ('msg_counter', [1, 'uint8']),
+        ('engage', [1, 'uint16']),
+        ('disengage', [1, 'uint16']),
+        ('speed_up', [1, 'uint16']),
+        ('slow_down', [1, 'uint16']),
+        ('further', [1, 'uint16']),
+        ('closer', [1, 'uint16']),
+        ('right_turn', [1, 'uint16']),
+        ('left_turn', [1, 'uint16']),
+    ],
+    'automotive_platform_msgs/msg/Gear': [
+        ('gear', [1, 'uint8']),
+    ],
+    'automotive_platform_msgs/msg/GearCommand': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('command', [2, 'automotive_platform_msgs/msg/Gear']),
+    ],
+    'automotive_platform_msgs/msg/GearFeedback': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('current_gear', [2, 'automotive_platform_msgs/msg/Gear']),
+    ],
+    'automotive_platform_msgs/msg/HillStartAssist': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('active', [1, 'bool']),
+    ],
+    'automotive_platform_msgs/msg/Speed': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('module_name', [1, 'string']),
+        ('speed', [1, 'float32']),
+        ('acceleration_limit', [1, 'float32']),
+        ('deceleration_limit', [1, 'float32']),
+    ],
+    'automotive_platform_msgs/msg/SpeedMode': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('mode', [1, 'uint16']),
+        ('speed', [1, 'float32']),
+        ('acceleration_limit', [1, 'float32']),
+        ('deceleration_limit', [1, 'float32']),
+    ],
+    'automotive_platform_msgs/msg/SpeedPedals': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('mode', [1, 'uint16']),
+        ('throttle', [1, 'float32']),
+        ('brake', [1, 'float32']),
+    ],
+    'automotive_platform_msgs/msg/Steer': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('module_name', [1, 'string']),
+        ('curvature', [1, 'float32']),
+        ('max_curvature_rate', [1, 'float32']),
+    ],
+    'automotive_platform_msgs/msg/SteerMode': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('mode', [1, 'uint16']),
+        ('curvature', [1, 'float32']),
+        ('max_curvature_rate', [1, 'float32']),
+    ],
+    'automotive_platform_msgs/msg/SteerWheel': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('mode', [1, 'uint16']),
+        ('angle', [1, 'float32']),
+        ('angle_velocity', [1, 'float32']),
+    ],
+    'automotive_platform_msgs/msg/SteeringCommand': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('steering_wheel_angle', [1, 'float32']),
+    ],
+    'automotive_platform_msgs/msg/SteeringFeedback': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('steering_wheel_angle', [1, 'float32']),
+    ],
+    'automotive_platform_msgs/msg/ThrottleCommand': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('throttle_pedal', [1, 'float32']),
+    ],
+    'automotive_platform_msgs/msg/ThrottleFeedback': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('throttle_pedal', [1, 'float32']),
+    ],
+    'automotive_platform_msgs/msg/TurnSignalCommand': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('mode', [1, 'uint16']),
+        ('turn_signal', [1, 'uint8']),
+    ],
+    'automotive_platform_msgs/msg/UserInputADAS': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('btn_cc_on', [1, 'bool']),
+        ('btn_cc_off', [1, 'bool']),
+        ('btn_cc_on_off', [1, 'bool']),
+        ('btn_cc_set_inc', [1, 'bool']),
+        ('btn_cc_set_dec', [1, 'bool']),
+        ('btn_cc_res', [1, 'bool']),
+        ('btn_cc_cncl', [1, 'bool']),
+        ('btn_cc_res_cncl', [1, 'bool']),
+        ('btn_acc_gap_inc', [1, 'bool']),
+        ('btn_acc_gap_dec', [1, 'bool']),
+        ('btn_lka_on', [1, 'bool']),
+        ('btn_lka_off', [1, 'bool']),
+        ('btn_lka_on_off', [1, 'bool']),
+    ],
+    'automotive_platform_msgs/msg/UserInputMedia': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('btn_vol_up', [1, 'bool']),
+        ('btn_vol_down', [1, 'bool']),
+        ('btn_mute', [1, 'bool']),
+        ('btn_next', [1, 'bool']),
+        ('btn_prev', [1, 'bool']),
+        ('btn_next_hang_up', [1, 'bool']),
+        ('btn_prev_answer', [1, 'bool']),
+        ('btn_hang_up', [1, 'bool']),
+        ('btn_answer', [1, 'bool']),
+        ('btn_play', [1, 'bool']),
+        ('btn_pause', [1, 'bool']),
+        ('btn_play_pause', [1, 'bool']),
+        ('btn_mode', [1, 'bool']),
+    ],
+    'automotive_platform_msgs/msg/UserInputMenus': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('str_whl_left_btn_left', [1, 'bool']),
+        ('str_whl_left_btn_down', [1, 'bool']),
+        ('str_whl_left_btn_right', [1, 'bool']),
+        ('str_whl_left_btn_up', [1, 'bool']),
+        ('str_whl_left_btn_ok', [1, 'bool']),
+        ('str_whl_right_btn_left', [1, 'bool']),
+        ('str_whl_right_btn_down', [1, 'bool']),
+        ('str_whl_right_btn_right', [1, 'bool']),
+        ('str_whl_right_btn_up', [1, 'bool']),
+        ('str_whl_right_btn_ok', [1, 'bool']),
+        ('cntr_cons_btn_left', [1, 'bool']),
+        ('cntr_cons_btn_down', [1, 'bool']),
+        ('cntr_cons_btn_right', [1, 'bool']),
+        ('cntr_cons_btn_up', [1, 'bool']),
+        ('cntr_cons_btn_ok', [1, 'bool']),
+    ],
+    'automotive_platform_msgs/msg/VelocityAccel': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('velocity', [1, 'float32']),
+        ('accleration', [1, 'float32']),
+    ],
+    'automotive_platform_msgs/msg/VelocityAccelCov': [
+        ('header', [2, 'std_msgs/msg/Header']),
+        ('velocity', [1, 'float32']),
+        ('accleration', [1, 'float32']),
+        ('covariance', [1, 'float32']),
     ],
 }
