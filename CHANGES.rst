@@ -86,6 +86,7 @@ Fixed
 - Running nodes referenced by dotted name
 - Yielding marv file objects via marv.push() in addition to plain yielding
 - Listing batch processing during re-initialisation of site
+- Sort connection indices in external rosbag module to align with rosbag play `#72`_
 - Authentication using OAuth2 webflow in Firefox (EE)
 
 Security
