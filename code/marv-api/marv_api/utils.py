@@ -5,6 +5,7 @@ import os
 import sys
 from contextlib import contextmanager
 from importlib import import_module
+from shlex import quote
 from subprocess import Popen
 
 NOTSET = type('NOTSET', (tuple,), {'__repr__': lambda x: '<NOTSET>'})()
@@ -36,6 +37,11 @@ def exclusive_setitem(dct, key, value, exc_class=KeyError):
     if key in dct:
         raise exc_class(f'{key!r} already in dictionary')
     dct[key] = value
+
+
+def joincmd(cmd):
+    """Join list of cmd and args into properly quoted string for shell execution."""
+    return ' '.join([quote(x) for x in cmd])
 
 
 @contextmanager
