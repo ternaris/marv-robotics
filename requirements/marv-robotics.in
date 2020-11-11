@@ -1,8 +1,10 @@
 -r marv-api.in
 lz4
 matplotlib==3.2.*  # TODO: 3.3 breaks in bundle
+mpld3
 numpy
 pillow
+plotly
 pycryptodome
 python-gnupg
 pyyaml

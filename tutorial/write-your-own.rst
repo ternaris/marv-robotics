@@ -241,14 +241,15 @@ In the final section we want to display a table that lists name and size of the 
 
 .. literalinclude:: code/marv_tutorial/__init__.py
     :pyobject: filesize_plot
-    :emphasize-lines: 12-33, 35-46
+    :emphasize-lines: 12-23, 25-28, 30-38, 40-48
 
-Here, we use `matplotlib <https://matplotlib.org/>`_ to create plots and `mpld3 <http://mpld3.github.io/>`_ for serialization to a file and visualization in the browser (EE-only, for CE use the image widget, see above). The file is referenced by the ``mpld3`` widget using ``marv-partial``. This reduces the size of the detail view as the plot data is only loaded once the contents of the section referencing it are displayed. An alternative would be to embed the plot data directly into the plot. This is the only mode of operation for the ``mpld3`` widget and it is the only widget supporting this feature so far.
+There are different approaches to show plotted data in the frontend and here we will showcase three, namely ``plotly``, ``mpld3`` and ``image``.
 
-.. note::
+`Plotly <https://plotly.com/python/>`_ is a graphing library for browser-based interactive graphs. Here we use Plotly's Python interface to create a figure object from the filesize data. After serializing the figure into a JSON file, we create a Plotly widget referencing said file.
 
-   For `plotly <https://plotly.com/python/>`_ as an alternative see :ref:`widget_plotly`.
+`Matplotlib <https://matplotlib.org/>`_ is a widely adopted graphing library in the Python ecosystem. Similar to the Plotly approach we first create a matplotlib figure from the data. Since matplotlib has no builtin support for browser-based plots, we use the `mpld3 <http://mpld3.github.io/>`_ serialization library to export the plot to a JSON file. Mirroring the plotly approach again, we create a mpld3 widget referencing the exported data. Matplotlib has builtin support to export a figure object as an image. Here we choose to export the figure into a ``jpg`` file and display using an image widget, like we have seen before.
 
+Finally, the different plotting outputs are nested into a ``dropdown`` widget, allowing the user to switch between different visualizations.
 
 .. literalinclude:: code/marv_tutorial/__init__.py
     :pyobject: combined_section

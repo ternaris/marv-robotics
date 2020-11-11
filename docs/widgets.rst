@@ -69,8 +69,8 @@ PDF (EE)
 
 .. _widget_dropdown:
 
-Dropdown (EE)
-^^^^^^^^^^^^^
+Dropdown
+^^^^^^^^
 .. code-block:: python
 
    dropdown = {'dropdown': {'widgets': [
@@ -83,8 +83,8 @@ A dropdown menu selects one of a list of widgets to be displayed below; their ti
 
 .. _widget_plotly:
 
-Interactive Plots (EE)
-^^^^^^^^^^^^^^^^^^^^^^
+Interactive Plots
+^^^^^^^^^^^^^^^^^
 
 There are two options for plotting:
   - `matplotlib <https://matplotlib.org/>`_ with `mpld3 <https://mpld3.github.io/>`_; see :ref:`tutorial_combined`

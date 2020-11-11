@@ -172,40 +172,42 @@ def filesize_plot(filesizes):
             break
         sizes.append(size)
 
-    # plot with mpld3
+    # plot with plotly
+    fig = go.Figure(data=go.Scatter(y=sizes))
+
+    # save plotly figure to file
+    plotfile = yield marv.make_file('filesizes_plotly.json')
+    Path(plotfile.path).write_text(fig.to_json())
+
+    # create plotly widget referencing file
+    widget_plotly = {
+        'title': 'Filesizes (plotly)',
+        'plotly': f'marv-partial:{plotfile.relpath}',
+    }
+
+    # plot with matplotlib
     fig = plt.figure()
     axis = fig.add_subplot(1, 1, 1)
     axis.plot(sizes, 'bo')
 
-    # CE: save plot as image
-    plotfile = yield marv.make_file('filesizes.jpg')
-    fig.savefig(plotfile.path)
-    widget_image = {
-        'title': 'Filesizes (image)',
-        'image': {'src': plotfile.relpath},
-    }
-
-    # EE: save mpld3 figure to file
+    # save mpld3 figure to file
     plotfile = yield marv.make_file('filesizes_mpld3.json')
     Path(plotfile.path).write_text(json.dumps(mpld3.fig_to_dict(fig)))
 
-    # EE: create mpld3 plot widget referencing file
+    # create mpld3 plot widget referencing file
     widget_mpld3 = {
         'title': 'Filesizes (mpld3)',
         'mpld3': f'marv-partial:{plotfile.relpath}',
     }
 
-    # EE: plot with plotly
-    fig = go.Figure(data=go.Scatter(y=sizes))
+    # save plot as image
+    plotfile = yield marv.make_file('filesizes.jpg')
+    fig.savefig(plotfile.path)
 
-    # EE: save plotly figure to file
-    plotfile = yield marv.make_file('filesizes_plotly.json')
-    Path(plotfile.path).write_text(fig.to_json())
-
-    # EE: create plotly widget referencing file
-    widget_plotly = {
-        'title': 'Filesizes (plotly)',
-        'plotly': f'marv-partial:{plotfile.relpath}',
+    # create image widget referencing file
+    widget_image = {
+        'title': 'Filesizes (image)',
+        'image': {'src': plotfile.relpath},
     }
 
     # Let the user choose which widget to show with a dropdown
@@ -213,9 +215,9 @@ def filesize_plot(filesizes):
         'title': 'Filesize plots',
         'dropdown': {
             'widgets': [
-                widget_image,
-                widget_mpld3,
                 widget_plotly,
+                widget_mpld3,
+                widget_image,
             ],
         },
     })
