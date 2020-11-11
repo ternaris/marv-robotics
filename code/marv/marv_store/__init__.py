@@ -124,6 +124,7 @@ class Store(Mapping, LoggerMixin):
     def _streaminfo(self, stream):
         return {'name': stream.name,
                 'header': stream.handle.header,
+                'version': stream.handle.node.version,
                 'streams': {x.name: self._streaminfo(x) for x in (stream.streams or {}).values()}}
 
     def load(self, setdir, node=None, nodename=None, default=NOTSET):
