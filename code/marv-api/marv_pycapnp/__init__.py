@@ -158,7 +158,16 @@ class Wrapper:
         # pylint: disable=protected-access
         if field_name in self._reader.schema.fieldnames and self._reader._has(field_name):
             field = self._reader.schema.fields[field_name]
-            return _wrap(getattr(self._reader, name), self._streamdir, self._setdir, field=field)
+            value = getattr(self._reader, name)
+
+            if self._streamdir and name == 'path' and \
+               self._reader.schema.node.displayName == 'marv_nodes/types.capnp:File' and \
+               not os.path.exists(value):
+                relpath = os.path.relpath(value, self._setdir)
+                if relpath[0] == '.':
+                    return os.path.join(self._setdir, relpath[1:])
+
+            return _wrap(value, self._streamdir, self._setdir, field=field)
 
         if name == 'id' and self._reader._has('id0') and self._reader._has('id1'):
             return SetID(self._reader.id0, self._reader.id1)
