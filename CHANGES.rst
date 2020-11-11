@@ -48,6 +48,8 @@ Changed
 - Require Python 3.8 for new language features; if you need support for Python 3.7 please let us know
 - Switch CE docker image base to plain Ubuntu focal as we don't have any external ROS dependencies anymore
 - Changed ffmpeg parameters to improve web streaming
+- Move widget dropdown to CE, previously EE only
+- Move widget mpld3 to CE, previously EE only
 
 Deprecated
 ~~~~~~~~~~
