@@ -331,6 +331,10 @@ class Reader:
 
             basepath = path if ver >= 4 else path.parent
             self.paths = [basepath / x for x in self.metadata['relative_file_paths']]
+            missing = [x for x in self.paths if not x.exists()]
+            if missing:
+                raise ReaderError(f'Some database files are missing: {[str(x) for x in missing]!r}')
+
             topics = [x['topic_metadata'] for x in self.metadata['topics_with_message_count']]
             noncdr = {y for x in topics if (y := x['serialization_format']) != 'cdr'}
             if noncdr:

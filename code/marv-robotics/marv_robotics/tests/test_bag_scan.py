@@ -156,6 +156,8 @@ def test_scan_with_rosbag2(caplog, tmpdir):
             'version': 4,
         },
     }))
+    (rb2 / 'foo.db3').write_text('')
+    (rb2 / 'bar.db3').write_text('')
 
     # Extra dirs and files in rosbag2 are ignored and trigger warning
     dirnames = ['extradir']
@@ -237,6 +239,8 @@ def test_dirscan_with_rosbag2(caplog, tmpdir):
             'version': 4,
         },
     }))
+    (rb2 / 'foo.db3').write_text('')
+    (rb2 / 'bar.db3').write_text('')
     dirnames = ['extradir']
     with caplog.at_level(logging.WARNING):
         rv = dirscan(str(rb2), dirnames, ['metadata.yaml', 'foo.db3', 'bar.db3'])
