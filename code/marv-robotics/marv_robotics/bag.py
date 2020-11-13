@@ -45,13 +45,23 @@ class Baginfo(namedtuple('Baginfo', 'filename basename prefix timestamp idx')):
         return cls(filename, basename, prefix, timestamp, idx)
 
 
+def is_rosbag2(dirpath):
+    metadata = dirpath / 'metadata.yaml'
+    if not metadata.exists():
+        return False
+
+    content = metadata.read_text()
+    return content.startswith('rosbag2_bagfile_information:')
+
+
 def _scan_rosbag2(log, dirpath, dirnames, filenames):
-    if 'metadata.yaml' not in filenames:
+    if 'metadata.yaml' not in filenames or not is_rosbag2(dirpath):
         return None
 
     try:
         reader = rosbag2.Reader(dirpath)
-    except rosbag2.ReaderError:
+    except rosbag2.ReaderError as exc:
+        log.warning('Rosbag2: %s %r', dirpath, exc)
         return None
 
     if dirnames:
@@ -62,7 +72,7 @@ def _scan_rosbag2(log, dirpath, dirnames, filenames):
     if extra := set(filenames).difference(setfiles):
         log.warning('Ignoring files not listed in metadata.yaml %s: %r', dirpath, sorted(extra))
 
-    return DatasetInfo(Path(dirpath).name, setfiles)
+    return DatasetInfo(dirpath.name, setfiles)
 
 
 def dirscan(dirpath, dirnames, filenames):
@@ -76,6 +86,7 @@ def dirscan(dirpath, dirnames, filenames):
 
     """
     log = getLogger(f'{__name__}.dirscan')
+    dirpath = Path(dirpath)
     dataset = _scan_rosbag2(log, dirpath, dirnames, filenames)
     if dataset:
         return [dataset]
@@ -87,7 +98,7 @@ def dirscan(dirpath, dirnames, filenames):
         log.warning('Ignoring subdirectories of dataset %s: %r', dirpath, dirnames[:])
         dirnames[:] = []
 
-    return [DatasetInfo(Path(dirpath).name, filenames)]
+    return [DatasetInfo(dirpath.name, filenames)]
 
 
 def scan(dirpath, dirnames, filenames):  # pylint: disable=unused-argument
@@ -150,7 +161,7 @@ def scan(dirpath, dirnames, filenames):  # pylint: disable=unused-argument
 
     """
     log = getLogger(f'{__name__}.scan')
-    dataset = _scan_rosbag2(log, dirpath, dirnames, filenames)
+    dataset = _scan_rosbag2(log, Path(dirpath), dirnames, filenames)
     if dataset:
         return [dataset]
 
