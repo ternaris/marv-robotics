@@ -281,7 +281,7 @@ class MarvConfig(Model):
     oauth: Dict[str, Tuple[str, ...]] = None
     reverse_proxy: Optional[ReverseProxyEnum] = None
     sessionkey_file: Path = 'sessionkey'
-    staticdir: Path = resource_filename('marv_ludwig', 'static')
+    staticdir: Path = resource_filename('marv', 'app/static')
     storedir: Path = 'store'
     upload_checkpoint_commands: Tuple[str, ...] = None
     venv: Path = 'venv'

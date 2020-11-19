@@ -79,14 +79,12 @@ RUN bash -c '\
     cd ${MARV_VENV} && \
     if [[ -n "${dist}" ]]; then \
         ./bin/pip install --no-index -f ${MARV_VENV}/dist marv=="${version}"; \
-        ./bin/pip install --no-index -f ${MARV_VENV}/dist marv-ludwig=="${version}"; \
         ./bin/pip install --no-index -f ${MARV_VENV}/dist marv-robotics=="${version}"; \
     else \
         rm ${MARV_VENV}/dist; \
         find code -maxdepth 2 -name setup.py -execdir ${MARV_VENV}/bin/pip install --no-deps . \; && \
-        ./bin/pip install marv-ludwig=="${version}" && \
         (source ./bin/activate && ./scripts/build-docs) && \
-        ./bin/pip install -U --no-deps ./code/marv-robotics; \
+        ./bin/pip install -U --no-deps ./code/marv; \
     fi; \
     if [[ -d /root/.cache ]]; then \
         rm -rf /root/.cache/pip /root/.cache/matplotlib && \

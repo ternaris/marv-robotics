@@ -12,4 +12,5 @@ __pycache__/
 /docs/_build/
 /marv_node/testing/_robotics_tests/data/
 /marv/app/docs/
+/marv/app/static/
 /venv

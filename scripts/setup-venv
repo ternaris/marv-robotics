@@ -44,6 +44,3 @@ find code -maxdepth 2 -name setup.py -execdir "$TARGET"/bin/pip install --no-dep
 if [[ -n "$EXTRA_CODE" ]]; then
     find "$EXTRA_CODE" -maxdepth 2 -name setup.py -execdir "$TARGET"/bin/pip install --no-deps $PIP_ARGS . \;
 fi
-
-VERSION="$(grep 'release =' docs/conf.py |cut -d"'" -f2)"
-"$TARGET"/bin/pip install marv-ludwig=="${VERSION}"
