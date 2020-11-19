@@ -45,11 +45,12 @@ Changed
 - Use pydantic to model configuration
 - Validate node output on marv.push() to allow debugging of schema violations in node context
 - Check that @marv.node() decorator is called before being applied
-- Require Python 3.8 for new language features; if you need support for Python 3.7 please let us know
-- Switch CE docker image base to plain Ubuntu focal as we don't have any external ROS dependencies anymore
 - Changed ffmpeg parameters to improve web streaming
-- Move widget dropdown to CE, previously EE only
-- Move widget mpld3 to CE, previously EE only
+- Require Python 3.8 for new language features; if you need support for Python 3.7 please let us know
+- Switch CE docker image base to plain Ubuntu focal as we don't have any external ROS dependencies anymore (CE)
+- Move widget dropdown to CE, previously EE only (CE)
+- Move widget mpld3 to CE, previously EE only (CE)
+- Ship frontend as part of marv python distribution (CE)
 
 Deprecated
 ~~~~~~~~~~
