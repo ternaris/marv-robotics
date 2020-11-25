@@ -6,6 +6,8 @@ persistent=no
 
 [MESSAGES CONTROL]
 disable=fixme,
+        cyclic-import,
+        duplicate-code,
         missing-docstring,
         raise-missing-from,
         redefined-builtin,
