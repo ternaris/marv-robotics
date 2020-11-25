@@ -1,0 +1,36 @@
+#!/bin/sh
+#
+# Copyright 2016 - 2020  Ternaris.
+# SPDX-License-Identifier: Apache-2.0
+
+set -eux
+
+BASE="${1:?BASE is missing}"; shift
+TARGET="${1:?TARGET is missing}"; shift
+
+cd "$(dirname "$(realpath "$0")")"/..
+
+# Build image with site and some test bags, mounting in CI is not reliable
+./scripts/download-test-bags
+docker build --build-arg BUILDKIT_INLINE_CACHE=1 -t "$TARGET" -f - . <<EOF
+FROM $BASE
+COPY sites/example/marv.conf /home/marv/site/marv.conf
+COPY code/marv/marv_node/testing/_robotics_tests/data /scanroot
+RUN chown -R 1000:1000 /home/marv
+EOF
+
+# Start container
+ID=$(docker run --rm --detach \
+    -e DEBUG=1 -e MARV_UID=1000 -e MARV_GID=1000 -e TIMEZONE=Europe/Berlin \
+    "$TARGET")
+{ docker logs -f "$ID" 2>&1 & } | grep -q 'Container startup complete.'
+
+# Scan and run first to give marv server to finish startup as well
+docker exec "$ID" bash -lc 'marv scan'
+docker exec "$ID" bash -lc 'marv run --col=bags'
+
+# Check some routes
+docker exec "$ID" curl -sfI http://localhost:8000/ || (docker logs "$ID"; exit 1)
+docker exec "$ID" curl -sfI http://localhost:8000/main-built.js || (docker logs "$ID"; exit 1)
+docker exec "$ID" curl -sfI http://localhost:8000/marv/api/meta || (docker logs "$ID"; exit 1)
+docker rm -f "$ID"

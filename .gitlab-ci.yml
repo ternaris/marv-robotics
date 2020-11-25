@@ -1,9 +1,12 @@
 variables:
+  DOCKER_BUILDKIT: 1
   DOCKER_DRIVER: overlay2
-  GITLAB_IMAGE: ${CI_REGISTRY_IMAGE}${GITLAB_IMAGE_SUFFIX}
+  TMPIMG: ci-$CI_JOB_ID
 
 stages:
   - Image
+  - Test
+  - Publish
   - Check
 
 workflow:
@@ -29,71 +32,69 @@ Sign-off check:
       junit: sign-off-report.xml
 
 
-Latest image:
+# Used by schedule to keep master and latest version tag up-to-date
+Image:
   stage: Image
   image: docker:latest
   needs: []
-  rules:
-    - if: '$CI_PROJECT_PATH == "ternaris/marv-robotics" &&
-           $CI_COMMIT_BRANCH == "master" &&
-           $CI_PIPELINE_SOURCE != "schedule"'
-  services:
-    - docker:dind
-  before_script:
-    - export tag=latest
-  script:
-    - chmod og-w . -R
-
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker login -u ${DOCKERHUB_USER} -p ${DOCKERHUB_PASS}
-
-    - docker pull ${GITLAB_IMAGE}:latest || true
-    - docker build -t ${GITLAB_IMAGE}:${tag} -t ${DOCKERHUB_IMAGE}:${tag} --cache-from ${GITLAB_IMAGE}:latest .
-    - docker push ${GITLAB_IMAGE}:${tag}
-    - docker push ${DOCKERHUB_IMAGE}:${tag}
-
-
-Release image:
-  extends: Latest image
-  rules:
-    - if: '$CI_PROJECT_PATH == "ternaris/marv-robotics" &&
-           $CI_COMMIT_TAG =~ /^v\d\d\.\d\d\.\d+ce$/ &&
-           $CI_PIPELINE_SOURCE != "schedule"'
-  before_script:
-    - export tag=${CI_COMMIT_TAG:1:-3}
-
-
-# Latest tag and "latest" tag
-Keep images up-to-date:
-  stage: Image
-  image: docker:latest
-  needs: []
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule"'
   services:
     - docker:dind
   script:
-    - apk add --no-cache git
-    - chmod og-w . -R
+    - apk add --no-cache git curl
+    - ./.gitlab-ci/build-test-push
+    - |
+      if [ "$CI_PIPELINE_SOURCE" = "schedule" ]; then
+        tag="$(git tag -l 'v*+ce' |tail -1)"
+        git reset --hard $tag;
+        export CI_COMMIT_TAG=$tag
+        export CI_COMMIT_SHA=$(git rev-parse $tag)
+        ./.gitlab-ci/build-test-push
+      fi
+  variables:
+    REPO: $CI_REGISTRY_IMAGE/cache
 
-    - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
-    - docker login -u ${DOCKERHUB_USER} -p ${DOCKERHUB_PASS}
 
-    - image=${GITLAB_IMAGE}:latest;
-    - base=$(sed -n "s/FROM \(.*\)/\1/p" Dockerfile)
-    - docker pull ${image} || true;
-    - docker build --pull -t ${image} -t ${DOCKERHUB_IMAGE}:latest --cache-from ${image} .
-    - docker push ${image}
-    - docker push ${DOCKERHUB_IMAGE}:latest
+pytest:
+  stage: Test
+  image: $CI_REGISTRY_IMAGE/cache/ci:z-$CI_COMMIT_SHA
+  needs:
+    - Image
+  script:
+    - . /opt/marv/bin/activate
+    - python3 -m pip install --no-deps -e code/marv-api
+    - python3 -m pip install --no-deps -e code/marv-cli
+    - python3 -m pip install --no-deps -e code/marv
+    - python3 -m pip install --no-deps -e code/marv-robotics
+    - ./scripts/build-docs
+    - ./scripts/download-test-bags
+    - ./scripts/fetch-deps
+    - pytest --cache-clear
+  artifacts:
+    when: always
+    paths:
+      - docs/_build/html
+      - pytest-report.xml
+    reports:
+      junit: pytest-report.xml
+  variables:
+    TZ: Europe/Berlin
 
-    - tags="$(git tag -l 'v*+ce' |tail -1)"
-    - 'for tag in ${tags}; do
-         git reset --hard ${tag};
-         tag=${tag:1:-3};
-         image=${GITLAB_IMAGE}:${tag};
-         base=$(sed -n "s/FROM \(.*\)/\1/p" Dockerfile);
-         docker pull ${image} || true;
-         docker build --pull -t ${image} -t ${DOCKERHUB_IMAGE}:${tag} --cache-from ${image} .;
-         docker push ${image};
-         docker push ${DOCKERHUB_IMAGE}:${tag};
-      done'
+
+pages:
+  stage: Publish
+  image: alpine:latest
+  rules:
+    - if: '$CI_PIPELINE_SOURCE != "schedule" &&
+           ($CI_COMMIT_BRANCH == "master" || $CI_COMMIT_TAG =~ /^v\d\d\.\d\d\.\d+ce$/)'
+  needs:
+    - Image
+    - pytest
+  dependencies:
+    - pytest
+  script:
+    - mv docs/_build/html public
+  artifacts:
+    paths:
+      - public
+  variables:
+    GIT_STRATEGY: none

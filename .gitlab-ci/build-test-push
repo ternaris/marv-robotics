@@ -1,0 +1,71 @@
+#!/bin/sh
+#
+# Copyright 2016 - 2020  Ternaris.
+# SPDX-License-Identifier: Apache-2.0
+
+set -eux
+
+cd "$(dirname "$(realpath "$0")")"/..
+
+# Fetch deps and fix mode, CI has 666
+./scripts/fetch-deps
+chmod -R go-w .
+
+
+# Cache from master, latest tag, and current branch or tag
+docker login -u gitlab-ci-token -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
+docker build --pull ${FORCE:+--no-cache} --build-arg BUILDKIT_INLINE_CACHE=1 \
+    --cache-from "$REPO:$CI_COMMIT_REF_NAME" \
+    --cache-from "$REPO:latest" \
+    --cache-from "$REPO:master" \
+    -t "$TMPIMG" \
+    .
+
+./.gitlab-ci/test-image "$TMPIMG" "$TMPIMG-site"
+
+docker tag "$TMPIMG" "$REPO:z-$CI_COMMIT_SHA"
+docker push "$REPO:z-$CI_COMMIT_SHA"
+
+
+# Dervice image for CI jobs
+docker build --build-arg BUILDKIT_INLINE_CACHE=1 -t "$TMPIMG-ci" -f - . <<EOF
+FROM $TMPIMG
+RUN rm /etc/profile.d/marv_env.sh
+ENTRYPOINT []
+CMD []
+EOF
+
+docker tag "$TMPIMG-ci" "$REPO/ci:z-$CI_COMMIT_SHA"
+docker push "$REPO/ci:z-$CI_COMMIT_SHA"
+
+
+# Determine docker tags to publish image for
+if [ -n "${CI_COMMIT_TAG-}" ]; then
+    git fetch --tags
+    dtags="${CI_COMMIT_TAG:0:-3}"
+    if [ "$(git tag -l 'v*' |tail -1)" = "$CI_COMMIT_TAG" ]; then
+        dtags="$dtags latest"
+    fi
+else
+    dtags="$CI_COMMIT_BRANCH"
+fi
+echo "$dtags"
+
+
+# Push docker tags
+for dtag in $dtags; do
+    docker tag "$TMPIMG" "$REPO:$dtag"
+    docker tag "$TMPIMG-ci" "$REPO/ci:$dtag"
+    docker push "$REPO:$dtag"
+    docker push "$REPO/ci:$dtag"
+done
+
+
+# Push dockerhub image, if configured
+if [ -n "${DOCKERHUB_IMAGE-}" ]; then
+    docker login -u "$DOCKERHUB_USER" -p "$DOCKERHUB_PASS"
+    for dtag in $dtags; do
+        docker tag "$TMPIMG" "$DOCKERHUB_IMAGE:$dtag"
+        docker push "$DOCKERHUB_IMAGE:$dtag"
+    done
+fi
