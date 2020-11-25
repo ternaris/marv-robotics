@@ -28,6 +28,8 @@ TARGET="$(realpath "$TARGET")"
 
 cd "$(dirname "$(realpath "$0")")"/..
 
+./scripts/fetch-deps
+
 export PIP_DISABLE_PIP_VERSION_CHECK=1
 
 python3.8 -m venv "$TARGET"

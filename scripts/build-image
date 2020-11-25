@@ -17,4 +17,5 @@ else
     IMAGE="$BASENAME"
 fi
 
+./scripts/fetch-deps
 docker build -t "$IMAGE" "$@" .

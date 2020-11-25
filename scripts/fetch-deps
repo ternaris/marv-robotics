@@ -1,0 +1,29 @@
+#!/bin/sh
+#
+# Copyright 2016 - 2020  Ternaris.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+set -efu
+
+cd "$(dirname "$(realpath "$0")")"/..
+
+
+fetch() {
+    OIFS=$IFS
+    IFS=@
+    # shellcheck disable=SC2086
+    set -- $1
+    IFS=$OIFS
+    target="${1:?target is missing}"
+    strip="${2:?strip is missing}"
+    url="${3:?url is missing}"
+    echo "Fetching $target"
+    rm -rf "$target"
+    mkdir -p "$target"
+    curl -sL "$url" | tar xz --strip-components "$strip" -C "$target"
+}
+
+
+while read -r dep; do
+    fetch "$dep"
+done < .deps
