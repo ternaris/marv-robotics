@@ -18,7 +18,9 @@ dpkg-reconfigure -f noninteractive tzdata
 groupadd -g $MARV_GID marv || true
 useradd -M -u $MARV_UID -g $MARV_GID --shell /bin/bash marv
 chown $MARV_UID:$MARV_GID /home/marv
-chown -R $MARV_UID:$MARV_GID $MARV_VENV
+if [[ $MARV_UID -ne 1000 ]] || [[ $MARV_GID -ne 1000 ]]; then
+    chown -R $MARV_UID:$MARV_GID $MARV_VENV
+fi
 
 for x in /etc/skel/.*; do
     target="/home/marv/$(basename "$x")"

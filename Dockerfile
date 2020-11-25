@@ -91,6 +91,7 @@ RUN bash -c '\
         rmdir /root/.cache || (ls -la /root/.cache; exit 1) \
     fi; \
     '
+RUN chown -R 1000:1000 /opt/marv
 
 COPY .docker/entrypoint.sh /marv_entrypoint.sh
 COPY .docker/env.sh /etc/profile.d/marv_env.sh
