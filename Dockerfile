@@ -66,28 +66,30 @@ COPY CONTRIBUTING.rst ${MARV_VENV}/CONTRIBUTING.rst
 COPY tutorial ${MARV_VENV}/tutorial
 COPY code ${MARV_VENV}/code
 COPY docs ${MARV_VENV}/docs
+RUN rm ${MARV_VENV}/docs/config/marv.conf
+COPY sites/example/marv.conf ${MARV_VENV}/docs/config/marv.conf
 COPY scripts ${MARV_VENV}/scripts
 
 ARG version=
 
-# For internal usage only
+# For internal use only
 ARG dist=
 COPY ${dist:-CHANGES.rst} ${MARV_VENV}/dist
 
 RUN bash -c '\
     set -e; \
-    cd ${MARV_VENV} && \
+    cd ${MARV_VENV}; \
     if [[ -n "${dist}" ]]; then \
         ./bin/pip install --no-index -f ${MARV_VENV}/dist marv=="${version}"; \
         ./bin/pip install --no-index -f ${MARV_VENV}/dist marv-robotics=="${version}"; \
     else \
         rm ${MARV_VENV}/dist; \
-        find code -maxdepth 2 -name setup.py -execdir ${MARV_VENV}/bin/pip install --no-deps . \; && \
-        (source ./bin/activate && ./scripts/build-docs) && \
+        find code -maxdepth 2 -name setup.py -execdir ${MARV_VENV}/bin/pip install --no-deps . \; ; \
+        (source ./bin/activate && ./scripts/build-docs); \
         ./bin/pip install -U --no-deps ./code/marv; \
     fi; \
     if [[ -d /root/.cache ]]; then \
-        rm -rf /root/.cache/pip /root/.cache/matplotlib && \
+        rm -rf /root/.cache/pip /root/.cache/matplotlib; \
         rmdir /root/.cache || (ls -la /root/.cache; exit 1) \
     fi; \
     '
