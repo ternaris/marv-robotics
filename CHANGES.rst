@@ -27,6 +27,9 @@ Added
 - New collection query API
 - Formatters for distance, speed, and acceleration
 - Nodes extracting basic motion parameters
+- Support to publish frontend updates independent of full releases (CE)
+- Let CI run pytest for community edition merge requests (CE)
+- Let CI publish latest documentation as gitlab pages (CE)
 - PDF widget (EE)
 - PDF section to display PDF files contained in dataset (EE)
 - Support finding and reading metadata of rosbag2 datasets (EE); CE got support in :ref:`v20.08.0` already
