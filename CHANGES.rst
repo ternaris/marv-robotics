@@ -78,6 +78,7 @@ Fixed
 - Authentication using OAuth2 webflow in Firefox (EE)
 - Prevent worker from restarting in case of errors during marv serve startup
 - Let len, min, max, and sum config functions handle None values
+- Sexp for detail_title may now take multiple arguments
 
 Security
 ~~~~~~~~
