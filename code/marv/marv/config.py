@@ -316,7 +316,7 @@ class MarvConfig(Model):
         return {}
 
 
-ParsedSexp = Tuple[str, Tuple[Any]]
+ParsedSexp = Tuple[str, Tuple[Any, ...]]
 
 
 class CollectionConfig(Model):
