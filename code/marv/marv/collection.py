@@ -360,7 +360,7 @@ class Collection:
                 directory = str(directory)  # TODO: for now we don't pass Path into scanner
                 # Ignore directories containing a .marvignore file
                 if os.path.exists(os.path.join(directory, '.marvignore')):
-                    subdirs[:] = []
+                    subdirs.clear()
                     continue
 
                 # Ignore hidden directories and traverse subdirs alphabetically
@@ -380,8 +380,9 @@ class Collection:
                     else:
                         dataset = await self.make_dataset(connection, files, name)
                         batch.append(dataset)
-                        if len(batch) > 50:
+                        if len(batch) >= 50:
                             await self._upsert_listing(connection, log, batch)
+                            batch.clear()
 
             if not dry_run and batch:
                 await self._upsert_listing(connection, log, batch)
@@ -418,18 +419,18 @@ class Collection:
                 batch.append(dataset)
                 if len(batch) > 50:
                     await Comment.bulk_create(comments, using_db=connection)
-                    comments[:] = []
                     await self._upsert_listing(connection, log, batch)
                     await self._add_tags(connection, tags)
+                    comments.clear()
+                    batch.clear()
+                    tags.clear()
             await Comment.bulk_create(comments, using_db=connection)
-            comments[:] = []
             await self._upsert_listing(connection, log, batch)
             await self._add_tags(connection, tags)
 
     async def _add_tags(self, connection, data):
         add = [(tag, dataset.id) for dataset, tags in data for tag in tags]
         await self.site.db.bulk_tag(add, [], '::', txn=connection)
-        data[:] = []
 
     async def _upsert_listing(self, txn, log, batch, update=False):
         descs = self.table_descriptors
@@ -456,7 +457,6 @@ class Collection:
 
         for dataset in batch:
             log.info(f'{"updated" if update else "added"} %r', dataset)
-        batch[:] = []
 
     async def make_dataset(self, connection, files, name, time_added=None, discarded=False,
                            setid=None, status=0, timestamp=None, _restore=None):
