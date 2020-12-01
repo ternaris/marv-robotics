@@ -69,7 +69,13 @@ async def test_tag(site):
 
     # add / remove
     await site.db.update_tags_by_setids(sets[0:1], add=['foo', 'bar'], remove=[])
+    with pytest.raises(DBPermissionError):  # not idempotent
+        await site.db.update_tags_by_setids(sets[0:1], add=['foo', 'bar'], remove=[])
+    await site.db.update_tags_by_setids(sets[0:1], add=['foo', 'bar'], remove=[], idempotent=True)
     await site.db.update_tags_by_setids(sets[0:1], add=[], remove=['foo'])
+    with pytest.raises(DBPermissionError):  # not idempotent
+        await site.db.update_tags_by_setids(sets[0:1], add=[], remove=['foo'])
+    await site.db.update_tags_by_setids(sets[0:1], add=[], remove=['foo'], idempotent=True)
     await site.db.update_tags_by_setids(sets[100:101], add=['baz'], remove=[])
     await site.db.update_tags_by_setids(sets[101:102], add=['baz', 'bar'], remove=[])
 

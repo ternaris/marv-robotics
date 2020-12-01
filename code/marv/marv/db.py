@@ -1137,14 +1137,23 @@ class Database:
                 raise DBPermissionError
 
     @run_in_transaction
-    async def update_tags_by_setids(self, setids, add, remove, txn=None):
+    async def update_tags_by_setids(self, setids, add, remove, idempotent=False, txn=None):
         setids = [str(x) for x in setids]
-        dataset = Table('dataset')
-        colids = await txn.exq(Query.from_(dataset)
-                               .where(dataset.setid.isin(setids))
-                               .select(dataset.id))
-        add = [(tag, colid['id']) for tag, colid in product(add, colids)]
-        remove = [(tag, colid['id']) for tag, colid in product(remove, colids)]
+        dataset, dataset_tag, tag = Tables('dataset', 'dataset_tag', 'tag')
+        tagmap = await txn.exq(Query.from_(dataset)
+                               .join(dataset_tag, how=JoinType.left_outer)
+                               .on(dataset.id == dataset_tag.dataset_id)
+                               .join(tag, how=JoinType.left_outer)
+                               .on(tag.id == dataset_tag.tag_id)
+                               .select(tag.value, dataset.id)
+                               .where(dataset.setid.isin(setids)))
+        current = {tuple(x) for x in tagmap}
+        ids = [x[1] for x in current]
+        add = set(product(add, ids))
+        remove = set(product(remove, ids))
+        if idempotent:
+            add -= current
+            remove &= current
         await self.bulk_tag(add, remove, user='::', txn=txn)
 
     @run_in_transaction

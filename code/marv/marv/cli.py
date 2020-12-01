@@ -23,7 +23,7 @@ from jinja2 import Template
 from tortoise.exceptions import DoesNotExist
 
 import marv_node.run
-from marv.db import USERGROUP_REGEX, DBError, DBNotInitialized, DBVersionError
+from marv.db import USERGROUP_REGEX, DBError, DBNotInitialized, DBPermissionError, DBVersionError
 from marv.site import SiteError, UnknownNode, load_sitepackages, make_config
 from marv.utils import within_pyinstaller_bundle
 from marv_api.utils import echo, err, find_obj
@@ -589,17 +589,29 @@ async def marvcli_scan(dry_run):
 @marvcli.command('tag')
 @click.option('--add', multiple=True, help='Tags to add')
 @click.option('--rm', '--remove', 'remove', multiple=True, help='Tags to remove')
+@click.option(
+    '--strict',
+    is_flag=True,
+    help=('By default tagging via CLI is idempotent; in strict mode it will fail if tags'
+          ' are repeatedly added or removed.'),
+)
 @click.argument('datasets', nargs=-1)
 @click.pass_context
 @click_async
-async def marvcli_tag(ctx, add, remove, datasets):
+async def marvcli_tag(ctx, add, remove, strict, datasets):
     """Add or remove tags to datasets."""
     if not any([add, remove]) or not datasets:
         click.echo(ctx.get_help())
         ctx.exit(1)
 
     async with create_site() as site:
-        await site.db.update_tags_by_setids(datasets, add, remove)
+        try:
+            await site.db.update_tags_by_setids(datasets, add, remove, idempotent=not strict)
+        except DBPermissionError:
+            if strict:
+                err('ERROR: --strict prevented add of existing or remove of non-existing tag(s).',
+                    exit=1)
+            raise
 
 
 @marvcli.group('comment')
