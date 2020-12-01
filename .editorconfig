@@ -11,7 +11,7 @@ trim_trailing_whitespace = true
 [*.py]
 max_line_length = 100
 
-[*.{yml,yaml}]
+[*.{js,json,yml,yaml}]
 indent_size = 2
 
 [COMMIT_EDITMSG]
