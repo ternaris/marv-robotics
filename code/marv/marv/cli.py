@@ -278,16 +278,23 @@ async def marvcli_undiscard(datasets):
 
 
 @marvcli.command('dump')
-@click.argument('dump_file', type=click.File('w'))
+@click.argument('dump_file', type=Path)
 @click_async
 async def marvcli_dump(dump_file):
     """Dump database to json file.
 
     Use '-' for stdout.
     """
+    if str(dump_file) != '-' and dump_file.exists():
+        err('ERROR: Dump file must not exist already!', exit=1)
+
     siteconf = make_config(get_site_config())
     dump = await Site.Database.dump_database(siteconf.marv.dburi)
-    json.dump(dump, dump_file, sort_keys=True, indent=2)
+    if str(dump_file) == '-':
+        json.dump(dump, sys.stdout, sort_keys=True, indent=2)
+    else:
+        with dump_file.open('w') as f:
+            json.dump(dump, f, sort_keys=True, indent=2)
 
 
 @marvcli.command('restore')
