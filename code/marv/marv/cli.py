@@ -219,7 +219,7 @@ def marvcli_serve(host, port, certfile, keyfile, approot):
                 'Existing database is not compatible with this version of MARV. '
                 'Check the migration instructions.', exit=4)
         except (PermissionError, SiteError) as exc:
-            err(exc, exit=4)
+            err(f'ERROR: {exc}', exit=4)
         except Exception:  # pylint: disable=broad-except
             traceback.print_exc()
             sys.exit(4)
