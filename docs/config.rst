@@ -623,6 +623,13 @@ Split string from the right. First argument is the string, further arguments are
 scope: :ref:`cfg_c_filters`, :ref:`cfg_c_listing_columns`
 
 
+``set``
+~~~~~~~
+Return set with items from one iterable argument.
+
+scope: :ref:`cfg_c_filters`, :ref:`cfg_c_listing_columns`, :ref:`cfg_c_listing_summary`
+
+
 ``split``
 ~~~~~~~~~
 Split string. First argument is the string, further arguments are passed to python's string split method.

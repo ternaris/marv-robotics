@@ -59,6 +59,7 @@ def make_funcs(dataset, setdir, store):
         'max': lambda x: max(x) if x else None,
         'min': lambda x: min(x) if x else None,
         'rsplit': lambda x, *args: x.rsplit(*args) if x else None,
+        'set': lambda x: set(x) if x else None,
         'split': lambda x, *args: x.split(*args) if x else None,
         'status': lambda: ['#STATUS#'],
         'sum': lambda x: sum(x) if x is not None else None,
