@@ -32,6 +32,10 @@ class ConfigError(Exception):
         return f'{section.filename} [{section.name}] {key}: {message}'
 
 
+class NewConfigError(Exception):
+    pass
+
+
 class InvalidToken(Exception):
     pass
 

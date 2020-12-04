@@ -14,7 +14,7 @@ from logging import getLogger
 from pypika import SQLLiteQuery as Query
 
 from marv import utils
-from marv.config import ConfigError, calltree, getdeps, make_funcs, parse_function
+from marv.config import ConfigError, NewConfigError, calltree, getdeps, make_funcs, parse_function
 from marv.db import scoped_session
 from marv.model import Collection as CollectionModel
 from marv.model import Comment, Dataset, File, make_listing_model, make_table_descriptors
@@ -70,24 +70,21 @@ def make_summary_item(line):
     return SummaryItem(name, title, formatter, islist, function)
 
 
-def flatten_syntax(functree):
-    functree = (flatten_syntax(x) if isinstance(x, tuple) else x for x in functree)
-    functree = (x if len(x) > 1 else x[0] for x in functree)
-    functree = ({} if x[1] == [] else
-                ('map', {}, ('idx', x[1][0]), x[1][1]) if x[0] == 'rows' else
-                x for x in functree)
-    return tuple(functree)
+def postprocess_functree(name, arguments):
+    if name == 'rows':
+        if len(arguments) == 0:
+            return {}
 
+        try:
+            field, default = arguments
+        except ValueError:
+            raise NewConfigError(
+                "'rows' takes zero or two arguments, column name and default value",
+            ) from None
 
-def parse_summary(items):
-    summary = []
-    for item in items:
-        functree = parse_function(item.function)
-        dct = item._asdict()
-        functree = flatten_syntax(functree)
-        dct['function'] = functree
-        summary.append(dct)
-    return summary
+        return ('map', {}, ('idx', field), default)
+
+    return (name, *(postprocess_functree(*x) for x in arguments))
 
 
 def rowdumps(*args, **kw):
@@ -289,9 +286,18 @@ class Collection:
 
     @cached_property
     def summary_items(self):
-        items = [make_summary_item(line)
-                 for line in self.section.listing_summary]
-        return parse_summary(items)
+        summary = []
+        for line in self.section.listing_summary:
+            item = make_summary_item(line)
+            dct = item._asdict()
+            functree = parse_function(item.function)
+            try:
+                functree = postprocess_functree(*functree)
+            except NewConfigError as exc:
+                raise NewConfigError(f'Collection {self.name!r} listing_summary: {exc}') from None
+            dct['function'] = functree
+            summary.append(dct)
+        return summary
 
     @property
     def section(self):
