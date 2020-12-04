@@ -439,11 +439,11 @@ Example:
 
    listing_summary =
        # id     | Title    | formatter | extractor
-       datasets | datasets | int       | (len (rows ))
+       datasets | datasets | int       | (len (rows))
        size     | size     | filesize  | (sum (rows "size" 0))
        duration | duration | timedelta | (sum (rows "duration" 0))
 
-A unique id, a title to be displayed bewlo the value, a formatter explained in :ref:`cfg_c_formatter` and extractor function explained in :ref:`cfg_sexp`.
+A unique id, a title displayed below the value, a formatter explained in :ref:`cfg_c_formatter` and extractor function explained in :ref:`cfg_sexp`.
 
 
 .. _cfg_c_detail_summary_widgets:
@@ -586,7 +586,7 @@ scope: :ref:`cfg_c_listing_columns`
 ~~~~~~~~
 Return list consisting of arguments with arguments being None removed.
 
-scope: :ref:`cfg_c_filters`, :ref:`cfg_c_listing_columns`, :ref:`cfg_c_listing_summary`
+scope: :ref:`cfg_c_filters`, :ref:`cfg_c_listing_columns`
 
 
 ``max``
@@ -605,7 +605,7 @@ scope: :ref:`cfg_c_filters`, :ref:`cfg_c_listing_columns`, :ref:`cfg_c_listing_s
 
 ``rows``
 ~~~~~~~~
-Return all rows matching current filter criteria. The optional second argument extracts a specific column defined in :ref:`cfg_c_listing_columns` instead of the full row and the third provides a default value instead of None.
+Return all rows matching current filter criteria. The optional second and third arguments extracts a specific column defined in :ref:`cfg_c_listing_columns` instead of the full row and provide a default value for it.
 
 Examples:
 
@@ -648,7 +648,7 @@ scope: :ref:`cfg_c_filters`, :ref:`cfg_c_listing_columns`
 ~~~~~~~~~
 Print trace messages.
 
-scope: :ref:`cfg_c_filters`, :ref:`cfg_c_listing_columns`, :ref:`cfg_c_listing_summary`
+scope: :ref:`cfg_c_filters`, :ref:`cfg_c_listing_columns`
 
 
 .. _cfg_examples:
