@@ -63,19 +63,6 @@ def make_funcs(dataset, setdir, store):
     }
 
 
-def make_summary_funcs(rows, ids):
-    """Functions available for listing summary fields."""
-    return {
-        'len': len,
-        'list': lambda *x: filter(None, list(x)),
-        'max': max,
-        'min': min,
-        'rows': partial(summary_rows, rows, ids),
-        'sum': sum,
-        'trace': print_trace,
-    }
-
-
 def summary_rows(rows, ids, id=None, default=None):
     if not id:
         return rows
