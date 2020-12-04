@@ -27,6 +27,9 @@ Added
 - New collection query API
 - Formatters for distance, speed, and acceleration
 - Nodes extracting basic motion parameters
+- Support for nested listing summary functions
+- Added filter config function
+- Added makelist config function
 - Support to publish frontend updates independent of full releases (CE)
 - Let CI run pytest for community edition merge requests (CE)
 - Let CI publish latest documentation as gitlab pages (CE)
@@ -61,6 +64,7 @@ Deprecated
 - 20.11 will remove marv.types, use marv_api.types instead
 - 20.11 will remove marv.utils.popen, use marv_api.utils.popen instead
 - 20.11 will remove the deprecated HTTP listing API, query :ref:`httpapi_query_collection` instead
+- 20.11 will remove list config function, use makelist instead
 
 Removed
 ~~~~~~~
@@ -75,10 +79,12 @@ Fixed
 - Return HTTP bad request from query API on unknown filter names `#83`_
 - Pass user argument to database method from marv show cli command `#87`_
 - Enabled cloned nodes as input for cloning
-- Authentication using OAuth2 webflow in Firefox (EE)
 - Prevent worker from restarting in case of errors during marv serve startup
 - Let len, min, max, and sum config functions handle None values
 - Sexp for detail_title may now take multiple arguments
+- Running nodes referenced by dotted name
+- Yielding marv file objects via marv.push() in addition to plain yielding
+- Authentication using OAuth2 webflow in Firefox (EE)
 
 Security
 ~~~~~~~~
