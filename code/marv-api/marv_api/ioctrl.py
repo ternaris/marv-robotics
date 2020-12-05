@@ -82,7 +82,7 @@ def pull_all(*handles):
 
 def push(msg):
     schema = NODE_SCHEMA.get()
-    if schema is not None:
+    if schema is not None and not isinstance(msg, Wrapper):
         try:
             msg = Wrapper.from_dict(schema, msg)
         except KjException:
