@@ -16,6 +16,7 @@ from pypika import Table
 
 from marv.utils import within_pyinstaller_bundle
 from marv_api.utils import find_obj
+from marv_node.node import Node
 from marv_node.run import run_nodes
 from marv_store import Store
 
@@ -279,7 +280,7 @@ class Site:
             selected_nodes.update(collection.detail_deps)
         persistent = collection.nodes
         try:
-            nodes = {persistent[name] if ':' not in name else find_obj(name)
+            nodes = {persistent[name] if ':' not in name else Node.from_dag_node(find_obj(name))
                      for name in selected_nodes
                      if name not in excluded_nodes
                      if name != 'dataset'}
