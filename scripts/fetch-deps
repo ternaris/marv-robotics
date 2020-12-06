@@ -19,7 +19,7 @@ fetch() {
     url="${3:?url is missing}"
     echo "Fetching $target"
     rm -rf "$target"
-    mkdir -p "$target"
+    mkdir "$target"
     curl -sL "$url" | tar xz --strip-components "$strip" -C "$target"
 }
 
