@@ -10,6 +10,8 @@ from capnp.lib.capnp import _DynamicEnum, _DynamicListReader, _DynamicStructRead
 from marv_api.setid import SetID
 from marv_api.utils import find_obj
 
+GETATTR_HOOKS = []
+
 
 def _to_dict(value, field=None, field_type=None, which=False):
     if isinstance(value, _DynamicStructReader):
@@ -151,7 +153,12 @@ class Wrapper:
 
         return data
 
-    def __getattr__(self, name):
+    def __getattr__(self, name):  # noqa: C901  # pylint: disable=too-many-return-statements
+        for hook in GETATTR_HOOKS:
+            handled, ret = hook(self, self._reader.schema.node.displayName, name)
+            if handled:
+                return ret
+
         parts = name.split('_')
         field_name = parts[0] + ''.join(((x[0].upper() + x[1:]) if x else '_') for x in parts[1:])
 
