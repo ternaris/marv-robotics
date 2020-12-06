@@ -527,6 +527,19 @@ Return dictionary rendering link to detail route of dataset. First argument is t
 scope: :ref:`cfg_c_listing_columns`
 
 
+``filter``
+~~~~~~~~~~
+Filter list by removing ``null`` elements (Python ``None``).
+
+Examples:
+
+.. code-block:: lisp
+
+   (filter null (makelist (get "unit.name")))
+
+scope: :ref:`cfg_c_filters`, :ref:`cfg_c_listing_columns`
+
+
 ``format``
 ~~~~~~~~~~
 Wrapper for ``fmt.format(*args)``. First argument is the format string ``fmt``, remaining arguments are passed on.
@@ -582,9 +595,15 @@ Render link with first argument as href and second argument displayed.
 scope: :ref:`cfg_c_listing_columns`
 
 
-``list``
-~~~~~~~~
-Return list consisting of arguments with arguments being None removed.
+``makelist``
+~~~~~~~~~~~~
+Takes one or more arguments and returns a list containing these.
+
+Examples:
+
+.. code-block:: lisp
+
+   (filter null (makelist (get "unit.name")))
 
 scope: :ref:`cfg_c_filters`, :ref:`cfg_c_listing_columns`
 
