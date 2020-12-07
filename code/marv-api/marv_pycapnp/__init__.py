@@ -1,8 +1,8 @@
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-import os
 from collections.abc import Mapping, Sequence
+from itertools import dropwhile, islice
 from pathlib import Path
 from pickle import PickleBuffer
 
@@ -109,9 +109,49 @@ class Wrapper:
         return (self.from_segments, (meta, *[PickleBuffer(x) for x in segments]))
 
     @property
-    def relpath(self):  # HACK: overload
-        path = os.path.relpath(self.path, self._setdir)
-        return path.lstrip('.')
+    def path(self):
+        """Absolute path string to access file during node run."""
+        if self._reader.schema.node.displayName != 'marv_nodes/types.capnp:File':
+            raise AttributeError('path')
+
+        path = Path(self._reader.path)
+
+        # File in scanroot
+        if self._streamdir is None:
+            return str(path)
+
+        # FUTURE
+        # if not path.is_absolute():
+        #     return self._streamdir / path  # do we trust path?
+
+        if not path.exists():
+            path = self._setdir / self._path_within_setdir(path)
+
+        return str(path)
+
+    @property
+    def relpath(self):
+        """Path string relative to setdir to reference files for the frontend."""
+        if self._reader.schema.node.displayName != 'marv_nodes/types.capnp:File':
+            raise AttributeError('relpath')
+
+        # File in scanroot
+        if self._streamdir is None:
+            raise AttributeError('relpath')
+
+        path = Path(self._reader.path)
+        return str(self._path_within_setdir(path))
+
+    def _path_within_setdir(self, path):
+        # Path relative to setdir, no relative_to() to handle moved stores
+        setid = self._setdir.name
+        parts = list(islice(dropwhile(lambda x: x != setid, path.parts), 1, None))
+
+        # Path to temporary streamdir during initial node run
+        if parts[0][0] == '.':
+            parts[0] = parts[0][1:]
+
+        return Path(*parts)
 
     @classmethod
     def from_segments(cls, meta, *segments):
@@ -163,20 +203,15 @@ class Wrapper:
         if field_name in self._reader.schema.fieldnames and self._reader._has(field_name):
             field = self._reader.schema.fields[field_name]
             value = getattr(self._reader, name)
-
-            if self._streamdir and name == 'path' and \
-               self._reader.schema.node.displayName == 'marv_nodes/types.capnp:File' and \
-               not os.path.exists(value):
-                relpath = os.path.relpath(value, self._setdir)
-                if relpath[0] == '.':
-                    return os.path.join(self._setdir, relpath[1:])
-
             return _wrap(value, self._streamdir, self._setdir, field=field)
 
         if name == 'id' and self._reader._has('id0') and self._reader._has('id1'):
             return SetID(self._reader.id0, self._reader.id1)
 
-        return getattr(self._reader, name)  # Not a field, but e.g. a method
+        try:
+            return getattr(self._reader, name)  # Not a field, but e.g. a method
+        except AttributeError:
+            raise AttributeError(name) from None
 
     def __repr__(self):
         return f'<Wrapper {self._reader.schema.node.displayName}>'
