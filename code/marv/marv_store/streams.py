@@ -3,6 +3,7 @@
 
 import os
 from collections import OrderedDict, deque
+from pathlib import Path
 
 from marv_node.io import THEEND
 from marv_node.stream import Handle, Msg, RequestedMessageTooOld, Stream
@@ -104,7 +105,7 @@ class PersistentStream(Stream):
                 self._commit(self)
         elif isinstance(msg.data, Wrapper) \
                 and msg.data._reader.schema.node.id == File.schema.node.id:
-            assert msg.data._streamdir == self.streamdir
+            assert msg.data._streamdir == Path(self.streamdir)
             stat = os.stat(msg.data.path)
             mtime = int(stat.st_mtime * 1e9)
             msg.data._reader = File.new_message(path=msg.data._reader.path,

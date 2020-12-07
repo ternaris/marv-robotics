@@ -3,6 +3,7 @@
 
 import os
 from collections.abc import Mapping, Sequence
+from pathlib import Path
 from pickle import PickleBuffer
 
 from capnp.lib.capnp import _DynamicEnum, _DynamicListReader, _DynamicStructReader
@@ -59,8 +60,8 @@ class ListWrapper:
         assert isinstance(list_reader, _DynamicListReader), type(list_reader)
         self._field_type = field_type
         self._reader = list_reader
-        self._streamdir = streamdir
-        self._setdir = setdir
+        self._streamdir = Path(streamdir) if streamdir else None
+        self._setdir = Path(setdir) if setdir else None
 
     def _wrap(self, item):
         return _wrap(item, self._streamdir, self._setdir, field_type=self._field_type)
@@ -87,13 +88,9 @@ class Wrapper:
     def __init__(self, struct_reader, streamdir, setdir, storedir=None):
         assert isinstance(struct_reader, _DynamicStructReader), type(struct_reader)
         self._reader = struct_reader
-        self._streamdir = streamdir  # HACK: overloaded
-        self._setdir = setdir
-        self._storedir = storedir  # HACK: patched by compare
-
-    # @property
-    # def path(self):  # HACK: overload
-    #     return os.path.realpath(os.path.join(self._streamdir, self.name))
+        self._streamdir = Path(streamdir) if streamdir else None
+        self._setdir = Path(setdir) if setdir else None
+        self._storedir = Path(storedir) if storedir else None
 
     def __reduce_ex__(self, protocol):
         if protocol < 5:
@@ -104,9 +101,9 @@ class Wrapper:
                                                    .replace('.capnp:', '_capnp:')
         meta = {
             'protoname': protoname,
-            'streamdir': self._streamdir,
-            'setdir': self._setdir,
-            'storedir': self._storedir,
+            'streamdir': str(self._streamdir),
+            'setdir': str(self._setdir),
+            'storedir': str(self._storedir),
         }
         segments = builder.to_segments()
         return (self.from_segments, (meta, *[PickleBuffer(x) for x in segments]))
@@ -123,21 +120,21 @@ class Wrapper:
         return cls(struct_reader, **meta)
 
     @classmethod
-    def from_dict(cls, schema, data):
+    def from_dict(cls, schema, data, setdir=None):
         setid = data.pop('id', None)
         if isinstance(setid, SetID):
             data['id0'], data['id1'] = setid.lohi
         dct = cls._unwrap(data)
         struct_reader = schema.new_message(**dct).as_reader()
-        return cls(struct_reader, None, None)
+        return cls(struct_reader, None, setdir)
 
     def to_dict(self, which=None):
         return _to_dict(self._reader, which=which)
 
     def load(self, node):
         from marv_store import Store  # pylint: disable=import-outside-toplevel
-        store = Store(self._storedir, {node.name: node})
-        return store.load(self._setdir, node, default=None)
+        store = Store(str(self._storedir), {node.name: node})
+        return store.load(str(self._setdir), node, default=None)
 
     @classmethod
     def _unwrap(cls, data):

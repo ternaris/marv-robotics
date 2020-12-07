@@ -32,7 +32,7 @@ def load_dataset(setdir, dataset):  # pylint: disable=redefined-outer-name
            'time_added': dataset.time_added * 10**6,
            'timestamp': dataset.timestamp * 10**6}
     try:
-        wrapper = Wrapper.from_dict(Dataset, dct)
+        wrapper = Wrapper.from_dict(Dataset, dct, setdir=setdir)
     except KjException as e:
         from pprint import pformat  # pylint: disable=import-outside-toplevel
         err('Schema violation for %s with data:\n%s\nschema: %s' % (
@@ -40,7 +40,6 @@ def load_dataset(setdir, dataset):  # pylint: disable=redefined-outer-name
             pformat(dct),
             Dataset.schema.node.displayName))
         raise e
-    wrapper._setdir = setdir  # needed by dataset.load(node)  # pylint: disable=protected-access
     return [wrapper]
 
 
