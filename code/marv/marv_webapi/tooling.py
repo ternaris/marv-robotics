@@ -86,7 +86,7 @@ def safejoin(basepath, rel):
 
 def sendfile(path, approot, reverse_proxy, filename=None):
     headers = {
-        'Cache-Control': 'no-cache',
+        'Cache-Control': 'no-cache, no-store',
         'Content-Disposition': f'attachment; filename={filename or path.name}',
     }
 
