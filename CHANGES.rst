@@ -54,6 +54,7 @@ Changed
 - Changed ffmpeg parameters to improve web streaming
 - Require Python 3.8 for new language features; if you need support for Python 3.7 please let us know
 - Check not to overwrite existing dump file
+- Tagging via CLI to be idempotent by default, previously it failed when trying to add existing or remove non-existing tags
 - Switch CE docker image base to plain Ubuntu focal as we don't have any external ROS dependencies anymore (CE)
 - Move widget dropdown to CE, previously EE only (CE)
 - Move widget mpld3 to CE, previously EE only (CE)
@@ -84,6 +85,7 @@ Fixed
 - Sexp for detail_title may now take multiple arguments
 - Running nodes referenced by dotted name
 - Yielding marv file objects via marv.push() in addition to plain yielding
+- Listing batch processing during re-initialisation of site
 - Authentication using OAuth2 webflow in Firefox (EE)
 
 Security
