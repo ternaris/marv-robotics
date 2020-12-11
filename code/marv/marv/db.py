@@ -509,7 +509,7 @@ class Tortoise(_Tortoise):
 class Database:
     # pylint: disable=too-many-public-methods
 
-    VERSION = '20.06'
+    VERSION = '20.12'
 
     EXPORT_HANDLERS = (
         ({'group', 'user', 'user_group'}, dump_users_groups),

@@ -11,6 +11,28 @@ Listed here are all versions that necessitate migration. Depending on the versio
 In case of database migrations it is sufficient to ``marv dump`` the database with the version you are currently using and ``marv restore`` with the latest version; marv is able to *dump* itself and *restore* any older version. In case this does not hold true ``marv restore`` will complain and provide instructions what to do.
 
 
+.. _migrate-upcoming:
+
+Upcoming
+--------
+
+Database migration
+^^^^^^^^^^^^^^^^^^
+Extended RPC filters, among others, required changes to database schemas, a migration of the MARV database is necessary. Export the database with your current version of MARV:
+
+.. code-block:: console
+
+   marv dump dump-2008.json
+   mv db/db.sqlite db/db.sqlite.2008
+
+After updating MARV run:
+
+.. code-block:: console
+
+   marv init
+   marv restore dump-2008.json
+
+
 .. _migrate-20.08.0:
 
 20.08.0
