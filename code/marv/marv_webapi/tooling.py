@@ -5,6 +5,7 @@ import math
 import mimetypes
 import time
 from collections import OrderedDict
+from datetime import timezone
 from pathlib import Path
 
 import jwt
@@ -22,7 +23,7 @@ async def check_authorization(request, acl, authorization):
             raise web.HTTPUnauthorized()
 
         user = await request.app['site'].db.get_user_by_name(session['sub'], deep=True)
-        if not user or user.time_updated.timestamp() > session['iat']:
+        if not user or user.time_updated.replace(tzinfo=timezone.utc).timestamp() > session['iat']:
             raise web.HTTPUnauthorized()
 
         username = user.name

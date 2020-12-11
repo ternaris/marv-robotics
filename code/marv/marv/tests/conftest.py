@@ -164,7 +164,7 @@ async def site(loop, request, tmpdir):  # pylint: disable=unused-argument
         class DatetimeBase(vanilla_datetime):
             @classmethod
             def utcnow(cls):
-                ret = vanilla_datetime.fromtimestamp(next(side_effect))
+                ret = vanilla_datetime.utcfromtimestamp(next(side_effect))
                 return ret
 
         return DatetimeMeta('datetime', (DatetimeBase,), {})

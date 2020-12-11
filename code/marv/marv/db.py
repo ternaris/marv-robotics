@@ -13,7 +13,7 @@ import sys
 from collections import namedtuple
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import reduce
 from itertools import groupby, product
 from logging import getLogger
@@ -344,8 +344,7 @@ def modelize(items, relations):
 
 def dt_to_sec(dtime):
     """Return seconds since epoch for datetime object."""
-    sec = (datetime.fromisoformat(dtime) - datetime.utcfromtimestamp(0)).total_seconds()
-    return int(sec)
+    return int(datetime.fromisoformat(dtime).replace(tzinfo=timezone.utc).timestamp())
 
 
 async def get_items_for_query(query, txn):
