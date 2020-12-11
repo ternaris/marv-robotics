@@ -362,7 +362,7 @@ def empty_trace(name, tracetype):
         'y': [],
         'type': tracetype,
         'name': name,
-        'mode': 'markers',
+        'mode': 'lines',
     }
 
 
