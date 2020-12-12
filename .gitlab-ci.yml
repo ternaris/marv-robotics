@@ -77,7 +77,7 @@ pytest:
     reports:
       junit: pytest-report.xml
   variables:
-    TZ: Europe/Berlin
+    TZ: UTC
 
 
 pages:
