@@ -55,6 +55,7 @@ Changed
 - Require Python 3.8 for new language features; if you need support for Python 3.7 please let us know
 - Check not to overwrite existing dump file
 - Tagging via CLI to be idempotent by default, previously it failed when trying to add existing or remove non-existing tags
+- Remove remaining EE-only leaf database model from (CE)
 - Switch CE docker image base to plain Ubuntu focal as we don't have any external ROS dependencies anymore (CE)
 - Move widget dropdown to CE, previously EE only (CE)
 - Move widget mpld3 to CE, previously EE only (CE)
