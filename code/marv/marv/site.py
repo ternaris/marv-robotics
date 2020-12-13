@@ -66,7 +66,6 @@ class Site:
         self.config = make_config(siteconf)
         self.collections = Collections(config=self.config, site=self)
         self.db = self.Database([y for x in self.collections.values() for y in x.model])  # pylint: disable=invalid-name
-        self.createdb = True
 
     @classmethod
     async def create(cls, siteconf, init=None):  # noqa: C901
@@ -76,11 +75,13 @@ class Site:
 
         assert site.config.marv.dburi.startswith('sqlite://')
         dbpath = Path(site.config.marv.dburi.split('://', 1)[1])
-        site.createdb = not dbpath.exists()
-        if not site.createdb:
+        if dbpath.exists():
             site.check_db_version()
+            store_db_version = False
         elif not init:
             raise DBNotInitialized('There is no marv database.')
+        else:
+            store_db_version = True
 
         if init:
             site.init_directory()
@@ -120,7 +121,7 @@ class Site:
 
         try:
             if init:
-                await site.init_database()
+                await site.init_database(store_db_version=store_db_version)
 
             async with scoped_session(site.db) as txn:
                 try:
@@ -201,7 +202,7 @@ class Site:
         for table in sorted(tables, key=len, reverse=True):
             await txn.execute_query(f'DROP TABLE {table};')
 
-    async def init_database(self):
+    async def init_database(self, store_db_version=False):
         async with scoped_session(self.db) as txn:
             await self.drop_listings(txn)
 
@@ -219,7 +220,7 @@ class Site:
                     using_db=txn,
                 )
 
-            if self.createdb:
+            if store_db_version:
                 await self.store_db_version(txn)
 
             await create_or_ignore('acn', id=1, txn=txn)
