@@ -8,6 +8,7 @@ import shutil
 import tempfile
 from itertools import count
 from logging import getLogger
+from pathlib import Path
 
 import pytest
 
@@ -56,7 +57,7 @@ async def site(loop):  # pylint: disable=unused-argument
     with open(siteconf, 'w') as fobj:
         fobj.write(inspect.cleandoc(CONFIG))
 
-    site_ = await Site.create(siteconf, init=True)
+    site_ = await Site.create(Path(siteconf), init=True)
     site_.scanroot_ = scanroot
     yield site_
 

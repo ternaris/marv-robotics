@@ -69,7 +69,7 @@ async def site(loop, tmpdir):  # pylint: disable=unused-argument
             path = tmpdir / 'scanroots' / sitename / name
             path.write(str(idx), ensure=True)
 
-    site_ = await Site.create(marv_conf.strpath, init=True)
+    site_ = await Site.create(marv_conf, init=True)
     yield site_
     await site_.destroy()
 

@@ -186,7 +186,7 @@ async def site(loop, request, tmpdir):  # pylint: disable=unused-argument
         return Stat()
 
     cls = site_cfg.get('cls', Site)
-    site = await cls.create(str(marv_conf), init=True)  # pylint: disable=redefined-outer-name
+    site = await cls.create(marv_conf, init=True)  # pylint: disable=redefined-outer-name
     try:
         if not site_cfg.get('empty'):
             with mock.patch('bcrypt.gensalt', return_value=b'$2b$12$k67acf6S32i3nW0c7ycwe.'), \

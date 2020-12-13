@@ -105,7 +105,7 @@ def marv(ctx, config, loglevel, logfilter, verbosity):
             config = '/etc/marv/marv.conf'
             if not os.path.exists(config):
                 config = None
-    ctx.obj = config
+    ctx.obj = Path(config)
     setup_logging(loglevel, verbosity, logfilter)
 
 

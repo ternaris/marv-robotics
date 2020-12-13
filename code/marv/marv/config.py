@@ -386,7 +386,7 @@ class Config(Model):
     @classmethod
     def from_file(cls, path):
         parser = ConfigParser()
-        with Path(path).open() as f:
+        with path.open() as f:
             parser.read_file(f)
         return cls.from_parser(path, parser)
 
