@@ -4,7 +4,6 @@
 import fcntl
 import os
 import shutil
-import sqlite3
 import sys
 from itertools import count, product
 from logging import getLogger
@@ -22,8 +21,7 @@ from marv_store import Store
 
 from .collection import Collections
 from .config import Config
-from .db import (Database, DBNotInitialized, DBVersionError, Tortoise, create_or_ignore,
-                 scoped_session)
+from .db import Database, DBNotInitialized, Tortoise, create_or_ignore, scoped_session
 from .model import Dataset, Group, User
 
 log = getLogger(__name__)
@@ -73,15 +71,10 @@ class Site:
         if within_pyinstaller_bundle():
             load_sitepackages(site.config.marv.sitepackages)
 
-        assert site.config.marv.dburi.startswith('sqlite://')
-        dbpath = Path(site.config.marv.dburi.split('://', 1)[1])
-        if dbpath.exists():
-            site.check_db_version()
-            store_db_version = False
-        elif not init:
-            raise DBNotInitialized('There is no marv database.')
-        else:
-            store_db_version = True
+        site.db.check_db_version(site.config.marv.dburi, missing_ok=init)
+
+        dbpath = Path(site.config.marv.dburi.split('sqlite://', 1)[1])
+        store_db_version = not dbpath.exists()
 
         if init:
             site.init_directory()
@@ -159,29 +152,6 @@ class Site:
         except OSError as e:
             if e.errno != 17:
                 raise
-
-    def check_db_version(self):
-        dbpath = Path(self.config.marv.dburi.split('://', 1)[1])
-        metadata = Table('metadata')
-        required = self.db.VERSION
-        try:
-            conn = sqlite3.connect(f'file:{dbpath}?mode=ro', uri=True)
-            with conn:
-                have = conn.execute(Query.from_(metadata)
-                                    .select(metadata.value)
-                                    .where(metadata.key == 'database_version')
-                                    .get_sql())\
-                           .fetchone()[0]
-                if have != required:
-                    raise DBVersionError(
-                        f'DB version on disk "{have}", but "{required}" required.',
-                    )
-        except (sqlite3.OperationalError, TypeError):
-            raise DBVersionError(
-                'DB version is unknown, metadata table or version entry missing.',
-            )
-        finally:
-            conn.close()
 
     async def store_db_version(self, txn):
         metadata = Table('metadata')

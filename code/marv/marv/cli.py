@@ -289,7 +289,11 @@ async def marvcli_dump(dump_file):
         err('ERROR: Dump file must not exist already!', exit=1)
 
     siteconf = make_config(get_site_config())
-    dump = await Site.Database.dump_database(siteconf.marv.dburi)
+    try:
+        dump = await Site.Database.dump_database(siteconf.marv.dburi)
+    except (DBNotInitialized, DBVersionError) as exc:
+        err(f'ERROR: {exc}', exit=1)
+
     if str(dump_file) == '-':
         json.dump(dump, sys.stdout, sort_keys=True, indent=2)
     else:

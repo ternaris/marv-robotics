@@ -6,6 +6,7 @@
 import asyncio
 import json
 import re
+import sqlite3
 import sys
 from collections import namedtuple
 from contextlib import asynccontextmanager
@@ -14,6 +15,7 @@ from datetime import datetime, timezone
 from functools import reduce
 from itertools import groupby, product
 from logging import getLogger
+from pathlib import Path
 
 import bcrypt
 from pypika import JoinType, Order
@@ -1517,6 +1519,35 @@ class Database:
 
         return result
 
+    @classmethod
+    def check_db_version(cls, dburi, missing_ok=False):
+        dbpath = Path(dburi.split('sqlite://', 1)[1])
+        if not dbpath.exists():
+            if not missing_ok:
+                raise DBNotInitialized('There is no marv database.')
+            return
+
+        metadata = Table('metadata')
+        required = cls.VERSION
+        try:
+            conn = sqlite3.connect(f'file:{dbpath}?mode=ro', uri=True)
+            with conn:
+                have = conn.execute(Query.from_(metadata)
+                                    .select(metadata.value)
+                                    .where(metadata.key == 'database_version')
+                                    .get_sql())\
+                           .fetchone()[0]
+                if have != required:
+                    raise DBVersionError(
+                        f'DB version on disk "{have}", but "{required}" required.',
+                    )
+        except (sqlite3.OperationalError, TypeError):
+            raise DBVersionError(
+                'DB version is unknown, metadata table or version entry missing.',
+            )
+        finally:
+            conn.close()
+
     async def restore_database(self, site, dct):
         async with scoped_session(self) as txn:
             for keys, handler in self.IMPORT_HANDLERS:
@@ -1539,6 +1570,7 @@ class Database:
         older databases, not matching the current version of marv, can be
         dumped.
         """
+        cls.check_db_version(dburi)
 
         class T2(Tortoise):
             apps = {}
