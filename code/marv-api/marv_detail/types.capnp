@@ -234,6 +234,7 @@ struct Widget {
     rangey @8 :List(Float32);
     rangez @9 :List(Float32);
     ranged @10 :List(Float32);
+    frameid @11 :Text;
   }
 
   struct Video {
