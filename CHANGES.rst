@@ -24,12 +24,13 @@ Added
 - Directory-based scanner as alternative to the default rosbag record set-based scanner
 - Pure-python rosbag2 reader
 - Log warning message from node Abort exception
-- New collection query API
+- New collection query API `#82`_ **needs migration:** :ref:`migrate-upcoming`
 - Formatters for distance, speed, and acceleration
 - Nodes extracting basic motion parameters
 - Support for nested listing summary functions
 - Added filter config function
 - Added makelist config function
+- Fallback to bag message timestamp in case ROS message header timestamp is zero
 - Support to publish frontend updates independent of full releases (CE)
 - Let CI run pytest for community edition merge requests (CE)
 - Let CI publish latest documentation as gitlab pages (CE)
@@ -56,6 +57,7 @@ Changed
 - Check not to overwrite existing dump file
 - Tagging via CLI to be idempotent by default, previously it failed when trying to add existing or remove non-existing tags
 - Disabled fulltext node in default config as it can lead to excessive DB memory usage; enable selectively instead
+- Publish marv_robotics.trajectory.navsatfix timestamps in nanoseonds **needs migration:** :ref:`migrate-upcoming` for custom nodes directly consuming the navsatfix node
 - Remove remaining EE-only leaf database model from (CE)
 - Switch CE docker image base to plain Ubuntu focal as we don't have any external ROS dependencies anymore (CE)
 - Move widget dropdown to CE, previously EE only (CE)
@@ -98,6 +100,7 @@ Security
 
 .. _#72: https://gitlab.com/ternaris/marv-robotics/issues/72
 .. _#78: https://gitlab.com/ternaris/marv-robotics/issues/78
+.. _#82: https://gitlab.com/ternaris/marv-robotics/issues/82
 .. _#83: https://gitlab.com/ternaris/marv-robotics/issues/83
 .. _#87: https://gitlab.com/ternaris/marv-robotics/issues/87
 

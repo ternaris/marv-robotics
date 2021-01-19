@@ -33,6 +33,10 @@ After updating MARV run:
    marv restore dump-2008.json
 
 
+Code migration
+^^^^^^^^^^^^^^
+Node :func:`marv_robotics.trajectory.navsatfix` now returns timestamps as integer in nanoseconds instead of as float in seconds. Directly consuming custom nodes need migration, all nodes shipping with marv are already adjusted accordingly.
+
 .. _migrate-20.08.0:
 
 20.08.0
