@@ -35,7 +35,7 @@ def navsatfix(stream):
             'status': rosmsg.status.status,
             'lon': rosmsg.longitude,
             'lat': rosmsg.latitude,
-            'timestamp': get_timestamp(rosmsg, msg) / 1e9,
+            'timestamp': get_timestamp(rosmsg, msg),
         })
 
     if erroneous:
@@ -80,8 +80,7 @@ def trajectory(navsatfixes):
         if msg is None:
             break
 
-        dt = msg['timestamp']  # pylint: disable=invalid-name
-        timestamps.append(int(dt * 1e9))
+        timestamps.append(msg['timestamp'])
 
         # Whether to output an augmented fix is determined by both the fix
         # type and the last time differential corrections were received.  A
