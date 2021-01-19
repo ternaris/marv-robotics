@@ -6,7 +6,7 @@ import numpy as np
 import marv_api as marv
 from marv_api.types import GeoJson
 
-from .bag import get_float_seconds, make_deserialize, messages
+from .bag import make_deserialize, make_get_timestamp, messages
 
 
 @marv.node()
@@ -14,7 +14,9 @@ from .bag import get_float_seconds, make_deserialize, messages
                                                      '*:sensor_msgs/msg/NavSatFix')))
 def navsatfix(stream):
     yield marv.set_header(title=stream.topic)
+    log = yield marv.get_logger()
     deserialize = make_deserialize(stream)
+    get_timestamp = make_get_timestamp(log, stream)
     erroneous = 0
     while True:
         msg = yield marv.pull(stream)
@@ -29,14 +31,14 @@ def navsatfix(stream):
             erroneous += 1
             continue
 
-        # TODO: namedtuple?
-        out = {'status': rosmsg.status.status,
-               'lon': rosmsg.longitude,
-               'lat': rosmsg.latitude,
-               'timestamp': get_float_seconds(rosmsg.header.stamp)}
-        yield marv.push(out)
+        yield marv.push({
+            'status': rosmsg.status.status,
+            'lon': rosmsg.longitude,
+            'lat': rosmsg.latitude,
+            'timestamp': get_timestamp(rosmsg, msg) / 1e9,
+        })
+
     if erroneous:
-        log = yield marv.get_logger()
         log.warning('skipped %d erroneous messages', erroneous)
 
 

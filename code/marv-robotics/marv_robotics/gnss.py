@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 import marv_api as marv
 from marv_api.types import File
 
-from .bag import get_float_seconds, get_message_type, make_deserialize, messages
+from .bag import make_deserialize, make_get_timestamp, messages
 
 
 def yaw_angle(frame):
@@ -45,7 +45,10 @@ def yaw_angle(frame):
                                                      '*:sensor_msgs/msg/NavSatFix')))
 def positions(stream):
     yield marv.set_header(title=stream.topic)
+    log = yield marv.get_logger()
     deserialize = make_deserialize(stream)
+    get_timestamp = make_get_timestamp(log, stream)
+
     erroneous = 0
     e_offset = None
     n_offset = None
@@ -74,8 +77,7 @@ def positions(stream):
         n = n - n_offset
         u = rosmsg.altitude - u_offset
 
-        # TODO: why do we accumulate?
-        positions.append([get_float_seconds(rosmsg.header.stamp),
+        positions.append([get_timestamp(rosmsg, msg) / 1e9,
                           rosmsg.latitude,
                           rosmsg.longitude,
                           rosmsg.altitude,
@@ -94,7 +96,10 @@ def positions(stream):
                                                      '*:sensor_msgs/msg/Imu')))
 def imus(stream):
     yield marv.set_header(title=stream.topic)
+    log = yield marv.get_logger()
     deserialize = make_deserialize(stream)
+    get_timestamp = make_get_timestamp(log, stream)
+
     erroneous = 0
     imus = []
     while True:
@@ -106,8 +111,7 @@ def imus(stream):
             erroneous += 1
             continue
 
-        # TODO: why do we accumulate?
-        imus.append([get_float_seconds(rosmsg.header.stamp),
+        imus.append([get_timestamp(rosmsg, msg) / 1e9,
                      yaw_angle(rosmsg.orientation)])
     if erroneous:
         log = yield marv.get_logger()
@@ -118,10 +122,11 @@ def imus(stream):
 @marv.node()
 @marv.input('stream', foreach=marv.select(messages, '*:nmea_navsat_driver/NavSatOrientation'))
 def navsatorients(stream):
-    log = yield marv.get_logger()
     yield marv.set_header(title=stream.topic)
-    pytype = get_message_type(stream)
-    rosmsg = pytype()
+    log = yield marv.get_logger()
+    deserialize = make_deserialize(stream)
+    get_timestamp = make_get_timestamp(log, stream)
+
     erroneous = 0
     navsatorients = []
     while True:
@@ -129,13 +134,13 @@ def navsatorients(stream):
         if msg is None:
             break
 
-        rosmsg.deserialize(msg.data)
+        rosmsg = deserialize(msg.data)
         if np.isnan(rosmsg.yaw):
             erroneous += 1
             continue
 
-        # TODO: why do we accumulate?
-        navsatorients.append([rosmsg.header.stamp.to_sec(), rosmsg.yaw])
+        navsatorients.append([get_timestamp(rosmsg, msg) / 1e9,
+                              rosmsg.yaw])
     if erroneous:
         log.warning('skipped %d erroneous messages', erroneous)
     yield marv.push({'values': navsatorients})

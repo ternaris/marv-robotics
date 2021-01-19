@@ -452,3 +452,47 @@ def get_float_seconds(stamp):
     if hasattr(stamp, 'to_sec'):
         return stamp.to_sec()
     return stamp.sec + stamp.nanosec * 1e-9
+
+
+def make_get_timestamp(log, stream):
+    """Make utitliy to get message header timestamp in nanoseconds.
+
+    Falling back to bag message timestamp if header stamp is zero or unavailable.
+
+    Args:
+        log: logger instance
+        stream: Handle for bag message stream
+
+    """
+    fallback = None
+
+    if stream.rosbag2:
+        def stamp_to_nanosec(stamp):
+            return stamp.sec * 10**9 + stamp.nanosec
+    else:
+        def stamp_to_nanosec(stamp):
+            return stamp.secs * 10**9 + stamp.nsecs
+
+    def get_timestamp(rosmsg, bagmsg):
+        """Return header timestamp, falling back to bagmsg timestamp if zero or unavailable.
+
+        Args:
+            rosmsg: Deserialized ROS message
+            bagmsg: Bag message as streamed by marv_robotics.bag.messages
+
+        """
+        nonlocal fallback
+        if fallback is None:
+            if hasattr(rosmsg, 'header'):
+                fallback = stamp_to_nanosec(rosmsg.header.stamp) == 0 and bagmsg.timestamp > 600e9
+                if fallback:
+                    log.warning('Header time is zero, will use message time instead.')
+            else:
+                fallback = True
+
+        if fallback:
+            return bagmsg.timestamp
+
+        return stamp_to_nanosec(rosmsg.header.stamp)
+
+    return get_timestamp

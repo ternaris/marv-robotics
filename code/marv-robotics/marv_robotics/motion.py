@@ -16,7 +16,7 @@ import utm
 import marv_api as marv
 from marv_api.types import Float64Value
 from marv_detail.types_capnp import Section  # pylint: disable=no-name-in-module
-from marv_robotics.bag import make_deserialize, messages
+from marv_robotics.bag import make_deserialize, make_get_timestamp, messages
 
 
 @marv.node()
@@ -32,6 +32,7 @@ def motion_timestamp(stream):
 
     """
     yield marv.set_header()
+    log = yield marv.get_logger()
     substreams = {}
     while substream := (yield marv.pull(stream)):
         if substream.header['msg_type'] not in substreams:
@@ -42,11 +43,10 @@ def motion_timestamp(stream):
     substream = substreams.get('geometry_msgs/PoseStamped') or \
         substreams.get('sensor_msgs/NavSatFix')
     deserialize = make_deserialize(substream)
+    get_timestamp = make_get_timestamp(log, substream)
     while msg := (yield marv.pull(substream)):
         rosmsg = deserialize(msg.data)
-        stamp = rosmsg.header.stamp
-        value = stamp.nsecs + stamp.secs * 1e9
-        yield marv.push(value)
+        yield marv.push(get_timestamp(rosmsg, msg))
 
 
 @marv.node()
