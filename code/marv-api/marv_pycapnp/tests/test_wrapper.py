@@ -1,7 +1,10 @@
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+import pickle
+
 import capnp  # pylint: disable=unused-import
+import pytest
 
 from marv_pycapnp import Wrapper
 
@@ -126,6 +129,15 @@ def test():
         '_which': 'unionText',
     }
 
+    # dict rountrip
     dct = wrapper.to_dict()
     roundtrip = Wrapper.from_dict(TestStruct, dct)
     assert dct == roundtrip.to_dict()
+
+    # pickle roundtrip
+    data = pickle.dumps(wrapper, protocol=5)
+    roundtrip = pickle.loads(data)
+    assert wrapper.to_dict() == roundtrip.to_dict()
+
+    with pytest.raises(RuntimeError):
+        data = pickle.dumps(wrapper)
