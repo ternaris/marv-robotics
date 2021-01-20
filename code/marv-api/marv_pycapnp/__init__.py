@@ -8,9 +8,6 @@ from pickle import PickleBuffer
 
 from capnp.lib.capnp import _DynamicEnum, _DynamicListReader, _DynamicStructReader
 
-from marv_api.setid import SetID
-from marv_api.utils import find_obj
-
 GETATTR_HOOKS = []
 
 
@@ -155,12 +152,16 @@ class Wrapper:
 
     @classmethod
     def from_segments(cls, meta, *segments):
+        from marv_api.utils import find_obj  # pylint: disable=import-outside-toplevel
+
         schema = find_obj(meta.pop('protoname'))
         struct_reader = schema.from_segments(segments)
         return cls(struct_reader, **meta)
 
     @classmethod
     def from_dict(cls, schema, data, setdir=None):
+        from marv_api.setid import SetID  # pylint: disable=import-outside-toplevel
+
         setid = data.pop('id', None)
         if isinstance(setid, SetID):
             data['id0'], data['id1'] = setid.lohi
@@ -191,6 +192,8 @@ class Wrapper:
         return data
 
     def __getattr__(self, name):  # noqa: C901  # pylint: disable=too-many-return-statements
+        from marv_api.setid import SetID  # pylint: disable=import-outside-toplevel
+
         for hook in GETATTR_HOOKS:
             handled, ret = hook(self, self._reader.schema.node.displayName, name)
             if handled:
