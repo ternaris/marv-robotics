@@ -55,6 +55,7 @@ Changed
 - Require Python 3.8 for new language features; if you need support for Python 3.7 please let us know
 - Check not to overwrite existing dump file
 - Tagging via CLI to be idempotent by default, previously it failed when trying to add existing or remove non-existing tags
+- Disabled fulltext node in default config as it can lead to excessive DB memory usage; enable selectively instead
 - Remove remaining EE-only leaf database model from (CE)
 - Switch CE docker image base to plain Ubuntu focal as we don't have any external ROS dependencies anymore (CE)
 - Move widget dropdown to CE, previously EE only (CE)
@@ -88,6 +89,7 @@ Fixed
 - Yielding marv file objects via marv.push() in addition to plain yielding
 - Listing batch processing during re-initialisation of site
 - Sort connection indices in external rosbag module to align with rosbag play `#72`_
+- Fulltext node treats null characters as whitespace instead of passing them on and producing an invalid SQL query
 - Authentication using OAuth2 webflow in Firefox (EE)
 
 Security
