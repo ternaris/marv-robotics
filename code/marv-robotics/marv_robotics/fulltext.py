@@ -1,10 +1,14 @@
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+import re
+
 import marv_api as marv
 from marv_api.types import Words
 
 from .bag import make_deserialize, messages
+
+WSNULL = re.compile(r'[\s\x00]')
 
 
 @marv.node(Words)
@@ -19,7 +23,8 @@ def fulltext_per_topic(stream):
         if msg is None:
             break
         rosmsg = deserialize(msg.data)
-        words.update(rosmsg.data.split())
+        words.update(WSNULL.split(rosmsg.data))
+
     if not words:
         raise marv.Abort()
     yield marv.push({'words': list(words)})
