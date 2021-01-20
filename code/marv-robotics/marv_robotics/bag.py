@@ -55,7 +55,7 @@ def is_rosbag2(dirpath):
 
 
 def _scan_rosbag2(log, dirpath, dirnames, filenames):
-    if 'metadata.yaml' not in filenames or not is_rosbag2(dirpath):
+    if not is_rosbag2(dirpath):
         return None
 
     try:
@@ -68,9 +68,17 @@ def _scan_rosbag2(log, dirpath, dirnames, filenames):
         log.warning('Ignoring subdirectories of dataset %s: %r', dirpath, dirnames[:])
         dirnames[:] = []
 
+    filenames = set(filenames)
     setfiles = ['metadata.yaml'] + [x.name for x in reader.paths]
-    if extra := set(filenames).difference(setfiles):
+
+    _setfiles = set(setfiles)
+    if extra := filenames - _setfiles:
         log.warning('Ignoring files not listed in metadata.yaml %s: %r', dirpath, sorted(extra))
+
+    if missing := _setfiles - filenames:
+        log.error('Refusing to create rosbag2 dataset %s missing files: %r',
+                  dirpath, sorted(missing))
+        return None
 
     return DatasetInfo(dirpath.name, setfiles)
 

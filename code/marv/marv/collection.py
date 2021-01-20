@@ -374,8 +374,10 @@ class Collection:
 
                 # Ignore hidden and known files
                 known = known_filenames[directory]
-                filenames = {x for x in filenames if x[0] != '.'}
-                filenames = sorted(filenames - known)
+                filenames = sorted(x for x in filenames if x[0] != '.' and x not in known)
+
+                if not filenames and not subdirs:
+                    continue
 
                 for name, files in self.scanner(directory, subdirs, filenames):
                     files = [x if os.path.isabs(x) else os.path.join(directory, x)
