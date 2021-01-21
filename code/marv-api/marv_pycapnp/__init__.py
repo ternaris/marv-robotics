@@ -159,7 +159,7 @@ class Wrapper:
         return cls(struct_reader, **meta)
 
     @classmethod
-    def from_dict(cls, schema, data, setdir=None):
+    def from_dict(cls, schema, data, setdir=None, streamdir=None):
         from marv_api.setid import SetID  # pylint: disable=import-outside-toplevel
 
         setid = data.pop('id', None)
@@ -167,7 +167,7 @@ class Wrapper:
             data['id0'], data['id1'] = setid.lohi
         dct = cls._unwrap(data)
         struct_reader = schema.new_message(**dct).as_reader()
-        return cls(struct_reader, None, setdir)
+        return cls(struct_reader, streamdir, setdir)
 
     def to_dict(self, which=None):
         return _to_dict(self._reader, which=which)

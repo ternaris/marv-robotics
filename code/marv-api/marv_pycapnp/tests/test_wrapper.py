@@ -2,10 +2,12 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import pickle
+from pathlib import Path
 
 import capnp  # pylint: disable=unused-import
 import pytest
 
+from marv_api.types import File
 from marv_pycapnp import Wrapper
 
 from .test_wrapper_capnp import TestStruct  # pylint: disable=import-error
@@ -141,3 +143,28 @@ def test():
 
     with pytest.raises(RuntimeError):
         data = pickle.dumps(wrapper)
+
+
+def test_file_wrapper():
+    wrapper = Wrapper.from_dict(TestStruct, {})
+    with pytest.raises(AttributeError):
+        assert wrapper.path
+    with pytest.raises(AttributeError):
+        assert wrapper.relpath
+
+    wrapper = Wrapper.from_dict(File, {'path': '/foo'})
+    assert wrapper.path == '/foo'
+    with pytest.raises(AttributeError):
+        assert wrapper.relpath
+
+    wrapper = Wrapper.from_dict(File, {'path': __file__}, streamdir=Path(__file__).parent)
+    assert wrapper.path == __file__
+
+    wrapper = Wrapper.from_dict(File, {'path': '/path/to/setdir/streamdir/file'},
+                                setdir='/path/to/moved/setdir', streamdir='/irrelevant')
+    assert wrapper.path == '/path/to/moved/setdir/streamdir/file'
+
+    wrapper = Wrapper.from_dict(File, {'path': '/path/to/setdir/.streamdir/file'},
+                                setdir='/path/to/moved/setdir', streamdir='/irrelevant')
+    assert wrapper.path == '/path/to/moved/setdir/streamdir/file'
+    assert wrapper.relpath == 'streamdir/file'
