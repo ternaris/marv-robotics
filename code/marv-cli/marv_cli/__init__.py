@@ -11,6 +11,17 @@ from pkg_resources import iter_entry_points
 
 from marv_api.utils import launch_pdb_on_exception
 
+try:
+    from marv_ee import VERSION_MESSAGE
+except ImportError:
+    VERSION_MESSAGE = """
+marv (MARV Community Edition) %(version)s
+Copyright (C) 2016 - 2021  Ternaris and the MARV Contributors.
+License AGPL-3.0-only: GNU Affero General Public License v3.0 <https://spdx.org/licenses/AGPL-3.0.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+""".strip()
+
 FORMAT = os.environ.get('MARV_LOG_FORMAT', '%(asctime)s %(levelname).4s %(name)s %(message)s')
 PDB = None
 STATICX_PROG_PATH = os.environ.get('STATICX_PROG_PATH')
@@ -91,6 +102,7 @@ def setup_logging(loglevel, verbosity=0, logfilter=None):
               help='Display only log messages for selected loggers')
 @click.option('-v', '--verbose', 'verbosity', count=True,
               help='Increase verbosity beyond --loglevel')
+@click.version_option(message=VERSION_MESSAGE)
 @click.pass_context
 def marv(ctx, config, loglevel, logfilter, verbosity):
     """Manage a Marv site."""
