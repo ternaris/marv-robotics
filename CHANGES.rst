@@ -31,6 +31,7 @@ Added
 - Added filter config function
 - Added makelist config function
 - Fallback to bag message timestamp in case ROS message header timestamp is zero
+- CLI version option to display version and copyright information
 - Support to publish frontend updates independent of full releases (CE)
 - Let CI run pytest for community edition merge requests (CE)
 - Let CI publish latest documentation as gitlab pages (CE)
