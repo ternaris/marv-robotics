@@ -38,6 +38,7 @@ class App():
         destroy_site,
     )
 
+    CACHE = {'Cache-Control': 'max-age=604800'}
     NOCACHE = {'Cache-Control': 'no-cache'}
 
     def __init__(self, site, app_root='', middlewares=None):
@@ -92,6 +93,7 @@ class App():
             LOADED = True
         marv_webapi.webapi.init_app(self.aioapp, url_prefix='/marv/api',
                                     app_root=self.aioapp['app_root'])
+        aggressive_caching = bool(os.environ.get('MARV_EXPERIMENTAL_AGGRESSIVE_CACHING'))
 
         customdir = self.aioapp['site'].config.marv.frontenddir / 'custom'
         staticdir = self.aioapp['site'].config.marv.staticdir
@@ -122,4 +124,7 @@ class App():
             fullpath = safejoin(staticdir, path)
             if not fullpath.is_file():
                 raise web.HTTPNotFound
-            return web.FileResponse(fullpath, headers=self.NOCACHE)
+
+            headers = (self.CACHE if aggressive_caching and fullpath.suffix == '.svg' else
+                       self.NOCACHE)
+            return web.FileResponse(fullpath, headers=headers)

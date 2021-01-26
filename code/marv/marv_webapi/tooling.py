@@ -3,6 +3,7 @@
 
 import math
 import mimetypes
+import os
 import time
 from collections import OrderedDict
 from datetime import timezone
@@ -10,6 +11,8 @@ from pathlib import Path
 
 import jwt
 from aiohttp import web
+
+AGGRESSIVE_CACHING = bool(os.environ.get('MARV_EXPERIMENTAL_AGGRESSIVE_CACHING'))
 
 
 async def check_authorization(request, acl, authorization):
@@ -87,9 +90,16 @@ def safejoin(basepath, rel):
 
 def sendfile(path, approot, reverse_proxy, filename=None):
     headers = {
-        'Cache-Control': 'no-cache, no-store',
         'Content-Disposition': f'attachment; filename={filename or path.name}',
     }
+    if AGGRESSIVE_CACHING and (
+            path.suffix in ('.jpg', '.json')
+            or (path.suffix == '.mrv' and path.stat().st_size < 20 * 10**6)
+            or path.name == 'default-stream'
+    ):
+        headers['Cache-Control'] = 'max-age=14400'
+    else:
+        headers['Cache-Control'] = 'no-cache, no-store'
 
     if reverse_proxy == 'nginx':
         mime = mimetypes.guess_type(str(path))[0]
