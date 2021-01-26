@@ -35,7 +35,7 @@ class Format(enum.IntEnum):
 
 
 CONVERSIONS = {
-    key: getattr(cv2, f'COLOR_{n1}2{n2}{dict(YUV="_Y422").get(n1, "")}', None)
+    key: getattr(cv2, f'COLOR_{n1}2{n2}{({"YUV": "_Y422"}).get(n1, "")}', None)
     for key in itertools.product(*(2 * (list(Format)[1:], )))
     if (n1 := key[0].name) == (n2 := key[1].name) or hasattr(cv2, f'COLOR_{n1}2{n2}')
 }
