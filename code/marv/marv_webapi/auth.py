@@ -6,7 +6,7 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from .tooling import api_group as marv_api_group
-from .tooling import generate_token as gentoken
+from .tooling import generate_token
 
 
 @marv_api_group()
@@ -30,5 +30,5 @@ async def auth_post(request):
         raise web.HTTPUnprocessableEntity
 
     return web.json_response({
-        'access_token': gentoken(username, request.app['config']['SECRET_KEY']).decode('utf-8'),
+        'access_token': generate_token(username, request.app['config']['SECRET_KEY']),
     })
