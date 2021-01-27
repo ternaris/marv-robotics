@@ -56,6 +56,7 @@ def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):  # pylint:
     deserialize = make_deserialize(stream)
     with ExitStack() as stack:
         encoder = None
+        dims = None
         while True:
             msg = yield marv.pull(stream)
             if msg is None:
@@ -70,6 +71,7 @@ def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):  # pylint:
                 return
 
             if not encoder:
+                dims = img.shape[:2]
                 ffargs = [
                     'ffmpeg',
                     '-f', 'rawvideo',
@@ -89,6 +91,11 @@ def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):  # pylint:
                     video.path,
                 ]
                 encoder = stack.enter_context(popen(ffargs, stdin=PIPE))
+            if dims != img.shape[:2]:
+                log = yield marv.get_logger()
+                log.warning(f'could not encode, image size changed {dims} != {img.shape[:2]}')
+                return
+
             encoder.stdin.write(img)
 
     yield video
