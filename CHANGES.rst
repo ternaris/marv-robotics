@@ -39,8 +39,10 @@ Added
 - PDF section to display PDF files contained in dataset (EE)
 - Support finding and reading metadata of rosbag2 datasets (EE); CE got support in :ref:`v20.08.0` already
 - Support reading and deserializing of rosbag2 datasets (EE); CE got support in :ref:`v20.08.0` already
-- Extraction and visualization of autonomous distance driven (Automotive)
-- Support for DMV reporting workflows (Automotive)
+- Extraction and visualization of autonomous distance driven (EE)
+- Support for DMV reporting workflows (EE)
+- Render markers in pointcloud player (EE)
+- Render ego model and static pointcloud/vector maps in pointcloud views (EE)
 
 Changed
 ~~~~~~~
