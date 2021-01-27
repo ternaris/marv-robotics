@@ -335,6 +335,11 @@ def acceleration(timestamp, speed):
     if msg_ts is None or msg_speed is None:
         return
 
+    msg_ts, msg_speed = yield marv.pull_all(timestamp, speed)
+    if msg_ts is None or msg_speed is None:
+        return
+
+    yield marv.push({'value': 0})
     yield marv.push({'value': 0})
     pts = msg_ts
     psp = msg_speed.value
@@ -507,5 +512,5 @@ def motion_section(timestamp, easting_northing, distance, speed, acceleration): 
             {'title': '', 'plotly': f'marv-partial:{file_en.relpath}'},
             {'title': '', 'plotly': f'marv-partial:{file_dist.relpath}'},
             {'title': '', 'plotly': f'marv-partial:{file_speed.relpath}'},
-            # {'title': '', 'plotly': f'marv-partial:{file_accel.relpath}'},
+            {'title': '', 'plotly': f'marv-partial:{file_accel.relpath}'},
         ]})
