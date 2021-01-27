@@ -94,6 +94,7 @@ Fixed
 - Listing batch processing during re-initialisation of site
 - Sort connection indices in external rosbag module to align with rosbag play `#72`_
 - Fulltext node treats null characters as whitespace instead of passing them on and producing an invalid SQL query
+- Sorting of incomplete listing columns that prevented rendering in some cases `#88`_
 - Authentication using OAuth2 webflow in Firefox (EE)
 
 Security
@@ -105,6 +106,7 @@ Security
 .. _#82: https://gitlab.com/ternaris/marv-robotics/issues/82
 .. _#83: https://gitlab.com/ternaris/marv-robotics/issues/83
 .. _#87: https://gitlab.com/ternaris/marv-robotics/issues/87
+.. _#88: https://gitlab.com/ternaris/marv-robotics/issues/88
 
 
 .. _v20.08.0:
