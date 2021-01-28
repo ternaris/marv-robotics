@@ -31,7 +31,6 @@ def motion_timestamp(stream):
         Message stream with timestamps.
 
     """
-    yield marv.set_header()
     log = yield marv.get_logger()
     substreams = {}
     while substream := (yield marv.pull(stream)):
@@ -42,6 +41,7 @@ def motion_timestamp(stream):
 
     substream = substreams.get('geometry_msgs/PoseStamped') or \
         substreams.get('sensor_msgs/NavSatFix')
+    yield marv.set_header(title=substream.topic)
     deserialize = make_deserialize(substream)
     get_timestamp = make_get_timestamp(log, substream)
     while msg := (yield marv.pull(substream)):
@@ -61,11 +61,11 @@ def position_xyz(stream):
         Message stream with Cartesian positions.
 
     """
-    yield marv.set_header()
     stream = yield marv.pull(stream)
     if not stream:
         return
 
+    yield marv.set_header(title=stream.topic)
     deserialize = make_deserialize(stream)
     while msg := (yield marv.pull(stream)):
         rosmsg = deserialize(msg.data)
@@ -85,11 +85,11 @@ def position_gps(stream):
         Message stream with GPS positions.
 
     """
-    yield marv.set_header()
     stream = yield marv.pull(stream)
     if not stream:
         return
 
+    yield marv.set_header(title=stream.topic)
     deserialize = make_deserialize(stream)
     while msg := (yield marv.pull(stream)):
         rosmsg = deserialize(msg.data)
@@ -128,6 +128,7 @@ def filter_pos(timestamp, pos, pvar, qvar, rvar, keys):  # pylint: disable=too-m
     if msg_ts is None or msg_pos is None:
         return
 
+    yield marv.set_header(title=timestamp.title)
     yield marv.push(msg_pos)
 
     F = numpy.eye(6)
@@ -191,11 +192,11 @@ def distance_xyz(pos):
         Message stream with distances.
 
     """
-    yield marv.set_header()
     msg = yield marv.pull(pos)
     if msg is None:
         return
 
+    yield marv.set_header(title=pos.title)
     yield marv.push({'value': 0})
     prev = msg
 
@@ -223,11 +224,11 @@ def distance_gps(pos):
         Message stream with distances.
 
     """
-    yield marv.set_header()
     msg = yield marv.pull(pos)
     if msg is None:
         return
 
+    yield marv.set_header(title=pos.title)
     yield marv.push({'value': 0})
     lat_p = radians(msg['lat'])
     lon_p = radians(msg['lon'])
@@ -270,9 +271,11 @@ def distance(distance_xyz, distance_gps):
     """
     msg_xyz, msg_gps = yield marv.pull_all(distance_xyz, distance_gps)
     if msg_xyz:
+        yield marv.set_header(title=distance_xyz.title)
         yield marv.push({'value': msg_xyz.value})
         distance = distance_xyz
     elif msg_gps:
+        yield marv.set_header(title=distance_gps.title)
         yield marv.push({'value': msg_gps.value})
         distance = distance_gps
     else:
@@ -299,11 +302,11 @@ def speed(timestamp, distance):
         Message stream with speed values.
 
     """
-    yield marv.set_header()
     msg_ts, msg_dist = yield marv.pull_all(timestamp, distance)
     if msg_ts is None or msg_dist is None:
         return
 
+    yield marv.set_header(title=timestamp.title)
     yield marv.push({'value': 0})
     pts = msg_ts
 
@@ -330,7 +333,6 @@ def acceleration(timestamp, speed):
         Message stream with acceleration values.
 
     """
-    yield marv.set_header()
     msg_ts, msg_speed = yield marv.pull_all(timestamp, speed)
     if msg_ts is None or msg_speed is None:
         return
@@ -339,6 +341,7 @@ def acceleration(timestamp, speed):
     if msg_ts is None or msg_speed is None:
         return
 
+    yield marv.set_header(title=timestamp.title)
     yield marv.push({'value': 0})
     yield marv.push({'value': 0})
     pts = msg_ts
@@ -417,7 +420,6 @@ def easting_northing(stream):
         Message stream with easting and northing.
 
     """
-    yield marv.set_header()
     substreams = {}
     while substream := (yield marv.pull(stream)):
         if substream.header['msg_type'] not in substreams:
@@ -427,6 +429,7 @@ def easting_northing(stream):
 
     substream = substreams.get('geometry_msgs/PoseStamped') or \
         substreams.get('sensor_msgs/NavSatFix')
+    yield marv.set_header(title=substream.topic)
     deserialize = make_deserialize(substream)
     while msg := (yield marv.pull(substream)):
         rosmsg = deserialize(msg.data)

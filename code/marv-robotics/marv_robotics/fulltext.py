@@ -15,7 +15,7 @@ WSNULL = re.compile(r'[\s\x00]')
 @marv.input('stream', foreach=marv.select(messages, ('*:std_msgs/String,'
                                                      '*:std_msgs/msg/String')))
 def fulltext_per_topic(stream):
-    yield marv.set_header()  # TODO: workaround
+    yield marv.set_header(title=stream.topic)
     words = set()
     deserialize = make_deserialize(stream)
     while True:
