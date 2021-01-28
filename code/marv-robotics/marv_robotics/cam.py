@@ -101,7 +101,7 @@ def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):  # pylint:
     yield video
 
 
-@marv.node(File)
+@marv.node(File, version=1)
 @marv.input('stream', foreach=marv.select(messages, IMAGE_MSG_TYPES))
 @marv.input('image_width', default=320)
 @marv.input('max_frames', default=50)
