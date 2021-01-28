@@ -478,6 +478,8 @@ def motion_section(timestamp, easting_northing, distance, speed, acceleration): 
     del plots['acceleration']['layout']['margin']
     plots['acceleration']['layout']['yaxis']['title'] = 'acceleration (m/s²)'
 
+    firste = None
+    firstn = None
     distsum = 0
     while True:
         msg_ts, msg_en, msg_distance, msg_speed, msg_acceleration = yield marv.pull_all(
@@ -486,8 +488,17 @@ def motion_section(timestamp, easting_northing, distance, speed, acceleration): 
                 msg_acceleration is None:
             break
 
-        traces['en']['x'].append(msg_en['e'])
-        traces['en']['y'].append(msg_en['n'])
+        if firste is None:
+            firste = msg_en['e']
+            firstn = msg_en['n']
+            rele = 0
+            reln = 0
+        else:
+            rele = msg_en['e'] - firste
+            reln = msg_en['n'] - firstn
+
+        traces['en']['x'].append(rele)
+        traces['en']['y'].append(reln)
 
         tsval = int(msg_ts / 1e6)
         traces['distance']['x'].append(tsval)
