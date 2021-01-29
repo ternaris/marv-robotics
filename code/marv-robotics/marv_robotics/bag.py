@@ -323,11 +323,12 @@ def bagmeta(dataset):
     })
 
 
-def read_messages(paths, topics=None, start_time=None, end_time=None):
+def read_messages(paths, topics=None, start_time=None, end_time=None, connection_header=False):
     """Iterate chronologically raw BagMessage for topic from paths."""
     with ExitStack() as stack:
         bags = [stack.enter_context(open_rosbag1(path)) for path in paths]
-        gens = [bag.read_messages(topics=topics, start_time=start_time, end_time=end_time, raw=True)
+        gens = [bag.read_messages(topics=topics, start_time=start_time, end_time=end_time, raw=True,
+                                  return_connection_header=connection_header)
                 for bag in bags]
         prev_time = genpy.Time(0)
         for time, msg in heapq.merge(*gens, key=lambda x: x[0]):
