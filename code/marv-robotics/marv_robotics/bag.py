@@ -5,7 +5,7 @@ import heapq
 import re
 import sys
 from collections import defaultdict, namedtuple
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 from itertools import groupby
 from logging import getLogger
 from pathlib import Path
@@ -15,7 +15,7 @@ import rosbag2
 
 import marv_api as marv
 import marv_nodes
-from marv_api import DatasetInfo
+from marv_api import DatasetInfo, ReaderError
 from marv_ros import genpy, rosbag
 from marv_ros.rosbag import _get_message_type
 
@@ -222,6 +222,19 @@ def _read_bagmeta2(path):
     }
 
 
+@contextmanager
+def open_rosbag1(path):
+    try:
+        with rosbag.Bag(path) as bag:
+            yield bag
+    except rosbag.ROSBagUnindexedException:
+        raise ReaderError((
+            f'Unindexed bag file: {path}\n'
+            '  File was not copied in full or recording did not finish properly\n'
+            '  Use `rosbag reindex` to index what is there.'
+        )) from None
+
+
 @marv.node(Bagmeta)
 @marv.input('dataset', marv_nodes.dataset)
 def bagmeta(dataset):
@@ -250,7 +263,7 @@ def bagmeta(dataset):
     end_time = 0
     connections = {}
     for path in paths:
-        with rosbag.Bag(path) as bag:
+        with open_rosbag1(path) as bag:
             try:
                 _start_time = int(bag.get_start_time() * 1.e9)
                 _end_time = int(bag.get_end_time() * 1.e9)
@@ -313,7 +326,7 @@ def bagmeta(dataset):
 def read_messages(paths, topics=None, start_time=None, end_time=None):
     """Iterate chronologically raw BagMessage for topic from paths."""
     with ExitStack() as stack:
-        bags = [stack.enter_context(rosbag.Bag(path)) for path in paths]
+        bags = [stack.enter_context(open_rosbag1(path)) for path in paths]
         gens = [bag.read_messages(topics=topics, start_time=start_time, end_time=end_time, raw=True)
                 for bag in bags]
         prev_time = genpy.Time(0)

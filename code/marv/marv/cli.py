@@ -26,6 +26,7 @@ import marv_node.run
 from marv.db import USERGROUP_REGEX, DBError, DBNotInitialized, DBPermissionError, DBVersionError
 from marv.site import SiteError, UnknownNode, load_sitepackages, make_config
 from marv.utils import within_pyinstaller_bundle
+from marv_api import ReaderError
 from marv_api.utils import echo, err, find_obj
 from marv_cli import PDB
 from marv_cli import marv as marvcli
@@ -561,6 +562,9 @@ async def marvcli_run(  # noqa: C901
                     ctx.abort()
                 except marv_node.run.Aborted:
                     ctx.abort()
+                except ReaderError as e:
+                    errors.append(setid)
+                    log.error('Reader error for dataset %s: %s', setid, e)
                 except Exception as e:  # pylint: disable=broad-except
                     errors.append(setid)
                     if isinstance(e, DirectoryAlreadyExists):

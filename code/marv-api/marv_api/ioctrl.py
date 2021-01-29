@@ -18,6 +18,10 @@ class Abort(Exception):
     pass
 
 
+class ReaderError(Exception):
+    """A file could not be read, full node run is aborted."""
+
+
 def create_stream(name, **header):
     """Create a stream for publishing messages.
 

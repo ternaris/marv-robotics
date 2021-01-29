@@ -2,14 +2,15 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 from .decorators import InputNameCollision, input, node, select
-from .ioctrl import (Abort, create_group, create_stream, get_logger, get_requested, make_file, pull,
-                     pull_all, push, set_header)
+from .ioctrl import (Abort, ReaderError, create_group, create_stream, get_logger, get_requested,
+                     make_file, pull, pull_all, push, set_header)
 from .scanner import DatasetInfo
 
 __all__ = (
     'Abort',
     'DatasetInfo',
     'InputNameCollision',
+    'ReaderError',
     'create_group',
     'create_stream',
     'get_logger',
