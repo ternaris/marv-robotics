@@ -152,12 +152,14 @@ def test_file_wrapper():
     with pytest.raises(AttributeError):
         assert wrapper.relpath
 
-    wrapper = Wrapper.from_dict(File, {'path': '/foo'})
+    wrapper = Wrapper.from_dict(File, {'path': '/foo'}, setdir=Path(__file__).parent.parent)
     assert wrapper.path == '/foo'
     with pytest.raises(AttributeError):
         assert wrapper.relpath
 
-    wrapper = Wrapper.from_dict(File, {'path': __file__}, streamdir=Path(__file__).parent)
+    wrapper = Wrapper.from_dict(File, {'path': __file__},
+                                setdir=Path(__file__).parent.parent,
+                                streamdir=Path(__file__).parent)
     assert wrapper.path == __file__
 
     wrapper = Wrapper.from_dict(File, {'path': '/path/to/setdir/streamdir/file'},
@@ -168,3 +170,11 @@ def test_file_wrapper():
                                 setdir='/path/to/moved/setdir', streamdir='/irrelevant')
     assert wrapper.path == '/path/to/moved/setdir/streamdir/file'
     assert wrapper.relpath == 'streamdir/file'
+
+    # Moved, but old path exists, i.e. copied
+    # Rhe last component of setdir is the setid, which usually is a random hash and looked for
+    # in the stored path to return the new path.
+    wrapper = Wrapper.from_dict(File, {'path': __file__},
+                                setdir=f'/path/to/moved/{Path(__file__).parent.name}',
+                                streamdir='/irrelevant')
+    assert wrapper.path == f'/path/to/moved/{Path(__file__).parent.name}/{Path(__file__).name}'

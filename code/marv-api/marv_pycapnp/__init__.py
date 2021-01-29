@@ -121,7 +121,8 @@ class Wrapper:
         # if not path.is_absolute():
         #     return self._streamdir / path  # do we trust path?
 
-        if not path.exists():
+        assert self._setdir
+        if self._setdir not in path.parents or not path.exists():
             path = self._setdir / self._path_within_setdir(path)
 
         return str(path)
