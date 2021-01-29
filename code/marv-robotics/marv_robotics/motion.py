@@ -20,7 +20,8 @@ from marv_robotics.bag import make_deserialize, make_get_timestamp, messages
 
 
 @marv.node()
-@marv.input('stream', marv.select(messages, '*:geometry_msgs/PoseStamped,*:sensor_msgs/NavSatFix'))
+@marv.input('stream', marv.select(messages, '*:sensor_msgs/NavSatFix'))
+# @marv.input('stream', marv.select(messages, '*:geometry_msgs/PoseStamped'))
 def motion_timestamp(stream):
     """Extract timestamps for motion events.
 
@@ -32,19 +33,14 @@ def motion_timestamp(stream):
 
     """
     log = yield marv.get_logger()
-    substreams = {}
-    while substream := (yield marv.pull(stream)):
-        if substream.header['msg_type'] not in substreams:
-            substreams[substream.header['msg_type']] = substream
-    if not substreams:
+    stream = yield marv.pull(stream)  # take first matching connection
+    if not stream:
         return
 
-    substream = substreams.get('geometry_msgs/PoseStamped') or \
-        substreams.get('sensor_msgs/NavSatFix')
-    yield marv.set_header(title=substream.topic)
-    deserialize = make_deserialize(substream)
-    get_timestamp = make_get_timestamp(log, substream)
-    while msg := (yield marv.pull(substream)):
+    yield marv.set_header(title=stream.topic)
+    deserialize = make_deserialize(stream)
+    get_timestamp = make_get_timestamp(log, stream)
+    while msg := (yield marv.pull(stream)):
         rosmsg = deserialize(msg.data)
         yield marv.push(get_timestamp(rosmsg, msg))
 
@@ -252,42 +248,8 @@ def distance_gps(pos):
 
 
 @marv.node(Float64Value)
-@marv.input('distance_xyz', distance_xyz)
-@marv.input('distance_gps', distance_gps)
-def distance(distance_xyz, distance_gps):
-    """Fuse distance streams.
-
-    Distances can be calculated from multiple sources. This node tries to pull different sources and
-    republishes one of them. Currently, distances are calculated from Pose and from GPS data. If
-    both are available Pose distances are preferred.
-
-    Args:
-        distance_xyz: Message stream with distances from Cartesian positions.
-        distance_gps: Message stream with distances from GPS positions.
-
-    Yields:
-        Message stream with distances.
-
-    """
-    msg_xyz, msg_gps = yield marv.pull_all(distance_xyz, distance_gps)
-    if msg_xyz:
-        yield marv.set_header(title=distance_xyz.title)
-        yield marv.push({'value': msg_xyz.value})
-        distance = distance_xyz
-    elif msg_gps:
-        yield marv.set_header(title=distance_gps.title)
-        yield marv.push({'value': msg_gps.value})
-        distance = distance_gps
-    else:
-        return
-
-    while msg := (yield marv.pull(distance)):
-        yield marv.push({'value': msg.value})
-
-
-@marv.node(Float64Value)
 @marv.input('timestamp', motion_timestamp)
-@marv.input('distance', distance)
+@marv.input('distance', distance_gps)
 def speed(timestamp, distance):
     """Calculate speed from distance stream.
 
@@ -409,7 +371,8 @@ def empty_plotly_widget(trace, title):
 
 
 @marv.node()
-@marv.input('stream', marv.select(messages, '*:geometry_msgs/PoseStamped,*:sensor_msgs/NavSatFix'))
+@marv.input('stream', marv.select(messages, '*:sensor_msgs/NavSatFix'))
+# @marv.input('stream', marv.select(messages, '*:geometry_msgs/PoseStamped'))
 def easting_northing(stream):
     """Extract easting and northing.
 
@@ -420,20 +383,15 @@ def easting_northing(stream):
         Message stream with easting and northing.
 
     """
-    substreams = {}
-    while substream := (yield marv.pull(stream)):
-        if substream.header['msg_type'] not in substreams:
-            substreams[substream.header['msg_type']] = substream
-    if not substreams:
+    stream = yield marv.pull(stream)  # take first matching connection
+    if not stream:
         return
 
-    substream = substreams.get('geometry_msgs/PoseStamped') or \
-        substreams.get('sensor_msgs/NavSatFix')
-    yield marv.set_header(title=substream.topic)
-    deserialize = make_deserialize(substream)
-    while msg := (yield marv.pull(substream)):
+    yield marv.set_header(title=stream.topic)
+    deserialize = make_deserialize(stream)
+    while msg := (yield marv.pull(stream)):
         rosmsg = deserialize(msg.data)
-        if substream.msg_type == 'sensor_msgs/NavSatFix':
+        if stream.msg_type == 'sensor_msgs/NavSatFix':
             easting, northing, _, _ = utm.from_latlon(rosmsg.latitude, rosmsg.longitude)
         else:
             easting, northing = rosmsg.pose.position.x, rosmsg.pose.position.y
@@ -443,7 +401,7 @@ def easting_northing(stream):
 @marv.node(Section)
 @marv.input('timestamp', motion_timestamp)
 @marv.input('easting_northing', easting_northing)
-@marv.input('distance', distance)
+@marv.input('distance', distance_gps)
 @marv.input('speed', speed)
 @marv.input('acceleration', acceleration)
 def motion_section(timestamp, easting_northing, distance, speed, acceleration):  # pylint: disable=too-many-arguments,too-many-locals
