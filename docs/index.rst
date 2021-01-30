@@ -23,6 +23,7 @@ Welcome to MARV Robotics!
    httpapi
    upload
    deploy
+   accesscontrol
    maintenance
    migrate/index
    CHANGES
