@@ -62,6 +62,7 @@ Changed
 - Disabled fulltext node in default config as it can lead to excessive DB memory usage; enable selectively instead
 - Publish marv_robotics.trajectory.navsatfix timestamps in nanoseonds **needs migration:** :ref:`migrate-upcoming` for custom nodes directly consuming the navsatfix node
 - Updated python dependencies
+- Silence aiosqlite exception logging, among others when trying to add users or groups that exist already
 - Remove remaining EE-only leaf database model from (CE)
 - Switch CE docker image base to plain Ubuntu focal as we don't have any external ROS dependencies anymore (CE)
 - Move widget dropdown to CE, previously EE only (CE)
