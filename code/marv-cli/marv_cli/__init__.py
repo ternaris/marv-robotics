@@ -69,9 +69,6 @@ def setup_logging(loglevel, verbosity=0, logfilter=None):
         def filter(self, record):
             if logfilter and not any(record.name.startswith(x) for x in logfilter):
                 return False
-            if record.name == 'rospy.core' and \
-               record.msg == 'signal_shutdown [atexit]':
-                return False
             return True
     filter = Filter()
 
