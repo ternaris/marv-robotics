@@ -69,6 +69,8 @@ def setup_logging(loglevel, verbosity=0, logfilter=None):
         def filter(self, record):
             if logfilter and not any(record.name.startswith(x) for x in logfilter):
                 return False
+            if record.name == 'aiosqlite' and 'returning exception' in record.msg:
+                return False
             return True
     filter = Filter()
 
