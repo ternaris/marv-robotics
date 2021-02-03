@@ -33,9 +33,26 @@ After updating MARV run:
    marv restore dump-2008.json
 
 
-Code migration
-^^^^^^^^^^^^^^
+Code migration (CE)
+^^^^^^^^^^^^^^^^^^^
 Node :func:`marv_robotics.trajectory.navsatfix` now returns timestamps as integer in nanoseconds instead of as float in seconds. Directly consuming custom nodes need migration, all nodes shipping with marv are already adjusted accordingly.
+
+
+Config migration (EE)
+^^^^^^^^^^^^^^^^^^^^^
+To implement partial downloads, the Enterprise Edition now uses a dedicated connections section. Please adjust your config accordingly and rerun the corresponding node:
+
+.. code-block:: diff
+
+   -    marv_robotics.detail:connections_section
+   +    marv_ee_nodes.detail:connections_section
+
+
+.. code-block:: console
+
+   marv run --force --node connections_section --col=\*
+
+
 
 .. _migrate-20.08.0:
 

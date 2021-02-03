@@ -68,6 +68,7 @@ Changed
 - Move widget dropdown to CE, previously EE only (CE)
 - Move widget mpld3 to CE, previously EE only (CE)
 - Ship frontend as part of marv python distribution (CE)
+- Introduce dedicated connections section for partial downloads (EE) **needs migration:** :ref:`migrate-upcoming`
 
 Deprecated
 ~~~~~~~~~~
