@@ -32,6 +32,7 @@ Added
 - Added makelist config function
 - Fallback to bag message timestamp in case ROS message header timestamp is zero
 - CLI version option to display version and copyright information
+- API call to get path to site resource within node (marv.get_resource_path())
 - Support to publish frontend updates independent of full releases (CE)
 - Let CI run pytest for community edition merge requests (CE)
 - Let CI publish latest documentation as gitlab pages (CE)
