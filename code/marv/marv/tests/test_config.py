@@ -5,10 +5,10 @@ import sysconfig
 from configparser import ConfigParser
 from pathlib import Path
 
-import pydantic
 import pytest
 
 from marv import config
+from marv.config import ConfigError
 
 CONFIG = """
 [marv]
@@ -96,10 +96,9 @@ def test_config():
 
 def test_marv_collections():
     parse('site/marv.conf', COLUNMENTIONED)
-    with pytest.raises(pydantic.ValidationError) as einfo:
+    with pytest.raises(ConfigError) as einfo:
         parse('site/marv.conf', COLMISSING)
-    assert len(einfo.value.errors()) == 1
-    assert "missing for ['foo']" in einfo.value.errors()[0]['msg']
+    assert "could not be parsed for ['foo']" in str(einfo.value)
 
 
 def test_validators():

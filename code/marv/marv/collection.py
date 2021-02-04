@@ -14,7 +14,7 @@ from logging import getLogger
 from pypika import SQLLiteQuery as Query
 
 from marv import utils
-from marv.config import ConfigError, NewConfigError, calltree, getdeps, make_funcs, parse_function
+from marv.config import ConfigError, calltree, getdeps, make_funcs, parse_function
 from marv.db import scoped_session
 from marv.model import Collection as CollectionModel
 from marv.model import Comment, Dataset, File, make_listing_model, make_table_descriptors
@@ -78,7 +78,7 @@ def postprocess_functree(name, arguments):
         try:
             field, default = arguments
         except ValueError:
-            raise NewConfigError(
+            raise ConfigError(
                 "'rows' takes zero or two arguments, column name and default value",
             ) from None
 
@@ -238,19 +238,18 @@ class Collection:
             try:
                 nodename, node = find_obj(line, True)
             except AttributeError:
-                raise ConfigError(self.section, 'nodes', 'Cannot find node %s' % line)
+                raise ConfigError(f'Collection {self.name!r} cannot find node {line!r}')
 
             node = Node.from_dag_node(node)
 
             if node in linemap:
-                raise ConfigError(self.section, 'nodes',
-                                  '%s already listed as %s' %
-                                  (line, linemap[node]))
+                raise ConfigError(
+                    f'Collection {self.name!r} node {line!r} already listed as {linemap[node]!r}')
             linemap[node] = line
             if nodename in nodes:
-                raise ConfigError(self.section, 'nodes', 'duplicate name %s' % (nodename,))
+                raise ConfigError(f'Collection {self.name!r} duplicate name {nodename!r}')
             if not node.schema:
-                raise ConfigError(self.section, 'nodes', '%s does not define a schema!' % (line,))
+                raise ConfigError(f'Collection {self.name!r} node {line!r} does not define schema')
             nodes[nodename] = node
         return nodes
 
@@ -282,7 +281,7 @@ class Collection:
         except IndexError:
             return 'ascending'
         except KeyError:
-            raise ConfigError(self.section, 'listing_sort', f'{sortorder} not in {orders}')
+            raise ConfigError(f'Collection {self.name!r} {sortorder} not in {orders}')
 
     @cached_property
     def summary_items(self):
@@ -293,8 +292,8 @@ class Collection:
             functree = parse_function(item.function)
             try:
                 functree = postprocess_functree(*functree)
-            except NewConfigError as exc:
-                raise NewConfigError(f'Collection {self.name!r} listing_summary: {exc}') from None
+            except ConfigError as exc:
+                raise ConfigError(f'Collection {self.name!r} listing_summary: {exc}') from None
             dct['function'] = functree
             summary.append(dct)
         return summary

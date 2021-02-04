@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 from pkg_resources import resource_filename
-from pydantic import BaseModel, Extra, validator
+from pydantic import BaseModel, Extra, ValidationError, validator
 
 from marv_api.deprecation import deprecated
 from marv_api.utils import echo
@@ -24,16 +24,6 @@ log = getLogger(__name__)
 
 
 class ConfigError(Exception):
-    def __str__(self):
-        try:
-            section, key, message = self.args  # pylint: disable=unbalanced-tuple-unpacking
-        except ValueError:
-            section, key = self.args  # pylint: disable=unbalanced-tuple-unpacking
-            message = 'missing'
-        return f'{section.filename} [{section.name}] {key}: {message}'
-
-
-class NewConfigError(Exception):
     pass
 
 
@@ -379,8 +369,10 @@ class Config(Model):
 
     @validator('collections')
     def collections_missing(cls, val, values):
+        if 'marv' not in values:
+            raise ValueError('Marv section could not be parsed')
         if missing := set(values['marv'].collections) - val.keys():
-            raise ValueError(f'Collection section missing for {sorted(missing)}')
+            raise ValueError(f'Collection section could not be parsed for {sorted(missing)}')
         return val
 
     @classmethod
@@ -402,4 +394,7 @@ class Config(Model):
                 dct['collections'][name.split(None, 1)[1]] = section
             else:
                 dct[name] = section
-        return cls.parse_obj(dct)
+        try:
+            return cls.parse_obj(dct)
+        except ValidationError as exc:
+            raise ConfigError(str(exc))
