@@ -2,13 +2,14 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 from contextvars import ContextVar
+from pathlib import Path
 
 from capnp.lib.capnp import KjException
 
 from marv_pycapnp import Wrapper
 
-from .iomsgs import (CreateStream, GetLogger, GetRequested, Handle, MakeFile, Pull, PullAll, Push,
-                     SetHeader)
+from .iomsgs import (CreateStream, GetLogger, GetRequested, GetResourcePath, Handle, MakeFile, Pull,
+                     PullAll, Push, SetHeader)
 from .utils import err
 
 NODE_SCHEMA = ContextVar('NODE_SCHEMA')
@@ -42,6 +43,16 @@ def get_logger():
 
 def get_requested():
     return GetRequested()
+
+
+def get_resource_path(name):
+    """Request path to resource from site/resources.
+
+    Treat resource as readonly, do NOT modify.
+    """
+    if Path(name).resolve().name != name:
+        raise ValueError('Resource name must be a valid file name.')
+    return GetResourcePath(name)
 
 
 def make_file(name):

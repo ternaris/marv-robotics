@@ -70,6 +70,7 @@ class Site:
         site = cls(siteconf)
         if within_pyinstaller_bundle():
             load_sitepackages(site.config.marv.sitepackages)
+        site.config.marv.resourcedir.mkdir(exist_ok=True)
 
         site.db.check_db_version(site.config.marv.dburi, missing_ok=init)
 
@@ -270,7 +271,7 @@ class Site:
             if nodes:
                 changed = await run_nodes(dataset, nodes, store, force=force,
                                           persistent=persistent,
-                                          deps=deps, cachesize=cachesize)
+                                          deps=deps, cachesize=cachesize, site=self)
         finally:
             if not keep:
                 for stream in store.pending:

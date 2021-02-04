@@ -3,7 +3,7 @@
 
 from .decorators import InputNameCollision, input, node, select
 from .ioctrl import (Abort, ReaderError, create_group, create_stream, get_logger, get_requested,
-                     make_file, pull, pull_all, push, set_header)
+                     get_resource_path, make_file, pull, pull_all, push, set_header)
 from .scanner import DatasetInfo
 
 __all__ = (
@@ -15,6 +15,7 @@ __all__ = (
     'create_stream',
     'get_logger',
     'get_requested',
+    'get_resource_path',
     'input',
     'make_file',
     'node',

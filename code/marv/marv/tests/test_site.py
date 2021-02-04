@@ -15,6 +15,7 @@ import pytest
 from marv.db import scoped_session
 from marv.site import Site
 from marv_api.utils import echo
+from marv_node.testing import make_dataset, marv, run_nodes
 
 KEEP = os.environ.get('KEEP')
 log = getLogger(__name__)
@@ -59,6 +60,8 @@ async def site(loop):  # pylint: disable=unused-argument
 
     site_ = await Site.create(Path(siteconf), init=True)
     site_.scanroot_ = scanroot
+    (site_.config.marv.resourcedir / 'answer').write_text('42')
+
     yield site_
 
     async with scoped_session(site_.db) as connection:
@@ -164,3 +167,20 @@ async def test_outdated_node(site):  # pylint: disable=redefined-outer-name
     await site.scan()
     foo1id = (await site.db.query(path=foo1))[0]
     assert foo1id
+
+
+@marv.node()
+def useresource():
+    path = yield marv.get_resource_path('answer')
+    yield marv.push(path.read_text())
+
+
+DATASET = make_dataset()
+
+
+async def test_node_site_resource(site):  # pylint: disable=redefined-outer-name
+    nodes = [useresource]
+    streams = await run_nodes(DATASET, nodes, site=site)
+    assert streams == [
+        ['42'],
+    ]

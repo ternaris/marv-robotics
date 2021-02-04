@@ -44,10 +44,11 @@ class Driver(Keyed, AGenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-
     def name(self):
         return self.stream.name
 
-    def __init__(self, stream, inputs=None):
+    def __init__(self, stream, inputs=None, site=None):
         self.stream = stream
         self.streams = OrderedDict([(stream.handle, stream)])
         self.inputs = inputs
+        self.site = site
         self._requested_streams = []
         self._agen = self._run()
         self._agen_node = None
@@ -64,7 +65,7 @@ class Driver(Keyed, AGenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-
         # pylint: disable=too-many-statements,too-many-branches,too-many-locals
         self.started = True
 
-        agen = self._agen_node = self.node.invoke(self.key_abbrev, self.inputs)
+        agen = self._agen_node = self.node.invoke(self.key_abbrev, self.inputs, site=self.site)
         assert hasattr(agen, 'asend'), agen
 
         yield  # Wait for start signal before returning anything notable

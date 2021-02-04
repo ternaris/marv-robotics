@@ -46,7 +46,7 @@ class Aborted(Exception):
 
 
 async def run_nodes(dataset, nodes, store, persistent=None, force=None, deps=None, cachesize=None,
-                    _gather_into=None):
+                    site=None, _gather_into=None):
     # pylint: disable=too-many-arguments
 
     if cachesize is not None:
@@ -56,7 +56,7 @@ async def run_nodes(dataset, nodes, store, persistent=None, force=None, deps=Non
 
     queue = []
     ret = await run_nodes_async(dataset=dataset, nodes=nodes, store=store,
-                                queue=queue, persistent=persistent,
+                                queue=queue, persistent=persistent, site=site,
                                 force=force, deps=deps, _gather_into=_gather_into)
     if ret is None:
         return False
@@ -88,7 +88,7 @@ async def run_nodes(dataset, nodes, store, persistent=None, force=None, deps=Non
 
 
 async def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=None, deps=None,
-                          _gather_into=None):  # noqa: C901
+                          site=None, _gather_into=None):  # noqa: C901
     # pylint: disable=too-many-arguments
     deps = True if deps is None else deps
     force = False if force is None else force
@@ -159,7 +159,7 @@ async def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=N
                 continue
         stream = (store.create_stream(handle) if node in persistent
                   else VolatileStream(handle))
-        driver = Driver(stream)
+        driver = Driver(stream, site=site)
         await start_driver(driver, force and handle in store)
 
     if not drivers:
@@ -427,7 +427,7 @@ async def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=N
                 driver_stream = \
                     store.create_stream(driver_handle) if node in persistent else \
                     VolatileStream(driver_handle)
-                reqdriver = Driver(driver_stream)
+                reqdriver = Driver(driver_stream, site=site)
                 assert reqdriver.key == driver_key
                 await start_driver(reqdriver, forced)
                 if node in persistent:

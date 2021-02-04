@@ -11,7 +11,7 @@ from logging import getLogger
 
 from marv_api import dag
 from marv_api.ioctrl import NODE_SCHEMA, Abort
-from marv_api.iomsgs import GetLogger
+from marv_api.iomsgs import GetLogger, GetResourcePath
 from marv_api.utils import find_obj
 
 from . import io
@@ -144,7 +144,7 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
     def __call__(self, **inputs):
         return self.func(**inputs)
 
-    async def invoke(self, key_abbrev, inputs=None):  # noqa: C901
+    async def invoke(self, key_abbrev, inputs=None, site=None):  # noqa: C901
         # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         # We must not write any instance variables, a node is running
         # multiple times in parallel.
@@ -198,7 +198,8 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
             if inputs is None:
                 inputs = dict(common)
             qout, qin = asyncio.Queue(1), asyncio.Queue(1)
-            task = asyncio.create_task(self.execnode(key_abbrev, inputs, qin=qout, qout=qin),
+            task = asyncio.create_task(self.execnode(key_abbrev, inputs, qin=qout, qout=qin,
+                                                     site=site),
                                        name=key_abbrev)
             while True:
                 request = await qin.get()
@@ -215,7 +216,7 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
 
                 qout.put_nowait(response)
 
-    async def execnode(self, key_abbrev, inputs, qin, qout):
+    async def execnode(self, key_abbrev, inputs, qin, qout, site=None):
         NODE_SCHEMA.set(self.schema)
         gen = self.func(**inputs)
         assert hasattr(gen, 'send')
@@ -237,6 +238,10 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
 
             if isinstance(request, GetLogger):
                 response = log
+                continue
+
+            if isinstance(request, GetResourcePath):
+                response = site.config.marv.resourcedir / request.name
                 continue
 
             qout.put_nowait(request)

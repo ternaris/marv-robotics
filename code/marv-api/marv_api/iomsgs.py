@@ -8,6 +8,7 @@ from marv_node.stream import Handle  # pylint: disable=unused-import
 CreateStream = namedtuple('CreateStream', 'parent name group header')
 GetLogger = namedtuple('GetLogger', '')
 GetRequested = namedtuple('GetRequested', '')
+GetResourcePath = namedtuple('GetResourcePath', 'name')
 MakeFile = namedtuple('MakeFile', 'handle name')
 
 Pull = namedtuple('Pull', 'handle enumerate')
