@@ -99,6 +99,7 @@ Fixed
 - Fulltext node treats null characters as whitespace instead of passing them on and producing an invalid SQL query
 - Sorting of incomplete listing columns that prevented rendering in some cases `#88`_
 - Gracefully handle unindexed rosbag1 files `#88`_
+- Config error exception handling
 - Authentication using OAuth2 webflow in Firefox (EE)
 
 Security
