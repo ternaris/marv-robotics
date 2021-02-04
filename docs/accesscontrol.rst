@@ -41,6 +41,10 @@ Webflow authorization will require two URLs to be filled in. One is the *applica
 
 The MARV application should be granted as few permissions as possible (see ``scope`` parameter below).
 
+.. note::
+
+   Double-check your nginx config (:ref:`deploy_nginx`), it's essential that MARV knows how it's served in order to generate the correct redirect URI. In case an oauth service complains about an invalid redirect URI, check the URL displayed in the browser for debugging, it contains the redirect URI as query parameter.
+
 
 Configuring MARV
 ^^^^^^^^^^^^^^^^
