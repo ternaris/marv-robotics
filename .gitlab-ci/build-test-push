@@ -47,10 +47,8 @@ if [ -n "${CI_COMMIT_TAG-}" ]; then
         dtags="$dtags latest"
     fi
 else
-    dtags="$CI_COMMIT_BRANCH"
-    if [ "$CI_COMMIT_BRANCH" != "master" ]; then
-        DOCKERHUB_IMAGE=""
-    fi
+    dtags=
+    DOCKERHUB_IMAGE=""
 fi
 echo "$dtags"
 
