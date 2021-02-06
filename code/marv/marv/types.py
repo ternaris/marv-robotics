@@ -6,7 +6,7 @@ from marv_api import deprecation
 
 DEPRECATIONS = {
     name: deprecation.Info(
-        __name__, '20.11', getattr(marv_api.types, name),
+        __name__, '21.04', getattr(marv_api.types, name),
         f'use marv_api.types.{name} instead.',
     ) for name in (
         'Section', 'Widget',

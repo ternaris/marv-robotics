@@ -32,7 +32,7 @@ class InvalidToken(Exception):
 
 
 @deprecated(
-    '20.11',
+    '21.04',
     'use makelist and filter instead (list (...)) -> (filter null (makelist (...))).',
     name='list',
 )

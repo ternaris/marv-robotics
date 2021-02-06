@@ -73,10 +73,10 @@ Changed
 
 Deprecated
 ~~~~~~~~~~
-- 20.11 will remove marv.types, use marv_api.types instead
-- 20.11 will remove marv.utils.popen, use marv_api.utils.popen instead
-- 20.11 will remove the deprecated HTTP listing API, query :ref:`httpapi_query_collection` instead
-- 20.11 will remove list config function, use makelist instead
+- 21.04 will remove marv.types, use marv_api.types instead
+- 21.04 will remove marv.utils.popen, use marv_api.utils.popen instead
+- 21.04 will remove the deprecated HTTP listing API, query :ref:`httpapi_query_collection` instead
+- 21.04 will remove list config function, use makelist instead
 
 Removed
 ~~~~~~~

@@ -368,7 +368,7 @@ Each collection entry corresponds to one dataset. For filtering by and embedding
 
 
 
-Listing (deprecated, will be removed in 20.11)
+Listing (deprecated, will be removed in 21.04)
 ----------------------------------------------
 
 MARV knows two kind of ids for dataset.
