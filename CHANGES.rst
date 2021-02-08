@@ -17,7 +17,7 @@ Upcoming (unreleased)
 
 Added
 ~~~~~
-- Plotly widget
+- Plotly widget `#37`_
 - Tests for image format conversions
 - Support for sensor_msgs/CompressedImage in cam nodes `#78`_
 - Warnings if rosbag2 contains subdirectories or files not listed in metadata.yaml
@@ -109,6 +109,7 @@ Security
 ~~~~~~~~
 
 
+.. _#37: https://gitlab.com/ternaris/marv-robotics/issues/37
 .. _#72: https://gitlab.com/ternaris/marv-robotics/issues/72
 .. _#78: https://gitlab.com/ternaris/marv-robotics/issues/78
 .. _#82: https://gitlab.com/ternaris/marv-robotics/issues/82
