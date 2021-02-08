@@ -25,7 +25,7 @@ from tortoise.exceptions import DoesNotExist
 import marv_node.run
 from marv.config import ConfigError
 from marv.db import USERGROUP_REGEX, DBError, DBNotInitialized, DBPermissionError, DBVersionError
-from marv.site import SiteError, UnknownNode, load_sitepackages, make_config
+from marv.site import SiteError, load_sitepackages, make_config
 from marv.utils import within_pyinstaller_bundle
 from marv_api import ReaderError
 from marv_api.utils import echo, err, find_obj
@@ -547,8 +547,8 @@ async def marvcli_run(  # noqa: C901
                     await site.run(setid, selected_nodes, deps, force, keep,
                                    force_dependent, update_detail, update_listing,
                                    excluded_nodes, cachesize=cachesize)
-                except UnknownNode as e:
-                    ctx.fail(f'Collection {e.args[0]} has no node {e.args[1]}')
+                except ConfigError as exc:
+                    err(f'ERROR: {exc}', exit=1)
                 except DoesNotExist:
                     click.echo(f'ERROR: unknown {setid!r}', err=True)
                     if not keep_going:
@@ -592,7 +592,10 @@ async def marvcli_run(  # noqa: C901
 async def marvcli_scan(dry_run):
     """Scan for new and changed files."""
     async with create_site() as site:
-        await site.scan(dry_run)
+        try:
+            await site.scan(dry_run)
+        except ConfigError as exc:
+            err(f'ERROR: {exc}', exit=1)
 
 
 @marvcli.command('tag')

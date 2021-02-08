@@ -20,7 +20,7 @@ from marv_node.run import run_nodes
 from marv_store import Store
 
 from .collection import Collections
-from .config import Config
+from .config import Config, ConfigError
 from .db import Database, DBNotInitialized, Tortoise, create_or_ignore, scoped_session
 from .model import Dataset, Group, User
 
@@ -28,10 +28,6 @@ log = getLogger(__name__)
 
 
 class SiteError(Exception):
-    pass
-
-
-class UnknownNode(Exception):
     pass
 
 
@@ -256,8 +252,8 @@ class Site:
                      for name in selected_nodes
                      if name not in excluded_nodes
                      if name != 'dataset'}
-        except KeyError as e:
-            raise UnknownNode(dataset.collection, e.args[0])
+        except KeyError as exc:
+            raise ConfigError(f'Collection {collection.name!r} has no node {exc}')
 
         if force_dependent:
             nodes.update(x for name in selected_nodes for x in persistent[name].dependent)

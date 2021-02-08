@@ -173,12 +173,19 @@ class Collection:
     @cached_property
     def detail_sections(self):
         nodes = self.nodes
-        return [nodes[x] for x in self.section.detail_sections]
+        try:
+            return [nodes[x] for x in self.section.detail_sections]
+        except KeyError as exc:
+            raise ConfigError(f'Collection {self.name!r}: unknown node {exc} in detail_sections')
 
     @cached_property
     def detail_summary_widgets(self):
         nodes = self.nodes
-        return [nodes[x] for x in self.section.detail_summary_widgets]
+        try:
+            return [nodes[x] for x in self.section.detail_summary_widgets]
+        except KeyError as exc:
+            raise ConfigError(
+                f'Collection {self.name!r}: unknown node {exc} in detail_summary_widgets')
 
     @cached_property
     def detail_title(self):
@@ -237,7 +244,7 @@ class Collection:
         for line in self.section.nodes:
             try:
                 nodename, node = find_obj(line, True)
-            except AttributeError:
+            except (AttributeError, ModuleNotFoundError):
                 raise ConfigError(f'Collection {self.name!r} cannot find node {line!r}')
 
             node = Node.from_dag_node(node)
