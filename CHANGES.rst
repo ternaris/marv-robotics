@@ -10,10 +10,10 @@ Changes necessitating migration reference the corresponding migration section. R
 If we're deprecating features you rely on, please speak up.
 
 
-.. _upcoming_changes:
+.. _v20.12.0:
 
-Upcoming (unreleased)
-^^^^^^^^^^^^^^^^^^^^^
+20.12.0 (2021-02-18)
+^^^^^^^^^^^^^^^^^^^^
 
 Added
 ~~~~~
@@ -24,7 +24,7 @@ Added
 - Directory-based scanner as alternative to the default rosbag record set-based scanner
 - Pure-python rosbag2 reader
 - Log warning message from node Abort exception
-- New collection query API `#82`_ **needs migration:** :ref:`migrate-upcoming`
+- New collection query API `#82`_ **needs migration:** :ref:`migrate-20.12.0`
 - Formatters for distance, speed, and acceleration
 - Nodes extracting basic motion parameters
 - Support for nested listing summary functions
@@ -61,7 +61,7 @@ Changed
 - Check not to overwrite existing dump file
 - Tagging via CLI to be idempotent by default, previously it failed when trying to add existing or remove non-existing tags
 - Disabled fulltext node in default config as it can lead to excessive DB memory usage; enable selectively instead
-- Publish marv_robotics.trajectory.navsatfix timestamps in nanoseonds **needs migration:** :ref:`migrate-upcoming` for custom nodes directly consuming the navsatfix node
+- Publish marv_robotics.trajectory.navsatfix timestamps in nanoseonds **needs migration:** :ref:`migrate-20.12.0` for custom nodes directly consuming the navsatfix node
 - Updated python dependencies
 - Silence aiosqlite exception logging, among others when trying to add users or groups that exist already
 - Remove remaining EE-only leaf database model from (CE)
@@ -70,7 +70,7 @@ Changed
 - Move widget mpld3 to CE, previously EE only (CE)
 - Ship frontend as part of marv python distribution (CE)
 - Publish latest tag as latest image to dockerhub and do not publish image for master branch (CE)
-- Introduce dedicated connections section for partial downloads (EE) **needs migration:** :ref:`migrate-upcoming`
+- Introduce dedicated connections section for partial downloads (EE) **needs migration:** :ref:`migrate-20.12.0`
 
 Deprecated
 ~~~~~~~~~~
@@ -104,10 +104,6 @@ Fixed
 - Gracefully handle unindexed rosbag1 files `#88`_
 - Config error exception handling
 - Authentication using OAuth2 webflow in Firefox (EE)
-
-Security
-~~~~~~~~
-
 
 .. _#37: https://gitlab.com/ternaris/marv-robotics/issues/37
 .. _#72: https://gitlab.com/ternaris/marv-robotics/issues/72

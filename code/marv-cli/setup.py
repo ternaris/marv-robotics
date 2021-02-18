@@ -8,7 +8,7 @@ from collections import OrderedDict
 from setuptools import find_packages, setup
 
 NAME = 'marv-cli'
-VERSION = '20.08.0'
+VERSION = '20.12.0'
 DESCRIPTION = 'Core of the MARV command-line interface'
 ENTRY_POINTS = {
     'console_scripts': [
