@@ -4,12 +4,11 @@
 import logging
 import os
 from collections import OrderedDict
+from contextlib import contextmanager
 from pathlib import Path
 
 import click
 from pkg_resources import iter_entry_points
-
-from marv_api.utils import launch_pdb_on_exception
 
 try:
     from marv_ee import VERSION_MESSAGE
@@ -36,6 +35,28 @@ LOGLEVEL = OrderedDict((
     ('noisy', 15),
     ('debug', 10),
 ))
+
+
+# TODO: duplicated from marv_api.utils
+@contextmanager
+def launch_pdb_on_exception(launch=True):
+    """Return contextmanager launching pdb on exception.
+
+    Example:
+      Toggle launch behavior via env variable::
+
+          with launch_pdb_on_exception(os.environ.get('PDB')):
+              cli()
+
+    """
+    if launch:
+        try:
+            yield
+        except Exception:  # pylint: disable=broad-except
+            import pdb  # pylint: disable=import-outside-toplevel
+            pdb.xpm()  # pylint: disable=no-member
+    else:
+        yield
 
 
 def make_log_method(name, numeric):
