@@ -20,6 +20,8 @@ Added
 
 Changed
 ~~~~~~~
+- Introduce dedicated marv-leaf binary (EE)
+
 
 Deprecated
 ~~~~~~~~~~
