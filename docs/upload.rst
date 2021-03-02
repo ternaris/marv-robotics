@@ -41,7 +41,7 @@ The freshly created token has to be stored on the leaf. The command will prompt 
 
 ::
 
-   (leaf)$ marv set-leaf-token
+   (leaf)$ marv-leaf set-token
    Token: <secret_token>
    Repeat for confirmation: <secret_token>
 
@@ -52,7 +52,7 @@ Once server and leaf have been prepared uploading datasets to MARV is straightfo
 
 ::
 
-   (leaf)$ marv upload --url https://example.com --collection bags recording.bag
+   (leaf)$ marv-leaf upload --url https://example.com --collection bags recording.bag
 
 This command will upload the file ``recording.bag`` to the MARV instance ``example.com`` and add the dataset to the ``bags`` collection. It is possible to specify any number of files to upload as a singular dataset. To upload multiple datasets call the command multiple times.
 
@@ -61,9 +61,9 @@ Return code
 
 On success the return value will be zero and the upload process will have made sure that the checksums of all uploaded files are correct.
 
-Rerunning ``marv upload`` on the same set of files will not create another dataset. Instead the MARV will recognize that the data already exists on the server and will indicate success by returning zero.
+Rerunning ``marv-leaf upload`` on the same set of files will not create another dataset. Instead the MARV will recognize that the data already exists on the server and will indicate success by returning zero.
 
-If an upload is interrupted manually of by e.g. loss of network connectivity the return value will be non zero to indicate failure. Rerunning ``marv upload`` with the same parameters will resume the upload from where it was interrupted.
+If an upload is interrupted manually of by e.g. loss of network connectivity the return value will be non zero to indicate failure. Rerunning ``marv-leaf upload`` with the same parameters will resume the upload from where it was interrupted.
 
 Data safety
 -----------
