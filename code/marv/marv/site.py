@@ -181,7 +181,7 @@ class Site:
 
             for name in ('marv:anonymous',):
                 user = await User.get_or_create(name=name, realm='marv', realmuid='',
-                                                using_db=txn)
+                                                active=True, using_db=txn)
                 await user[0].groups.add(
                     await Group.get(name=name.replace(':', ':user:')).using_db(txn),
                     using_db=txn,

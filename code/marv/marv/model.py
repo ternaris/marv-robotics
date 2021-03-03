@@ -139,6 +139,7 @@ class User(Model):
     email = TextField(null=True)
     realm = TextField()
     realmuid = TextField(null=True)
+    active = BooleanField()
     time_created = DatetimeField(auto_now_add=True)
     time_updated = DatetimeField(auto_now=True)
     groups = ManyToManyField('models.Group', related_name='users')

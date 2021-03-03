@@ -511,7 +511,7 @@ class Tortoise(_Tortoise):
 class Database:
     # pylint: disable=too-many-public-methods
 
-    VERSION = '20.12'
+    VERSION = '21.03'
 
     EXPORT_HANDLERS = (
         ({'group', 'user', 'user_group'}, dump_users_groups),
@@ -567,7 +567,7 @@ class Database:
         if not username or not password:
             return False
         try:
-            user = await User.get(name=username, realm='marv').using_db(txn)
+            user = await User.get(name=username, active=True, realm='marv').using_db(txn)
         except DoesNotExist:
             return False
         return bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8'))
@@ -589,7 +589,7 @@ class Database:
             for name in users_add:
                 if not USERGROUP_REGEX.match(name):
                     raise DBError('User name can only contain alphanumeric characters and [-_+@.]')
-                user = await User.create(name=name, realm='marv', using_db=txn)
+                user = await User.create(name=name, realm='marv', active=True, using_db=txn)
                 await user.groups.add(
                     await Group.create(name=f'marv:user:{name}', using_db=txn),
                     everybody,
@@ -620,7 +620,8 @@ class Database:
 
     @run_in_transaction
     async def user_add(self, name, password, realm, realmuid, given_name=None, family_name=None,
-                       email=None, time_created=None, time_updated=None, _restore=None, txn=None):
+                       email=None, active=True, time_created=None, time_updated=None, _restore=None,
+                       txn=None):
         # pylint: disable=too-many-arguments
         if not USERGROUP_REGEX.match(name):
             raise DBError('User name can only contain alphanumeric characters and [-_+@.]')
@@ -632,8 +633,9 @@ class Database:
         try:
             user = await User.create(name=name, password=password, realm=realm,
                                      given_name=given_name, family_name=family_name,
-                                     email=email, realmuid=realmuid, time_created=time_created,
-                                     time_updated=time_updated, using_db=txn)
+                                     email=email, realmuid=realmuid, active=active,
+                                     time_created=time_created, time_updated=time_updated,
+                                     using_db=txn)
             if name != 'marv:anonymous':
                 everybody = await Group.get(name='marv:users').using_db(txn)
                 await user.groups.add(
