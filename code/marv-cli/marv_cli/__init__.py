@@ -14,7 +14,7 @@ try:
     from marv_ee import VERSION_MESSAGE
 except ImportError:
     VERSION_MESSAGE = """
-marv (MARV Community Edition) %(version)s
+%(prog)s (MARV Community Edition) %(version)s
 Copyright (C) 2016 - 2021  Ternaris and the MARV Contributors.
 License AGPL-3.0-only: GNU Affero General Public License v3.0 <https://spdx.org/licenses/AGPL-3.0.html>
 This is free software: you are free to change and redistribute it.
