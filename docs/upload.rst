@@ -8,7 +8,7 @@ Upload (EE)
 
 MARV is designed to process and manage continuous recordings performed by large fleets of robots. To ease the handling of a large influx of data MARV implements an upload functionality. It takes care that new data is quickly and securely handed into MARV management. Transmissions are automatically authenticated and encrypted.
 
-In the MARV ecosystem data providers that connect to the MARV server are called ``leafs``. A leaf can be any potential source of data, e.g. a robot, a vehicle, a CI server, or any other technical system.
+In the MARV ecosystem data providers that connect to the MARV server are called ``leaves``. A leaf can be any potential source of data, e.g. a robot, a vehicle, a CI server, or any other technical system.
 
 Preparations
 ------------
@@ -27,7 +27,7 @@ To upload data to MARV the data providing robot has to be registered as a leaf.
 Generate an authentication token
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-MARV does not allow anonymous uploads and all connections have to be authenticated. This is achieved by generating tokens on the server and storing those on the leafs.
+MARV does not allow anonymous uploads and all connections have to be authenticated. This is achieved by generating tokens on the server and storing those on the leaves.
 
 ::
 
