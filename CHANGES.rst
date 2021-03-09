@@ -31,6 +31,7 @@ Removed
 
 Fixed
 ~~~~~
+- Rosbag2 reader path handling independent of declared format version
 
 Security
 ~~~~~~~~
