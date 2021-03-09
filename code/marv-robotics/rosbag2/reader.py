@@ -329,8 +329,9 @@ class Reader:
                 raise ReaderError(f'Rosbag2 storage plugin {storageid!r} not supported; '
                                   'please report issue.')
 
-            basepath = path if ver >= 4 else path.parent
-            self.paths = [basepath / x for x in self.metadata['relative_file_paths']]
+            # Version-independent there are rosbag2 containing the rosbag2 directory in
+            # "relative_file_paths" and not, so far there are none having files in subdirectories.
+            self.paths = [path / Path(x).name for x in self.metadata['relative_file_paths']]
             missing = [x for x in self.paths if not x.exists()]
             if missing:
                 raise ReaderError(f'Some database files are missing: {[str(x) for x in missing]!r}')
