@@ -273,10 +273,13 @@ class MarvConfig(Model):
     dburi: str = 'sqlite://db/db.sqlite'
     frontenddir: Path = 'frontend'
     leavesdir: Path = 'leaves'
+    mail_footer: str = ''
     oauth: Dict[str, Tuple[str, ...]] = None
     reverse_proxy: Optional[ReverseProxyEnum] = None
     resourcedir: Path = 'resources'
     sessionkey_file: Path = 'sessionkey'
+    smtp_url: str = 'smtp://'
+    smtp_from: str = ''
     staticdir: Path = resource_filename('marv', 'app/static')
     storedir: Path = 'store'
     upload_checkpoint_commands: Tuple[str, ...] = None
