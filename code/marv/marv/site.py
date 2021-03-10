@@ -59,7 +59,8 @@ class Site:
     def __init__(self, siteconf):
         self.config = make_config(siteconf)
         self.collections = Collections(config=self.config, site=self)
-        self.db = self.Database([y for x in self.collections.values() for y in x.model])  # pylint: disable=invalid-name
+        self.db = self.Database([y for x in self.collections.values() for y in x.model],  # pylint: disable=invalid-name
+                                self.config)
 
     @classmethod
     async def create(cls, siteconf, init=None):  # noqa: C901

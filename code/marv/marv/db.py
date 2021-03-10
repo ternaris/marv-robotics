@@ -530,10 +530,11 @@ class Database:
 
     MODELS = MODELS
 
-    def __init__(self, listing_models):
+    def __init__(self, listing_models, config):
         self.connections = []
         self.connection_queue = asyncio.Queue()
         self.listing_models = listing_models
+        self.config = config
 
     async def initialize_connections(self):
         defcon = Tortoise.get_connection('default')

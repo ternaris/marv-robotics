@@ -272,6 +272,7 @@ class MarvConfig(Model):
     acl: str = 'marv_webapi.acls:authenticated'
     dburi: str = 'sqlite://db/db.sqlite'
     frontenddir: Path = 'frontend'
+    leavesdir: Path = 'leaves'
     oauth: Dict[str, Tuple[str, ...]] = None
     reverse_proxy: Optional[ReverseProxyEnum] = None
     resourcedir: Path = 'resources'
@@ -286,8 +287,9 @@ class MarvConfig(Model):
         return self.venv / 'lib' / f'python{sysconfig.get_python_version()}' / 'site-packages'
 
     _resolve_path = reapvalidator('sitedir')(resolve_path)
-    _resolve_relto_site = reapvalidator('frontenddir', 'resourcedir', 'sessionkey_file',
-                                        'staticdir', 'storedir', 'venv')(resolve_relto_site)
+    _resolve_relto_site = reapvalidator('frontenddir', 'leavesdir', 'resourcedir',
+                                        'sessionkey_file', 'staticdir', 'storedir',
+                                        'venv')(resolve_relto_site)
     _split = reapvalidator('collections')(split)
     _splitlines_split = reapvalidator('upload_checkpoint_commands')(splitlines_split)
     _strip = reapvalidator('reverse_proxy')(strip)
