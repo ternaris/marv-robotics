@@ -1,4 +1,4 @@
-.. Copyright 2016 - 2018  Ternaris.
+.. Copyright 2016 - 2021  Ternaris.
 .. SPDX-License-Identifier: CC-BY-SA-4.0
 
 .. _migrate:
@@ -11,10 +11,46 @@ Listed here are all versions that necessitate migration. Depending on the versio
 In case of database migrations it is sufficient to ``marv dump`` the database with the version you are currently using and ``marv restore`` with the latest version; marv is able to *dump* itself and *restore* any older version. In case this does not hold true ``marv restore`` will complain and provide instructions what to do.
 
 
+.. _migrate-upcoming:
+
+Upcoming
+--------
+
+Database migration
+^^^^^^^^^^^^^^^^^^
+Extended user and leaf management, among others, required changes to database schemas, a migration of the MARV database is necessary. Export the database with your current version of MARV:
+
+.. code-block:: console
+
+   marv dump dump-2012.json
+   mv db/db.sqlite db/db.sqlite.2012
+
+After updating MARV run:
+
+.. code-block:: console
+
+   marv init
+   marv restore dump-2012.json
+
+
+Leaves storage configuration changes (EE)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+MARV now uses a dedicated directory to store datasets uploaded by leaves (default ``./leaves`` in your site). Update your reverse proxy configuration to serve these files. For nginx add:
+
+.. code-block:: nginx
+
+       location /docker/container/path/to/leavesdir {
+         internal;
+         alias /host/path/to/leavesdir;
+       }
+
+See also :ref:`deploy_nginx`.
+
+
 .. _migrate-20.12.0:
 
 20.12.0
-^^^^^^^
+-------
 
 Database migration
 ^^^^^^^^^^^^^^^^^^

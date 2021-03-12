@@ -20,6 +20,7 @@ Added
 
 Changed
 ~~~~~~~
+- User and leaf database models **needs migration:** :ref:`migrate-upcoming`
 - Introduce dedicated marv-leaf binary (EE)
 
 
