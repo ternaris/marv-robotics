@@ -95,11 +95,11 @@ Example:
 See :ref:`deploy_nginx` for the corresponding nginx configuration.
 
 
-.. _cfg_marv_leafsdir:
+.. _cfg_marv_leavesdir:
 
 leavesdir
-^^^^^^^^
-Storage location for datasets uploaded by leafs.
+^^^^^^^^^
+Storage location for datasets uploaded by leaves.
 
 Example:
 
@@ -111,14 +111,14 @@ Default:
 
 .. code-block:: ini
 
-   leafsdir = ./leafs
+   leavesdir = ./leaves
 
 
 .. _cfg_marv_mail_footer:
 
 mail_footer
 ^^^^^^^^^^^
-Email footer that shall be apended to all outgoing emails.
+Email footer that shall be appended to all outgoing emails.
 
 Example:
 
@@ -127,7 +127,7 @@ Example:
    mail_footer =
      Example.com Inc.
      Website: https://example.com
-     Privact: https://example.com/privacy
+     Privacy: https://example.com/privacy
 
 Default:
 
@@ -159,7 +159,7 @@ Default:
 
 smtp_url
 ^^^^^^^^
-Server host, port and credentials for sending emails from MARV.
+Server host, port and credentials for sending emails from MARV. STARTTLS will be used and ``smtp://`` is the only supported schema.
 
 Example:
 
