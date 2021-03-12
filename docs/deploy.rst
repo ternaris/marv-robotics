@@ -58,6 +58,10 @@ Nginx allows marv to offload serving data from disk which is especially useful f
          internal;
          alias /host/path/to/store;
        }
+       location /docker/container/path/to/leavesdir {
+         internal;
+         alias /host/path/to/leavesdir;
+       }
        location /scanroot {
          internal;
          alias /host/path/to/scanroot;
@@ -73,6 +77,10 @@ Nginx allows marv to offload serving data from disk which is especially useful f
        location /other_instance/docker/container/path/to/store {
          internal;
          alias /host/path/to/store;
+       }
+       location /other_instance/docker/container/path/to/leavesdir {
+         internal;
+         alias /host/path/to/leavesdir;
        }
        location /other_instance/scanroot {
          internal;

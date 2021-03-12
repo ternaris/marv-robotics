@@ -95,6 +95,85 @@ Example:
 See :ref:`deploy_nginx` for the corresponding nginx configuration.
 
 
+.. _cfg_marv_leafsdir:
+
+leavesdir
+^^^^^^^^
+Storage location for datasets uploaded by leafs.
+
+Example:
+
+.. code-block:: ini
+
+   leavesdir = /var/local/lib/marv/leaves
+
+Default:
+
+.. code-block:: ini
+
+   leafsdir = ./leafs
+
+
+.. _cfg_marv_mail_footer:
+
+mail_footer
+^^^^^^^^^^^
+Email footer that shall be apended to all outgoing emails.
+
+Example:
+
+.. code-block:: ini
+
+   mail_footer =
+     Example.com Inc.
+     Website: https://example.com
+     Privact: https://example.com/privacy
+
+Default:
+
+.. code-block:: ini
+
+   mail_footer =
+
+
+.. _cfg_marv_smtp_from:
+
+smtp_from
+^^^^^^^^^
+Sender address MARV shall use when generating emails.
+
+Example:
+
+.. code-block:: ini
+
+   smtp_from = marv@example.com
+
+Default:
+
+.. code-block:: ini
+
+   smtp_from =
+
+
+.. _cfg_marv_smtp_url:
+
+smtp_url
+^^^^^^^^
+Server host, port and credentials for sending emails from MARV.
+
+Example:
+
+.. code-block:: ini
+
+   smtp_url = smtp://marv_user:marv_password@mail.example.com:587
+
+Default:
+
+.. code-block:: ini
+
+   smtp_url =
+
+
 .. _cfg_marv_store:
 
 storedir
