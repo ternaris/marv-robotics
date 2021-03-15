@@ -618,6 +618,8 @@ class Database:
                 await group.users.add(*users, using_db=txn)
         except DoesNotExist:
             raise DBError('Entity does not exist')
+        except IntegrityError:
+            raise DBError('Entity exists already')
 
     @run_in_transaction
     async def user_add(self, name, password, realm, realmuid, given_name=None, family_name=None,
