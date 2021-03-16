@@ -13,7 +13,7 @@ In the MARV ecosystem data providers that connect to the MARV server are called 
 Preparations
 ------------
 
-For secure operation some preparational steps are necessary.
+For secure operation some preparatory steps are necessary.
 
 Create a leaf
 ^^^^^^^^^^^^^
@@ -34,14 +34,14 @@ MARV does not allow anonymous uploads and all connections have to be authenticat
    (server)$ marv leaf regen-token C3P0
    New token for C3P0: <secret_token>
 
-Store token on leaf
-^^^^^^^^^^^^^^^^^^^
+Register leaf
+^^^^^^^^^^^^^
 
 The freshly created token has to be stored on the leaf. The command will prompt twice to paste the string from the server.
 
 ::
 
-   (leaf)$ marv-leaf set-token
+   (leaf)$ marv-leaf register https://example.com
    Token: <secret_token>
    Repeat for confirmation: <secret_token>
 
@@ -52,7 +52,7 @@ Once server and leaf have been prepared uploading datasets to MARV is straightfo
 
 ::
 
-   (leaf)$ marv-leaf upload --url https://example.com --collection bags recording.bag
+   (leaf)$ marv-leaf upload --collection bags recording.bag
 
 This command will upload the file ``recording.bag`` to the MARV instance ``example.com`` and add the dataset to the ``bags`` collection. It is possible to specify any number of files to upload as a singular dataset. To upload multiple datasets call the command multiple times.
 
@@ -64,6 +64,7 @@ On success the return value will be zero and the upload process will have made s
 Rerunning ``marv-leaf upload`` on the same set of files will not create another dataset. Instead the MARV will recognize that the data already exists on the server and will indicate success by returning zero.
 
 If an upload is interrupted manually of by e.g. loss of network connectivity the return value will be non zero to indicate failure. Rerunning ``marv-leaf upload`` with the same parameters will resume the upload from where it was interrupted.
+
 
 Data safety
 -----------
