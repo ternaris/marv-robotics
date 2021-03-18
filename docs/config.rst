@@ -195,7 +195,7 @@ Default:
 
 upload_checkpoint_commands
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-List of commands that is executed before marv touches a collection's scanroot as part of an upload from a leaf. See :ref:`upload` for more information.
+List of commands that is executed before marv touches marv's :ref:`cfg_marv_leavesdir` as part of an upload from a leaf. See :ref:`upload` for more information.
 
 Example:
 
@@ -210,8 +210,8 @@ Content of checkpoint script:
 
    #!/bin/sh
 
-   NAME="$(basename "${MARV_SCANROOT}")"
-   sudo btrfs subvolume snapshot -r "${MARV_SCANROOT}" /snapshots/"${NAME}"-$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+   NAME="$(basename "${MARV_LEAVESDIR}")"
+   sudo btrfs subvolume snapshot -r "${MARV_LEAVESDIR}" /snapshots/"${NAME}"-$(date -u '+%Y-%m-%dT%H:%M:%SZ')
 
 Checkpoint script needs to be executable (``chmod +x``) and user running marv needs to have sudoer permission for btrfs:
 

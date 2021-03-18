@@ -69,4 +69,4 @@ If an upload is interrupted manually of by e.g. loss of network connectivity the
 Data safety
 -----------
 
-The uploaded datasets are stored in a subdirectory ``leaf`` in the collection's scanroot. Independent of the upload feature all scanroots need to be backed up regularly, e.g. via cronjob. In addition to that a list of checkpoint commands can be run before MARV touches the scanroot as part of an upload. Please see :ref:`cfg_upload_checkpoint_commands` for more information.
+The uploaded datasets are stored in a site's :ref:`cfg_marv_leavesdir`, by default ``leaves``. Independent of the upload feature all scanroots and the leaves directory need to be backed up regularly, e.g. via cronjob. In addition to that a list of checkpoint commands can be run before MARV touches the leaves directory as part of an upload. Please see :ref:`cfg_upload_checkpoint_commands` for more information.
