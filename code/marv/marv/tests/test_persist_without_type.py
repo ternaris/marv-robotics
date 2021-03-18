@@ -54,7 +54,7 @@ def notype(dataset):
         yield marv.push({'value': int(f.read())})
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 async def site(loop, tmpdir):  # pylint: disable=unused-argument
     flag = (tmpdir / 'TEST_SITE')
     flag.write('')

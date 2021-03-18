@@ -47,7 +47,7 @@ def scan_bar(directory, subdirs, filenames):  # pylint: disable=unused-argument
 COUNTER = count()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 async def site(loop):  # pylint: disable=unused-argument
     sitedir = tempfile.mkdtemp()
     scanroot = os.path.join(sitedir, 'scanroot')

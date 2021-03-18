@@ -122,7 +122,7 @@ def section_test(node):
     ]})
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 async def site(loop, request, tmpdir):  # pylint: disable=unused-argument
     # pylint: disable=too-many-locals
     collection_names = ('hodge', 'podge')
@@ -217,7 +217,7 @@ async def site(loop, request, tmpdir):  # pylint: disable=unused-argument
         await site.destroy()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def app(site, request):  # pylint: disable=redefined-outer-name
     mark = {x.name: x.kwargs for x in request.node.iter_markers()}
     app_cfg = mark.get('marv', {}).get('app', {})
