@@ -3,6 +3,7 @@ Sphinx
 sphinx_paramlinks
 
 # development
+callee
 flake8
 flake8-bugbear
 flake8-commas
