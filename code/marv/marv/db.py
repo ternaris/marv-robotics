@@ -395,7 +395,7 @@ async def dump_users_groups(tables, dump, txn):
     dump['users'] = users = []
     items = await get_items_for_query(Query.from_(user_t)
                                       .select('*')
-                                      .where(~escaped_startswith(user_t.name, 'marv:'))
+                                      .where(user_t.name != 'marv:anonymous')
                                       .orderby(user_t.name),
                                       txn)
     for user in items:
