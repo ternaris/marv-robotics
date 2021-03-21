@@ -89,10 +89,10 @@ def safejoin(basepath, rel):
     return fullpath
 
 
-def sendfile(path, approot, reverse_proxy, filename=None):
-    headers = {
-        'Content-Disposition': f'attachment; filename={filename or path.name}',
-    }
+def sendfile(path, approot, reverse_proxy, filename=None, headers=None):
+    headers = headers.copy() if headers else {}
+    headers.setdefault('Content-Disposition', f'attachment; filename={filename or path.name}')
+
     if AGGRESSIVE_CACHING and (
             path.suffix in ('.jpg', '.json')
             or (path.suffix == '.mrv' and path.stat().st_size < 20 * 10**6)
