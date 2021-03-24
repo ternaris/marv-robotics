@@ -11,7 +11,7 @@ import click
 from pkg_resources import iter_entry_points
 
 try:
-    from marv_ee import VERSION_MESSAGE
+    from marv_ee import VERSION_MESSAGE, copying_option
 except ImportError:
     VERSION_MESSAGE = """
 %(prog)s (MARV Community Edition) %(version)s
@@ -20,6 +20,10 @@ License AGPL-3.0-only: GNU Affero General Public License v3.0 <https://spdx.org/
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
 """.strip()
+
+    def copying_option(func):
+        return func
+
 
 FORMAT = os.environ.get('MARV_LOG_FORMAT', '%(asctime)s %(levelname).4s %(name)s %(message)s')
 PDB = None
@@ -123,6 +127,7 @@ def setup_logging(loglevel, verbosity=0, logfilter=None):
 @click.option('-v', '--verbose', 'verbosity', count=True,
               help='Increase verbosity beyond --loglevel')
 @click.version_option(message=VERSION_MESSAGE)
+@copying_option
 @click.pass_context
 def marv(ctx, config, loglevel, logfilter, verbosity):
     """Manage a Marv site."""
