@@ -23,7 +23,13 @@ fetch() {
     curl -sL "$url" | tar xz --strip-components "$strip" -C "$target"
 }
 
+if cmp -s .deps .deps-fetched; then
+    exit 0
+fi
+rm -f .deps-fetched
 
 while read -r dep; do
     fetch "$dep"
 done < .deps
+
+cp .deps .deps-fetched

@@ -10,6 +10,7 @@ htmlcov/
 .pytest_cache/
 pytest-report.xml
 __pycache__/
+/.deps-fetched
 /.image-name
 /dist/
 /code/*/build/
