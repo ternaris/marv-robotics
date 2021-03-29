@@ -20,11 +20,11 @@ Added
 
 Changed
 ~~~~~~~
+- Update python packages
 - User and leaf database models **needs migration:** :ref:`migrate-upcoming`
 - Introduce dedicated marv-leaf binary (EE)
 - User and leaf management interfaces (EE)
 - User invitation and account recovery workflows (EE)
-
 
 Deprecated
 ~~~~~~~~~~
