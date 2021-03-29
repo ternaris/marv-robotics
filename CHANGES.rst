@@ -35,9 +35,12 @@ Removed
 Fixed
 ~~~~~
 - Rosbag2 reader path handling independent of declared format version
+- Fetch dependencies when starting docker container `#92`_
 
 Security
 ~~~~~~~~
+
+.. _#92: https://gitlab.com/ternaris/marv-robotics/issues/92
 
 
 .. _v20.12.0:
