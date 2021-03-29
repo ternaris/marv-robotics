@@ -10,18 +10,15 @@ Changes necessitating migration reference the corresponding migration section. R
 If we're deprecating features you rely on, please speak up.
 
 
-.. _upcoming_changes:
+.. _v21.03.0:
 
-Upcoming (unreleased)
-^^^^^^^^^^^^^^^^^^^^^
-
-Added
-~~~~~
+21.03.0 (2021-03-29)
+^^^^^^^^^^^^^^^^^^^^
 
 Changed
 ~~~~~~~
 - Update python packages
-- User and leaf database models **needs migration:** :ref:`migrate-upcoming`
+- User and leaf database models **needs migration:** :ref:`migrate-21.03.0`
 - Introduce dedicated marv-leaf binary (EE)
 - User and leaf management interfaces (EE)
 - User invitation and account recovery workflows (EE)
@@ -30,17 +27,12 @@ Deprecated
 ~~~~~~~~~~
 - 21.05 will remove route-based ACL profiles
 
-Removed
-~~~~~~~
-
 Fixed
 ~~~~~
-- Rosbag2 reader path handling independent of declared format version
+- Rosbag2 reader path handling independent of declared format version `#91`_
 - Fetch dependencies when starting docker container `#92`_
 
-Security
-~~~~~~~~
-
+.. _#91: https://gitlab.com/ternaris/marv-robotics/issues/91
 .. _#92: https://gitlab.com/ternaris/marv-robotics/issues/92
 
 

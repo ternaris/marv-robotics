@@ -11,10 +11,10 @@ Listed here are all versions that necessitate migration. Depending on the versio
 In case of database migrations it is sufficient to ``marv dump`` the database with the version you are currently using and ``marv restore`` with the latest version; marv is able to *dump* itself and *restore* any older version. In case this does not hold true ``marv restore`` will complain and provide instructions what to do.
 
 
-.. _migrate-upcoming:
+.. _migrate-21.03.0:
 
-Upcoming
---------
+21.03.0
+-------
 
 Database migration
 ^^^^^^^^^^^^^^^^^^
