@@ -57,6 +57,8 @@ get_timezone() {
 
 export TIMEZONE="${MARV_TIMEZONE:-$(get_timezone)}"
 
+./scripts/fetch-deps
+
 docker stop "$NAME" || true
 docker rm "$NAME" || true
 docker run \
