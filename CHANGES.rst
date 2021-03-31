@@ -28,6 +28,7 @@ Changed
 
 Deprecated
 ~~~~~~~~~~
+- 21.05 will remove route-based ACL profiles
 
 Removed
 ~~~~~~~

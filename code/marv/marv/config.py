@@ -297,6 +297,11 @@ class MarvConfig(Model):
     _splitlines_split = reapvalidator('upload_checkpoint_commands')(splitlines_split)
     _strip = reapvalidator('reverse_proxy')(strip)
 
+    @validator('acl')
+    @deprecated('21.05', name='acl')
+    def acl_config(val):
+        return val
+
     @apvalidator('dburi')
     def dburi_relto_site(cls, val, values):
         if val and val.startswith('sqlite:///'):

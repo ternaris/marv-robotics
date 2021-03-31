@@ -108,10 +108,6 @@ MARV requires you to be signed-in to see anything worthwhile. In order to be abl
 
 After creating the user, you should be able to sign-in using his credentials and be presented with an yet empty listing of the bags collection.
 
-.. note::
-
-   You can change the access control list, to allow for example public access to MARV (see :ref:`cfg_marv_acl`).
-
 **docker**: Run commands inside container, after entering it with ``./scripts/enter-container``.
 
 .. code-block:: console

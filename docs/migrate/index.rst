@@ -125,7 +125,7 @@ Likewise for :func:`marv_nodes.meta_table`.
 
 Changes to access control
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-MARV supports access control profiles (see :ref:`cfg_marv_acl`) that dictate who is permitted to perform what. Profiles map actions like ``comment`` or ``tag`` to lists of user groups that are permitted to perform these actions. This version of MARV cleans up and streamlines the list of supported verbs.
+MARV supports access control profiles that dictate who is permitted to perform what. Profiles map actions like ``comment`` or ``tag`` to lists of user groups that are permitted to perform these actions. This version of MARV cleans up and streamlines the list of supported verbs.
 
 If you created a custom profile, please refer to :mod:`marv_webapi.acls` as an example and make sure to adjust your custom profile to use the new action verbs.
 
@@ -254,7 +254,7 @@ The list of system dependencies is updated and the installation has significantl
 
 MARV now supports offloading the delivery of files to nginx. In case you are not using nginx as reverse-proxy, yet, you should seriously consider to change that now. See :ref:`cfg_marv_reverse_proxy` and :ref:`deploy_nginx`.
 
-MARV now supports access control lists (ACLs). The default ACL requires authentication to read anything, tag and comment; and only members of the group admin may discard datasets. For users of the Enterprise Edition this corresponds to the same behaviour as before. The :func:`marv_webapi.acls.public` closely resembles the previous Community Edition default, apart from requiring admin group membership to discard datasets. See :ref:`cfg_marv_acl` to change the effective ACL.
+MARV now supports access control lists (ACLs). The default ACL requires authentication to read anything, tag and comment; and only members of the group admin may discard datasets. For users of the Enterprise Edition this corresponds to the same behaviour as before.
 
 
 .. _migrate-18.03:
