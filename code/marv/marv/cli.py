@@ -293,8 +293,10 @@ async def marvcli_dump(dump_file):
     siteconf = make_config(get_site_config())
     try:
         dump = await Site.Database.dump_database(siteconf.marv.dburi)
-    except (DBNotInitialized, DBVersionError) as exc:
+    except DBNotInitialized as exc:
         err(f'ERROR: {exc}', exit=1)
+    except DBVersionError as exc:
+        err(f'ERROR: {exc} Please use the correct version of marv to dump.', exit=1)
 
     if str(dump_file) == '-':
         json.dump(dump, sys.stdout, sort_keys=True, indent=2)
