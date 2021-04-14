@@ -10,28 +10,28 @@ async def test_collection(app, site, client):
         ('foo', 2),
     ], [], '::')
 
-    res = await client.get('/marv/api/collection/notexist')
+    res = await client.get('/marv/api/_collection/notexist')
     assert res.status == 401
 
-    res = await client.get_json('/marv/api/collection/hodge')
+    res = await client.get_json('/marv/api/_collection/hodge')
     assert len(res['listing']['widget']['data']['rows']) == 50
 
-    res = await client.get('/marv/api/collection/hodge', params={
+    res = await client.get('/marv/api/_collection/hodge', params={
         'filter': json.dumps({'not exist': {'val': 42, 'op': 'eq'}}),
     })
     assert res.status == 400
 
-    res = await client.get('/marv/api/collection/hodge', params={
+    res = await client.get('/marv/api/_collection/hodge', params={
         'filter': json.dumps({'f_name': {'val': 42, 'op': 'not exist'}}),
     })
     assert res.status == 400
 
-    res = await client.get_json('/marv/api/collection/hodge')
+    res = await client.get_json('/marv/api/_collection/hodge')
     app['debug'] = True
-    res2 = await client.get_json('/marv/api/collection/hodge')
+    res2 = await client.get_json('/marv/api/_collection/hodge')
     assert res == res2
 
-    res = await client.get('/marv/api/collection/hodge', params={
+    res = await client.get('/marv/api/_collection/hodge', params={
         'filter': json.dumps({'f_name': {'val': 'filtér', 'op': 'eq'}}),
     })
     assert res.status == 200

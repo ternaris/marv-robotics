@@ -8,7 +8,7 @@ import pytest
 
 
 async def try_listing(client):
-    return await client.get('/marv/api/collection', headers=client.headers)
+    return await client.get('/marv/api/_collection', headers=client.headers)
 
 
 async def try_details(client):
@@ -154,7 +154,7 @@ async def test_profiles(client, auth, params):
     assert len(res['collections']) == params.count
 
     # check local permissions on collection
-    res = await client.get_json('/marv/api/collection')
+    res = await client.get_json('/marv/api/_collection')
     if params.local:
         assert set(res['acl']) == params.local
     else:

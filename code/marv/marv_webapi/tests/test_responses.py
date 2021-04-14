@@ -16,7 +16,7 @@ async def get_listings(client):
     listings = {}
     for colinfo in metadata['collections']:
         name = colinfo['name']
-        listings[name] = await client.get_json(f'/marv/api/collection/{name}')
+        listings[name] = await client.get_json(f'/marv/api/_collection/{name}')
     return listings
 
 
