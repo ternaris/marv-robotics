@@ -17,6 +17,7 @@ Upcoming (unreleased)
 
 Added
 ~~~~~
+- Example for nginx with natively installed marv
 
 Changed
 ~~~~~~~
@@ -33,6 +34,8 @@ Removed
 
 Fixed
 ~~~~~
+- Docs for proxy_pass nginx directive
+- Docs for using a custom certification authority for HTTPS
 
 Security
 ~~~~~~~~
