@@ -73,18 +73,18 @@ Nginx allows marv to offload serving data from disk which is especially useful f
        proxy_set_header X-Forwarded-Proto $scheme;
        proxy_pass http://127.0.0.1:8000;
      }
-     location /other_instance {
-       location /other_instance/docker/container/path/to/store {
+     location /native_instance {
+       location /native_instance/path/to/store {
          internal;
-         alias /host/path/to/store;
+         alias /path/to/store;
        }
-       location /other_instance/docker/container/path/to/leavesdir {
+       location /native_instance/path/to/leavesdir {
          internal;
-         alias /host/path/to/leavesdir;
+         alias /path/to/leavesdir;
        }
-       location /other_instance/scanroot {
+       location /native_instance/path/to/scanroot {
          internal;
-         alias /host/path/to/other/scanroot;
+         alias /path/to/scanroot;
        }
        client_max_body_size 10m;
        client_body_buffer_size 128k;
