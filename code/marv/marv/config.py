@@ -31,15 +31,6 @@ class InvalidToken(Exception):
     pass
 
 
-@deprecated(
-    '21.04',
-    'use makelist and filter instead (list (...)) -> (filter null (makelist (...))).',
-    name='list',
-)
-def deprecated_list(*args):
-    return list(filter(None, args))
-
-
 def make_funcs(dataset, setdir, store):
     """Functions available for listing columns and filters."""
     return {
@@ -56,7 +47,6 @@ def make_funcs(dataset, setdir, store):
                  {'href': href or '',
                   'title': title or '',
                   'target': '_blank' if target is None else target}),
-        'list': deprecated_list,
         'makelist': lambda *x: list(x),
         'max': lambda x: max(x) if x else None,
         'min': lambda x: min(x) if x else None,

@@ -130,7 +130,8 @@ async def site(loop, request, tmpdir):  # pylint: disable=unused-argument
         '    marv.tests.conftest:node_test',
         '    marv.tests.conftest:section_test',
     ])
-    add_filters = '    node_test | Test node | any | subset | (list (get "node_test.value" 0))'
+    add_filters = '    node_test | Test node | any | subset' + \
+        ' | (filter null (makelist (get "node_test.value" 0)))'
     add_columns = '    node_test  | Test   | int      | (get "node_test.value" 0)'
     add_sections = '    section_test'
     collections = ''.join([
