@@ -26,6 +26,10 @@ Deprecated
 
 Removed
 ~~~~~~~
+- In 20.12 deprecated marv.types, use marv_api.types instead
+- In 20.12 deprecated marv.utils.popen, use marv_api.utils.popen instead
+- In 20.12 deprecated HTTP listing API, query :ref:`httpapi_query_collection` instead
+- In 20.12 deprecated list config function, use makelist instead
 
 Fixed
 ~~~~~
