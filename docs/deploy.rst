@@ -27,7 +27,7 @@ References:
 - https://aiohttp.readthedocs.io/en/stable/deployment.html#nginx-gunicorn
 
 
-When working behind a revese proxy MARV's default Gunicorn config will work without change.
+When working behind a reverse proxy MARV's default Gunicorn config will work without change.
 
 nginx config
 ^^^^^^^^^^^^
@@ -95,39 +95,83 @@ Nginx allows marv to offload serving data from disk which is especially useful f
      }
    }
 
-For a **self-signed certificate** (see steps below) remove ``ssl_trusted_certificate`` and adjust ``ssl_certificate`` and ``ssl_certificate_key`` accordingly.
+For a **certificate signed by a custom CA** (see steps below) point ``ssl_trusted_certificate`` to the CA certificate and adjust ``ssl_certificate`` and ``ssl_certificate_key`` to the generated files accordingly.
 
 
 .. _deploy_gunicorn:
 
-Gunicorn with self-signed certificate
--------------------------------------
+Gunicorn with HTTPS
+-------------------
 
-Note: Use this mode of deploymeny for development setups only.
+.. note::
 
-Gunicorn supports HTTPS out of the box with the limitation that it cannot serve HTTP and HTTPS simultaneously. To activate HTTPS mode you only need to provide Gunicorn with a certificate and corresponding keyfile.
+   Use this mode of deployment for development setups only.
 
-Generate self-signed certificate
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-::
-
-   openssl genrsa -out sites/example/gunicorn-ssl.key 2048
-   openssl req -new -key sites/example/gunicorn-ssl.key \
-       -out sites/example/gunicorn-ssl.csr
+Gunicorn supports HTTPS out of the box with the limitation that it cannot serve HTTP and HTTPS simultaneously. To activate HTTPS mode you only need to provide Gunicorn with a certificate and corresponding keyfile. Use the ``--keyfile`` and ``--certfile`` options of MARV to enable the HTTPS mode. The following example makes MARV run on the default HTTPS port:
 
 ::
 
-   openssl x509 -req -days 3650 \
-       -in sites/example/gunicorn-ssl.csr \
-       -signkey sites/example/gunicorn-ssl.key \
-       -out sites/example/gunicorn-ssl.crt
+   (venv) $ marv serve --port 443 \
+              --certfile /etc/letsencrypt/live/example.com/fullchain.pem \
+              --keyfile /etc/letsencrypt/live/example.com/privkey.pem
 
-Pass certificate files to MARV
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Use the ``--keyfile`` and ``--certfile`` options to enable the HTTPS mode. The following example makes MARV run on the default HTTPS port:
+
+Use custom CA when Let's Encrypt is unavailable
+-----------------------------------------------
+
+When MARV is deployed on an internal network Let's Encrypt may not be an option for acquiring server certificates.
+
+You can create a custom certification authority (CA) to properly secure communication with your MARV instance.
+
+.. note::
+
+   A simple self-signed certificate will not suffice, as browsers will still classify the connection as insecure without a properly established root of trust.
+
+In the first step generate a certification authority (CA). You can adjust ``days`` (validity of CA in days) and ``subj`` (subject name for certificate) parameters if you like.
 
 ::
 
-   (venv) $ marv serve --port 443 --certfile gunicorn-ssl.crt --keyfile gunicorn-ssl.key
+   openssl req \
+       -x509 \
+       -nodes \
+       -days 1095 \
+       -addext keyUsage="critical,digitalSignature,keyCertSign" \
+       -addext extendedKeyUsage="serverAuth,clientAuth" \
+       -subj "/CN=MarvCA" \
+       -keyout CA-key.pem \
+       -out CA-cert.pem
+
+The ``CA-cert.pem`` file needs to be installed on all client machines that are going to interact with MARV.
+
+In the second step generate the server private key and certificate signing request. Again you can adjust the ``subj`` parameter if you like.
+
+::
+
+   openssl req \
+       -new \
+       -nodes \
+       -subj "/CN=MarvServer" \
+       -keyout server-key.pem \
+       -out server-req.csr
+
+In the last step generate the server certificate from the certificate signing request. In the example below you can again adjust the ``days`` parameter to your liking. Be sure to adjust the ``subjectAltName`` value to match your needs. The value should be a comma separated list of entries starting with ``IP:`` or ``DNS:`` and reflect the addresses users will use to access MARV. In most cases a single DNS or IP entry should suffice.
+
+::
+
+   openssl x509 \
+       -req \
+       -days 365 \
+       -extfile <(printf "
+           keyUsage=critical,digitalSignature,keyEncipherment
+           extendedKeyUsage=serverAuth,clientAuth
+           basicConstraints=critical,CA:FALSE
+           subjectKeyIdentifier=hash
+           authorityKeyIdentifier=keyid,issuer
+           subjectAltName=IP:192.168.0.42,DNS:marv.internal
+       ") \
+       -in server-req.csr \
+       -CA CA-cert.pem \
+       -CAkey CA-key.pem \
+       -CAcreateserial \
+       -out server-cert.pem
