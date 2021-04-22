@@ -22,7 +22,12 @@ except ImportError:
     cv2 = None
 
 
-IMAGE_MSG_TYPES = ','.join(['*:sensor_msgs/Image', '*:sensor_msgs/CompressedImage'])
+IMAGE_MSG_TYPES = ','.join([
+    '*:sensor_msgs/Image',
+    '*:sensor_msgs/CompressedImage',
+    '*:sensor_msgs/msg/Image',
+    '*:sensor_msgs/msg/CompressedImage',
+])
 
 
 def ros2cv(msg, scale=1, offset=0):

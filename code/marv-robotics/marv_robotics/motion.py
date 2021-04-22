@@ -20,8 +20,9 @@ from marv_robotics.bag import make_deserialize, make_get_timestamp, messages
 
 
 @marv.node()
-@marv.input('stream', marv.select(messages, '*:sensor_msgs/NavSatFix'))
-# @marv.input('stream', marv.select(messages, '*:geometry_msgs/PoseStamped'))
+@marv.input('stream', marv.select(messages, '*:sensor_msgs/NavSatFix,*:sensor_msgs/msg/NavSatFix'))
+# @marv.input('stream', marv.select(messages,
+#                                   '*:geometry_msgs/PoseStamped,*:geometry_msgs/msg/PoseStamped'))
 def motion_timestamp(stream):
     """Extract timestamps for motion events.
 
@@ -46,7 +47,8 @@ def motion_timestamp(stream):
 
 
 @marv.node()
-@marv.input('stream', marv.select(messages, '*:geometry_msgs/PoseStamped'))
+@marv.input('stream', marv.select(messages,
+                                  '*:geometry_msgs/PoseStamped,*:geometry_msgs/msg/PoseStamped'))
 def position_xyz(stream):
     """Extract position from Pose.
 
@@ -70,7 +72,7 @@ def position_xyz(stream):
 
 
 @marv.node()
-@marv.input('stream', marv.select(messages, '*:sensor_msgs/NavSatFix'))
+@marv.input('stream', marv.select(messages, '*:sensor_msgs/NavSatFix,*:sensor_msgs/msg/NavSatFix'))
 def position_gps(stream):
     """Extract position from GPS.
 
@@ -371,8 +373,9 @@ def empty_plotly_widget(trace, title):
 
 
 @marv.node()
-@marv.input('stream', marv.select(messages, '*:sensor_msgs/NavSatFix'))
-# @marv.input('stream', marv.select(messages, '*:geometry_msgs/PoseStamped'))
+@marv.input('stream', marv.select(messages, '*:sensor_msgs/NavSatFix,*:sensor_msgs/msg/NavSatFix'))
+#  @marv.input('stream', marv.select(messages,
+#                                    '*:geometry_msgs/PoseStamped,*:geometry_msgs/msg/PoseStamped'))
 def easting_northing(stream):
     """Extract easting and northing.
 
@@ -391,7 +394,7 @@ def easting_northing(stream):
     deserialize = make_deserialize(stream)
     while msg := (yield marv.pull(stream)):
         rosmsg = deserialize(msg.data)
-        if stream.msg_type == 'sensor_msgs/NavSatFix':
+        if stream.msg_type.endswith('/NavSatFix'):
             easting, northing, _, _ = utm.from_latlon(rosmsg.latitude, rosmsg.longitude)
         else:
             easting, northing = rosmsg.pose.position.x, rosmsg.pose.position.y

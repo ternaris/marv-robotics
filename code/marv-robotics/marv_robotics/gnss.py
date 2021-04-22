@@ -120,7 +120,10 @@ def imus(stream):
 
 
 @marv.node()
-@marv.input('stream', foreach=marv.select(messages, '*:nmea_navsat_driver/NavSatOrientation'))
+@marv.input('stream', foreach=marv.select(messages, ','.join([
+    '*:nmea_navsat_driver/NavSatOrientation',
+    '*:nmea_navsat_driver/msg/NavSatOrientation',
+])))
 def navsatorients(stream):
     yield marv.set_header(title=stream.topic)
     log = yield marv.get_logger()
