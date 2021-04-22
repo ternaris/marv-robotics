@@ -21,6 +21,7 @@ Added
 
 Changed
 ~~~~~~~
+- Make nodes select also ROS2 message types
 
 Deprecated
 ~~~~~~~~~~
