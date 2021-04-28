@@ -166,6 +166,7 @@ async def run_nodes_async(dataset, nodes, store, queue, persistent=None, force=N
         logverbose('all satisfied.')
         return None
 
+    loginfo('Starting run for %r', dataset)
     # TODO: reconsider what pulling means and if needed
     # Drivers for nodes passed to run_nodes and their forks are the
     # ones pulling. Warn if after that there are persistent nodes
