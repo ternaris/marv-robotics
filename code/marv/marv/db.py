@@ -573,7 +573,7 @@ class Database:
             user = await User.get(name=username, active=True, realm='marv').using_db(txn)
         except DoesNotExist:
             return False
-        return bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8'))
+        return bcrypt.checkpw(password.encode(), user.password.encode())
 
     @run_in_transaction
     async def bulk_um(self, users_add, users_remove, groups_add, groups_remove,  # noqa: C901
@@ -631,7 +631,7 @@ class Database:
         if not USERGROUP_REGEX.match(name) and not _restore:
             raise DBError('User name can only contain alphanumeric characters and [-_+@.]')
         if not _restore and password is not None:
-            password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
         now = datetime.utcnow()  # noqa: DTZ
         time_created = datetime.utcfromtimestamp(time_created) if time_created else now
         time_updated = datetime.utcfromtimestamp(time_updated) if time_updated else now
@@ -678,7 +678,7 @@ class Database:
         except DoesNotExist:
             raise ValueError(f'User {username} does not exist')
 
-        user.password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        user.password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
         user.time_updated = int(utils.now())
         await user.save(using_db=txn)
 

@@ -24,8 +24,8 @@ def test():
     assert wrapper.text == '\u03a8'
     assert isinstance(wrapper.text, str)
 
-    builder.data = '\u03a8'.encode('utf-8')
-    assert wrapper.data == '\u03a8'.encode('utf-8')
+    builder.data = '\u03a8'.encode()
+    assert wrapper.data == '\u03a8'.encode()
     assert isinstance(wrapper.data, bytes)
 
     builder.textList = ['\u03a8']
@@ -35,15 +35,15 @@ def test():
     assert isinstance(wrapper.text_list[0], str)
     assert repr(wrapper.textList) == "['Ψ']"
 
-    builder.dataList = ['\u03a8'.encode('utf-8')]
-    assert wrapper.data_list == ['\u03a8'.encode('utf-8')]
-    assert wrapper.data_list[:] == ['\u03a8'.encode('utf-8')]
-    assert list(wrapper.data_list) == ['\u03a8'.encode('utf-8')]
+    builder.dataList = ['\u03a8'.encode()]
+    assert wrapper.data_list == ['\u03a8'.encode()]
+    assert wrapper.data_list[:] == ['\u03a8'.encode()]
+    assert list(wrapper.data_list) == ['\u03a8'.encode()]
     assert isinstance(wrapper.data_list[0], bytes)
     assert repr(wrapper.dataList) == "[b'\\xce\\xa8']"
 
     builder.textListInList = [[u'\u03a8'], [u'\u03a8']]
-    builder.dataListInList = [[u'\u03a8'.encode('utf-8')], [u'\u03a8'.encode('utf-8')]]
+    builder.dataListInList = [[u'\u03a8'.encode()], [u'\u03a8'.encode()]]
     assert all(isinstance(x, str) for lst in wrapper.textListInList for x in lst)
     assert all(isinstance(x, bytes) for lst in wrapper.dataListInList for x in lst)
 
@@ -51,11 +51,11 @@ def test():
         schema=TestStruct,
         data={
             'text': '\u03a8',
-            'data': '\u03a8'.encode('utf-8'),
+            'data': '\u03a8'.encode(),
             'textList': ['\u03a8'],
-            'dataList': ['\u03a8'.encode('utf-8')],
+            'dataList': ['\u03a8'.encode()],
             'textListInList': [['\u03a8'], [u'\u03a8']],
-            'dataListInList': [['\u03a8'.encode('utf-8')], ['\u03a8'.encode('utf-8')]],
+            'dataListInList': [['\u03a8'.encode()], ['\u03a8'.encode()]],
         },
     )
     builder.nestedList = [nested._reader]  # pylint: disable=protected-access
@@ -64,13 +64,13 @@ def test():
     assert isinstance(wrapper.nested_list[0].textList[0], str)
     assert isinstance(wrapper.nested_list[0].dataList[0], bytes)
 
-    builder.unionData = '\u03a8'.encode('utf-8')
+    builder.unionData = '\u03a8'.encode()
     assert isinstance(wrapper.union_data, bytes)
 
     builder.unionText = '\u03a8'
     assert isinstance(wrapper.union_text, str)
 
-    builder.union.data = '\u03a8'.encode('utf-8')
+    builder.union.data = '\u03a8'.encode()
     assert isinstance(wrapper.union.data, bytes)
 
     builder.union.text = '\u03a8'
@@ -79,7 +79,7 @@ def test():
     builder.group.text = '\u03a8'
     assert isinstance(wrapper.group.text, str)
 
-    builder.group.data = '\u03a8'.encode('utf-8')
+    builder.group.data = '\u03a8'.encode()
     assert isinstance(wrapper.group.data, bytes)
 
     builder.enum = 'foo'

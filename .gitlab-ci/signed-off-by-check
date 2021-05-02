@@ -36,7 +36,7 @@ class Commit(namedtuple('Commit', 'sha subject author committer trailers')):
 
 def runout(*args, **kw):
     """Run cmd and return its stdout."""
-    return run(*args, stdout=PIPE, **kw).stdout.decode('utf-8')
+    return run(*args, stdout=PIPE, **kw).stdout.decode()
 
 
 def cli():

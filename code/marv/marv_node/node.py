@@ -62,8 +62,8 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def genhash(specs):
-        spec_keys = repr(tuple(x.key for x in sorted(specs.values()))).encode('utf-8')
-        return b32encode(hashlib.sha256(spec_keys).digest()).decode('utf-8').lower()[:-4]
+        spec_keys = repr(tuple(x.key for x in sorted(specs.values()))).encode()
+        return b32encode(hashlib.sha256(spec_keys).digest()).decode().lower()[:-4]
 
     @classmethod
     def from_dag_node(cls, func):
