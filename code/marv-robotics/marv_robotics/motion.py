@@ -14,36 +14,9 @@ import numpy
 import utm
 
 import marv_api as marv
-from marv_api.types import Float64Value
+from marv_api.types import TimedFloat64
 from marv_detail.types_capnp import Section  # pylint: disable=no-name-in-module
 from marv_robotics.bag import make_deserialize, make_get_timestamp, messages
-
-
-@marv.node()
-@marv.input('stream', marv.select(messages, '*:sensor_msgs/NavSatFix,*:sensor_msgs/msg/NavSatFix'))
-# @marv.input('stream', marv.select(messages,
-#                                   '*:geometry_msgs/PoseStamped,*:geometry_msgs/msg/PoseStamped'))
-def motion_timestamp(stream):
-    """Extract timestamps for motion events.
-
-    Args:
-        stream: ROS message stream with Pose or GPS messages.
-
-    Yields:
-        Message stream with timestamps.
-
-    """
-    log = yield marv.get_logger()
-    stream = yield marv.pull(stream)  # take first matching connection
-    if not stream:
-        return
-
-    yield marv.set_header(title=stream.topic)
-    deserialize = make_deserialize(stream)
-    get_timestamp = make_get_timestamp(log, stream)
-    while msg := (yield marv.pull(stream)):
-        rosmsg = deserialize(msg.data)
-        yield marv.push(get_timestamp(rosmsg, msg))
 
 
 @marv.node()
@@ -64,11 +37,14 @@ def position_xyz(stream):
         return
 
     yield marv.set_header(title=stream.topic)
+    log = yield marv.get_logger()
     deserialize = make_deserialize(stream)
+    get_timestamp = make_get_timestamp(log, stream)
     while msg := (yield marv.pull(stream)):
         rosmsg = deserialize(msg.data)
         pos = rosmsg.pose.position
-        yield marv.push({'x': pos.x, 'y': pos.y, 'z': pos.z})
+        yield marv.push({'x': pos.x, 'y': pos.y, 'z': pos.z,
+                         'timestamp': get_timestamp(rosmsg, msg)})
 
 
 @marv.node()
@@ -88,10 +64,13 @@ def position_gps(stream):
         return
 
     yield marv.set_header(title=stream.topic)
+    log = yield marv.get_logger()
     deserialize = make_deserialize(stream)
+    get_timestamp = make_get_timestamp(log, stream)
     while msg := (yield marv.pull(stream)):
         rosmsg = deserialize(msg.data)
-        yield marv.push({'lat': rosmsg.latitude, 'lon': rosmsg.longitude, 'alt': rosmsg.altitude})
+        yield marv.push({'lat': rosmsg.latitude, 'lon': rosmsg.longitude, 'alt': rosmsg.altitude,
+                         'timestamp': get_timestamp(rosmsg, msg)})
 
 
 @marv.node()
@@ -100,40 +79,38 @@ def dummy():
 
 
 @marv.node()
-@marv.input('timestamp', dummy)
 @marv.input('pos', dummy)
 @marv.input('pvar', type=float)
 @marv.input('qvar', type=float)
 @marv.input('rvar', type=float)
 @marv.input('keys', (), type=tuple)
-def filter_pos(timestamp, pos, pvar, qvar, rvar, keys):  # pylint: disable=too-many-arguments,too-many-locals
+def filter_pos(pos, pvar, qvar, rvar, keys):  # pylint: disable=too-many-arguments,too-many-locals
     """Kalman filter input stream using simple linear motion model.
 
     Args:
-        timestamp: Message stream with timestamps corresponding to pos.
-        pos: Message stream with positional data.
+        pos: Message stream with timestamped positional data.
         pvar: Model uncertainty.
         qvar: Process uncertainty.
         rvar: Measurement uncertainty.
         keys: Keynames of positional data.
 
     Yields:
-        Message stream with filtered positions.
+        Message stream with timestamped filtered positions.
 
     """
     # pylint: disable=invalid-name
-    msg_ts, msg_pos = yield marv.pull_all(timestamp, pos)
-    if msg_ts is None or msg_pos is None:
+    msg = yield marv.pull(pos)
+    if msg is None:
         return
 
-    yield marv.set_header(title=timestamp.title)
-    yield marv.push(msg_pos)
+    yield marv.set_header(title=pos.title)
+    yield marv.push(msg)
 
     F = numpy.eye(6)
     x = numpy.array([
-        msg_pos[keys[0]], 0.,
-        msg_pos[keys[1]], 0.,
-        msg_pos[keys[2]], 0.,
+        msg[keys[0]], 0.,
+        msg[keys[1]], 0.,
+        msg[keys[2]], 0.,
     ])
     P = numpy.eye(6) * pvar
     Q = numpy.eye(6)
@@ -145,14 +122,14 @@ def filter_pos(timestamp, pos, pvar, qvar, rvar, keys):  # pylint: disable=too-m
         [0, 0, 0, 0, 1, 0],
     ])
 
-    last_ts = msg_ts
+    last_ts = msg['timestamp']
     while True:
-        msg_ts, msg_pos = yield marv.pull_all(timestamp, pos)
-        if msg_ts is None or msg_pos is None:
+        msg = yield marv.pull(pos)
+        if msg is None:
             return
 
-        dt = (msg_ts - last_ts) / 1e9
-        last_ts = msg_ts
+        dt = (msg['timestamp'] - last_ts) / 1e9
+        last_ts = msg['timestamp']
 
         F[0, 1] = dt
         F[2, 3] = dt
@@ -167,17 +144,19 @@ def filter_pos(timestamp, pos, pvar, qvar, rvar, keys):  # pylint: disable=too-m
         x = F.dot(x)
         P = F.dot(P).dot(F.T) + Q
 
-        z = numpy.array([msg_pos[x] for x in keys])
+        z = numpy.array([msg[x] for x in keys])
         K = P.dot(H.T).dot(numpy.linalg.inv(H.dot(P).dot(H.T) + R))
         x = x + K.dot(z - H.dot(x))
         P = P - K.dot(H).dot(P)
 
         res = H.dot(x)
-        yield marv.push({x: float(res[i]) for i, x in enumerate(keys)})
+        dct = {x: float(res[i]) for i, x in enumerate(keys)}
+        dct['timestamp'] = last_ts
+        yield marv.push(dct)
 
 
-@marv.node(Float64Value)
-@marv.input('pos', filter_pos.clone(timestamp=motion_timestamp, pos=position_xyz,
+@marv.node(TimedFloat64, version=1)
+@marv.input('pos', filter_pos.clone(pos=position_xyz,
                                     pvar=100., qvar=4., rvar=.1, keys=['x', 'y', 'z']))
 # @marv.input('pos', position_xyz)  # use this input for unfiltered data
 def distance_xyz(pos):
@@ -195,7 +174,7 @@ def distance_xyz(pos):
         return
 
     yield marv.set_header(title=pos.title)
-    yield marv.push({'value': 0})
+    yield marv.push({'value': 0, 'timestamp': msg['timestamp']})
     prev = msg
 
     while msg := (yield marv.pull(pos)):
@@ -203,12 +182,12 @@ def distance_xyz(pos):
         diffn = msg['y'] - prev['y']
         diffa = msg['z'] - prev['z']
         dist = (diffe**2 + diffn**2 + diffa**2)**0.5
-        yield marv.push({'value': dist})
+        yield marv.push({'value': dist, 'timestamp': msg['timestamp']})
         prev = msg
 
 
-@marv.node(Float64Value)
-@marv.input('pos', filter_pos.clone(timestamp=motion_timestamp, pos=position_gps,
+@marv.node(TimedFloat64, version=1)
+@marv.input('pos', filter_pos.clone(pos=position_gps,
                                     pvar=100., qvar=1e-17, rvar=1e-18,
                                     keys=['lat', 'lon', 'alt']))
 # @marv.input('pos', position_gps)  # use this input for unfiltered data
@@ -227,7 +206,7 @@ def distance_gps(pos):
         return
 
     yield marv.set_header(title=pos.title)
-    yield marv.push({'value': 0})
+    yield marv.push({'value': 0, 'timestamp': msg['timestamp']})
     lat_p = radians(msg['lat'])
     lon_p = radians(msg['lon'])
     alt_p = msg['alt']
@@ -243,79 +222,76 @@ def distance_gps(pos):
         dis = 2 * 6371008.8 * asin(sqrt(dis))
         if not math.isnan(alt_d):
             dis = sqrt(dis**2 + alt_d**2)  # euclidean approx taking altitude into account
-        yield marv.push({'value': dis})
+        yield marv.push({'value': dis, 'timestamp': msg['timestamp']})
         lat_p = lat
         lon_p = lon
         alt_p = alt
 
 
-@marv.node(Float64Value)
-@marv.input('timestamp', motion_timestamp)
+@marv.node(TimedFloat64, version=1)
 @marv.input('distance', distance_gps)
-def speed(timestamp, distance):
+def speed(distance):
     """Calculate speed from distance stream.
 
     This node calculates the speed values from distance values. It is useful in cases where no speed
     data from a sensor is available.
 
     Args:
-        timestamp: Message stream with timestamps of distances.
-        distance: Message stream with distance values.
+        distance: Message stream with timestamped distance values.
 
     Yields:
         Message stream with speed values.
 
     """
-    msg_ts, msg_dist = yield marv.pull_all(timestamp, distance)
-    if msg_ts is None or msg_dist is None:
+    msg = yield marv.pull(distance)
+    if msg is None:
         return
 
-    yield marv.set_header(title=timestamp.title)
-    yield marv.push({'value': 0})
-    pts = msg_ts
+    yield marv.set_header(title=distance.title)
+    yield marv.push({'value': 0, 'timestamp': msg.timestamp})
+    pts = msg.timestamp
 
-    while (msg_ts := (yield marv.pull(timestamp))) and (msg_dist := (yield marv.pull(distance))):
-        speed = msg_dist.value * 1e9 / (msg_ts - pts)
-        yield marv.push({'value': speed})
-        pts = msg_ts
+    while msg := (yield marv.pull(distance)):
+        speed = msg.value * 1e9 / (msg.timestamp - pts)
+        yield marv.push({'value': speed, 'timestamp': msg.timestamp})
+        pts = msg.timestamp
 
 
-@marv.node(Float64Value)
-@marv.input('timestamp', motion_timestamp)
+@marv.node(TimedFloat64, version=1)
 @marv.input('speed', speed)
-def acceleration(timestamp, speed):
+def acceleration(speed):
     """Calculate acceleration from speed stream.
 
     This node calculates the acceleration values from speed values. It is useful in cases where no
     acceleration data from a sensor is available.
 
     Args:
-        timestamp: Message stream with timestamps of distances.
-        speed: Message stream with speed values.
+        speed: Message stream with timestamped speed values.
 
     Yields:
         Message stream with acceleration values.
 
     """
-    msg_ts, msg_speed = yield marv.pull_all(timestamp, speed)
-    if msg_ts is None or msg_speed is None:
+    msg = yield marv.pull(speed)
+    if msg is None:
         return
 
-    msg_ts, msg_speed = yield marv.pull_all(timestamp, speed)
-    if msg_ts is None or msg_speed is None:
+    yield marv.set_header(title=speed.title)
+    yield marv.push({'value': 0, 'timestamp': msg.timestamp})
+
+    msg = yield marv.pull(speed)
+    if msg is None:
         return
 
-    yield marv.set_header(title=timestamp.title)
-    yield marv.push({'value': 0})
-    yield marv.push({'value': 0})
-    pts = msg_ts
-    psp = msg_speed.value
+    yield marv.push({'value': 0, 'timestamp': msg.timestamp})
+    pts = msg.timestamp
+    psp = msg.value
 
-    while (msg_ts := (yield marv.pull(timestamp))) and (msg_speed := (yield marv.pull(speed))):
-        acceleration = (msg_speed.value - psp) * 1e9 / (msg_ts - pts)
-        yield marv.push({'value': acceleration})
-        pts = msg_ts
-        psp = msg_speed.value
+    while msg := (yield marv.pull(speed)):
+        acceleration = (msg.value - psp) * 1e9 / (msg.timestamp - pts)
+        yield marv.push({'value': acceleration, 'timestamp': msg.timestamp})
+        pts = msg.timestamp
+        psp = msg.value
 
 
 def empty_trace(name, tracetype):
@@ -402,12 +378,11 @@ def easting_northing(stream):
 
 
 @marv.node(Section)
-@marv.input('timestamp', motion_timestamp)
 @marv.input('easting_northing', easting_northing)
 @marv.input('distance', distance_gps)
 @marv.input('speed', speed)
 @marv.input('acceleration', acceleration)
-def motion_section(timestamp, easting_northing, distance, speed, acceleration):  # pylint: disable=too-many-arguments,too-many-locals
+def motion_section(easting_northing, distance, speed, acceleration):  # pylint: disable=too-many-arguments,too-many-locals
     """Create motion section.
 
     Args:
@@ -446,10 +421,9 @@ def motion_section(timestamp, easting_northing, distance, speed, acceleration): 
     firstn = None
     distsum = 0
     while True:
-        msg_ts, msg_en, msg_distance, msg_speed, msg_acceleration = yield marv.pull_all(
-            timestamp, easting_northing, distance, speed, acceleration)
-        if msg_ts is None or msg_en is None or msg_distance is None or msg_speed is None or \
-                msg_acceleration is None:
+        msg_en, msg_distance, msg_speed, msg_acceleration = yield marv.pull_all(
+            easting_northing, distance, speed, acceleration)
+        if msg_en is None or msg_distance is None or msg_speed is None or msg_acceleration is None:
             break
 
         if firste is None:
@@ -464,7 +438,7 @@ def motion_section(timestamp, easting_northing, distance, speed, acceleration): 
         traces['en']['x'].append(rele)
         traces['en']['y'].append(reln)
 
-        tsval = int(msg_ts / 1e6)
+        tsval = int(msg_distance.timestamp / 1e6)
         traces['distance']['x'].append(tsval)
         traces['speed']['x'].append(tsval)
         traces['acceleration']['x'].append(tsval)
