@@ -22,6 +22,7 @@ Added
 Changed
 ~~~~~~~
 - Make nodes select also ROS2 message types
+- Publish timestamped velocity and acceleration (CE)
 
 Deprecated
 ~~~~~~~~~~
