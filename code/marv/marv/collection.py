@@ -486,6 +486,7 @@ class Collection:
                                        timestamp=0,
                                        setid=setid or SetID.random(),
                                        acn_id=collection.acn_id,
+                                       dacn_id=2,
                                        using_db=connection)
 
         if _restore:

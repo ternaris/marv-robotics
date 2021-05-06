@@ -192,6 +192,7 @@ class Site:
                 await self.store_db_version(txn)
 
             await create_or_ignore('acn', id=1, txn=txn)
+            await create_or_ignore('acn', id=2, txn=txn)
             for name in self.collections:
                 await create_or_ignore('collection', name=name, acn_id=1, txn=txn)
 

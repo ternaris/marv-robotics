@@ -303,7 +303,7 @@ def resolve_filter(table, fltr, models):  # noqa: C901  pylint: disable=too-many
 
 def cleanup_attrs(items):
     return [
-        {k: x[k] for k in x.keys() if k not in ['acn_id', 'password', 'row']}
+        {k: x[k] for k in x.keys() if k not in ['acn_id', 'dacn_id', 'password', 'row']}
         for x in items
     ]
 
@@ -465,6 +465,7 @@ async def dump_datasets(tables, dump, txn):
         did = dataset.pop('id')
         del dataset['acn_id']
         del dataset['collection_id']
+        del dataset['dacn_id']
         dataset['comments'] = comments.pop(did, [])
         dataset['files'] = files.pop(did)
         dataset['tags'] = tags.pop(did, [])
@@ -511,7 +512,8 @@ class Tortoise(_Tortoise):
 class Database:
     # pylint: disable=too-many-public-methods
 
-    VERSION = '21.03'
+    VERSION = '21.05'
+    DUMP_VERSION = '21.05'
 
     EXPORT_HANDLERS = (
         ({'group', 'user', 'user_group'}, dump_users_groups),
@@ -1558,6 +1560,7 @@ class Database:
             for keys, handler in self.IMPORT_HANDLERS:
                 if keys.issubset(dct.keys()):
                     await handler(site, dct, txn)
+            dct.pop('version', None)
             if dct:
                 log.warning(
                     'Some fields from the dump file could not be imported. If you are imporing '
@@ -1588,7 +1591,7 @@ class Database:
                 connection = cls._connections['default']
                 return connection._in_transaction()  # pylint: disable=protected-access
 
-        dump = {}
+        dump = {'version': Database.DUMP_VERSION}
         async with await T2.transaction() as txn:
             master = Table('sqlite_master')
             tables = {

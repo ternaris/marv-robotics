@@ -84,6 +84,7 @@ class Dataset(Model):
     setid = custom.SetIDField(unique=True)
     tags = ManyToManyField('models.Tag', related_name='datasets')
     acn = ForeignKeyField('models.Acn', related_name='datasets', on_delete=RESTRICT)
+    dacn = ForeignKeyField('models.Acn', related_name='gdatasets', on_delete=RESTRICT)
 
     # Populated by backreferences: comments, files
 
