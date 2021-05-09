@@ -18,6 +18,7 @@ Upcoming (unreleased)
 Added
 ~~~~~
 - Example for nginx with natively installed marv
+- Support for leaves running on aarch64 (EE)
 
 Changed
 ~~~~~~~
