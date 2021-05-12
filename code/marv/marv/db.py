@@ -626,7 +626,7 @@ class Database:
                        email=None, active=True, time_created=None, time_updated=None, _restore=None,
                        txn=None):
         # pylint: disable=too-many-arguments
-        if not USERGROUP_REGEX.match(name):
+        if not USERGROUP_REGEX.match(name) and not _restore:
             raise DBError('User name can only contain alphanumeric characters and [-_+@.]')
         if not _restore and password is not None:
             password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
