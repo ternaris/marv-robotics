@@ -58,7 +58,7 @@ class AuthtestParams(namedtuple('Param', 'count expected forbidden local calls')
         return super().__new__(cls, *args)
 
 
-LOCAL_ACTIONS = {'comment', 'compare', 'delete', 'list', 'read', 'tag'}
+LOCAL_ACTIONS = {'comment', 'compare', 'delete', 'list', 'read', 'setacl', 'tag'}
 
 UNAUTH_PUBLIC = AuthtestParams(
     2,
@@ -106,7 +106,7 @@ ADMIN = AuthtestParams(
     2,
     {'rpc_entry'},
     {'auth_post'} | LOCAL_ACTIONS,
-    {'download_raw', 'list', 'read', 'comment', 'compare', 'tag', 'delete'},
+    {'download_raw', 'list', 'read', 'comment', 'compare', 'tag', 'delete', 'setacl'},
     [(200, try_listing),
      (200, try_details),
      (200, try_filelist),

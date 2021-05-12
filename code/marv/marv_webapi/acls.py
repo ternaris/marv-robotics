@@ -26,6 +26,7 @@ def authenticated():
         'download_raw': ['__authenticated__'],
         'list': ['__authenticated__'],
         'read': ['__authenticated__'],
+        'setacl': ['admin'],
         'tag': ['__authenticated__'],
     }
 
@@ -44,5 +45,6 @@ def public():
         'download_raw': ['__unauthenticated__', '__authenticated__'],
         'list': ['__unauthenticated__', '__authenticated__'],
         'read': ['__unauthenticated__', '__authenticated__'],
+        'setacl': ['admin'],
         'tag': ['__authenticated__'],
     }
