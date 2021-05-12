@@ -19,6 +19,7 @@ Added
 ~~~~~
 - Example for nginx with natively installed marv
 - Support for leaves running on aarch64 (EE)
+- Per dataset ACL management (EE)
 
 Changed
 ~~~~~~~
