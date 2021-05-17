@@ -39,6 +39,19 @@ log = getLogger(__name__)
 
 USERGROUP_REGEX = re.compile(r'[0-9a-zA-Z\-_\.@+]+$')
 
+# Order corresponds to marv.model.STATUS OrderedDict
+STATUS_ICON = ['fire', 'eye-close', 'warning-sign', 'time']
+STATUS_JSON = [json.dumps({'icon': STATUS_ICON[i], 'title': x},
+                          separators=(',', ':'))
+               for i, x in enumerate(STATUS.values())]
+# TODO: reconsider in case we get a couple of more states
+STATUS_STRS = {
+    bitmask: ','.join(filter(None,
+                             (STATUS_JSON[i] if bitmask & 2**i else None
+                              for i in range(len(STATUS_JSON)))))
+    for bitmask in range(2**(len(STATUS_JSON)))
+}
+
 
 class NoSetidFound(Exception):
     pass
@@ -1159,25 +1172,55 @@ class Database:
                      .orderby(tag.value)
         return [x['value'] for x in await txn.exq(query)]
 
+    @staticmethod
+    def get_listing_query(listing):
+        listing, dataset, dataset_tag, tag = \
+            Tables(listing, 'dataset', 'dataset_tag', 'tag')
+
+        return Query.from_(listing)\
+                    .join(dataset, how=JoinType.left_outer)\
+                    .on(listing.id == dataset.id)\
+                    .join(dataset_tag, how=JoinType.left_outer)\
+                    .on(dataset.id == dataset_tag.dataset_id)\
+                    .join(tag, how=JoinType.left_outer)\
+                    .on(dataset_tag.tag_id == tag.id)\
+                    .select(listing.id.as_('id'),
+                            listing.row.as_('row'),
+                            dataset.status.as_('status'),
+                            GroupConcat(tag.value).as_('tag_value'))
+
+    @staticmethod
+    def try_extended_filter(query, name, value, operator, val_type, col):  # pylint: disable=unused-argument
+        return False, query
+
+    @staticmethod
+    def postprocess_listing(rows):
+        def fmt(row):
+            if not row['tag_value']:
+                return '[]'
+            return json.dumps(sorted(row['tag_value'].split(',')))
+
+        return [
+            {
+                'id': row['id'],
+                'row': (row['row']
+                        .replace('["#TAGS#"]', fmt(row))
+                        .replace('"#TAGS#"', fmt(row)[1:-1] if fmt(row) != '[]' else '')
+                        .replace('[,', '[')
+                        .replace('"#STATUS#"', STATUS_STRS[row['status']])),
+            }
+            for row in rows
+        ]
+
     @run_in_transaction
-    async def get_filtered_listing(self, descs, filters, user, txn=None):  # noqa: C901
+    async def get_filtered_listing(self, descs, filters, collection, user, txn=None):  # noqa: C901
         # pylint: disable=too-many-locals,too-many-branches,too-many-statements,unused-argument
         listing, dataset, dataset_tag, tag = \
             Tables(descs[0].table, 'dataset', 'dataset_tag', 'tag')
 
-        query = Query.from_(listing)\
-                     .join(dataset, how=JoinType.left_outer)\
-                     .on(listing.id == dataset.id)\
-                     .join(dataset_tag, how=JoinType.left_outer)\
-                     .on(dataset.id == dataset_tag.dataset_id)\
-                     .join(tag, how=JoinType.left_outer)\
-                     .on(dataset_tag.tag_id == tag.id)\
-                     .select(listing.id.as_('id'),
-                             listing.row.as_('row'),
-                             dataset.status.as_('status'),
-                             GroupConcat(tag.value).as_('tag_value'))\
-                     .where(dataset.discarded.ne(True)
-                            & dataset.id.isin(self.get_actionable('dataset', user, 'list')))
+        query = self.get_listing_query(descs[0].table)\
+                    .where(dataset.discarded.ne(True)
+                           & dataset.id.isin(self.get_actionable('dataset', user, 'list')))
 
         for name, value, operator, val_type in filters:
             if isinstance(value, int):
@@ -1241,6 +1284,11 @@ class Database:
 
                 if operator in ['le', 'gt']:
                     value = value + 24 * 3600 * 1000 - 1
+
+            extended_done, query = self.try_extended_filter(query, name, value, operator, val_type,
+                                                            collection)
+            if extended_done:
+                continue
 
             field = getattr(listing, name)
             if operator == 'lt':
@@ -1314,7 +1362,7 @@ class Database:
                 raise UnknownOperator(operator)
 
         query = query.orderby(tag.value).groupby('id')
-        return await txn.exq(query)
+        return self.postprocess_listing(await txn.exq(query))
 
     @run_in_transaction
     async def delete_listing_rel_values_without_ref(self, descs, txn=None):

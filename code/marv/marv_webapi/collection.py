@@ -9,7 +9,6 @@ from aiohttp import web
 
 from marv.collection import Filter
 from marv.db import DBPermissionError, UnknownOperator
-from marv.model import STATUS
 from marv.utils import parse_datetime, parse_filesize, parse_timedelta
 
 from .tooling import HTTPPermissionError
@@ -50,20 +49,6 @@ VALUE_TYPE_MAP = {
 
 
 TIMEZONE = pendulum.local_timezone().name
-
-
-# Order corresponds to marv.model.STATUS OrderedDict
-STATUS_ICON = ['fire', 'eye-close', 'warning-sign', 'time']
-STATUS_JSON = [jsondumps({'icon': STATUS_ICON[i], 'title': x},
-                         separators=(',', ':'))
-               for i, x in enumerate(STATUS.values())]
-# TODO: reconsider in case we get a couple of more states
-STATUS_STRS = {
-    bitmask: ','.join(filter(None,
-                             (STATUS_JSON[i] if bitmask & 2**i else None
-                              for i in range(len(STATUS_JSON)))))
-    for bitmask in range(2**(len(STATUS_JSON)))
-}
 
 
 def parse_filters(specs, filters):
@@ -120,7 +105,7 @@ async def collection(request):  # pylint: disable=too-many-locals  # noqa: C901
 
     try:
         rows = await site.db.get_filtered_listing(collection.table_descriptors, filters,
-                                                  user=request['username'])
+                                                  collection, user=request['username'])
     except (KeyError, ValueError, UnknownOperator):
         raise web.HTTPBadRequest()
 
@@ -143,16 +128,6 @@ async def collection(request):  # pylint: disable=too-many-locals  # noqa: C901
         for x in collection.filter_specs.values()
     ]
 
-    def fmt(row):
-        if not row['tag_value']:
-            return '[]'
-        return json.dumps(sorted(row['tag_value'].split(',')))
-
-    rowdata = ',\n'.join([row['row'].replace('["#TAGS#"]', fmt(row))
-                          .replace('"#TAGS#"', fmt(row)[1:-1] if fmt(row) != '[]' else '')
-                          .replace('[,', '[')
-                          .replace('"#STATUS#"', STATUS_STRS[row['status']])
-                          for row in rows])
     dct = {
         'acl': acl,
         'all_known': all_known,
@@ -183,7 +158,7 @@ async def collection(request):  # pylint: disable=too-many-locals  # noqa: C901
         indent = 2
         separators = (', ', ': ')
     jsondata = jsondumps(dct, indent=indent, separators=separators, sort_keys=True)
-    jsondata = jsondata.replace('"#ROWS#"', rowdata)
+    jsondata = jsondata.replace('"#ROWS#"', ',\n'.join(x['row'] for x in rows))
     return web.Response(text=jsondata, headers={
         'Content-Type': 'application/json',
         'Cache-Control': 'no-cache',

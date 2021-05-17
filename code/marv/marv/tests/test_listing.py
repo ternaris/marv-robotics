@@ -34,34 +34,34 @@ async def test_listing(site):
         'f_tags': ['bar', 'foo'],
     }
 
-    res = await site.db.get_filtered_listing(descs, [], '::')
+    res = await site.db.get_filtered_listing(descs, [], collection, '::')
     assert len(res) == 50
 
     # by comment
     res = await site.db.get_filtered_listing(descs, [
         ('f_comments', 'rem', 'substring', 'string'),
-    ], '::')
+    ], collection, '::')
     assert len(res) == 1
     assert res[0]['id'] == 3
 
     # by tag
     res = await site.db.get_filtered_listing(descs, [
         ('f_tags', ['bar', 'foo'], 'any', 'string'),
-    ], '::')
+    ], collection, '::')
     assert len(res) == 2
     assert res[0]['id'] == 1
     assert res[1]['id'] == 2
 
     res = await site.db.get_filtered_listing(descs, [
         ('f_tags', ['bar', 'foo'], 'all', 'string'),
-    ], '::')
+    ], collection, '::')
     assert len(res) == 1
     assert res[0]['id'] == 1
 
     with pytest.raises(UnknownOperator):
         res = await site.db.get_filtered_listing(descs, [
             ('f_tags', ['bar', 'foo'], 'bad operator', 'string'),
-        ], '::')
+        ], collection, '::')
 
     # TODO: status
 
@@ -70,42 +70,42 @@ async def test_listing(site):
     day2 = day1 + 24 * 3600 * 1000
     res = await site.db.get_filtered_listing(descs, [
         ('f_time_added', day1, 'eq', 'datetime'),
-    ], '::')
+    ], collection, '::')
     assert len(res) == 2
     times = [json.loads(x['row'])['values'][4] for x in res]
     assert all(day1 <= x < day2 for x in times)
 
     res = await site.db.get_filtered_listing(descs, [
         ('f_time_added', day1, 'ne', 'datetime'),
-    ], '::')
+    ], collection, '::')
     assert len(res) == 48
     times = [json.loads(x['row'])['values'][4] for x in res]
     assert all(x < day1 or x >= day2 for x in times)
 
     res = await site.db.get_filtered_listing(descs, [
         ('f_time_added', day1, 'lt', 'datetime'),
-    ], '::')
+    ], collection, '::')
     assert len(res) == 2
     times = [json.loads(x['row'])['values'][4] for x in res]
     assert all(x < day1 for x in times)
 
     res = await site.db.get_filtered_listing(descs, [
         ('f_time_added', day1, 'le', 'datetime'),
-    ], '::')
+    ], collection, '::')
     assert len(res) == 4
     times = [json.loads(x['row'])['values'][4] for x in res]
     assert all(x < day2 for x in times)
 
     res = await site.db.get_filtered_listing(descs, [
         ('f_time_added', day1, 'gt', 'datetime'),
-    ], '::')
+    ], collection, '::')
     assert len(res) == 46
     times = [json.loads(x['row'])['values'][4] for x in res]
     assert all(x > day1 for x in times)
 
     res = await site.db.get_filtered_listing(descs, [
         ('f_time_added', day1, 'ge', 'datetime'),
-    ], '::')
+    ], collection, '::')
     assert len(res) == 48
     times = [json.loads(x['row'])['values'][4] for x in res]
     assert all(x >= day1 for x in times)
@@ -113,54 +113,54 @@ async def test_listing(site):
     # substring
     res = await site.db.get_filtered_listing(descs, [
         ('f_setid', 'eaa', 'substring', 'string'),
-    ], '::')
+    ], collection, '::')
     assert sorted(x['id'] for x in res) == [2, 10, 18, 26, 33, 34, 42, 50]
 
     # startswith
     res = await site.db.get_filtered_listing(descs, [
         ('f_setid', 'feaa', 'startswith', 'string'),
-    ], '::')
+    ], collection, '::')
     assert len(res) == 1
     assert res[0]['id'] == 42
 
     # lt
-    res = await site.db.get_filtered_listing(descs, [('f_size', 10, 'lt', 'int')], '::')
+    res = await site.db.get_filtered_listing(descs, [('f_size', 10, 'lt', 'int')], collection, '::')
     assert len(res) == 9
 
     # le
-    res = await site.db.get_filtered_listing(descs, [('f_size', 10, 'le', 'int')], '::')
+    res = await site.db.get_filtered_listing(descs, [('f_size', 10, 'le', 'int')], collection, '::')
     assert len(res) == 10
 
     # eq
-    res = await site.db.get_filtered_listing(descs, [('f_size', 10, 'eq', 'int')], '::')
+    res = await site.db.get_filtered_listing(descs, [('f_size', 10, 'eq', 'int')], collection, '::')
     assert len(res) == 1
 
     # ge
-    res = await site.db.get_filtered_listing(descs, [('f_size', 10, 'ge', 'int')], '::')
+    res = await site.db.get_filtered_listing(descs, [('f_size', 10, 'ge', 'int')], collection, '::')
     assert len(res) == 41
 
     # gt
-    res = await site.db.get_filtered_listing(descs, [('f_size', 10, 'gt', 'int')], '::')
+    res = await site.db.get_filtered_listing(descs, [('f_size', 10, 'gt', 'int')], collection, '::')
     assert len(res) == 40
 
     # ne
-    res = await site.db.get_filtered_listing(descs, [('f_size', 10, 'ne', 'int')], '::')
+    res = await site.db.get_filtered_listing(descs, [('f_size', 10, 'ne', 'int')], collection, '::')
     assert len(res) == 49
 
     # relations
     res = await site.db.get_filtered_listing(descs, [
         ('f_divisors', ['div17'], 'any', 'string'),
-    ], '::')
+    ], collection, '::')
     assert [x['id'] for x in res] == [17, 34]
 
     res = await site.db.get_filtered_listing(descs, [
         ('f_divisors', ['div2', 'div17'], 'all', 'string'),
-    ], '::')
+    ], collection, '::')
     assert [x['id'] for x in res] == [34]
 
     res = await site.db.get_filtered_listing(descs, [
         ('f_divisors', 'iv4', 'substring_any', 'string'),
-    ], '::')
+    ], collection, '::')
     assert [x['id'] for x in res] == list(range(4, 41, 4)) + list(range(41, 50))
 
     # TODO: words
