@@ -197,6 +197,8 @@ class Collection:
         for spec in self.filter_specs.values():
             if spec.name in ('f_comments', 'f_status', 'f_tags'):
                 continue
+            if spec.name.startswith('f_leaf_'):
+                continue
             functree = parse_function(spec.function)
             funcs.append((spec, functree))
         return funcs

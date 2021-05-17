@@ -43,6 +43,7 @@ def make_funcs(dataset, setdir, store):
         'getitem': lambda x, y: x[y] if x is not None else None,
         'join': lambda sep, *args: sep.join([x for x in args if x]),
         'len': lambda x: len(x) if x is not None else None,
+        'leaf': lambda x: [f'#LEAF.{x}#'],
         'link': (lambda href, title, target=None:
                  {'href': href or '',
                   'title': title or '',

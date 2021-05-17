@@ -210,7 +210,8 @@ def make_listing_model(name, filter_specs):
 
     dct.update((fspec.name, coltype_factories[fspec.value_type](fspec.name))
                for fspec in filter_specs.values()
-               if fspec.name not in ('row', 'f_comments', 'f_status', 'f_tags'))
+               if fspec.name not in ('row', 'f_comments', 'f_status', 'f_tags')
+               if not fspec.name.startswith('f_leaf_'))
 
     models.append(type(listing_model_name, (Model,), dct))
     return models
