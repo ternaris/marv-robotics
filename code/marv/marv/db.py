@@ -1132,7 +1132,7 @@ class Database:
                 x['value'] for x in await txn.exq(Query.from_(desc.table).select('value'))
             ]
             for desc in descs
-            if {'any', 'all'}.intersection(collection.filter_specs[desc.key].operators)
+            if {'any', 'all', 'none'}.intersection(collection.filter_specs[desc.key].operators)
         }
         all_known.update({
             'f_status': list(STATUS),
@@ -1220,6 +1220,13 @@ class Database:
                                                         .select(dataset_tag.dataset_id)
                                                         .groupby(dataset_tag.dataset_id)
                                                         .having(fn.Count('*') == len(value))))
+                elif operator == 'none':
+                    query = query.where(listing.id.notin(Query.from_(dataset_tag)
+                                                        .join(tag)
+                                                        .on(dataset_tag.tag_id == tag.id)
+                                                        .where(tag.value.isin(value))
+                                                        .select(dataset_tag.dataset_id)
+                                                        .distinct()))
 
                 else:
                     raise UnknownOperator(operator)
