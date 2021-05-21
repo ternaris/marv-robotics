@@ -9,7 +9,7 @@ gunicorn
 jinja2
 pendulum!=2.1.0
 pycapnp-for-marv==0.6.3
-pydantic
+pydantic==1.7.*
 pypika==0.37.1  # TODO: tortoise breaks at least with 0.37.16
 setproctitle
 tortoise-orm==0.15.*
