@@ -1,4 +1,4 @@
-# Copyright 2016 - 2020  Ternaris.
+# Copyright 2016 - 2021  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import pytest
@@ -105,6 +105,13 @@ async def test_tag(site):
     res = await site.db.list_tags()
     assert res == ['bar', 'baz', 'foo']
 
+    with pytest.raises(DBPermissionError):
+        res = await site.db.bulk_tag([
+            ('foo', 3),
+        ], [], 'marv:anonymous')
+
+    res = await site.db.list_tags()
+    assert res == ['bar', 'baz', 'foo']
     res = await site.db.bulk_tag([], [
         ('bar', 1),
     ], '::')

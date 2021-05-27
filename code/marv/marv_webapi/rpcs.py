@@ -1,4 +1,4 @@
-# Copyright 2019  Ternaris.
+# Copyright 2016 - 2021  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import json
@@ -7,15 +7,10 @@ from collections import defaultdict
 from aiohttp import web
 from tortoise.exceptions import OperationalError
 
-from .tooling import api_group as marv_api_group
+from .api import api
 
 
-@marv_api_group()
-def rpcs(_):
-    pass
-
-
-@rpcs.endpoint('/v1/rpcs', methods=['POST'], force_acl=['__authenticated__'])
+@api.endpoint('/v1/rpcs', methods=['POST'])
 async def rpc_entry(request):  # noqa: C901
     # pylint: disable=too-many-locals,too-many-branches
 

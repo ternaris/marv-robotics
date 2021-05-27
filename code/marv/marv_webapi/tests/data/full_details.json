@@ -1,9 +1,11 @@
 [
   {
     "acl": [
+      "comment",
       "download_raw",
       "list",
-      "read"
+      "read",
+      "tag"
     ],
     "all_known_tags": [
       "TAG1",
@@ -91,9 +93,11 @@
   },
   {
     "acl": [
+      "comment",
       "download_raw",
       "list",
-      "read"
+      "read",
+      "tag"
     ],
     "all_known_tags": [
       "TAG1",
@@ -182,9 +186,11 @@
   },
   {
     "acl": [
+      "comment",
       "download_raw",
       "list",
-      "read"
+      "read",
+      "tag"
     ],
     "all_known_tags": [
       "TAG2"
@@ -243,9 +249,11 @@
   },
   {
     "acl": [
+      "comment",
       "download_raw",
       "list",
-      "read"
+      "read",
+      "tag"
     ],
     "all_known_tags": [
       "TAG2"
@@ -312,9 +320,11 @@
   },
   {
     "acl": [
+      "comment",
       "download_raw",
       "list",
-      "read"
+      "read",
+      "tag"
     ],
     "all_known_tags": [
       "TAG2"
@@ -373,9 +383,11 @@
   },
   {
     "acl": [
+      "comment",
       "download_raw",
       "list",
-      "read"
+      "read",
+      "tag"
     ],
     "all_known_tags": [
       "TAG2"

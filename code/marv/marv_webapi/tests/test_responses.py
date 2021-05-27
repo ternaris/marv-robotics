@@ -1,4 +1,4 @@
-# Copyright 2016 - 2019  Ternaris.
+# Copyright 2016 - 2021  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 from pathlib import Path
@@ -30,12 +30,15 @@ def get_rows(listing):
 
 
 @pytest.mark.marv(site={'empty': True})
-async def test_empty_responses(client):
+async def test_empty_responses(client, site):
+    await site.db.user_add('test', password='test_pw', realm='marv', realmuid='')
+    await client.authenticate('test', 'test_pw')
     assert recorded(await get_listings(client), DATADIR / 'empty_listings.json')
 
 
 @pytest.mark.marv(site={'postscan': postscan, 'size': 2})
 async def test_full_responses(client, site):
+    await client.authenticate('test', 'test_pw')
     sets = await site.db.get_datasets_for_collections(None)
     for setid in sets:
         await site.run(setid)

@@ -1,4 +1,4 @@
-# Copyright 2016 - 2018  Ternaris.
+# Copyright 2016 - 2021  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 from json import JSONDecodeError
@@ -7,11 +7,11 @@ from aiohttp import web
 
 from marv.db import DBPermissionError
 
+from .api import api
 from .tooling import HTTPPermissionError
-from .tooling import api_endpoint as marv_api_endpoint
 
 
-@marv_api_endpoint('/tag', methods=['POST'])
+@api.endpoint('/tag', methods=['POST'])
 async def tag(request):  # noqa: C901
     try:
         changes = await request.json()

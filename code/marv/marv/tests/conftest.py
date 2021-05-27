@@ -1,4 +1,4 @@
-# Copyright 2016 - 2019  Ternaris.
+# Copyright 2016 - 2021  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import datetime
@@ -62,7 +62,7 @@ detail_sections =
 
 MARV_CONF = """
 [marv]
-acl = {acl_name}
+ce_anonymous_readonly_access = {anon_read}
 collections = {collection_names}
 
 {collections}
@@ -149,7 +149,7 @@ async def site(loop, request, tmpdir):  # pylint: disable=unused-argument  # noq
     marv_conf = (tmpdir / 'marv.conf')
     mark = {x.name: x.kwargs for x in request.node.iter_markers()}
     site_cfg = mark.get('marv', {}).get('site', {})
-    marv_conf.write(MARV_CONF.format(acl_name=site_cfg.get('acl', 'marv_webapi.acls:public'),
+    marv_conf.write(MARV_CONF.format(anon_read=site_cfg.get('acl') == 'marv_webapi.acls:public',
                                      collection_names=' '.join(collection_names),
                                      collections=collections))
 

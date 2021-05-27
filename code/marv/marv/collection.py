@@ -521,8 +521,9 @@ class Collection:
             'time_added': time_added,
             'timestamp': timestamp,
             'setid': setid,
-            'files': [type('file', (), {'missing': False, **x}) for x in files],
-        })
+            'files': [type('file', (), {'missing': False, **x})() for x in files],
+            '__repr__': lambda _: f'<Dataset {setid} {name}>',
+        })()
         storedir = self.config.marv.storedir
         store = Store(storedir, self.nodes)
         store.add_dataset(dataset, exists_okay=_restore)

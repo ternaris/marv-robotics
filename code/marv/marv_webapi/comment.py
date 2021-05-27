@@ -1,4 +1,4 @@
-# Copyright 2016 - 2018  Ternaris.
+# Copyright 2016 - 2021  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import time
@@ -7,11 +7,11 @@ from aiohttp import web
 
 from marv.db import DBPermissionError
 
+from .api import api
 from .tooling import HTTPPermissionError
-from .tooling import api_endpoint as marv_api_endpoint
 
 
-@marv_api_endpoint('/comment', methods=['POST'])
+@api.endpoint('/comment', methods=['POST'])
 async def comment(request):
     username = request['username']
     changes = await request.json()

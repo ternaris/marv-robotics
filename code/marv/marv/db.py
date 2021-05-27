@@ -1,4 +1,4 @@
-# Copyright 2016 - 2020  Ternaris.
+# Copyright 2016 - 2021  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 # pylint: disable=too-many-lines
@@ -18,7 +18,7 @@ from logging import getLogger
 from pathlib import Path
 
 import bcrypt
-from pypika import JoinType, Order
+from pypika import JoinType, NullValue, Order
 from pypika import SQLLiteQuery as Query
 from pypika import Table, Tables, Tuple
 from pypika import functions as fn
@@ -167,7 +167,10 @@ class FromExceptQuery:
 
 class ValuesTuple(Tuple):
     def get_sql(self, **kw):
-        return f'(VALUES {",".join(x.get_sql(**kw) for x in self.values)})'
+        sql = f'(VALUES {",".join(x.get_sql(**kw) for x in self.values)})'
+        if self.alias:
+            return f'{sql} AS {self.alias}'
+        return sql
 
 
 class GroupConcat(AggregateFunction):
@@ -522,6 +525,16 @@ class Tortoise(_Tortoise):
         return [model]
 
 
+ACLS = {
+    'comment': ['__authenticated__'],
+    'delete': ['admin'],
+    'download_raw': ['__authenticated__'],
+    'list': ['__authenticated__'],
+    'read': ['__authenticated__'],
+    'tag': ['__authenticated__'],
+}
+
+
 class Database:
     # pylint: disable=too-many-public-methods
 
@@ -550,6 +563,13 @@ class Database:
         self.connection_queue = asyncio.Queue()
         self.listing_models = listing_models
         self.config = config
+        self.acls = ACLS.copy()
+        if self.config.marv.ce_anonymous_readonly_access_value:
+            self.acls.update({
+                'download_raw': ['__unauthenticated__', '__authenticated__'],
+                'list': ['__unauthenticated__', '__authenticated__'],
+                'read': ['__unauthenticated__', '__authenticated__'],
+            })
 
     async def initialize_connections(self):
         defcon = Tortoise.get_connection('default')
@@ -770,33 +790,64 @@ class Database:
         return default
 
     @staticmethod
-    def get_actionable(modelname, user, action):
-        # pylint: disable=unused-argument
-        model = Table(modelname)
-        return Query.from_(model).select(model.id)
+    def if_admin(username, query):
+        user, user_group, group = Tables('user', 'user_group', 'group')
+        return (query
+                .join(user)
+                .cross()
+                .join(user_group)
+                .on(user.id == user_group.user_id)
+                .join(group)
+                .on(user_group.group_id == group.id)
+                .where((group.name == 'admin') & (user.name == username)))
 
-    @staticmethod
-    def get_resolve_value_query(rel, relations, user, action):
+    def generate_crit(self, ids, empty, user, action):
+        if user == '::':
+            return ids
+        groups = self.acls[action]
+        if user == 'marv:anonymous':
+            if '__unauthenticated__' in groups:
+                return ids
+            return empty
+
+        if '__authenticated__' in groups:
+            return ids
+
+        return self.if_admin(user, ids)
+
+    def get_actionable(self, modelname, user, action):
+        model = Table(modelname)
+        query = Query.from_(model).select(model.id)
+        return self.generate_crit(query, query.where(model.id.isnull()), user, action)
+
+    def get_resolve_value_query(self, rel, relations, user, action):
         # pylint: disable=unused-argument
         out, tmp = Tables('out', 'tmp')
-        return Query.with_(Query.with_(Query.from_(ValuesTuple(*relations))
-                                       .select('*'), 'tmp(value, back_id)')
-                           .from_(tmp)
-                           .join(rel)
-                           .on(tmp.value == rel.value)
-                           .select(rel.id, tmp.back_id), 'out(rel_id, back_id)')\
-                    .from_(out)\
-                    .select(out.rel_id, out.back_id)
+        query = Query.with_(Query.with_(Query.from_(ValuesTuple(*relations))
+                                        .select('*'), 'tmp(value, back_id)')
+                            .from_(tmp)
+                            .join(rel)
+                            .on(tmp.value == rel.value)
+                            .select(rel.id, tmp.back_id), 'out(rel_id, back_id)')\
+                     .from_(out)\
+                     .select(out.rel_id, out.back_id)
 
-    @staticmethod
-    def id_crit(ids, user, action):  # pylint: disable=unused-argument
-        dataset = Table('dataset')
-        return dataset.id.isin(ids)
+        ids = Table('ids')
+        empty = Query.select(ids.star).from_(ValuesTuple(Tuple(0, 0)).as_(ids)).where(NullValue())
 
-    @staticmethod
-    def setid_crit(ids, user, action):  # pylint: disable=unused-argument
+        return self.generate_crit(query, empty, user, action)
+
+    def id_crit(self, ids, user, action):
         dataset = Table('dataset')
-        return dataset.setid.isin([str(x) for x in ids])
+        tids = Table('tids')
+        ids = Query.from_(ValuesTuple(*[(x,) for x in ids]).as_('tids')).select(tids.star)
+        return dataset.id.isin(self.generate_crit(ids, Tuple(), user, action))
+
+    def setid_crit(self, ids, user, action):
+        dataset = Table('dataset')
+        tids = Table('tids')
+        ids = Query.from_(ValuesTuple(*[(str(x),) for x in ids]).as_('tids')).select(tids.star)
+        return dataset.setid.isin(self.generate_crit(ids, Tuple(), user, action))
 
     @run_in_transaction
     async def resolve_shortids(self, prefixes, discarded=False, txn=None):

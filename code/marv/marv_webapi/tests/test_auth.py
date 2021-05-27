@@ -1,4 +1,4 @@
-# Copyright 2016 - 2019  Ternaris.
+# Copyright 2016 - 2021  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import time
@@ -58,12 +58,10 @@ class AuthtestParams(namedtuple('Param', 'count expected forbidden local calls')
         return super().__new__(cls, *args)
 
 
-LOCAL_ACTIONS = {'comment', 'compare', 'delete', 'list', 'read', 'setacl', 'tag'}
-
 UNAUTH_PUBLIC = AuthtestParams(
     2,
-    {'auth_post'},
-    {'rpc_entry'} | LOCAL_ACTIONS,
+    set(),
+    {'admin'},
     {'download_raw', 'list', 'read'},
     [(200, try_listing),
      (200, try_details),
@@ -76,8 +74,8 @@ UNAUTH_PUBLIC = AuthtestParams(
 
 UNAUTH_AUTHENTICATED = AuthtestParams(
     0,
-    {'auth_post'},
-    {'rpc_entry'} | LOCAL_ACTIONS,
+    set(),
+    {'admin'},
     set(),
     [(401, try_listing),
      (401, try_details),
@@ -90,9 +88,9 @@ UNAUTH_AUTHENTICATED = AuthtestParams(
 
 AUTH = AuthtestParams(
     2,
-    {'rpc_entry'},
-    {'auth_post'} | LOCAL_ACTIONS,
-    {'download_raw', 'list', 'read', 'comment', 'compare', 'tag'},
+    set(),
+    {'admin'},
+    {'download_raw', 'list', 'read', 'comment', 'tag'},
     [(200, try_listing),
      (200, try_details),
      (200, try_filelist),
@@ -104,9 +102,9 @@ AUTH = AuthtestParams(
 
 ADMIN = AuthtestParams(
     2,
-    {'rpc_entry'},
-    {'auth_post'} | LOCAL_ACTIONS,
-    {'download_raw', 'list', 'read', 'comment', 'compare', 'tag', 'delete', 'setacl'},
+    {'admin'},
+    set(),
+    {'download_raw', 'list', 'read', 'comment', 'tag', 'delete'},
     [(200, try_listing),
      (200, try_details),
      (200, try_filelist),
@@ -119,16 +117,16 @@ ADMIN = AuthtestParams(
 
 @pytest.mark.parametrize('auth, params', [
     pytest.param(
-        None, UNAUTH_PUBLIC,
-        marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:public'}),
+       None, UNAUTH_PUBLIC,
+       marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:public'}),
     ),
     pytest.param(
-        ('test', 'test_pw'), AUTH,
-        marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:public'}),
+       ('test', 'test_pw'), AUTH,
+       marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:public'}),
     ),
     pytest.param(
-        ('adm', 'adm_pw'), ADMIN,
-        marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:public'}),
+       ('adm', 'adm_pw'), ADMIN,
+       marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:public'}),
     ),
     pytest.param(
         None, UNAUTH_AUTHENTICATED,

@@ -1,9 +1,11 @@
 {
   "hodge": {
     "acl": [
+      "comment",
       "download_raw",
       "list",
-      "read"
+      "read",
+      "tag"
     ],
     "all_known": {
       "f_divisors": [],
@@ -252,9 +254,11 @@
   },
   "podge": {
     "acl": [
+      "comment",
       "download_raw",
       "list",
-      "read"
+      "read",
+      "tag"
     ],
     "all_known": {
       "f_divisors": [],

@@ -1,4 +1,4 @@
-# Copyright 2016 - 2018  Ternaris.
+# Copyright 2016 - 2021  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 """Marv config parsing."""
@@ -261,6 +261,7 @@ class MarvConfig(Model):
     sitedir: Path  # TODO: workaround
     collections: Tuple[str, ...]
     acl: str = 'marv_webapi.acls:authenticated'
+    ce_anonymous_readonly_access: bool = False
     dburi: str = 'sqlite://db/db.sqlite'
     frontenddir: Path = 'frontend'
     leavesdir: Path = 'leaves'
@@ -291,7 +292,13 @@ class MarvConfig(Model):
     @validator('acl')
     @deprecated('21.05', name='acl')
     def acl_config(val):
+        if val not in ('marv_webapi.acls:authenticated', 'marv_webapi.acls:public'):
+            raise ValueError(f'ACL value {val} is not supported')
         return val
+
+    @property
+    def ce_anonymous_readonly_access_value(self):
+        return self.ce_anonymous_readonly_access or self.acl == 'marv_webapi.acls:public'
 
     @apvalidator('dburi')
     def dburi_relto_site(cls, val, values):

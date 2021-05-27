@@ -1,4 +1,4 @@
-# Copyright 2016 - 2020  Ternaris.
+# Copyright 2016 - 2021  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import json
@@ -9,17 +9,11 @@ from aiohttp import web
 from marv.db import DBPermissionError
 from marv_api.setid import SetID
 
-from .tooling import HTTPPermissionError
-from .tooling import api_group as marv_api_group
-from .tooling import get_local_granted, safejoin, sendfile
+from .api import api
+from .tooling import HTTPPermissionError, get_local_granted, safejoin, sendfile
 
 
-@marv_api_group()
-def dataset(_):
-    pass
-
-
-@dataset.endpoint('/file-list', methods=['POST'], acl_key='download_raw')
+@api.endpoint('/file-list', methods=['POST'], allow_anon=True)
 async def file_list(request):
     try:
         ids = await request.json()
@@ -106,7 +100,7 @@ async def _get_filepath(request, setid, setdir, path):
     return path
 
 
-@dataset.endpoint('/dataset/{setid:[^/]+}{_:/?}{path:((?<=/).*)?}', acl_key='read')
+@api.endpoint('/dataset/{setid:[^/]+}{_:/?}{path:((?<=/).*)?}', methods=['GET'], allow_anon=True)
 async def detail(request):
     setid = request.match_info['setid']
     path = request.match_info['path'] or 'detail.json'

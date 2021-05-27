@@ -1,4 +1,4 @@
-# Copyright 2016 - 2018  Ternaris.
+# Copyright 2016 - 2021  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import json
@@ -11,9 +11,8 @@ from marv.collection import Filter
 from marv.db import DBPermissionError, UnknownOperator
 from marv.utils import parse_datetime, parse_filesize, parse_timedelta
 
-from .tooling import HTTPPermissionError
-from .tooling import api_endpoint as marv_api_endpoint
-from .tooling import get_global_granted, get_local_granted
+from .api import api
+from .tooling import HTTPPermissionError, get_global_granted, get_local_granted
 
 ALIGN = {
     'acceleration': 'right',
@@ -62,13 +61,10 @@ def parse_filters(specs, filters):
     ]
 
 
-@marv_api_endpoint('/meta', force_acl=['__unauthenticated__', '__authenticated__'], acl_key='list')
+@api.endpoint('/meta', methods=['GET'], allow_anon=True)
 async def meta(request):
     site = request.app['site']
-    if not set(request['user_groups']).intersection(request.app['route_acl']['list']):
-        collections = []
-    else:
-        collections = await site.db.get_collections(user=request['username'])
+    collections = await site.db.get_collections(user=request['username'])
 
     resp = web.json_response({
         'acl': get_global_granted(request),
@@ -80,7 +76,7 @@ async def meta(request):
     return resp
 
 
-@marv_api_endpoint('/_collection{_:/?}{collection_id:((?<=/).*)?}', acl_key='read')
+@api.endpoint('/_collection{_:/?}{collection_id:((?<=/).*)?}', methods=['GET'], allow_anon=True)
 async def collection(request):  # pylint: disable=too-many-locals  # noqa: C901
     site = request.app['site']
     collection_id = request.match_info['collection_id'] or site.collections.default_id

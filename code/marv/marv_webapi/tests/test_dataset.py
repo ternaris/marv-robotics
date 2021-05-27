@@ -1,4 +1,4 @@
-# Copyright 2016 - 2019  Ternaris.
+# Copyright 2016 - 2021  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 from pathlib import Path
@@ -20,7 +20,7 @@ async def test_dataset(site, client):
     assert res.status == 404
 
     # 403 for absolute file
-    res = await client.get(f'/marv/api/dataset/{sets[0]}//absolute')
+    res = await client.get_json(f'/marv/api/dataset/{sets[0]}//absolute')
     assert res.status == 403
 
     # filelist
@@ -46,6 +46,6 @@ async def test_nginx(site, client, mocker):
 
     mocker.patch('marv_webapi.dataset._get_filepath', wraps=get_filepath)
 
-    res = await client.get(f'/marv/api/dataset/{sets[0]}/0')
+    res = await client.get_json(f'/marv/api/dataset/{sets[0]}/0')
     assert res.status == 200
     assert res.headers['x-accel-redirect'] == '/dev/null/foo'

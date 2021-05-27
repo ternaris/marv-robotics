@@ -16,6 +16,11 @@ In case of database migrations it is sufficient to ``marv dump`` the database wi
 Upcoming (unreleased)
 ---------------------
 
+Configuration migration (CE)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The ``acl`` configuration key for setting a route-based permission profile was removed. If you were previously using the ``marv_webapi.acls:public`` profile in your CE installation, you can grant anonymous users readonly access with the :ref:`cfg_marv_ce_anonymous_readonly_access` configuration key.
+
+
 Database migration
 ^^^^^^^^^^^^^^^^^^
 Dataset and leaf permission management required changes to database schemas, a migration of the MARV database is necessary. Export the database with your current version of MARV:
@@ -149,7 +154,7 @@ Changes to access control
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 MARV supports access control profiles that dictate who is permitted to perform what. Profiles map actions like ``comment`` or ``tag`` to lists of user groups that are permitted to perform these actions. This version of MARV cleans up and streamlines the list of supported verbs.
 
-If you created a custom profile, please refer to :mod:`marv_webapi.acls` as an example and make sure to adjust your custom profile to use the new action verbs.
+If you created a custom profile, please refer to ``marv_webapi.acls`` as an example and make sure to adjust your custom profile to use the new action verbs.
 
 No migration is necessary for installations that use one of the two default profiles (``authenticated`` or ``public``).
 

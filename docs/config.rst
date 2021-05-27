@@ -25,6 +25,19 @@ marv section
    [marv]
 
 
+.. _cfg_marv_ce_anonymous_readonly_access:
+
+ce_anonymous_readonly_access (CE)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Give anonymous users readonly access to all datasets.
+
+Example:
+
+.. code-block:: ini
+
+   ce_anonymous_readonly_access = True
+
+
 .. _cfg_marv_collections:
 
 collections

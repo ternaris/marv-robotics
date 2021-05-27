@@ -26,6 +26,7 @@ Changed
 ~~~~~~~
 - Make nodes select also ROS2 message types
 - Publish timestamped velocity and acceleration (CE)
+- Simplified permission handling and removed route ACL profiles (CE)
 
 Deprecated
 ~~~~~~~~~~
@@ -36,6 +37,7 @@ Removed
 - In 20.12 deprecated marv.utils.popen, use marv_api.utils.popen instead
 - In 20.12 deprecated HTTP listing API, query :ref:`httpapi_query_collection` instead
 - In 20.12 deprecated list config function, use makelist instead
+- In 21.03 deprecated route-based ACL profiles **needs migration:** :ref:`migrate-upcoming` (CE)
 
 Fixed
 ~~~~~
