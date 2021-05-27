@@ -10,13 +10,13 @@ async def test_frontend(client):
     res = await client.get('/main-built.js')
     assert res.status == 200
     assert res.headers['Content-Type'] == 'application/javascript'
-    data = await res.text()
+    data = await res.text(encoding='utf-8')
     assert data.startswith('/*')
 
     res = await client.get('/main-built.css')
     assert res.status == 200
     assert res.headers['Content-Type'] == 'text/css'
-    data = await res.text()
+    data = await res.text(encoding='utf-8')
     assert data.startswith('/*')
 
     res = await client.get('/custom/not-exist.js')

@@ -8,6 +8,7 @@ import pytest
 from marv.db import UnknownOperator
 
 
+@pytest.mark.marv(site={'size': 50})
 async def test_listing(site):
     # pylint: disable=too-many-statements
 
@@ -172,14 +173,14 @@ async def test_listing_relations(site):
         await site.run(setid)
 
     res = await site.db.get_all_known_for_collection(site.collections, 'hodge', '::')
-    assert res['f_divisors'] == [f'div{x}' for x in range(1, 51)]
+    assert res['f_divisors'] == [f'div{x}' for x in range(1, 11)]
 
-    await site.db.discard_datasets_by_setids([sets[41]])
+    await site.db.discard_datasets_by_setids([sets[6]])
     await site.cleanup_discarded()
 
     res = await site.db.get_all_known_for_collection(site.collections, 'hodge', '::')
-    assert res['f_divisors'] == [f'div{x}' for x in range(1, 51)]
+    assert res['f_divisors'] == [f'div{x}' for x in range(1, 11)]
 
     await site.cleanup_relations()
     res = await site.db.get_all_known_for_collection(site.collections, 'hodge', '::')
-    assert res['f_divisors'] == [f'div{x}' for x in range(1, 51) if x != 42]
+    assert res['f_divisors'] == [f'div{x}' for x in range(1, 11) if x != 7]

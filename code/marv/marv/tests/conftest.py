@@ -123,7 +123,7 @@ def section_test(node):
 
 
 @pytest.fixture
-async def site(loop, request, tmpdir):  # pylint: disable=unused-argument
+async def site(loop, request, tmpdir):  # pylint: disable=unused-argument  # noqa: C901
     # pylint: disable=too-many-locals
     collection_names = ('hodge', 'podge')
     add_nodes = '\n'.join([
@@ -174,7 +174,7 @@ async def site(loop, request, tmpdir):  # pylint: disable=unused-argument
         collection = Path(path).name
         assert collection in collection_names, 'TEST SETUP ERROR: basename must match a collection!'
         idx = collection_names.index(collection)
-        size = site_cfg.get('size', 50)
+        size = site_cfg.get('size', 10)
         return ((path, [], [f'{x+1:04d}' for x in range((idx + 1) * size)]),)
 
     def stat(path):
@@ -186,11 +186,29 @@ async def site(loop, request, tmpdir):  # pylint: disable=unused-argument
             st_size = idx
         return Stat()
 
+    class Bcrypt:
+        PWDB = {
+            b'adm_pw': b'bs1QyNuPObrtRc0M8h71kIhNli0COLC',
+            b'test_pw': b'iB5fVFuFzQLmNLdZtYldTg9VvVFZDe2',
+        }
+
+        @staticmethod
+        def gensalt():
+            return b'$2b$12$k67acf6S32i3nW0c7ycwe.'
+
+        @staticmethod
+        def hashpw(password, salt):
+            return salt + Bcrypt.PWDB.get(password, b'')
+
+        @staticmethod
+        def checkpw(clear, hashed):
+            return Bcrypt.gensalt() + Bcrypt.PWDB.get(clear, b'') == hashed
+
     cls = site_cfg.get('cls', Site)
     site = await cls.create(marv_conf, init=True)  # pylint: disable=redefined-outer-name
     try:
         if not site_cfg.get('empty'):
-            with mock.patch('bcrypt.gensalt', return_value=b'$2b$12$k67acf6S32i3nW0c7ycwe.'), \
+            with mock.patch('marv.db.bcrypt', wraps=Bcrypt), \
                     mock.patch.object(datetime, 'datetime', create_datemock()), \
                     mock.patch('marv_api.setid.SetID.random', side_effect=count(2**127)), \
                     mock.patch('marv.utils.mtime', side_effect=count(1200000000)), \
@@ -249,13 +267,13 @@ async def client(aiohttp_client, app):  # pylint: disable=redefined-outer-name
 
     async def get_json(*args, **kw):
         resp = await client.get(*args, headers=headers, **kw)
-        if resp.status < 300:
+        if resp.status < 300 and resp.headers['content-type'].startswith('application/json'):
             return await resp.json()
         return resp
 
     async def post_json(*args, **kw):
         resp = await client.post(*args, headers=headers, **kw)
-        if resp.status < 300:
+        if resp.status < 300 and resp.headers['content-type'].startswith('application/json'):
             return await resp.json()
         return resp
 

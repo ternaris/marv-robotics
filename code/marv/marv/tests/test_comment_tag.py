@@ -76,8 +76,8 @@ async def test_tag(site):
     with pytest.raises(DBPermissionError):  # not idempotent
         await site.db.update_tags_by_setids(sets[0:1], add=[], remove=['foo'])
     await site.db.update_tags_by_setids(sets[0:1], add=[], remove=['foo'], idempotent=True)
-    await site.db.update_tags_by_setids(sets[100:101], add=['baz'], remove=[])
-    await site.db.update_tags_by_setids(sets[101:102], add=['baz', 'bar'], remove=[])
+    await site.db.update_tags_by_setids(sets[20:21], add=['baz'], remove=[])
+    await site.db.update_tags_by_setids(sets[21:22], add=['baz', 'bar'], remove=[])
 
     # get all
     res = await site.db.get_all_known_tags_for_collection('hodge')
@@ -116,7 +116,7 @@ async def test_tag(site):
     res = await site.db.list_tags(collections=['podge'])
     assert res == ['bar', 'baz']
 
-    await site.db.delete_comments_tags([sets[x] for x in [0, 1, 100, 101]], False, True)
+    await site.db.delete_comments_tags([sets[x] for x in [0, 1, 20, 21]], False, True)
     res = await site.db.delete_tag_values_without_ref()
     res = await site.db.list_tags()
     assert res == []

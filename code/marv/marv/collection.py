@@ -12,11 +12,11 @@ from itertools import groupby
 from logging import getLogger
 
 from pypika import SQLLiteQuery as Query
+from pypika import Tables
 
 from marv import utils
 from marv.config import ConfigError, calltree, getdeps, make_funcs, parse_function
 from marv.db import scoped_session
-from marv.model import Collection as CollectionModel
 from marv.model import Comment, Dataset, File, make_listing_model, make_table_descriptors
 from marv_api.setid import SetID
 from marv_api.utils import find_obj
@@ -430,7 +430,7 @@ class Collection:
                 _comments = dataset.pop('comments')
                 _tags = dataset.pop('tags')
                 dataset = await self.make_dataset(connection, _restore=True, **dataset)
-                comments.extend(Comment(dataset=dataset, **x) for x in _comments)
+                comments.extend(Comment(dataset_id=dataset.id, **x) for x in _comments)
                 tags.append((dataset, _tags))
                 batch.append(dataset)
                 if len(batch) > 50:
@@ -476,42 +476,60 @@ class Collection:
 
     async def make_dataset(self, connection, files, name, time_added=None, discarded=False,
                            setid=None, status=0, timestamp=None, _restore=None):
-        # pylint: disable=too-many-arguments
+        # pylint: disable=too-many-arguments,too-many-locals
         time_added = int(utils.now() * 1000) if time_added is None else time_added
 
-        collection = await CollectionModel.filter(name=self.name).using_db(connection).first()
-        dataset = await Dataset.create(collection=collection,
-                                       name=name,
-                                       discarded=discarded,
-                                       status=status,
-                                       time_added=time_added,
-                                       timestamp=0,
-                                       setid=setid or SetID.random(),
-                                       acn_id=collection.acn_id,
-                                       dacn_id=2,
-                                       using_db=connection)
-
         if _restore:
-            files = [File(dataset=dataset, idx=i, **x) for i, x in enumerate(files)]
+            files = [{'idx': i, **x} for i, x in enumerate(files)]
         else:
-            files = [File(dataset=dataset, idx=i, mtime=int(utils.mtime(path) * 1000),
-                          path=path, size=stat.st_size)
-                     for i, (path, stat)
-                     in enumerate((path, utils.stat(path)) for path in files)]
+            files = [
+                {
+                    'idx': i,
+                    'missing': False,
+                    'mtime': int(stat.st_mtime * 1000),
+                    'path': path,
+                    'size': stat.st_size,
+                }
+                for i, (path, stat) in enumerate((path, utils.stat(path)) for path in files)
+            ]
+        timestamp = timestamp or max(x['mtime'] for x in files)
 
-        dataset.timestamp = timestamp or max(x.mtime for x in files)
-        await dataset.save(using_db=connection)
-        await File.bulk_create(files, using_db=connection)
+        collection_t, dataset_t, file_t = Tables('collection', 'dataset', 'file')  # pylint: disable=unbalanced-tuple-unpacking
+        collection = (await connection.exq(Query.from_(collection_t)
+                                           .select(collection_t.id, collection_t.acn_id)
+                                           .where(collection_t.name == self.name)))[0]
 
-        await dataset.fetch_related('files', using_db=connection)
+        setid = SetID(setid or SetID.random())
 
+        await connection.exq(Query.into(dataset_t)
+                             .columns('collection_id', 'name', 'discarded', 'status', 'time_added',
+                                      'timestamp', 'setid', 'acn_id', 'dacn_id')
+                             .insert((collection['id'], name, discarded, status, time_added,
+                                      timestamp, str(setid), collection['acn_id'], 2)))
+        dataset_id = (await connection.execute_query('SELECT last_insert_rowid()'))[1][0][0]
+
+        await connection.exq(Query.into(file_t)
+                             .columns('dataset_id', 'idx', 'missing', 'mtime', 'path', 'size')
+                             .insert(*[(dataset_id, x['idx'], x.get('missing', False), x['mtime'],
+                                        x['path'], x['size']) for x in files]))
+
+        dataset = type('dataset', (), {
+            'id': dataset_id,
+            'discarded': discarded,
+            'name': name,
+            'status': status,
+            'time_added': time_added,
+            'timestamp': timestamp,
+            'setid': setid,
+            'files': [type('file', (), {'missing': False, **x}) for x in files],
+        })
         storedir = self.config.marv.storedir
         store = Store(storedir, self.nodes)
         store.add_dataset(dataset, exists_okay=_restore)
-        self.render_detail(dataset)
+        self.render_detail(dataset, store)
         return dataset
 
-    def render_detail(self, dataset):
+    def render_detail(self, dataset, store=None):
         storedir = self.config.marv.storedir
         setdir = os.path.join(storedir, str(dataset.setid))
         try:
@@ -519,7 +537,8 @@ class Collection:
         except OSError:
             pass
         assert os.path.isdir(setdir), setdir
-        store = Store(storedir, self.nodes)
+        if store is None:
+            store = Store(storedir, self.nodes)
         funcs = make_funcs(dataset, setdir, store)
 
         summary_widgets = [

@@ -1,7 +1,10 @@
 # Copyright 2016 - 2019  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+import pytest
 
+
+@pytest.mark.marv(site={'size': 50})
 async def test_rpc_query(site, client):
     # pylint: disable=too-many-statements
 
@@ -32,7 +35,7 @@ async def test_rpc_query(site, client):
         'setid': 'aaaaaaaaaaaaaaaaaaaaaaaaqa',
         'status': 0,
         'time_added': 1400000000000,
-        'timestamp': 1200000000000,
+        'timestamp': 1500001000000,
     }
 
     # query with filtered attrs
@@ -454,12 +457,12 @@ async def test_rpc_query(site, client):
                               'f_setid': 'aaaaaaaaaaaaaaaaaaaaaaaaqa',
                               'f_size': 1,
                               'f_time_added': 1400000000000,
-                              'f_time_mtime': 1200000000000}],
+                              'f_time_mtime': 1500001000000}],
         'dataset.files': [{'dataset_id': 1,
                            'id': 1,
                            'idx': 0,
                            'missing': 0,
-                           'mtime': 1200000000000,
+                           'mtime': 1500001000000,
                            'path': '/dev/null/hodge/0001',
                            'size': 1}],
     }
@@ -480,6 +483,6 @@ async def test_rpc_query(site, client):
                               'f_setid': 'aaaaaaaaaaaaaaaaaaaaaaaaqa',
                               'f_size': 1,
                               'f_time_added': 1400000000000,
-                              'f_time_mtime': 1200000000000}],
+                              'f_time_mtime': 1500001000000}],
         'f_divisors': [{'id': 1, 'value': 'div1'}],
     }
