@@ -10,16 +10,16 @@ Changes necessitating migration reference the corresponding migration section. R
 If we're deprecating features you rely on, please speak up.
 
 
-.. _upcoming_changes:
+.. _v21.05.0:
 
-Upcoming (unreleased)
-^^^^^^^^^^^^^^^^^^^^^
+21.05.0 (2021-05-31)
+^^^^^^^^^^^^^^^^^^^^
 
 Added
 ~~~~~
 - Example for nginx with natively installed marv
 - Support for leaves running on aarch64 (EE)
-- Per dataset ACL management (EE)
+- Per dataset ACL management **needs migration:** :ref:`migrate-21.05.0` (EE)
 - Indexable key-value data for leafs (EE)
 
 Changed
@@ -28,24 +28,18 @@ Changed
 - Publish timestamped velocity and acceleration (CE)
 - Simplified permission handling and removed route ACL profiles (CE)
 
-Deprecated
-~~~~~~~~~~
-
 Removed
 ~~~~~~~
 - In 20.12 deprecated marv.types, use marv_api.types instead
 - In 20.12 deprecated marv.utils.popen, use marv_api.utils.popen instead
 - In 20.12 deprecated HTTP listing API, query :ref:`httpapi_query_collection` instead
 - In 20.12 deprecated list config function, use makelist instead
-- In 21.03 deprecated route-based ACL profiles **needs migration:** :ref:`migrate-upcoming` (CE)
+- In 21.03 deprecated route-based ACL profiles **needs migration:** :ref:`migrate-21.05.0` (CE)
 
 Fixed
 ~~~~~
 - Docs for proxy_pass nginx directive
 - Docs for using a custom certification authority for HTTPS
-
-Security
-~~~~~~~~
 
 
 .. _v21.03.0:
