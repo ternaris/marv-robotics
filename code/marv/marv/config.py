@@ -15,7 +15,6 @@ from typing import Any, Dict, Optional, Tuple
 from pkg_resources import resource_filename
 from pydantic import BaseModel, Extra, ValidationError, validator
 
-from marv_api.deprecation import deprecated
 from marv_api.utils import echo
 
 from . import sexp
@@ -260,7 +259,6 @@ reapvalidator = partial(validator, allow_reuse=True, always=True, pre=True)
 class MarvConfig(Model):
     sitedir: Path  # TODO: workaround
     collections: Tuple[str, ...]
-    acl: str = 'marv_webapi.acls:authenticated'
     ce_anonymous_readonly_access: bool = False
     dburi: str = 'sqlite://db/db.sqlite'
     frontenddir: Path = 'frontend'
@@ -288,17 +286,6 @@ class MarvConfig(Model):
     _split = reapvalidator('collections')(split)
     _splitlines_split = reapvalidator('upload_checkpoint_commands')(splitlines_split)
     _strip = reapvalidator('reverse_proxy')(strip)
-
-    @validator('acl')
-    @deprecated('21.05', name='acl')
-    def acl_config(val):
-        if val not in ('marv_webapi.acls:authenticated', 'marv_webapi.acls:public'):
-            raise ValueError(f'ACL value {val} is not supported')
-        return val
-
-    @property
-    def ce_anonymous_readonly_access_value(self):
-        return self.ce_anonymous_readonly_access or self.acl == 'marv_webapi.acls:public'
 
     @apvalidator('dburi')
     def dburi_relto_site(cls, val, values):

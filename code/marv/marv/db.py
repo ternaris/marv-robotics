@@ -564,7 +564,7 @@ class Database:
         self.listing_models = listing_models
         self.config = config
         self.acls = ACLS.copy()
-        if self.config.marv.ce_anonymous_readonly_access_value:
+        if self.config.marv.ce_anonymous_readonly_access:
             self.acls.update({
                 'download_raw': ['__unauthenticated__', '__authenticated__'],
                 'list': ['__unauthenticated__', '__authenticated__'],

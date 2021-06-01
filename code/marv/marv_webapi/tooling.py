@@ -65,7 +65,7 @@ def get_global_granted(request):
 
 def get_local_granted(request):
     if request['username'] == 'marv:anonymous':
-        if request.app['site'].config.marv.ce_anonymous_readonly_access_value:
+        if request.app['site'].config.marv.ce_anonymous_readonly_access:
             return ['download_raw', 'list', 'read']
         return []
 
