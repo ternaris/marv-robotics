@@ -16,6 +16,14 @@ In case of database migrations it is sufficient to ``marv dump`` the database wi
 Upcoming (unreleased)
 ---------------------
 
+Connections_section migration (EE)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The EE node ``marv_ee_nodes.detail:connections_section`` has gained support for the download of time slices. On installations that use this node its output needs to be regenerated:
+
+.. code-block:: console
+
+   marv run --force --node connections_section --col=\*
+
 
 .. _migrate-21.05.0:
 
