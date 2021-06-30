@@ -45,5 +45,9 @@ def fulltext(streams):
         raise marv.Abort()
 
     msgs = yield marv.pull_all(*streams)
-    words = {x for msg in msgs for x in msg.words}
+    words = []
+    for msg in msgs:
+        if msg is not None:
+            for x in msg.words:
+                words.append(x)
     yield marv.push({'words': sorted(words)})
