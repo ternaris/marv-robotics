@@ -8,10 +8,12 @@ from collections import defaultdict, namedtuple
 from contextlib import ExitStack, contextmanager
 from itertools import groupby
 from logging import getLogger
+from os import walk
 from pathlib import Path
 
 import capnp  # pylint: disable=unused-import
-import rosbag2
+from rosbags import rosbag2, serde
+from rosbags.typesys import get_types_from_idl, get_types_from_msg, register_types
 
 import marv_api as marv
 import marv_nodes
@@ -81,6 +83,25 @@ def _scan_rosbag2(log, dirpath, dirnames, filenames):
         return None
 
     return DatasetInfo(dirpath.name, setfiles)
+
+
+def _add_message_types(msgpath):
+    typs = {}
+    for root, dirnames, files in walk(msgpath):
+        if '.rosbags_ignore' in files:
+            dirnames.clear()
+            continue
+        dirnames.sort()
+        for fname in sorted(files):
+            path = Path(root, fname)
+            if path.suffix == '.idl':
+                typs.update(get_types_from_idl(path.read_text()))
+            elif path.suffix == '.msg':
+                name = path.relative_to(path.parents[2]).with_suffix('')
+                if '/msg/' not in str(name):
+                    name = name.parent / 'msg' / name.name
+                typs.update(get_types_from_msg(path.read_text(), str(name)))
+    register_types(typs)
 
 
 def dirscan(dirpath, dirnames, filenames):
@@ -204,8 +225,8 @@ def _read_bagmeta2(path):
     reader = rosbag2.Reader(Path(path).parent)
 
     return {
-        'start_time': reader.starting_time,
-        'end_time': reader.starting_time + reader.duration,
+        'start_time': reader.start_time,
+        'end_time': reader.end_time,
         'duration': reader.duration,
         'msg_count': reader.message_count,
         'msg_types': sorted(set(reader.topics.values())),
@@ -347,7 +368,13 @@ def raw_messages(dataset, bagmeta):  # noqa: C901  # pylint: disable=redefined-o
     bagmeta, dataset = yield marv.pull_all(bagmeta, dataset)
 
     try:
-        reader = rosbag2.Reader(Path(dataset.files[0].path).parent)
+        rosbag_path = Path(dataset.files[0].path).parent
+        reader = rosbag2.Reader(rosbag_path)
+        msgpath = rosbag_path / 'messages'
+        if not msgpath.exists():
+            msgpath = yield marv.get_resource_path('messages')
+        if msgpath.exists():
+            _add_message_types(msgpath)
     except rosbag2.ReaderError:
         reader = None
 
@@ -420,10 +447,11 @@ def raw_messages(dataset, bagmeta):  # noqa: C901  # pylint: disable=redefined-o
                 yield stream.msg(dct)
         return
 
-    for topic, _, timestamp, data in reader.messages(topics=bytopic.keys()):
-        dct = {'data': data, 'timestamp': timestamp}
-        for stream in bytopic[topic]:
-            yield stream.msg(dct)
+    with reader:
+        for topic, _, timestamp, data in reader.messages(topics=bytopic.keys()):
+            dct = {'data': data, 'timestamp': timestamp}
+            for stream in bytopic[topic]:
+                yield stream.msg(dct)
 
 
 messages = raw_messages  # pylint: disable=invalid-name
@@ -444,10 +472,10 @@ def get_message_type(stream):
 def make_deserialize(stream):
     """Create appropriate deserialize function for rosbag1 and 2."""
     if stream.rosbag2:
-        deserialize = rosbag2.deserialize
+        deserialize_cdr = serde.deserialize_cdr
         typename = stream.msg_type
 
-        return lambda data: deserialize(data, typename)
+        return lambda data: deserialize_cdr(data, typename)
 
     pytype = get_message_type(stream)
     if pytype is None:

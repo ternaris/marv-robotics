@@ -21,6 +21,7 @@ Added
 
 Changed
 ~~~~~~~
+- Switch to rosbags for reading and writing of ROS2 bags **needs migration** :ref:`migrate-upcoming`
 
 Deprecated
 ~~~~~~~~~~

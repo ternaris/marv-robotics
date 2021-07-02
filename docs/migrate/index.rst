@@ -16,6 +16,21 @@ In case of database migrations it is sufficient to ``marv dump`` the database wi
 Upcoming (unreleased)
 ---------------------
 
+Switch to rosbags library
+^^^^^^^^^^^^^^^^^^^^^^^^^
+Previously MARV shipped with a builtin ROS2 bag reader. Out of the box it supported deserialization of all default ROS2 and Autoware.Auto messages. The ROS2 reading code was spun off into `rosbags`_. To allow for more flexibility in regards to type versioning, rosbags includes a dynamic type system that can be extended during runtime and does not include the Autoware.Auto messages.
+
+If you are using Autoware.Auto messages in your ROS2 bags, you have to provide their message definitions to MARV with the following commands in your site folder:
+
+.. code-block:: console
+
+   mkdir -p resources/messages
+   cd resources/messages
+   git clone https://gitlab.com/autowarefoundation/autoware.auto/autoware_auto_msgs.git
+
+.. _rosbags: https://gitlab.com/ternaris/rosbags
+
+
 Connections_section migration (EE)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The EE node ``marv_ee_nodes.detail:connections_section`` has gained support for the download of time slices. On installations that use this node its output needs to be regenerated:
