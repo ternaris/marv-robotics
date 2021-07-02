@@ -30,6 +30,7 @@ Removed
 
 Fixed
 ~~~~~
+- Management of admin users via frontend (EE)
 
 Security
 ~~~~~~~~
