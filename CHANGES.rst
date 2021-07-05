@@ -18,6 +18,7 @@ Upcoming (unreleased)
 Added
 ~~~~~
 - Download of time slices from a bag :ref:`migrate-upcoming` (EE)
+- Support direct leaf upload of rosbag2 datasets (EE)
 
 Changed
 ~~~~~~~
