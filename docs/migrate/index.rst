@@ -18,15 +18,16 @@ Upcoming (unreleased)
 
 Switch to rosbags library
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-Previously MARV shipped with a builtin ROS2 bag reader. Out of the box it supported deserialization of all default ROS2 and Autoware.Auto messages. The ROS2 reading code was spun off into `rosbags`_. To allow for more flexibility in regards to type versioning, rosbags includes a dynamic type system that can be extended during runtime and does not include the Autoware.Auto messages.
+Previously MARV shipped with a builtin ROS2 bag reader. Out of the box it supported deserialization of all default ROS2, Autoware.Auto, and automotive_autonomy messages. The ROS2 reading code was spun off into `rosbags`_. To allow for more flexibility in regards to type versioning, rosbags includes a dynamic type system that can be extended during runtime and does only include ROS2 default messages.
 
-If you are using Autoware.Auto messages in your ROS2 bags, you have to provide their message definitions to MARV with the following commands in your site folder:
+If you are using the previously included messages in your ROS2 bags, you have to provide their message definitions to MARV with the following commands in your site folder:
 
 .. code-block:: console
 
    mkdir -p resources/messages
    cd resources/messages
    git clone https://gitlab.com/autowarefoundation/autoware.auto/autoware_auto_msgs.git
+   git clone https://github.com/astuff/automotive_autonomy_msgs.git
 
 .. _rosbags: https://gitlab.com/ternaris/rosbags
 
