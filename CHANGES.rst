@@ -10,35 +10,25 @@ Changes necessitating migration reference the corresponding migration section. R
 If we're deprecating features you rely on, please speak up.
 
 
-.. _upcoming_changes:
+.. _v21.07.0:
 
-Upcoming (unreleased)
-^^^^^^^^^^^^^^^^^^^^^
+21.07.0 (2021-07-07)
+^^^^^^^^^^^^^^^^^^^^
 
 Added
 ~~~~~
-- Download of time slices from a bag :ref:`migrate-upcoming` (EE)
+- Download of time slices from a bag :ref:`migrate-21.07.0` (EE)
 - Support direct leaf upload of rosbag2 datasets (EE)
 - Transparent optional zstd compression for direct leaf uploads (EE)
 - Ingestion of leaf datasets from filesystem in addition to direct upload (EE)
 
 Changed
 ~~~~~~~
-- Switch to rosbags for reading and writing of ROS2 bags **needs migration** :ref:`migrate-upcoming`
-
-Deprecated
-~~~~~~~~~~
-
-Removed
-~~~~~~~
+- Switch to rosbags for reading and writing of ROS2 bags **needs migration** :ref:`migrate-21.07.0`
 
 Fixed
 ~~~~~
 - Management of admin users via frontend (EE)
-
-Security
-~~~~~~~~
-
 
 .. _v21.05.0:
 
