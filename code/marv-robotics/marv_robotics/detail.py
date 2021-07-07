@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import json
-import os
+from pathlib import Path
 
 import marv_api as marv
 import marv_nodes
@@ -61,11 +61,17 @@ def bagmeta_table(bagmeta, dataset):
     ]
     rows = []
     bags = list(bagmeta.bags)
-    for idx, file in enumerate(dataset.files):
-        if file.path.endswith('.bag'):
+    files = list(dataset.files)
+    first = Path(files[0].path)
+    rb2path = first.parent if first.name == 'metadata.yaml' else None
+    for idx, file in enumerate(files):
+        path = Path(file.path)
+        if rb2path and path.relative_to(rb2path).parts[0] == 'messages':
+            continue
+        if path.suffix == '.bag':
             bag = bags.pop(0)
             rows.append({'id': idx, 'cells': [
-                {'link': {'href': f'{idx}', 'title': os.path.basename(file.path)}},
+                {'link': {'href': f'{idx}', 'title': path.name}},
                 {'uint64': file.size},
                 {'timestamp': bag.start_time},
                 {'timestamp': bag.end_time},
@@ -74,7 +80,7 @@ def bagmeta_table(bagmeta, dataset):
             ]})
         else:
             rows.append({'id': idx, 'cells': [
-                {'link': {'href': f'{idx}', 'title': os.path.basename(file.path)}},
+                {'link': {'href': f'{idx}', 'title': path.name}},
                 {'uint64': file.size},
                 {'void': None},
                 {'void': None},
