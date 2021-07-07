@@ -70,6 +70,10 @@ def _scan_rosbag2(log, dirpath, dirnames, filenames):
         log.warning('Ignoring subdirectories of dataset %s: %r', dirpath, dirnames[:])
         dirnames[:] = []
 
+        # Already created, we're only called because of ignored files
+        if 'metadata.yaml' not in filenames:
+            return None
+
     filenames = set(filenames)
     setfiles = ['metadata.yaml'] + [x.name for x in reader.paths]
 
