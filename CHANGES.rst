@@ -20,6 +20,7 @@ Added
 - Download of time slices from a bag :ref:`migrate-upcoming` (EE)
 - Support direct leaf upload of rosbag2 datasets (EE)
 - Transparent optional zstd compression for direct leaf uploads (EE)
+- Ingestion of leaf datasets from filesystem in addition to direct upload (EE)
 
 Changed
 ~~~~~~~
