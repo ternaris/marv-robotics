@@ -88,15 +88,32 @@ secondname, *optional*
 
 
 
-The following snippet configures Google, GitHub, and GitLab as external providers:
+The following snippets configure GitLab, GitHub, and Google as external providers and enforce the username to be taken from a specific oauth response key.
+
+.. code-block:: ini
+
+  [marv]
+  oauth =
+      GitLab | https://gitlab.example.com/oauth/authorize | https://gitlab.example.com/oauth/token | https://gitlab.example.com/oauth/userinfo | gitlab_id | gitlab_secret | openid email ||
+  oauth_enforce_username = nickname
+
+
+.. code-block:: ini
+
+  [marv]
+  oauth =
+      GitHub | https://github.com/login/oauth/authorize | https://github.com/login/oauth/access_token | https://api.github.com/user | github_id | github_secret | read:user,user:email ||
+  oauth_enforce_username = login
+
+Beware, that GitHub separates scopes by comma, in contrast to space.
+
 
 .. code-block:: ini
 
   [marv]
   oauth =
       Google | https://accounts.google.com/o/oauth2/v2/auth | https://accounts.google.com/o/oauth2/token | https://www.googleapis.com/oauth2/v1/userinfo | google_id | google_secret | openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile ||
-      GitHub | https://github.com/login/oauth/authorize | https://github.com/login/oauth/access_token | https://api.github.com/user | github_id | github_secret | read:user,user:email ||
-      GitLab | https://gitlab.example.com/oauth/authorize | https://gitlab.example.com/oauth/token | https://gitlab.example.com/oauth/userinfo | gitlab_id | gitlab_secret | openid email ||
+  oauth_enforce_username = email
 
 
-Beware, that GitHub separates scopes by comma, in contrast to space.
+It is also possible to use multiple providers, but :ref:`cfg_marv_oauth_enforce_username` can only be used with a single provider.

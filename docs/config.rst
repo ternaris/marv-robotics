@@ -130,6 +130,20 @@ Default:
    mail_footer =
 
 
+.. _cfg_marv_oauth:
+
+oauth (EE)
+^^^^^^^^^^
+See :ref:`authentication`.
+
+
+.. _cfg_marv_oauth_enforce_username:
+
+oauth_enforce_username
+^^^^^^^^^^^^^^^^^^^^^^
+In case of exactly one :ref:`cfg_marv_oauth` provider, take username from oauth response key, instead of letting the user choose herself. See :ref:`authentication` for more information.
+
+
 .. _cfg_marv_smtp_from:
 
 smtp_from

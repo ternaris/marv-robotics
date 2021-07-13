@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 from pkg_resources import resource_filename
-from pydantic import BaseModel, Extra, ValidationError, validator
+from pydantic import BaseModel, Extra, ValidationError, root_validator, validator
 
 from marv_api.utils import echo
 
@@ -265,6 +265,7 @@ class MarvConfig(Model):
     leavesdir: Path = 'leaves'
     mail_footer: str = ''
     oauth: Dict[str, Tuple[str, ...]] = None
+    oauth_enforce_username: Optional[str] = None
     reverse_proxy: Optional[ReverseProxyEnum] = None
     resourcedir: Path = 'resources'
     sessionkey_file: Path = 'sessionkey'
@@ -304,6 +305,12 @@ class MarvConfig(Model):
                 if (line := x.strip())
             }
         return {}
+
+    @root_validator
+    def check_oauth(cls, values):
+        if values.get('oauth_enforce_username') and len(values.get('oauth')) != 1:
+            raise ValueError('Use oauth_enforce_username with exactly one oauth provider.')
+        return values
 
 
 ParsedSexp = Tuple[str, Tuple[Any, ...]]

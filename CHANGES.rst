@@ -17,6 +17,7 @@ Upcoming (unreleased)
 
 Added
 ~~~~~
+- Option to enforce username from OAuth when using a single OAuth provider (EE)
 
 Changed
 ~~~~~~~
