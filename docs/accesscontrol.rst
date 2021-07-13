@@ -96,6 +96,10 @@ The following snippets configure GitLab, GitHub, and Google as external provider
   oauth =
       GitLab | https://gitlab.example.com/oauth/authorize | https://gitlab.example.com/oauth/token | https://gitlab.example.com/oauth/userinfo | gitlab_id | gitlab_secret | openid email ||
   oauth_enforce_username = nickname
+  # optionally require membership in any of the listed groups
+  oauth_gitlab_groups = group a, group b
+
+Optionally, for GitLab access to MARV can be limited to users that are members of at least one of several groups, specified as comma-separated list.
 
 
 .. code-block:: ini

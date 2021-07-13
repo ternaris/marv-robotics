@@ -220,6 +220,12 @@ def split(val):
     return []
 
 
+def splitcommastrip(val):
+    if val is not None:
+        return [x.strip() for x in val.split(',')]
+    return []
+
+
 def splitlines(val):
     if val is not None:
         return [stripped for x in val.splitlines() if (stripped := x.strip())]
@@ -266,6 +272,7 @@ class MarvConfig(Model):
     mail_footer: str = ''
     oauth: Dict[str, Tuple[str, ...]] = None
     oauth_enforce_username: Optional[str] = None
+    oauth_gitlab_groups: Optional[Tuple[str, ...]] = None
     reverse_proxy: Optional[ReverseProxyEnum] = None
     resourcedir: Path = 'resources'
     sessionkey_file: Path = 'sessionkey'
@@ -280,6 +287,7 @@ class MarvConfig(Model):
     def sitepackages(self):
         return self.venv / 'lib' / f'python{sysconfig.get_python_version()}' / 'site-packages'
 
+    _oauth_gitlab_groups = reapvalidator('oauth_gitlab_groups')(splitcommastrip)
     _resolve_path = reapvalidator('sitedir')(resolve_path)
     _resolve_relto_site = reapvalidator('frontenddir', 'leavesdir', 'resourcedir',
                                         'sessionkey_file', 'staticdir', 'storedir',

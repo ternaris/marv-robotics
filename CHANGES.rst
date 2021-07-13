@@ -18,6 +18,7 @@ Upcoming (unreleased)
 Added
 ~~~~~
 - Option to enforce username from OAuth when using a single OAuth provider (EE)
+- Option to require GitLab group membership for OAuth users (EE)
 
 Changed
 ~~~~~~~
