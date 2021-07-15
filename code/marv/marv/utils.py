@@ -114,7 +114,7 @@ def underscore_to_camelCase(string):  # pylint: disable=invalid-name
 
 
 def within_pyinstaller_bundle():
-    return any(x for x in sys.path if '/tmp/_MEI' in x)
+    return any(x.endswith('base_library.zip') for x in sys.path)
 
 
 def within_staticx_bundle():
