@@ -14,6 +14,7 @@ from contextlib import asynccontextmanager
 from functools import reduce
 from logging import getLogger
 from pathlib import Path
+from runpy import run_path
 
 import click
 from aiohttp import web
@@ -199,6 +200,8 @@ def marvcli_develop_server(port, public):
 def marvcli_serve(host, port, certfile, keyfile, approot):
     """Run webserver through gunicorn."""
     config = get_site_config()
+    if within_pyinstaller_bundle():
+        ensure_python(config, '')
 
     async def app_factory():
         """App factory used inside of worker.
@@ -921,5 +924,9 @@ def marvcli_python(unbuffered, ignore, command, args):  # pylint: disable=unused
         sys.argv = ['-c', *args]
         sys.path.append('.')
         exec(compile(command, 'python_wrapper', 'exec'))  # pylint: disable=exec-used
+    elif args:
+        sys.argv = [*args]
+        sys.path.append('.')
+        run_path(args[0], run_name='__main__')
     else:
         code.interact(local=locals())
