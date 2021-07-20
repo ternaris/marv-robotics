@@ -24,6 +24,7 @@ Added
 - Support for leaf dataset uploads from Windows (EE)
 - Support for partial rosbag2 download, selected topics and sliced by time (EE)
 - MARVIO client library for remote ATF and ROS bag data access (EE)
+- Docker-compose setup to start fully configured and linked nginx and marv containers (EE)
 
 Changed
 ~~~~~~~
