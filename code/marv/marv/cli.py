@@ -37,10 +37,14 @@ from marv_store import DirectoryAlreadyExists
 
 try:
     import marv_ee
-    from marv_ee.app import App
-    from marv_ee.site import Site
 except ImportError:
     marv_ee = None
+
+if marv_ee:
+    marv_ee.init()
+    from marv_ee.app import App
+    from marv_ee.site import Site
+else:
     from marv.app import App
     from marv.site import Site
 

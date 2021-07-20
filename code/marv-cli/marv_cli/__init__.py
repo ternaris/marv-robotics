@@ -11,8 +11,14 @@ import click
 from pkg_resources import iter_entry_points
 
 try:
-    from marv_ee import VERSION_MESSAGE, copying_option
+    import marv_ee
 except ImportError:
+    marv_ee = None
+
+if marv_ee:
+    marv_ee.init()
+    from marv_ee import VERSION_MESSAGE, copying_option
+else:
     VERSION_MESSAGE = """
 %(prog)s (MARV Community Edition) %(version)s
 Copyright (C) 2016 - 2021  Ternaris and the MARV Contributors.
