@@ -22,6 +22,7 @@ Added
 - Option to require GitLab group membership for OAuth users (EE)
 - Support for ASAM ODS ATF files (EE)
 - Support for leaf dataset uploads from Windows (EE)
+- Support for partial rosbag2 download, selected topics and sliced by time (EE)
 
 Changed
 ~~~~~~~
