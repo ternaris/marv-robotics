@@ -58,5 +58,6 @@ exclude-protected=_asdict,
 
 
 [IMPORTS]
-known-third-party=cv2,
+known-third-party=build,
+                  cv2,
                   enchant
