@@ -1,4 +1,4 @@
-# Copyright 2016 - 2018  Ternaris.
+# Copyright 2016 - 2021  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import pickle
@@ -8,6 +8,7 @@ import capnp  # pylint: disable=unused-import
 import pytest
 
 from marv_api.types import File
+from marv_nodes import Dataset
 from marv_pycapnp import Wrapper
 
 from .test_wrapper_capnp import TestStruct  # pylint: disable=import-error
@@ -178,3 +179,47 @@ def test_file_wrapper():
                                 setdir=f'/path/to/moved/{Path(__file__).parent.name}',
                                 streamdir='/irrelevant')
     assert wrapper.path == f'/path/to/moved/{Path(__file__).parent.name}/{Path(__file__).name}'
+
+
+def test_dataset_userdata(tmpdir):
+    wrapper = Wrapper.from_dict(TestStruct, {})
+    with pytest.raises(AttributeError):
+        assert wrapper.userdata
+
+    wrapper = Wrapper.from_dict(Dataset, {})
+    assert wrapper.userdata is None
+
+    wrapper = Wrapper.from_dict(Dataset, {
+        'files': [
+            {'path': '/68b329da9893e34099c7d8ad5cb9c940/meta.json'},
+        ],
+    })
+    assert wrapper.userdata is None
+
+    wrapper = Wrapper.from_dict(Dataset, {
+        'files': [
+            {'path': '/68b329da9893e34099c7d8ad5cb9c940/meta.yaml'},
+        ],
+    })
+    assert wrapper.userdata is None
+
+    metajson = tmpdir / 'foo' / 'meta.json'
+    metayaml = tmpdir / 'bar' / 'meta.yaml'
+    metajson.parent.mkdir()
+    metayaml.parent.mkdir()
+    metajson.write_text('{"userdata": {"foo": 2}}')
+    metayaml.write_text('userdata:\n  bar: 1')
+    wrapper = Wrapper.from_dict(Dataset, {
+        'files': [
+            {'path': str(metayaml)},
+            {'path': str(metajson)},
+        ],
+    })
+    assert wrapper.userdata == {'foo': 2}
+
+    wrapper = Wrapper.from_dict(Dataset, {
+        'files': [
+            {'path': str(metayaml)},
+        ],
+    })
+    assert wrapper.userdata == {'bar': 1}

@@ -17,6 +17,7 @@ Upcoming (unreleased)
 
 Added
 ~~~~~
+- Dataset userdata read from meta.json/meta.yaml userdata key
 - Option to enforce username from OAuth when using a single OAuth provider (EE)
 - Option to require GitLab group membership for OAuth users (EE)
 - Support for ASAM ODS ATF files (EE)

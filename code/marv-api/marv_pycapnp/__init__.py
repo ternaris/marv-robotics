@@ -1,12 +1,14 @@
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+import json
 from collections.abc import Mapping, Sequence
 from itertools import dropwhile, islice
 from pathlib import Path
 from pickle import PickleBuffer
 
 from capnp.lib.capnp import _DynamicEnum, _DynamicListReader, _DynamicStructReader
+from ruamel.yaml import YAML
 
 GETATTR_HOOKS = []
 
@@ -104,6 +106,43 @@ class Wrapper:
         }
         segments = builder.to_segments()
         return (self.from_segments, (meta, *[PickleBuffer(x) for x in segments]))
+
+    @property
+    def userdata(self):
+        """Return dataset user data from meta.json/.yaml userdata key.
+
+        User data is read from a top-level 'userdata' key in either meta.json or meta.yaml
+        searched for in that order among the dataset files.
+
+        """
+        if self._reader.schema.node.displayName != 'marv_nodes/types.capnp:Dataset':
+            raise AttributeError('path')
+
+        paths = [Path(x.path) for x in self.files]
+        if meta := next((x for x in paths if x.name == 'meta.json'), None):
+            # We can be called during local ingest before files are moved into
+            # position.
+            try:
+                dct = json.loads(meta.read_text())
+            except FileNotFoundError:
+                return None
+            return dct.get('userdata')
+
+        meta = next((x for x in paths if x.name == 'meta.yaml'), None)
+        # TODO: Waiting for https://github.com/ros2/rosbag2/issues/547
+        # if meta is None:
+        #     meta = next((x for x in paths if x.name == 'metadata.yaml'), None)
+        if meta is None:
+            return None
+
+        # We can be called during local ingest before files are moved into
+        # position.
+        yaml = YAML(typ='safe')
+        try:
+            dct = yaml.load(meta.read_text())
+        except FileNotFoundError:
+            return None
+        return dct.get('userdata')
 
     @property
     def path(self):
