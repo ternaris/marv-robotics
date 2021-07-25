@@ -96,9 +96,13 @@ def detail_route(setid, name=None):
 
 
 def doget(value, name, lookup):
-    value = getattr(value, name, None)
+    if isinstance(value, dict):
+        value = value.get(name, None)
+    else:
+        value = getattr(value, name, None)
     if value is None:
         return None
+
     if lookup is not None:
         try:
             return value[lookup]
