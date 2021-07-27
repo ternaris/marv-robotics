@@ -23,6 +23,7 @@ Added
 - Support for ASAM ODS ATF files (EE)
 - Support for leaf dataset uploads from Windows (EE)
 - Support for partial rosbag2 download, selected topics and sliced by time (EE)
+- MARVIO client library for remote ATF and ROS bag data access (EE)
 
 Changed
 ~~~~~~~
