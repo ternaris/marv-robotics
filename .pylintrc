@@ -24,6 +24,8 @@ good-names=_,
            id,
            kw,
            log,
+           np,
+           pd,
            rv
 
 
