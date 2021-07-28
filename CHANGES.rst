@@ -27,6 +27,7 @@ Added
 
 Changed
 ~~~~~~~
+- Speed up partial download controls in frontend (EE)
 
 Deprecated
 ~~~~~~~~~~
