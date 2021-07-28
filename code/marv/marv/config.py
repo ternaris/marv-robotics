@@ -3,6 +3,7 @@
 
 """Marv config parsing."""
 
+import os
 import sys
 import sysconfig
 from configparser import ConfigParser
@@ -273,6 +274,7 @@ class MarvConfig(Model):
     dburi: str = 'sqlite://db/db.sqlite'
     frontenddir: Path = 'frontend'
     leavesdir: Path = 'leaves'
+    leafbinpath: Optional[Path] = None
     mail_footer: str = ''
     oauth: Dict[str, Tuple[str, ...]] = None
     oauth_enforce_username: Optional[str] = None
@@ -318,10 +320,20 @@ class MarvConfig(Model):
             }
         return {}
 
-    @root_validator
-    def check_oauth(cls, values):
+    @root_validator(pre=True)
+    def root_validator(cls, values):
         if values.get('oauth_enforce_username') and len(values.get('oauth')) != 1:
             raise ValueError('Use oauth_enforce_username with exactly one oauth provider.')
+        if val := os.environ.get('MARV_LEAVES_PATH'):
+            values['leavesdir'] = val
+        if val := os.environ.get('MARV_REVERSE_PROXY'):
+            values['reverse_proxy'] = val
+        if val := os.environ.get('MARV_VENV_PATH'):
+            values['venv'] = val
+        if val := os.environ.get('MARV_LEAFBIN_PATH'):
+            values['leafbinpath'] = val
+        else:
+            values['leafbinpath'] = values['sitedir']
         return values
 
 
