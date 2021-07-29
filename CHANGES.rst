@@ -28,6 +28,7 @@ Added
 Changed
 ~~~~~~~
 - Speed up partial download controls in frontend (EE)
+- Improve performance of partial downloads of split rosbag1 (EE)
 
 Deprecated
 ~~~~~~~~~~
