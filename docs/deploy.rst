@@ -38,21 +38,26 @@ Nginx allows marv to offload serving data from disk which is especially useful f
    server {
      server_name example.com;
      listen 80;
+     listen [::]:80;
      return 301 https://$host$request_uri;
    }
 
    server {
      server_name example.com;
      listen 443 ssl http2;
+     listen [::]:443 ssl http2;
 
      include /usr/lib/python3.7/site-packages/certbot_nginx/tls_configs/options-ssl-nginx.conf;
      ssl_stapling_verify on;
      ssl_stapling on;
 
+     add_header Strict-Transport-Security "max-age=63072000" always;
+
      ssl_trusted_certificate /etc/letsencrypt/live/example.com/chain.pem;
      ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
      ssl_certificate /etc/letsencrypt/live/example.com/fullchain.pem;
 
+     # Docker setup running at the root
      location / {
        # Attachments are EE-only, but the rule won't hurt CE
        location /docker/container/path/to/attachments {
@@ -67,7 +72,11 @@ Nginx allows marv to offload serving data from disk which is especially useful f
          internal;
          alias /host/path/to/leavesdir;
        }
-       location /scanroot {
+       location /docker/container/path/to/resources {
+         internal;
+         alias /host/path/to/resources;
+       }
+       location /docker/container/path/to/scanroot {
          internal;
          alias /host/path/to/scanroot;
        }
@@ -78,21 +87,32 @@ Nginx allows marv to offload serving data from disk which is especially useful f
        proxy_set_header X-Forwarded-Proto $scheme;
        proxy_pass http://127.0.0.1:8000;
      }
-     location /native_instance {
+
+     # Native installation running in different application root
+
+     location = /approot {
+       rewrite ^(.*)$ $1/ redirect;
+     }
+
+     location /approot/ {
        # Attachments are EE-only, but the rule won't hurt CE
-       location /native_instance/path/to/attachments {
+       location /approot/path/to/attachments {
          internal;
          alias /path/to/attachments;
        }
-       location /native_instance/path/to/store {
+       location /approot/path/to/store {
          internal;
          alias /path/to/store;
        }
-       location /native_instance/path/to/leavesdir {
+       location /approot/path/to/leavesdir {
          internal;
          alias /path/to/leavesdir;
        }
-       location /native_instance/path/to/scanroot {
+       location /approot/path/to/resources {
+         internal;
+         alias /path/to/resources;
+       }
+       location /approot/path/to/scanroot {
          internal;
          alias /path/to/scanroot;
        }
@@ -149,10 +169,10 @@ In the first step generate a certification authority (CA). You can adjust ``days
        -addext keyUsage="critical,digitalSignature,keyCertSign" \
        -addext extendedKeyUsage="serverAuth,clientAuth" \
        -subj "/CN=MarvCA" \
-       -keyout CA-key.pem \
-       -out CA-cert.pem
+       -keyout CA-privkey.pem \
+       -out chain.pem
 
-The ``CA-cert.pem`` file needs to be installed on all client machines that are going to interact with MARV.
+The ``chain.pem`` file needs to be installed on all client machines that are going to interact with MARV.
 
 In the second step generate the server private key and certificate signing request. Again you can adjust the ``subj`` parameter if you like.
 
@@ -162,8 +182,8 @@ In the second step generate the server private key and certificate signing reque
        -new \
        -nodes \
        -subj "/CN=MarvServer" \
-       -keyout server-key.pem \
-       -out server-req.csr
+       -keyout privkey.pem \
+       -out certreq.csr
 
 In the last step generate the server certificate from the certificate signing request. In the example below you can again adjust the ``days`` parameter to your liking. Be sure to adjust the ``subjectAltName`` value to match your needs. The value should be a comma separated list of entries starting with ``IP:`` or ``DNS:`` and reflect the addresses users will use to access MARV. In most cases a single DNS or IP entry should suffice.
 
@@ -180,8 +200,8 @@ In the last step generate the server certificate from the certificate signing re
            authorityKeyIdentifier=keyid,issuer
            subjectAltName=IP:192.168.0.42,DNS:marv.internal
        ") \
-       -in server-req.csr \
-       -CA CA-cert.pem \
-       -CAkey CA-key.pem \
+       -in certreq.csr \
+       -CA chain.pem \
+       -CAkey CA-privkey.pem \
        -CAcreateserial \
-       -out server-cert.pem
+       -out fullchain.pem

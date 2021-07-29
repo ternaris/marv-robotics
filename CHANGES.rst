@@ -28,6 +28,7 @@ Added
 
 Changed
 ~~~~~~~
+- NGINX example config for IPv6, HSTS, redirect and resources location
 - Speed up partial download controls in frontend (EE)
 - Improve performance of partial downloads of split rosbag1 (EE)
 
