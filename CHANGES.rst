@@ -39,6 +39,7 @@ Removed
 Fixed
 ~~~~~
 - Handling of aiohttp SystemRoute instances in auth middleware
+- Authentication issues related to service workers
 
 Security
 ~~~~~~~~
