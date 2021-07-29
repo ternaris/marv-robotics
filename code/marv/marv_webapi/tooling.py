@@ -10,12 +10,16 @@ from pathlib import Path
 
 import jwt
 from aiohttp import web
+from aiohttp.web_urldispatcher import SystemRoute
 
 AGGRESSIVE_CACHING = bool(os.environ.get('MARV_EXPERIMENTAL_AGGRESSIVE_CACHING'))
 
 
 @web.middleware
 async def auth_middleware(request, handler):
+    if (instance := getattr(handler, '__self__', None)) and isinstance(instance, SystemRoute):  # pylint: disable=used-before-assignment
+        return await handler(request)
+
     assert isinstance(handler.acl, set)
     authorization = request.headers.get('Authorization')
     if not authorization:
