@@ -25,6 +25,7 @@ Added
 - Support for partial rosbag2 download, selected topics and sliced by time (EE)
 - MARVIO client library for remote ATF and ROS bag data access (EE)
 - Docker-compose setup to start fully configured and linked nginx and marv containers (EE)
+- Mechanism to read SMTP URL and OAuth ID and secret from ``secrets.json`` (EE)
 
 Changed
 ~~~~~~~

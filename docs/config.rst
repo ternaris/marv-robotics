@@ -181,6 +181,9 @@ Example:
 .. code-block:: ini
 
    smtp_url = smtp://marv_user:marv_password@mail.example.com:587
+   smtp_url = secret://smtp_url
+
+The second example will read the url from a top-level ``smtp_url`` key from ``secrets.json`` next to ``marv.conf``, see :ref:`cfg_secrets` for more information.
 
 Default:
 
@@ -571,6 +574,17 @@ Example:
        video_section
 
 You can write your own and use some of the already existing :ref:`section_nodes`.
+
+
+.. _cfg_secrets:
+
+secrets (EE)
+------------
+:ref:`eeacl` and :ref:`oauth2` require secrets. Instead of storing these in ``marv.conf`` store them in ``secrets.json`` next to it.
+
+.. literalinclude:: config/secrets.json
+
+Secrets are referenced from ``marv.conf`` by using ``secret://<key name>``, see :ref:`cfg_marv_smtp_url` for an example.
 
 
 .. _cfg_sexp:

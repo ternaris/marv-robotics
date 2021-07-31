@@ -72,10 +72,10 @@ info
    The URL for accessing a user's information as given by the provider.
 
 id
-   The user part of the credentials generated for the MARV application.
+   The user part of the credentials generated for the MARV application. Use ``secret://<key>`` to read from top-level ``key`` from ``secrets.json`` next to ``marv.conf``.
 
 secret
-   The secret part of the credentials generated for the MARV application.
+   The secret part of the credentials generated for the MARV application. Use ``secret://<key>`` to read from top-level ``key`` from ``secrets.json`` next to ``marv.conf``.
 
 scope
    The scope MARV should request from the user. The selected scope should allow to read a user's name and email address.
@@ -94,7 +94,7 @@ The following snippets configure GitLab, GitHub, and Google as external provider
 
   [marv]
   oauth =
-      GitLab | https://gitlab.example.com/oauth/authorize | https://gitlab.example.com/oauth/token | https://gitlab.example.com/oauth/userinfo | gitlab_id | gitlab_secret | openid email ||
+      GitLab | https://gitlab.example.com/oauth/authorize | https://gitlab.example.com/oauth/token | https://gitlab.example.com/oauth/userinfo | secret://gitlab_id | secret://gitlab_secret | openid email ||
   oauth_enforce_username = nickname
   # optionally require membership in any of the listed groups
   oauth_gitlab_groups = group a, group b
@@ -106,7 +106,7 @@ Optionally, for GitLab access to MARV can be limited to users that are members o
 
   [marv]
   oauth =
-      GitHub | https://github.com/login/oauth/authorize | https://github.com/login/oauth/access_token | https://api.github.com/user | github_id | github_secret | read:user,user:email ||
+      GitHub | https://github.com/login/oauth/authorize | https://github.com/login/oauth/access_token | https://api.github.com/user | secret://github_id | secret://github_secret | read:user,user:email ||
   oauth_enforce_username = login
 
 Beware, that GitHub separates scopes by comma, in contrast to space.
@@ -116,8 +116,12 @@ Beware, that GitHub separates scopes by comma, in contrast to space.
 
   [marv]
   oauth =
-      Google | https://accounts.google.com/o/oauth2/v2/auth | https://accounts.google.com/o/oauth2/token | https://www.googleapis.com/oauth2/v1/userinfo | google_id | google_secret | openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile ||
+      Google | https://accounts.google.com/o/oauth2/v2/auth | https://accounts.google.com/o/oauth2/token | https://www.googleapis.com/oauth2/v1/userinfo | secret://google_id | secret://google_secret | openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile ||
   oauth_enforce_username = email
 
 
 It is also possible to use multiple providers, but :ref:`cfg_marv_oauth_enforce_username` can only be used with a single provider.
+
+Above examples look up secrets from a ``secrets.json`` file next to ``marv.conf``:
+
+.. literalinclude:: config/secrets.json
