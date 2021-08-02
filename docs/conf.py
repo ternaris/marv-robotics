@@ -52,7 +52,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'MARV Robotics'
-copyright = ' Copyright 2016-2019  Ternaris'
+copyright = ' Copyright 2016-2021  Ternaris'
 author = 'Ternaris'
 
 # The version info for the project you're documenting, acts as replacement for

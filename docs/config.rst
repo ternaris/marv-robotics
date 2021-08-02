@@ -134,21 +134,21 @@ Default:
 
 oauth (EE)
 ^^^^^^^^^^
-See :ref:`authentication`.
+See :ref:`oauth2`.
 
 
 .. _cfg_marv_oauth_enforce_username:
 
 oauth_enforce_username
 ^^^^^^^^^^^^^^^^^^^^^^
-In case of exactly one :ref:`cfg_marv_oauth` provider, take username from oauth response key, instead of letting the user choose herself. See :ref:`authentication` for more information.
+In case of exactly one :ref:`cfg_marv_oauth` provider, take username from oauth response key, instead of letting the user choose herself. See :ref:`oauth2` for more information.
 
 
 .. _cfg_marv_oauth_gitlab_groups:
 
 oauth_gitlab_groups
 ^^^^^^^^^^^^^^^^^^^
-Require GitLab oauth users to be a member of at least one of a comma-separated list of groups. See :ref:`authentication` for more information.
+Require GitLab oauth users to be a member of at least one of a comma-separated list of groups. See :ref:`oauth2` for more information.
 
 
 .. _cfg_marv_smtp_from:

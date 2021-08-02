@@ -26,6 +26,7 @@ Added
 - MARVIO client library for remote ATF and ROS bag data access (EE)
 - Docker-compose setup to start fully configured and linked nginx and marv containers (EE)
 - Mechanism to read SMTP URL and OAuth ID and secret from ``secrets.json`` (EE)
+- Documentation for web-based access control and user, group, and leaf management (EE)
 
 Changed
 ~~~~~~~

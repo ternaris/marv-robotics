@@ -1,14 +1,22 @@
 .. Copyright 2021  Ternaris.
 .. SPDX-License-Identifier: CC-BY-SA-4.0
 
-.. _authentication:
+.. _accesscontrol:
 
 Access Control
 ==============
 
-MARV includes a full authentication, authorization and access control system. Users and groups can either be created locally inside of MARV or be provided by an external sign-on provider (EE).
+MARV includes a full authentication, authorization and access control system. Depending on the edition there are different options.
 
-Local accounts are managed via CLI (``marv user`` and ``marv group``) or the web admin interface (EE). Accounts are securely stored inside the MARV database. A user account will be granted different permissions in MARV depending on its group memberships.
+- Local users and groups managed via CLI (CE)
+- Web-based user, group and leaf management (EE)
+- Single sign-on (SSO) using OAuth2 (EE)
+
+
+Local accounts (CE)
+-------------------
+
+For the Community Edition, local accounts are managed via CLI (``marv user --help`` and ``marv group --help``). Accounts are securely stored inside the MARV database. A user account will be granted different permissions in MARV depending on its group memberships.
 
 ::
 
@@ -17,13 +25,33 @@ Local accounts are managed via CLI (``marv user`` and ``marv group``) or the web
    # Add user to admin group granting privileges like "delete"
    (server)$ marv group adduser john admin
 
-In addition to authentication against its local database MARV EE supports single sign-on (SSO) via external services. When a new user signs in for the first time via an external provider, MARV asks for a new username and links the remote account to a new local user entry.
 
+.. _eeacl:
+
+Web-based user, group, and leaf management (EE)
+-----------------------------------------------
+
+For the Enterprise Edition, user, group, and leave management happens through a web admin panel, available via the wrench icon on the top-left.
+
+- Manage leaves to upload datasets directly to MARV, see also :ref:`upload`.
+- Invite users to create an account in MARV (needs :ref:`cfg_marv_mail_footer`, :ref:`cfg_marv_smtp_from`, and :ref:`cfg_marv_smtp_url`).
+- Add users to groups
+- Give groups permissions to all datasets uploaded by a specific leaf
+
+In addition for a specific dataset, inspect and override permissions in its detail view, with the *permission* button to the top-right.
+
+Create an initial admin to get started, marv will prompt for the password::
+
+  marv user add <username>
+  marv group adduser <username> admin
+
+
+.. _oauth2:
 
 OAuth2 (EE)
 -----------
 
-This plugin allows logging in with accounts from any service implementing OAuth2 webflow authorization.
+Instead of inviting users individually, MARV integrates into a company single-sign on landscape through any service implementing OAuth2 webflow authorization. The following outlines the steps to configure the OAuth2 provider and MARV accordingly.
 
 
 Configuring external provider
