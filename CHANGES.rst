@@ -10,10 +10,10 @@ Changes necessitating migration reference the corresponding migration section. R
 If we're deprecating features you rely on, please speak up.
 
 
-.. _upcoming_changes:
+.. _v21.08.0:
 
-Upcoming (unreleased)
-^^^^^^^^^^^^^^^^^^^^^
+21.08.0 (2021-08-04)
+^^^^^^^^^^^^^^^^^^^^
 
 Added
 ~~~~~
@@ -23,7 +23,7 @@ Added
 - Support for ASAM ODS ATF files (EE)
 - Support for leaf dataset uploads from Windows (EE)
 - Support for partial rosbag2 download, selected topics and sliced by time (EE)
-- MARVIO client library for remote ATF and ROS bag data access (EE)
+- MARVIO client library for remote ATF and ROS bag data access with examplary jupyter notebook integration (EE)
 - Docker-compose setup to start fully configured and linked nginx and marv containers (EE)
 - Mechanism to read SMTP URL and OAuth ID and secret from ``secrets.json`` (EE)
 - Documentation for web-based access control and user, group, and leaf management (EE)
@@ -34,20 +34,10 @@ Changed
 - Speed up partial download controls in frontend (EE)
 - Improve performance of partial downloads of split rosbag1 (EE)
 
-Deprecated
-~~~~~~~~~~
-
-Removed
-~~~~~~~
-
 Fixed
 ~~~~~
 - Handling of aiohttp SystemRoute instances in auth middleware
 - Authentication issues related to service workers
-
-Security
-~~~~~~~~
-
 
 .. _v21.07.0:
 
