@@ -42,8 +42,8 @@ except ImportError:
 
 if marv_ee:
     marv_ee.init()
-    from marv_ee.app import App
-    from marv_ee.site import Site
+    from marv_ee.app import App  # pylint: disable=import-error
+    from marv_ee.site import Site  # pylint: disable=import-error
 else:
     from marv.app import App
     from marv.site import Site

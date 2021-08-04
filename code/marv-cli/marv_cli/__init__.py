@@ -17,7 +17,7 @@ except ImportError:
 
 if marv_ee:
     marv_ee.init()
-    from marv_ee import VERSION_MESSAGE, copying_option
+    from marv_ee import VERSION_MESSAGE, copying_option  # pylint: disable=import-error
 else:
     VERSION_MESSAGE = """
 %(prog)s (MARV Community Edition) %(version)s
