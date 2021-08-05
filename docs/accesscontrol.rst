@@ -100,10 +100,10 @@ info
    The URL for accessing a user's information as given by the provider.
 
 id
-   The user part of the credentials generated for the MARV application. Use ``secret://<key>`` to read from top-level ``key`` from ``secrets.json`` next to ``marv.conf``.
+   The user part of the credentials generated for the MARV application. Use ``secret://<key>`` to read from top-level ``key`` from ``site/secrets.json``.
 
 secret
-   The secret part of the credentials generated for the MARV application. Use ``secret://<key>`` to read from top-level ``key`` from ``secrets.json`` next to ``marv.conf``.
+   The secret part of the credentials generated for the MARV application. Use ``secret://<key>`` to read from top-level ``key`` from ``site/secrets.json``.
 
 scope
    The scope MARV should request from the user. The selected scope should allow to read a user's name and email address.
@@ -150,6 +150,11 @@ Beware, that GitHub separates scopes by comma, in contrast to space.
 
 It is also possible to use multiple providers, but :ref:`cfg_marv_oauth_enforce_username` can only be used with a single provider.
 
-Above examples look up secrets from a ``secrets.json`` file next to ``marv.conf``:
+Above examples look up secrets from ``site/secrets.json``:
 
-.. literalinclude:: config/secrets.json
+.. code-block:: json
+
+   {
+     "gitlab_id": "...",
+     "gitlab_secret": "..."
+   }
