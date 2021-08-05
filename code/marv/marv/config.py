@@ -320,10 +320,14 @@ class MarvConfig(Model):
             }
         return {}
 
-    @root_validator(pre=True)
-    def root_validator(cls, values):
-        if values.get('oauth_enforce_username') and len(values.get('oauth')) != 1:
+    @root_validator()
+    def _root_validator(cls, values):
+        if values['oauth_enforce_username'] and len(values['oauth']) != 1:
             raise ValueError('Use oauth_enforce_username with exactly one oauth provider.')
+        return values
+
+    @root_validator(pre=True)
+    def _pre_root_validator(cls, values):
         if val := os.environ.get('MARV_LEAVES_PATH'):
             values['leavesdir'] = val
         if val := os.environ.get('MARV_REVERSE_PROXY'):
