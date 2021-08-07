@@ -201,6 +201,6 @@ Create ``site/frontend/custom.js`` and restart your instance to customize widget
 .. literalinclude:: config/custom.js
    :language: javascript
 
-Beginning with MARV :ref:`v18.04` frontend styling is not based on Bootstrap v3 anymore. MARV now uses a custom style sheet with markup that is heavily inspired by Bootstrap v4 and is still undergoing improvements. Custom widgets can make use of existing CSS classes to achieve an identical look and feel to the native widgets. If stability is key, it is advisable to style custom widgets independently of MARV with their own style sheets to avoid migration pains during future MARV updates. Each widget is rendered in a container with the CSS class ``.widget-${name}``, and any custom CSS should be scoped to children of these containers.
+Implement custom widgets as Web Components and style them independently of the rest of MARV inside their respective shadow DOM. This approach guarantees that changes in MARV or the customization will never interfere with each other. Each widget renders in a container with the CSS class ``.widget-${name}`` and each custom widget not implemented as a Web Component can use this class to style its contents. Additionally, custom widgets can make use of the CSS classes and variables defined by the default MARV stylesheet to achieve a native look and feel.
 
-Custom CSS is loaded from ``site/frontend/custom.css`` and ``site/frontend/custom/`` is mapped to the ``/custom/`` backend route to serve additional files.
+Custom CSS loads from ``site/frontend/custom.css`` and the ``/custom/`` backend route serves additional files from ``site/frontend/custom/``.
