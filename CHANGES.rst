@@ -29,6 +29,7 @@ Removed
 
 Fixed
 ~~~~~
+- Fix partial loading of capnp data in frontend
 
 Security
 ~~~~~~~~
