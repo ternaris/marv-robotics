@@ -10,30 +10,14 @@ Changes necessitating migration reference the corresponding migration section. R
 If we're deprecating features you rely on, please speak up.
 
 
-.. _upcoming_changes:
+.. _v21.08.1:
 
-Upcoming (unreleased)
-^^^^^^^^^^^^^^^^^^^^^
-
-Added
-~~~~~
-
-Changed
-~~~~~~~
-
-Deprecated
-~~~~~~~~~~
-
-Removed
-~~~~~~~
+21.08.1 (2021-08-11)
+^^^^^^^^^^^^^^^^^^^^
 
 Fixed
 ~~~~~
 - Fix partial loading of capnp data in frontend
-
-Security
-~~~~~~~~
-
 
 .. _v21.08.0:
 

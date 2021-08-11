@@ -8,7 +8,7 @@ from collections import OrderedDict
 from setuptools import find_packages, setup
 
 NAME = 'marv-robotics'
-VERSION = '21.08.0'
+VERSION = '21.08.1'
 DESCRIPTION = 'Data management platform for robot logs'
 ENTRY_POINTS = {}
 

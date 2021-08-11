@@ -8,7 +8,7 @@ from collections import OrderedDict
 from setuptools import find_packages, setup
 
 NAME = 'marv-api'
-VERSION = '21.08.0'
+VERSION = '21.08.1'
 DESCRIPTION = 'MARV API to implement MARV nodes'
 ENTRY_POINTS = {
 }
