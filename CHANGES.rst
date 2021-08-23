@@ -29,6 +29,7 @@ Removed
 
 Fixed
 ~~~~~
+- Motion section to handle topics without messages (EE)
 
 Security
 ~~~~~~~~
