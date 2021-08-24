@@ -123,11 +123,7 @@ def filter_pos(pos, pvar, qvar, rvar, keys):  # pylint: disable=too-many-argumen
     ])
 
     last_ts = msg['timestamp']
-    while True:
-        msg = yield marv.pull(pos)
-        if msg is None:
-            return
-
+    while msg := (yield marv.pull(pos)):
         dt = (msg['timestamp'] - last_ts) / 1e9
         last_ts = msg['timestamp']
 

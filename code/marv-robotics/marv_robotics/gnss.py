@@ -54,10 +54,7 @@ def positions(stream):
     n_offset = None
     u_offset = None
     positions = []
-    while True:
-        msg = yield marv.pull(stream)
-        if msg is None:
-            break
+    while msg := (yield marv.pull(stream)):
         rosmsg = deserialize(msg.data)
 
         if not hasattr(rosmsg, 'status') or \
@@ -102,10 +99,7 @@ def imus(stream):
 
     erroneous = 0
     imus = []
-    while True:
-        msg = yield marv.pull(stream)
-        if msg is None:
-            break
+    while msg := (yield marv.pull(stream)):
         rosmsg = deserialize(msg.data)
         if np.isnan(rosmsg.orientation.x):
             erroneous += 1
@@ -116,7 +110,8 @@ def imus(stream):
     if erroneous:
         log = yield marv.get_logger()
         log.warning('skipped %d erroneous messages', erroneous)
-    yield marv.push({'values': imus})
+    if imus:
+        yield marv.push({'values': imus})
 
 
 @marv.node()
@@ -132,11 +127,7 @@ def navsatorients(stream):
 
     erroneous = 0
     navsatorients = []
-    while True:
-        msg = yield marv.pull(stream)
-        if msg is None:
-            break
-
+    while msg := (yield marv.pull(stream)):
         rosmsg = deserialize(msg.data)
         if np.isnan(rosmsg.yaw):
             erroneous += 1
@@ -146,22 +137,17 @@ def navsatorients(stream):
                               rosmsg.yaw])
     if erroneous:
         log.warning('skipped %d erroneous messages', erroneous)
-    yield marv.push({'values': navsatorients})
+    if navsatorients:
+        yield marv.push({'values': navsatorients})
 
 
 @marv.node(group=True)
 @marv.input('imus', default=imus)
 @marv.input('navsatorients', default=navsatorients)
 def orientations(imus, navsatorients):
-    while True:
-        tmp = yield marv.pull(imus)
-        if tmp is None:
-            break
+    while tmp := (yield marv.pull(imus)):
         yield marv.push(tmp)
-    while True:
-        tmp = yield marv.pull(navsatorients)
-        if tmp is None:
-            break
+    while tmp := (yield marv.pull(navsatorients)):
         yield marv.push(tmp)
 
 

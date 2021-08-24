@@ -124,12 +124,10 @@ def galleries(stream):
     """
     yield marv.set_header(title=stream.title)
     images = []
-    while True:
-        img = yield marv.pull(stream)
-        if img is None:
-            break
+    while img := (yield marv.pull(stream)):
         images.append({'src': img.relpath})
-    yield marv.push({'title': stream.title, 'gallery': {'images': images}})
+    if images:
+        yield marv.push({'title': stream.title, 'gallery': {'images': images}})
 
 
 @marv.node(Section)
@@ -138,11 +136,10 @@ def galleries(stream):
 def images_section(galleries, title):
     """Section with galleries of images for each images stream."""
     tmp = []
-    while True:
-        msg = yield marv.pull(galleries)
-        if msg is None:
-            break
+    while msg := (yield marv.pull(galleries)):
         tmp.append(msg)
+    if not tmp:
+        raise marv.Abort()
     galleries = tmp
     galleries = sorted(galleries, key=lambda x: x.title)
     widgets = yield marv.pull_all(*galleries)
@@ -251,10 +248,7 @@ def trajectory_section(geojson, title, minzoom, maxzoom, tile_server_protocol):
 def video_section(videos, title):
     """Section displaying one video player per image stream."""
     tmps = []
-    while True:
-        tmp = yield marv.pull(videos)
-        if tmp is None:
-            break
+    while tmp := (yield marv.pull(videos)):
         tmps.append(tmp)
     videos = sorted(tmps, key=lambda x: x.title)
     if not videos:

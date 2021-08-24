@@ -18,10 +18,7 @@ def navsatfix(stream):
     deserialize = make_deserialize(stream)
     get_timestamp = make_get_timestamp(log, stream)
     erroneous = 0
-    while True:
-        msg = yield marv.pull(stream)
-        if msg is None:
-            break
+    while msg := (yield marv.pull(stream)):
         rosmsg = deserialize(msg.data)
 
         if not hasattr(rosmsg, 'status') or \
@@ -75,11 +72,7 @@ def trajectory(navsatfixes):
     quality = None
     coords = []
     timestamps = []
-    while True:
-        msg = yield marv.pull(navsatfix)
-        if msg is None:
-            break
-
+    while msg := (yield marv.pull(navsatfix)):
         timestamps.append(msg['timestamp'])
 
         # Whether to output an augmented fix is determined by both the fix

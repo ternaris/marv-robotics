@@ -29,7 +29,7 @@ Removed
 
 Fixed
 ~~~~~
-- Motion section to handle topics without messages (EE)
+- Handling of topics without messages
 - Include missing DLLs in Windows leaf binaries (EE)
 
 Security

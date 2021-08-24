@@ -18,10 +18,7 @@ def fulltext_per_topic(stream):
     yield marv.set_header(title=stream.topic)
     words = set()
     deserialize = make_deserialize(stream)
-    while True:
-        msg = yield marv.pull(stream)
-        if msg is None:
-            break
+    while msg := (yield marv.pull(stream)):
         rosmsg = deserialize(msg.data)
         words.update(WSNULL.split(rosmsg.data))
 
@@ -35,10 +32,7 @@ def fulltext_per_topic(stream):
 def fulltext(streams):
     """Extract all text from bag file and store for fulltext search."""
     tmp = []
-    while True:
-        stream = yield marv.pull(streams)
-        if stream is None:
-            break
+    while stream := (yield marv.pull(streams)):
         tmp.append(stream)
     streams = tmp
     if not streams:

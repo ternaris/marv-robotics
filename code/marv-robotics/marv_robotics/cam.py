@@ -62,18 +62,14 @@ def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):  # pylint:
     with ExitStack() as stack:
         encoder = None
         dims = None
-        while True:
-            msg = yield marv.pull(stream)
-            if msg is None:
-                break
-
+        while msg := (yield marv.pull(stream)):
             rosmsg = deserialize(msg.data)
             try:
                 img = ros2cv(rosmsg, convert_32FC1_scale, convert_32FC1_offset)
             except (ImageFormatError, ImageConversionError) as err:
                 log = yield marv.get_logger()
                 log.error('could not convert image from topic %s: %s ', stream.topic, err)
-                return
+                raise marv.Abort('Conversion error')
 
             if not encoder:
                 dims = img.shape[:2]
@@ -96,12 +92,16 @@ def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):  # pylint:
                     video.path,
                 ]
                 encoder = stack.enter_context(popen(ffargs, stdin=PIPE))
+
             if dims != img.shape[:2]:
                 log = yield marv.get_logger()
                 log.warning(f'could not encode, image size changed {dims} != {img.shape[:2]}')
                 return
 
             encoder.stdin.write(img)
+
+        if not encoder:
+            raise marv.Abort('No messages')
 
     yield video
 
@@ -131,10 +131,7 @@ def images(stream, image_width, max_frames, convert_32FC1_scale, convert_32FC1_o
     digits = int(math.ceil(math.log(stream.msg_count) / math.log(10)))
     name_template = '%s-{:0%sd}.jpg' % (stream.topic.replace('/', ':')[1:], digits)
     counter = count()
-    while True:
-        msg = yield marv.pull(stream)
-        if msg is None:
-            break
+    while msg := (yield marv.pull(stream)):
         idx = next(counter)
         if idx % interval:
             continue
