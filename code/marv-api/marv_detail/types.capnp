@@ -138,7 +138,7 @@ struct Widget {
     bgcolor @2 :List(UInt8) = [240, 240, 240, 255];  # rgba
     speed :group {
       min @3 :Float32 = 1.0;
-      max @4 :Float32 = 1000.0;
+      max @4 :Float32 = 100.0;
       default @5 :Float32 = 1.0;
     }
 
