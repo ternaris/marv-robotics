@@ -112,7 +112,7 @@ def doget(value, name, lookup):
     return value
 
 
-def getnode(dataset, setdir, store, objpath, default=None, _name_only=False):  # noqa: C901
+def getnode(dataset, setdir, store, objpath, default=None, _name_only=False):  # noqa: C901  pylint: disable=too-many-branches
     try:
         nodename, rest = objpath.split('.', 1)
     except ValueError:
@@ -152,6 +152,9 @@ def getnode(dataset, setdir, store, objpath, default=None, _name_only=False):  #
             value = [doget(x, name, lookup) for x in value]
         else:
             value = doget(value, name, lookup)
+
+        if value is None:
+            return default
     return value
 
 
