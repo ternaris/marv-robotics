@@ -17,6 +17,7 @@ Upcoming (unreleased)
 
 Added
 ~~~~~
+- Filter for datasets without specific tag in frontend (EE)
 
 Changed
 ~~~~~~~
