@@ -20,8 +20,7 @@ from marv_robotics.bag import make_deserialize, make_get_timestamp, messages
 
 
 @marv.node()
-@marv.input('stream', marv.select(messages,
-                                  '*:geometry_msgs/PoseStamped,*:geometry_msgs/msg/PoseStamped'))
+@marv.input('stream', marv.select(messages, '*:geometry_msgs/msg/PoseStamped'))
 def position_xyz(stream):
     """Extract position from Pose.
 
@@ -39,7 +38,7 @@ def position_xyz(stream):
     yield marv.set_header(title=stream.topic)
     log = yield marv.get_logger()
     deserialize = make_deserialize(stream)
-    get_timestamp = make_get_timestamp(log, stream)
+    get_timestamp = make_get_timestamp(log)
     while msg := (yield marv.pull(stream)):
         rosmsg = deserialize(msg.data)
         pos = rosmsg.pose.position
@@ -48,7 +47,7 @@ def position_xyz(stream):
 
 
 @marv.node()
-@marv.input('stream', marv.select(messages, '*:sensor_msgs/NavSatFix,*:sensor_msgs/msg/NavSatFix'))
+@marv.input('stream', marv.select(messages, '*:sensor_msgs/msg/NavSatFix'))
 def position_gps(stream):
     """Extract position from GPS.
 
@@ -66,7 +65,7 @@ def position_gps(stream):
     yield marv.set_header(title=stream.topic)
     log = yield marv.get_logger()
     deserialize = make_deserialize(stream)
-    get_timestamp = make_get_timestamp(log, stream)
+    get_timestamp = make_get_timestamp(log)
     while msg := (yield marv.pull(stream)):
         rosmsg = deserialize(msg.data)
         yield marv.push({'lat': rosmsg.latitude, 'lon': rosmsg.longitude, 'alt': rosmsg.altitude,
@@ -345,9 +344,8 @@ def empty_plotly_widget(trace, title):
 
 
 @marv.node()
-@marv.input('stream', marv.select(messages, '*:sensor_msgs/NavSatFix,*:sensor_msgs/msg/NavSatFix'))
-#  @marv.input('stream', marv.select(messages,
-#                                    '*:geometry_msgs/PoseStamped,*:geometry_msgs/msg/PoseStamped'))
+@marv.input('stream', marv.select(messages, '*:sensor_msgs/msg/NavSatFix'))
+#  @marv.input('stream', marv.select(messages, '*:geometry_msgs/msg/PoseStamped'))
 def easting_northing(stream):
     """Extract easting and northing.
 

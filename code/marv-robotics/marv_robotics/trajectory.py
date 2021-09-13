@@ -10,13 +10,12 @@ from .bag import make_deserialize, make_get_timestamp, messages
 
 
 @marv.node()
-@marv.input('stream', foreach=marv.select(messages, ('*:sensor_msgs/NavSatFix,'
-                                                     '*:sensor_msgs/msg/NavSatFix')))
+@marv.input('stream', foreach=marv.select(messages, '*:sensor_msgs/msg/NavSatFix'))
 def navsatfix(stream):
     yield marv.set_header(title=stream.topic)
     log = yield marv.get_logger()
     deserialize = make_deserialize(stream)
-    get_timestamp = make_get_timestamp(log, stream)
+    get_timestamp = make_get_timestamp(log)
     erroneous = 0
     while msg := (yield marv.pull(stream)):
         rosmsg = deserialize(msg.data)

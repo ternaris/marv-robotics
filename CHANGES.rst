@@ -20,6 +20,7 @@ Added
 
 Changed
 ~~~~~~~
+- Use rosbags library for all rosbag access **needs migration:** :ref:`migrate-upcoming`
 
 Deprecated
 ~~~~~~~~~~

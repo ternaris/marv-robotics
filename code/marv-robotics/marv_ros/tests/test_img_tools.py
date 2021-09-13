@@ -6,39 +6,10 @@ from base64 import b64decode
 
 import numpy
 import pytest
+from rosbags.typesys.types import sensor_msgs__msg__CompressedImage as CompressedImage
+from rosbags.typesys.types import sensor_msgs__msg__Image as Image
 
-from marv_ros.genpy.dynamic import generate_dynamic
 from marv_ros.img_tools import ImageConversionError, compressed_imgmsg_to_cv2, imgmsg_to_cv2
-
-MSGTYPE = 'sensor_msgs/Image'
-
-MSGDEF = """
-Header header
-uint32 height
-uint32 width
-string encoding
-uint8 is_bigendian
-uint32 step
-uint8[] data
-================================================================================
-MSG: std_msgs/Header
-uint32 seq
-time stamp
-string frame_id
-"""
-
-MSGTYPE_COMPRESSED = 'sensor_msgs/CompressedImage'
-
-MSGDEF_COMPRESSED = """
-Header header
-string format
-uint8[] data
-================================================================================
-MSG: std_msgs/Header
-uint32 seq
-time stamp
-string frame_id
-"""
 
 FORMATS = [
     'rgb8',
@@ -115,10 +86,6 @@ def get_desc(name):
         raise ValueError(f'Unexpected encoding {name}')
 
     return (channels, bits, 'FC' in name)
-
-
-Image = generate_dynamic(MSGTYPE, MSGDEF)[MSGTYPE]
-CompressedImage = generate_dynamic(MSGTYPE_COMPRESSED, MSGDEF_COMPRESSED)[MSGTYPE_COMPRESSED]
 
 
 def generate_image(format):

@@ -4,7 +4,7 @@
       {
         "connections": [
           {
-            "datatype": "rosgraph_msgs/Log",
+            "datatype": "rosgraph_msgs/msg/Log",
             "latching": true,
             "md5sum": "acffd30cd6b6de30f120938c17c593fb",
             "msgCount": 2,
@@ -13,7 +13,7 @@
             "topic": "/rosout"
           },
           {
-            "datatype": "rosgraph_msgs/Log",
+            "datatype": "rosgraph_msgs/msg/Log",
             "latching": true,
             "md5sum": "acffd30cd6b6de30f120938c17c593fb",
             "msgCount": 10,
@@ -22,7 +22,7 @@
             "topic": "/rosout"
           },
           {
-            "datatype": "rosgraph_msgs/Log",
+            "datatype": "rosgraph_msgs/msg/Log",
             "latching": false,
             "md5sum": "acffd30cd6b6de30f120938c17c593fb",
             "msgCount": 9,
@@ -31,7 +31,7 @@
             "topic": "/rosout_agg"
           },
           {
-            "datatype": "std_msgs/String",
+            "datatype": "std_msgs/msg/String",
             "latching": false,
             "md5sum": "992ce8a1687cec8c8bd883ec73ca41d1",
             "msgCount": 8,
@@ -40,16 +40,16 @@
             "topic": "/chatter"
           }
         ],
-        "duration": 963920384,
-        "endTime": 1423137548218460672,
+        "duration": 963920275,
+        "endTime": 1423137548218460453,
         "msgCount": 29,
-        "startTime": 1423137547254540288,
+        "startTime": 1423137547254540178,
         "version": 200
       },
       {
         "connections": [
           {
-            "datatype": "std_msgs/String",
+            "datatype": "std_msgs/msg/String",
             "latching": false,
             "md5sum": "992ce8a1687cec8c8bd883ec73ca41d1",
             "msgCount": 21,
@@ -58,7 +58,7 @@
             "topic": "/chatter"
           },
           {
-            "datatype": "rosgraph_msgs/Log",
+            "datatype": "rosgraph_msgs/msg/Log",
             "latching": true,
             "md5sum": "acffd30cd6b6de30f120938c17c593fb",
             "msgCount": 2,
@@ -67,7 +67,7 @@
             "topic": "/rosout"
           },
           {
-            "datatype": "rosgraph_msgs/Log",
+            "datatype": "rosgraph_msgs/msg/Log",
             "latching": false,
             "md5sum": "acffd30cd6b6de30f120938c17c593fb",
             "msgCount": 22,
@@ -76,7 +76,7 @@
             "topic": "/rosout_agg"
           },
           {
-            "datatype": "rosgraph_msgs/Log",
+            "datatype": "rosgraph_msgs/msg/Log",
             "latching": true,
             "md5sum": "acffd30cd6b6de30f120938c17c593fb",
             "msgCount": 20,
@@ -85,16 +85,16 @@
             "topic": "/rosout"
           }
         ],
-        "duration": 1959523840,
-        "endTime": 1423137550224936960,
+        "duration": 1959523907,
+        "endTime": 1423137550224936975,
         "msgCount": 65,
-        "startTime": 1423137548265413120,
+        "startTime": 1423137548265413068,
         "version": 200
       }
     ],
     "connections": [
       {
-        "datatype": "std_msgs/String",
+        "datatype": "std_msgs/msg/String",
         "latching": false,
         "md5sum": "992ce8a1687cec8c8bd883ec73ca41d1",
         "msgCount": 29,
@@ -103,7 +103,7 @@
         "topic": "/chatter"
       },
       {
-        "datatype": "rosgraph_msgs/Log",
+        "datatype": "rosgraph_msgs/msg/Log",
         "latching": true,
         "md5sum": "acffd30cd6b6de30f120938c17c593fb",
         "msgCount": 34,
@@ -112,7 +112,7 @@
         "topic": "/rosout"
       },
       {
-        "datatype": "rosgraph_msgs/Log",
+        "datatype": "rosgraph_msgs/msg/Log",
         "latching": false,
         "md5sum": "acffd30cd6b6de30f120938c17c593fb",
         "msgCount": 31,
@@ -121,14 +121,14 @@
         "topic": "/rosout_agg"
       }
     ],
-    "duration": 2970396672,
-    "endTime": 1423137550224936960,
+    "duration": 2970396797,
+    "endTime": 1423137550224936975,
     "msgCount": 94,
     "msgTypes": [
-      "rosgraph_msgs/Log",
-      "std_msgs/String"
+      "rosgraph_msgs/msg/Log",
+      "std_msgs/msg/String"
     ],
-    "startTime": 1423137547254540288,
+    "startTime": 1423137547254540178,
     "topics": [
       "/chatter",
       "/rosout",

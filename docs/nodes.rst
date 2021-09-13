@@ -16,7 +16,8 @@ ROS bag messages
 ----------------
 
 .. autofunction:: marv_robotics.bag.raw_messages()
-.. autofunction:: marv_robotics.bag.get_message_type
+.. autofunction:: marv_robotics.bag.make_deserialize()
+.. autofunction:: marv_robotics.bag.make_get_timestamp()
 
 
 Images

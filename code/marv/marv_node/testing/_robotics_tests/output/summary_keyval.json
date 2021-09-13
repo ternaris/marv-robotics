@@ -24,7 +24,7 @@
         {
           "cell": {
             "_which": "timestamp",
-            "timestamp": 1423137547254540288
+            "timestamp": 1423137547254540178
           },
           "formatter": "datetime",
           "list": false,
@@ -33,7 +33,7 @@
         {
           "cell": {
             "_which": "timestamp",
-            "timestamp": 1423137550224936960
+            "timestamp": 1423137550224936975
           },
           "formatter": "datetime",
           "list": false,
@@ -42,7 +42,7 @@
         {
           "cell": {
             "_which": "timedelta",
-            "timedelta": 2970396672
+            "timedelta": 2970396797
           },
           "formatter": "timedelta",
           "list": false,

@@ -4,6 +4,7 @@
 import heapq
 import re
 import sys
+import warnings
 from collections import defaultdict, namedtuple
 from contextlib import ExitStack, contextmanager
 from itertools import groupby
@@ -12,14 +13,14 @@ from os import walk
 from pathlib import Path
 
 import capnp  # pylint: disable=unused-import
-from rosbags import rosbag2, serde
-from rosbags.typesys import get_types_from_idl, get_types_from_msg, register_types
+from rosbags import rosbag1, rosbag2, serde
+from rosbags.serde.messages import MSGDEFCACHE
+from rosbags.typesys import get_types_from_idl, get_types_from_msg, register_types, types
+from rosbags.typesys.msg import normalize_msgtype
 
 import marv_api as marv
 import marv_nodes
 from marv_api import DatasetInfo, ReaderError
-from marv_ros import genpy, rosbag
-from marv_ros.rosbag import _get_message_type
 
 from .bag_capnp import Bagmeta, Message  # pylint: disable=import-error
 
@@ -233,7 +234,7 @@ def _read_bagmeta2(path):
         'end_time': reader.end_time,
         'duration': reader.duration,
         'msg_count': reader.message_count,
-        'msg_types': sorted(set(reader.topics.values())),
+        'msg_types': sorted({x.msgtype for x in reader.topics.values()}),
         'topics': sorted(reader.topics.keys()),
         'connections': [
             {
@@ -250,9 +251,9 @@ def _read_bagmeta2(path):
 @contextmanager
 def open_rosbag1(path):
     try:
-        with rosbag.Bag(path) as bag:
+        with rosbag1.Reader(path) as bag:
             yield bag
-    except rosbag.ROSBagUnindexedException:
+    except rosbag1.ReaderError:
         raise ReaderError((
             f'Unindexed bag file: {path}\n'
             '  File was not copied in full or recording did not finish properly\n'
@@ -290,28 +291,23 @@ def bagmeta(dataset):
     for path in paths:
         with open_rosbag1(path) as bag:
             try:
-                _start_time = int(bag.get_start_time() * 1.e9)
-                _end_time = int(bag.get_end_time() * 1.e9)
-            except rosbag.ROSBagException:
+                _start_time = int(bag.start_time)
+                _end_time = int(bag.end_time)
+            except ValueError:
                 _start_time = sys.maxsize
                 _end_time = 0
 
             start_time = _start_time if _start_time < start_time else start_time
             end_time = _end_time if _end_time > end_time else end_time
 
-            _msg_counts = defaultdict(int)
-            for chunk in bag._chunks:  # pylint: disable=protected-access
-                for conid, count in chunk.connection_counts.items():
-                    _msg_counts[conid] += count
-
             _connections = [
                 {'topic': x.topic,
-                 'datatype': x.datatype,
+                 'datatype': x.msgtype,
                  'md5sum': x.md5sum,
-                 'msg_def': x.msg_def,
-                 'msg_count': _msg_counts[x.id],
-                 'latching': bool(int(x.header.get('latching', 0)))}
-                for x in bag._connections.values()  # pylint: disable=protected-access
+                 'msg_def': x.msgdef,
+                 'msg_count': len(x.indexes),
+                 'latching': bool(x.latching)}
+                for x in bag.connections.values()
             ]
 
             _start_time = _start_time if _start_time != sys.maxsize else 0
@@ -319,9 +315,9 @@ def bagmeta(dataset):
                 'start_time': _start_time,
                 'end_time': _end_time,
                 'duration': _end_time - _start_time,
-                'msg_count': sum(_msg_counts.values()),
+                'msg_count': sum(x['msg_count'] for x in _connections),
                 'connections': _connections,
-                'version': bag.version,
+                'version': 200,
             })
 
             for _con in _connections:
@@ -348,17 +344,44 @@ def bagmeta(dataset):
     })
 
 
-def read_messages(paths, topics=None, start_time=None, end_time=None, connection_header=False):
+def read_messages(paths, topics=None, start_time=None, end_time=None, wipe_typesys=False):
     """Iterate chronologically raw BagMessage for topic from paths."""
+    # pylint: disable=too-many-locals
+
+    if wipe_typesys:
+        backup = types.FIELDDEFS.copy()
+        for key in list(types.FIELDDEFS.keys()):
+            if key not in [
+                'builtin_interfaces/msg/Time',
+                'builtin_interfaces/msg/Duration',
+                'std_msgs/msg/Header',
+            ]:
+                types.FIELDDEFS.pop(key)
+        MSGDEFCACHE.clear()
+
     with ExitStack() as stack:
+        if wipe_typesys:
+            stack.callback(lambda: types.FIELDDEFS.clear() or types.FIELDDEFS.update(backup)
+                           or MSGDEFCACHE.clear())
         bags = [stack.enter_context(open_rosbag1(path)) for path in paths]
-        gens = [bag.read_messages(topics=topics, start_time=start_time, end_time=end_time, raw=True,
-                                  return_connection_header=connection_header)
-                for bag in bags]
-        prev_time = genpy.Time(0)
-        for time, msg in heapq.merge(*gens, key=lambda x: x[0]):
+        if wipe_typesys:
+            typs = {}
+            for bag in bags:
+                for rconn in bag.connections.values():
+                    typs.update(get_types_from_msg(rconn.msgdef, rconn.msgtype))
+            register_types(typs)
+        gens = [
+            bag.messages(
+                connections=[x for x in bag.connections.values() if x.topic in topics],
+                start=start_time,
+                stop=end_time,
+            )
+            for bag in bags
+        ]
+        prev_time = 0
+        for connection, time, data in heapq.merge(*gens, key=lambda x: x[1]):
             assert time >= prev_time, (repr(time), repr(prev_time))
-            yield msg
+            yield connection, time, data
             prev_time = time
 
 
@@ -413,24 +436,40 @@ def raw_messages(dataset, bagmeta):  # noqa: C901  # pylint: disable=redefined-o
                 'rosbag2': reader is not None,
                 'topic': topic}
 
+    deprecated_names = set()
     bytopic = defaultdict(list)
     for name in groups:
-        topics = []
+        topics = set()
         for selector in name.split(','):
             try:
                 reqtop, reqtype = selector.split(':')
             except ValueError:
                 reqtop, reqtype = selector, '*'
+            else:
+                norm = normalize_msgtype(reqtype)
+                if reqtype != norm:
+                    deprecated_names.add((reqtype, norm))
+                    reqtype = norm
+
             # TODO: topic with more than one type is not supported
-            topics.extend(
+            topics.update(
                 con.topic for con in connections
                 if reqtop in ('*', con.topic) and reqtype in ('*', con.datatype)
             )
         group = yield marv.create_group(name)
-        for topic in topics:
+        for topic in sorted(topics):
             stream = yield group.create_stream(f'{name}.{topic}', **make_header(topic))
             bytopic[topic].append(stream)
         yield group.finish()
+
+    for old, new in deprecated_names:
+        warnings.warn(
+            (
+                f'marv.select: Change all occurrences of {old} to {new}.'
+                ' Support for old ROS1 names will be removed in 21.12.0'
+            ),
+            FutureWarning,
+        )
 
     bagtopics = bagmeta.topics
     for topic in individuals:
@@ -445,16 +484,17 @@ def raw_messages(dataset, bagmeta):  # noqa: C901  # pylint: disable=redefined-o
     if not reader:
         paths = [x.path for x in dataset.files if x.path.endswith('.bag')]
         # TODO: topic with more than one type is not supported
-        for topic, raw, timestamp in read_messages(paths, topics=list(bytopic)):
-            dct = {'data': raw[1], 'timestamp': timestamp.to_nsec()}
-            for stream in bytopic[topic]:
+        for conn, timestamp, data in read_messages(paths, topics=list(bytopic), wipe_typesys=True):
+            dct = {'data': data, 'timestamp': timestamp}
+            for stream in bytopic[conn.topic]:
                 yield stream.msg(dct)
         return
 
     with reader:
-        for topic, _, timestamp, data in reader.messages(topics=bytopic.keys()):
+        connections = [x for x in reader.connections.values() if x.topic in bytopic.keys()]
+        for conn, timestamp, data in reader.messages(connections=connections):
             dct = {'data': data, 'timestamp': timestamp}
-            for stream in bytopic[topic]:
+            for stream in bytopic[conn.topic]:
                 yield stream.msg(dct)
 
 
@@ -463,34 +503,14 @@ messages = raw_messages  # pylint: disable=invalid-name
 _ConnectionInfo = namedtuple('_ConnectionInfo', 'md5sum datatype msg_def')
 
 
-def get_message_type(stream):
-    """ROS message type from definition stored for stream."""
-    if stream.msg_type and stream.msg_type_def and stream.msg_type_md5sum:
-        info = _ConnectionInfo(md5sum=stream.msg_type_md5sum,
-                               datatype=stream.msg_type,
-                               msg_def=stream.msg_type_def)
-        return _get_message_type(info)
-    return None
-
-
 def make_deserialize(stream):
     """Create appropriate deserialize function for rosbag1 and 2."""
+    deserialize_cdr = serde.deserialize_cdr
+    ros1_to_cdr = serde.ros1_to_cdr
+    typename = stream.msg_type
     if stream.rosbag2:
-        deserialize_cdr = serde.deserialize_cdr
-        typename = stream.msg_type
-
         return lambda data: deserialize_cdr(data, typename)
-
-    pytype = get_message_type(stream)
-    if pytype is None:
-        raise marv.Abort()
-
-    def deserialize_ros1(data):
-        rosmsg = pytype()
-        rosmsg.deserialize(data)
-        return rosmsg
-
-    return deserialize_ros1
+    return lambda data: deserialize_cdr(ros1_to_cdr(data, typename), typename)
 
 
 def get_float_seconds(stamp):
@@ -500,24 +520,30 @@ def get_float_seconds(stamp):
     return stamp.sec + stamp.nanosec * 1e-9
 
 
-def make_get_timestamp(log, stream):
+def make_get_timestamp(log, stream=None):
     """Make utitliy to get message header timestamp in nanoseconds.
 
     Falling back to bag message timestamp if header stamp is zero or unavailable.
 
     Args:
         log: logger instance
-        stream: Handle for bag message stream
+        stream: Obsolete, previously needed argument
 
     """
     fallback = None
 
-    if stream.rosbag2:
-        def stamp_to_nanosec(stamp):
-            return stamp.sec * 10**9 + stamp.nanosec
-    else:
-        def stamp_to_nanosec(stamp):
-            return stamp.secs * 10**9 + stamp.nsecs
+    if stream is not None:
+        warnings.warn(
+            (
+                'Use make_get_timestamp(log) instead of make_get_timestamp(log, stream). '
+                'Obsolete stream argument will be removed in 21.12.0'
+            ),
+            FutureWarning,
+            stacklevel=1,
+        )
+
+    def stamp_to_nanosec(stamp):
+        return stamp.sec * 10**9 + stamp.nanosec
 
     def get_timestamp(rosmsg, bagmsg):
         """Return header timestamp, falling back to bagmsg timestamp if zero or unavailable.

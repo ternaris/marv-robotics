@@ -112,9 +112,9 @@ Deserialize raw message
 
 .. literalinclude:: code/marv_tutorial/__init__.py
     :pyobject: image
-    :lines: 19-22
+    :lines: 19-21
 
-The ``raw_messages`` node pushes raw ROS messages, which have to be deserialized using the correct message type returned by :any:`get_message_type`.
+The ``raw_messages`` node pushes raw ROS1 or ROS2 messages, which have to be deserialized. Use :any:`make_deserialize` to create a deserialize function for all messages pulled from a stream.
 
 
 Write image to file
@@ -122,7 +122,7 @@ Write image to file
 
 .. literalinclude:: code/marv_tutorial/__init__.py
     :pyobject: image
-    :lines: 24-
+    :lines: 23-
 
 Define name for the image file and instruct marv to create a file in its store. Then transform the ros image message into an opencv image and save it to the file. Finally, push the file to the output stream for consumers of our image node to pull it.
 

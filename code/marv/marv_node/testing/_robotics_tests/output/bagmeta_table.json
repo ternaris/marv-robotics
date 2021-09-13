@@ -65,15 +65,15 @@
             },
             {
               "_which": "timestamp",
-              "timestamp": 1423137547254540288
+              "timestamp": 1423137547254540178
             },
             {
               "_which": "timestamp",
-              "timestamp": 1423137548218460672
+              "timestamp": 1423137548218460453
             },
             {
               "_which": "timedelta",
-              "timedelta": 963920384
+              "timedelta": 963920275
             },
             {
               "_which": "uint64",
@@ -99,15 +99,15 @@
             },
             {
               "_which": "timestamp",
-              "timestamp": 1423137548265413120
+              "timestamp": 1423137548265413068
             },
             {
               "_which": "timestamp",
-              "timestamp": 1423137550224936960
+              "timestamp": 1423137550224936975
             },
             {
               "_which": "timedelta",
-              "timedelta": 1959523840
+              "timedelta": 1959523907
             },
             {
               "_which": "uint64",

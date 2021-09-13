@@ -15,6 +15,48 @@ In case of database migrations it is sufficient to ``marv dump`` the database wi
 
 Upcoming (unreleased)
 ---------------------
+Previously MARV shipped a fork of the upstream rosbag Python library for ROS1 bag reading and writing. These tasks are now handled by `rosbags`_ which offers better performance and a unified interface for ROS1 and ROS2 bags. One of the main user facing changes is that ROS1 message type names are now normalized to their ROS2 counterparts. While searching a database with ROS1 and ROS2 bags for images required filtering for message type ``sensor_msgs/Image`` **and** ``sensor_msgs/msg/Image`` in the past, the same query is now achieved just by filtering for ``sensor_msgs/msg/Image``.
+
+.. _rosbags: https://gitlab.com/ternaris/rosbags
+
+Bagmeta node for ROS1 bags needs to be rerun
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Rerun the node ``marv_robotics.bag:bagmeta`` to get normalized message type names:
+
+.. code-block:: console
+
+   marv run --col="*" --force \
+     --node bagmeta \
+     --node summary_keyval \
+     --node bagmeta_table \
+     --node connections_section
+
+
+Stop using classic ROS1 message type names
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Update any code or API calls using classic ROS1 message type names to the corresponding ROS2 names.
+
+
+Update any code using get_message_type()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+MARV nodes now have access to rosbag version agnostic types, you need to update your type deserialization code.
+
+Replace the pattern
+
+.. code-block:: python
+
+   rosmsg = get_message_type(stream)() if stream.msg_type else None
+   ...
+   rosmsg.deserialize(msg.data)
+
+with
+
+.. code-block:: python
+
+   deserialize = make_deserialize(stream)
+   ...
+   rosmsg = deserialize(msg.data)
+
 
 
 .. _migrate-21.07.0:

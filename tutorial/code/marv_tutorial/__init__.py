@@ -12,7 +12,7 @@ import plotly.graph_objects as go
 import marv_api as marv
 from marv_detail.types_capnp import Section, Widget  # pylint: disable=no-name-in-module
 from marv_nodes.types_capnp import File  # pylint: disable=no-name-in-module
-from marv_robotics.bag import get_message_type, raw_messages
+from marv_robotics.bag import make_deserialize, raw_messages
 from marv_ros.img_tools import imgmsg_to_cv2
 
 TOPIC = '/wide_stereo/left/image_rect_throttle'
@@ -39,9 +39,8 @@ def image(cam):
         return
 
     # Deserialize raw ros message
-    pytype = get_message_type(cam)
-    rosmsg = pytype()
-    rosmsg.deserialize(msg.data)
+    deserialize = make_deserialize(cam)
+    rosmsg = deserialize(msg.data)
 
     # Write image to jpeg and push it to output stream
     name = f"{cam.topic.replace('/', ':')[1:]}.jpg"
@@ -92,16 +91,15 @@ def images(cam):
     yield marv.set_header(title=cam.topic)
 
     # Fetch and process first 20 image messages
-    name_template = '%s-{}.jpg' % cam.topic.replace('/', ':')[1:]
+    name_template = f'{cam.topic.replace("/", ":")[1:]}-{{}}.jpg'
     while True:
         idx, msg = yield marv.pull(cam, enumerate=True)
         if msg is None or idx >= 20:
             break
 
         # Deserialize raw ros message
-        pytype = get_message_type(cam)
-        rosmsg = pytype()
-        rosmsg.deserialize(msg.data)
+        deserialize = make_deserialize(cam)
+        rosmsg = deserialize(msg.data)
 
         # Write image to jpeg and push it to output stream
         img = imgmsg_to_cv2(rosmsg, 'rgb8')

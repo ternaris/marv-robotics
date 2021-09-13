@@ -52,7 +52,7 @@
                 },
                 {
                   "_which": "text",
-                  "text": "std_msgs/String"
+                  "text": "std_msgs/msg/String"
                 },
                 {
                   "_which": "text",
@@ -77,7 +77,7 @@
                 },
                 {
                   "_which": "text",
-                  "text": "rosgraph_msgs/Log"
+                  "text": "rosgraph_msgs/msg/Log"
                 },
                 {
                   "_which": "text",
@@ -102,7 +102,7 @@
                 },
                 {
                   "_which": "text",
-                  "text": "rosgraph_msgs/Log"
+                  "text": "rosgraph_msgs/msg/Log"
                 },
                 {
                   "_which": "text",

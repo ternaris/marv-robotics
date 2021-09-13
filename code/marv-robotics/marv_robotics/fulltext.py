@@ -12,8 +12,7 @@ WSNULL = re.compile(r'[\s\x00]')
 
 
 @marv.node(Words)
-@marv.input('stream', foreach=marv.select(messages, ('*:std_msgs/String,'
-                                                     '*:std_msgs/msg/String')))
+@marv.input('stream', foreach=marv.select(messages, '*:std_msgs/msg/String'))
 def fulltext_per_topic(stream):
     yield marv.set_header(title=stream.topic)
     words = set()

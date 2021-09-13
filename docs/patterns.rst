@@ -11,7 +11,7 @@ Patterns and known issues
 Optional inputs
 ---------------
 
-Starting with 18.07 inputs selecting individual topics are optional. Your node needs to be prepared that such a stream has no messages. The first ``yield marv.pull()`` and moreover ``get_message_type()`` will return ``None``. The ``msg_type`` attribute for a known-to-be-empty stream is ``None``.
+Starting with 18.07 inputs selecting individual topics are optional. Your node needs to be prepared that such a stream has no messages. The first ``yield marv.pull()`` will return ``None``. The ``msg_type`` attribute for a known-to-be-empty stream is ``None``.
 
 .. code-block:: python
 
@@ -19,12 +19,12 @@ Starting with 18.07 inputs selecting individual topics are optional. Your node n
    @marv.input('stream', marv.select(messages, '/optional/stream'))
    def mynode(stream):
        yield marv.set_header()
-       rosmsg = get_message_type(stream)() if stream.msg_type else None
+       deserialize = make_deserialize(stream)
        while True:
            msg = yield marv.pull(stream)
            if msg is None:
                break
-           rosmsg.deserialize(msg.data)
+           rosmsg = deserialize(msg.data)
            yield marv.push({'value': rosmsg.data})
 
 
@@ -59,21 +59,21 @@ However, typically it is a sign of a wrongly structured node graph.
        yield marv.set_header()
 
        sum1 = None
-       rosmsg = get_message_type(stream1)() if stream1.msg_type else None
+       deserialize = make_deserialize(stream1)
        while True:
            msg = yield marv.pull(stream1)
            if msg is None:
                break
-           rosmsg.deserialize(msg.data)
+           rosmsg = deserialize(msg.data)
 	   sum1 += rosmsg.data
 
        sum2 = None
-       rosmsg = get_message_type(stream2)() if stream2.msg_type else None
+       deserialize = make_deserialize(stream2)
        while True:
            msg = yield marv.pull(stream2)
            if msg is None:
                break
-           rosmsg.deserialize(msg.data)
+           rosmsg = deserialize(msg.data)
 	   sum2 += rosmsg.data
 
        yield marv.push({'sums': [sum1, sum2]})
@@ -89,12 +89,12 @@ However, typically it is a sign of a wrongly structured node graph.
        yield marv.set_header()
 
        sum1 = None
-       rosmsg = get_message_type(stream1)() if stream1.msg_type else None
+       deserialize = make_deserialize(stream1)
        while True:
            msg = yield marv.pull(stream1)
            if msg is None:
                break
-           rosmsg.deserialize(msg.data)
+           rosmsg = deserialize(msg.data)
 	   sum1 += rosmsg.data
 
        yield marv.push({'value': sum1})
@@ -105,12 +105,12 @@ However, typically it is a sign of a wrongly structured node graph.
        yield marv.set_header()
 
        sum2 = None
-       rosmsg = get_message_type(stream2)() if stream2.msg_type else None
+       deserialize = make_deserialize(stream2)
        while True:
            msg = yield marv.pull(stream2)
            if msg is None:
                break
-           rosmsg.deserialize(msg.data)
+           rosmsg = deserialize(msg.data)
 	   sum2 += rosmsg.data
 
        yield marv.push({'value': sum2})

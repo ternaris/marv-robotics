@@ -6,7 +6,7 @@ from pkg_resources import resource_filename
 import marv_api as marv
 import marv_node.testing
 from marv_node.testing import make_dataset, run_nodes, temporary_directory
-from marv_robotics.bag import get_message_type, messages
+from marv_robotics.bag import make_deserialize, messages
 from marv_robotics.fulltext import fulltext
 from marv_store import Store
 
@@ -14,17 +14,16 @@ from marv_store import Store
 @marv.node()
 @marv.input('chatter', default=marv.select(messages, '/chatter'))
 def collect(chatter):
-    pytype = get_message_type(chatter)
-    rosmsg = pytype()
+    deserialize = make_deserialize(chatter)
     msg = yield marv.pull(chatter)
     assert msg is not None
-    rosmsg.deserialize(msg.data)
+    rosmsg = deserialize(msg.data)
     yield marv.push(rosmsg.data)
     while True:
         msg = yield marv.pull(chatter)
         if msg is None:
             return
-        rosmsg.deserialize(msg.data)
+        rosmsg = deserialize(msg.data)
         yield marv.push(rosmsg.data)
 
 

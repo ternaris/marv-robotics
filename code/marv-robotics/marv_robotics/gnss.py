@@ -41,13 +41,12 @@ def yaw_angle(frame):
 
 
 @marv.node()
-@marv.input('stream', foreach=marv.select(messages, ('*:sensor_msgs/NavSatFix,'
-                                                     '*:sensor_msgs/msg/NavSatFix')))
+@marv.input('stream', foreach=marv.select(messages, '*:sensor_msgs/msg/NavSatFix'))
 def positions(stream):
     yield marv.set_header(title=stream.topic)
     log = yield marv.get_logger()
     deserialize = make_deserialize(stream)
-    get_timestamp = make_get_timestamp(log, stream)
+    get_timestamp = make_get_timestamp(log)
 
     erroneous = 0
     e_offset = None
@@ -89,13 +88,12 @@ def positions(stream):
 
 
 @marv.node()
-@marv.input('stream', foreach=marv.select(messages, ('*:sensor_msgs/Imu,'
-                                                     '*:sensor_msgs/msg/Imu')))
+@marv.input('stream', foreach=marv.select(messages, '*:sensor_msgs/msg/Imu'))
 def imus(stream):
     yield marv.set_header(title=stream.topic)
     log = yield marv.get_logger()
     deserialize = make_deserialize(stream)
-    get_timestamp = make_get_timestamp(log, stream)
+    get_timestamp = make_get_timestamp(log)
 
     erroneous = 0
     imus = []
@@ -115,15 +113,12 @@ def imus(stream):
 
 
 @marv.node()
-@marv.input('stream', foreach=marv.select(messages, ','.join([
-    '*:nmea_navsat_driver/NavSatOrientation',
-    '*:nmea_navsat_driver/msg/NavSatOrientation',
-])))
+@marv.input('stream', foreach=marv.select(messages, '*:nmea_navsat_driver/msg/NavSatOrientation'))
 def navsatorients(stream):
     yield marv.set_header(title=stream.topic)
     log = yield marv.get_logger()
     deserialize = make_deserialize(stream)
-    get_timestamp = make_get_timestamp(log, stream)
+    get_timestamp = make_get_timestamp(log)
 
     erroneous = 0
     navsatorients = []
