@@ -11,8 +11,12 @@ import numpy
 import marv_api as marv
 from marv_api.types import File
 from marv_api.utils import popen
-from marv_ros.img_tools import (ImageConversionError, ImageFormatError, compressed_imgmsg_to_cv2,
-                                imgmsg_to_cv2)
+from marv_ros.img_tools import (
+    ImageConversionError,
+    ImageFormatError,
+    compressed_imgmsg_to_cv2,
+    imgmsg_to_cv2,
+)
 
 from .bag import make_deserialize, messages
 
@@ -34,8 +38,7 @@ def ros2cv(msg, scale=1, offset=0):
 
     if 'FC' in msg.encoding:
         passimg = numpy.nan_to_num(imgmsg_to_cv2(msg))
-        valscaled = cv2.convertScaleAbs(passimg, None, scale, offset)
-        return valscaled
+        return cv2.convertScaleAbs(passimg, None, scale, offset)
 
     mono = msg.encoding.startswith('mono') or msg.encoding[-1] in ['1', 'U', 'S', 'F']
     return imgmsg_to_cv2(msg, 'mono8' if mono else 'bgr8')
@@ -46,7 +49,7 @@ def ros2cv(msg, scale=1, offset=0):
 @marv.input('speed', default=4)
 @marv.input('convert_32FC1_scale', default=1)
 @marv.input('convert_32FC1_offset', default=0)
-def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):  # pylint: disable=invalid-name
+def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):  # noqa: N803  pylint: disable=invalid-name
     """Create video for each image topic with ffmpeg."""
     # pylint: disable=too-many-locals
 
@@ -110,7 +113,7 @@ def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):  # pylint:
 @marv.input('max_frames', default=50)
 @marv.input('convert_32FC1_scale', default=1)
 @marv.input('convert_32FC1_offset', default=0)
-def images(stream, image_width, max_frames, convert_32FC1_scale, convert_32FC1_offset):
+def images(stream, image_width, max_frames, convert_32FC1_scale, convert_32FC1_offset):  # noqa:N803
     """Extract max_frames equidistantly spread images from each image stream.
 
     Args:
@@ -120,6 +123,9 @@ def images(stream, image_width, max_frames, convert_32FC1_scale, convert_32FC1_o
         convert_32FC1_scale (float): Scale factor for FC image values.
         convert_32FC1_offset (float): Offset for FC image values.
 
+    Yields:
+        Images section.
+
     """
     # pylint: disable=invalid-name,too-many-locals
 
@@ -127,7 +133,7 @@ def images(stream, image_width, max_frames, convert_32FC1_scale, convert_32FC1_o
     deserialize = make_deserialize(stream)
     interval = int(math.ceil(stream.msg_count / max_frames))
     digits = int(math.ceil(math.log(stream.msg_count) / math.log(10)))
-    name_template = '%s-{:0%sd}.jpg' % (stream.topic.replace('/', ':')[1:], digits)
+    name_template = '%s-{:0%sd}.jpg' % (stream.topic.replace('/', ':')[1:], digits)  # noqa: FS001
     counter = count()
     while msg := (yield marv.pull(stream)):
         idx = next(counter)

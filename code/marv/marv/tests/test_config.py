@@ -121,9 +121,9 @@ def test_validators():
     assert config.strip('   foo bar \n') == 'foo bar'  # noqa: B005
 
     # pylint: disable=no-value-for-parameter
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Invalid dburi'):
         assert config.MarvConfig.dburi_relto_site(None, None)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Invalid dburi'):
         assert config.MarvConfig.dburi_relto_site(None, 'foo')
     assert config.MarvConfig.dburi_relto_site('sqlite:///foo', None) == 'sqlite:///foo'
     assert config.MarvConfig.dburi_relto_site('sqlite://../foo', {'sitedir': Path('/site')}) == \

@@ -6,6 +6,7 @@ import json
 import os
 import shutil
 from collections.abc import Mapping
+from contextlib import suppress
 from pathlib import Path
 
 from marv_api.utils import NOTSET
@@ -15,7 +16,7 @@ from marv_pycapnp import Wrapper
 from .streams import PersistentStream, ReadStream
 
 
-class DirectoryAlreadyExists(Exception):
+class DirectoryAlreadyExistsError(Exception):
     """Temporary directory for next generation of stream already exists.
 
     This might mean another node run is in progress or aborted without
@@ -45,7 +46,7 @@ class Store(Mapping, LoggerMixin):
         streamdir = os.path.join(setdir, gendir)
         if not os.path.exists(streamdir):
             raise KeyError(handle)
-        with open(os.path.join(streamdir, 'streams.json')) as f:
+        with open(os.path.join(streamdir, 'streams.json'), encoding='utf-8') as f:
             streams = json.load(f)
         if handle.name != 'default':
             streams = streams['streams'][handle.name]
@@ -82,17 +83,15 @@ class Store(Mapping, LoggerMixin):
         nextdir = os.path.join(setdir, next_name)
         newlink = os.path.join(setdir, f'.{name}')
         tmpdir = os.path.join(setdir, '.' + next_name)
-        try:
+        with suppress(OSError):
             os.mkdir(tmpdir)
-        except OSError:
-            pass
         tmpdir_fd = os.open(tmpdir, os.O_RDONLY)
         try:
             fcntl.flock(tmpdir_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except IOError:
             os.close(tmpdir_fd)
             self.logerror('directory exists %r', tmpdir)
-            raise DirectoryAlreadyExists(tmpdir)
+            raise DirectoryAlreadyExistsError(tmpdir)
         for path in Path(tmpdir).absolute().iterdir():
             if path.is_dir():
                 shutil.rmtree(str(path))
@@ -135,7 +134,7 @@ class Store(Mapping, LoggerMixin):
         name = nodename or self.name_by_node.get(node, node.name)
         nodedir = os.path.join(setdir, name)
         try:
-            with open(os.path.join(nodedir, 'default-stream')) as f:
+            with open(os.path.join(nodedir, 'default-stream'), encoding='utf-8') as f:
                 msgs = node.schema.read_multiple_packed(f)
                 return [Wrapper(x, None, setdir) for x in msgs]
         except IOError:

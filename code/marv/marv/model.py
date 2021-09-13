@@ -6,8 +6,17 @@ import sqlite3
 from collections import OrderedDict, namedtuple
 
 import tortoise
-from tortoise.fields import (RESTRICT, BooleanField, CharField, DatetimeField, FloatField,
-                             ForeignKeyField, IntField, ManyToManyField, TextField)
+from tortoise.fields import (
+    RESTRICT,
+    BooleanField,
+    CharField,
+    DatetimeField,
+    FloatField,
+    ForeignKeyField,
+    IntField,
+    ManyToManyField,
+    TextField,
+)
 from tortoise.models import Model
 
 from . import model_fields as custom

@@ -3,12 +3,13 @@
 
 import json
 
-import capnp  # pylint: disable=unused-import
+import capnp  # noqa: F401,TC002  pylint: disable=unused-import
 
 from marv_api.utils import err
 from marv_pycapnp import Wrapper
 
-from .types_capnp import Detail, Widget  # pylint: disable=import-error,unused-import
+from .types_capnp import Detail  # noqa: F401,TC002  pylint: disable=import-error,unused-import
+from .types_capnp import Widget  # noqa: F401,TC002  pylint: disable=import-error,unused-import
 
 FORMATTER_MAP = {
     'acceleration': lambda x: x,
@@ -160,4 +161,4 @@ def fixup_geometry(geometry):
 
 def ccw(points):
     return sum((x2 + x1) / 2 * (y2 - y1) for (x1, y1), (x2, y2) in
-               (points[i:i+2] for i in range(len(points) - 1))) > 0
+               (points[i:i + 2] for i in range(len(points) - 1))) > 0

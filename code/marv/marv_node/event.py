@@ -14,6 +14,5 @@ class DefaultOrderedDict(OrderedDict):
         try:
             return super().__getitem__(key)
         except KeyError:
-            value = self._factory()
-            self[key] = value
-            return value
+            self[key] = self._factory()
+            return self[key]

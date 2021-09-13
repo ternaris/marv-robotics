@@ -201,7 +201,7 @@ def gnss_plots(gps, orientation):
     gps = gps[np.isfinite(gps[:, 1])]
 
     # precompute plot vars
-    c = cm.prism(gps[:, 7]/2)  # pylint: disable=no-member
+    c = cm.prism(gps[:, 7] / 2)  # pylint: disable=no-member
 
     ax1.scatter(gps[:, 4], gps[:, 5], c=c, edgecolor='none', s=3,
                 label='green: RTK\nyellow: DGPS\nred: Single')

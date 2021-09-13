@@ -5,7 +5,7 @@ import json
 
 import pytest
 
-from marv.db import UnknownOperator
+from marv.db import UnknownOperatorError
 
 
 @pytest.mark.marv(site={'size': 50})
@@ -59,7 +59,7 @@ async def test_listing(site):
     assert len(res) == 1
     assert res[0]['id'] == 1
 
-    with pytest.raises(UnknownOperator):
+    with pytest.raises(UnknownOperatorError):
         res = await site.db.get_filtered_listing(descs, [
             ('f_tags', ['bar', 'foo'], 'bad operator', 'string'),
         ], collection, '::')

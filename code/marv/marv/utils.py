@@ -105,11 +105,11 @@ def profile(func, sort='cumtime'):
         _profile.disable()
         stats = pstats.Stats(_profile).sort_stats(sort)
         stats.print_stats()
-        return result
+        return result  # noqa: R504
     return profiled
 
 
-def underscore_to_camelCase(string):  # pylint: disable=invalid-name
+def underscore_to_camelCase(string):  # noqa: N802  pylint: disable=invalid-name
     return ''.join(x.capitalize() for x in string.split('_'))
 
 

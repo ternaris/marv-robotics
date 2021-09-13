@@ -55,7 +55,7 @@ async def auth_middleware(request, handler):
     return await handler(request)
 
 
-def HTTPPermissionError(request):  # pylint: disable=invalid-name
+def HTTPPermissionError(request):  # noqa: N802  pylint: disable=invalid-name
     if request['username'] == 'marv:anonymous':
         return web.HTTPUnauthorized
     return web.HTTPForbidden

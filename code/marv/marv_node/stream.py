@@ -3,9 +3,12 @@
 
 # pylint: disable=import-outside-toplevel
 
+from __future__ import annotations
+
 from collections import deque
 from itertools import count
 from numbers import Integral
+from typing import TYPE_CHECKING
 
 from capnp.lib.capnp import KjException
 
@@ -15,8 +18,11 @@ from marv_pycapnp import Wrapper
 
 from .mixins import Keyed, LoggerMixin, Request, Task
 
+if TYPE_CHECKING:
+    from typing import Optional
 
-class RequestedMessageTooOld(Exception):
+
+class RequestedMessageTooOldError(Exception):
     """Indicate a message requested from a stream is not in memory anymore."""
 
 
@@ -128,7 +134,7 @@ Request.register(Msg)
 class Stream(Keyed, LoggerMixin):
     CACHESIZE = 50
     cache = None
-    ended = None
+    ended: Optional[bool] = None
     handle = None
 
     @property
@@ -198,7 +204,7 @@ class VolatileStream(Stream):
         try:
             msg = self.cache[offset]
         except IndexError:
-            raise RequestedMessageTooOld(req, offset)
+            raise RequestedMessageTooOldError(req, offset)
         assert msg.data is not None
         self.logdebug('return %r', msg)
         return msg

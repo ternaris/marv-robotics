@@ -1,16 +1,22 @@
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+from __future__ import annotations
+
 import json
 from collections.abc import Mapping, Sequence
 from itertools import dropwhile, islice
 from pathlib import Path
 from pickle import PickleBuffer
+from typing import TYPE_CHECKING
 
 from capnp.lib.capnp import _DynamicEnum, _DynamicListReader, _DynamicStructReader
 from ruamel.yaml import YAML
 
-GETATTR_HOOKS = []
+if TYPE_CHECKING:
+    from typing import Callable, List
+
+GETATTR_HOOKS: List[Callable] = []
 
 
 def _to_dict(value, field=None, field_type=None, which=False):

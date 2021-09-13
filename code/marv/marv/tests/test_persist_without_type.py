@@ -50,11 +50,11 @@ def scanner(dirpath, dirnames, filenames):  # pylint: disable=unused-argument
 @marv.input('dataset', default=dataset_node)
 def notype(dataset):
     dataset = yield marv.pull(dataset)
-    with open(dataset.files[0].path) as f:
+    with open(dataset.files[0].path, encoding='utf-8') as f:
         yield marv.push({'value': int(f.read())})
 
 
-@pytest.fixture
+@pytest.fixture()
 async def site(loop, tmpdir):  # pylint: disable=unused-argument
     flag = (tmpdir / 'TEST_SITE')
     flag.write('')

@@ -5,6 +5,7 @@ import fcntl
 import os
 import shutil
 import sys
+from contextlib import suppress
 from itertools import count, product
 from logging import getLogger
 from pathlib import Path
@@ -21,7 +22,7 @@ from marv_store import Store
 
 from .collection import Collections
 from .config import Config, ConfigError
-from .db import Database, DBNotInitialized, Tortoise, create_or_ignore, scoped_session
+from .db import Database, DBNotInitializedError, Tortoise, create_or_ignore, scoped_session
 from .model import Dataset, Group, User
 
 log = getLogger(__name__)
@@ -41,16 +42,14 @@ def load_sitepackages(sitepackages):
     sitepackages.mkdir(parents=True, exist_ok=True)
     if str(sitepackages) not in sys.path:
         sys.path.append(str(sitepackages))
-    try:
-        with (sitepackages / 'easy-install.pth').open('r') as f:
-            for directory in f.readlines():
-                if directory[0] == '#' or directory.startswith('import'):
-                    continue
-                directory = directory.strip()
-                if directory not in sys.path:
-                    sys.path.append(directory)
-    except FileNotFoundError:
-        pass
+    with suppress(FileNotFoundError), \
+         (sitepackages / 'easy-install.pth').open('r') as f:
+        for directory in f.readlines():
+            if directory[0] == '#' or directory.startswith('import'):
+                continue
+            directory = directory.strip()
+            if directory not in sys.path:
+                sys.path.append(directory)
 
 
 class Site:
@@ -118,7 +117,7 @@ class Site:
                 try:
                     await txn.execute_query('SELECT name FROM sqlite_master WHERE type="table"')
                 except ValueError:
-                    raise DBNotInitialized
+                    raise DBNotInitializedError
         except BaseException:
             await site.destroy()
             raise
@@ -206,7 +205,7 @@ class Site:
                                          .using_db(txn)\
                                          .prefetch_related('files')\
                                          .limit(batchsize)\
-                                         .offset(batchsize*next(loop))\
+                                         .offset(batchsize * next(loop))\
                                          .all()
                     for dataset in batch:
                         collection.render_detail(dataset)

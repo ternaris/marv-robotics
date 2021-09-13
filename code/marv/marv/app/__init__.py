@@ -1,10 +1,8 @@
 # Copyright 2016 - 2021  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-import asyncio
 import base64
 import os
-from collections import namedtuple
 from logging import getLogger
 from pathlib import Path
 
@@ -12,7 +10,6 @@ from aiohttp import web
 from pkg_resources import resource_filename
 
 from marv.collection import cached_property
-from marv_api.utils import find_obj
 from marv_webapi.api import api
 from marv_webapi.tooling import Webapi, auth_middleware, safejoin
 
@@ -86,7 +83,7 @@ class App():
         staticdir = self.aioapp['site'].config.marv.staticdir
 
         # decorator for non api endpoint routes
-        @self.api.endpoint('/custom/{path:.*}', methods=['GET'], allow_anon=True)
+        @self.api.endpoint('/custom/{path:.*}', methods=['GET'], allow_anon=True)  # noqa: FS003
         async def custom(request):  # pylint: disable=unused-variable
             path = request.match_info['path']
             fullpath = safejoin(customdir, path)
@@ -94,12 +91,13 @@ class App():
                 raise web.HTTPNotFound
             return web.FileResponse(fullpath, headers=self.NOCACHE)
 
-        @self.api.endpoint(r'/docs{_:/?}{path:((?<=/).*)?}', methods=['GET'], allow_anon=True)
+        @self.api.endpoint(r'/docs{_:/?}{path:((?<=/).*)?}', methods=['GET'],  # noqa: FS003
+                           allow_anon=True)
         async def docs(request):  # pylint: disable=unused-variable
             path = request.match_info['path'] or 'index.html'
             return web.FileResponse(safejoin(DOCS, path), headers={'Cache-Control': 'no-cache'})
 
-        @self.api.endpoint('/{path:.*}', methods=['GET'], allow_anon=True)
+        @self.api.endpoint('/{path:.*}', methods=['GET'], allow_anon=True)  # noqa: FS003
         async def assets(request):  # pylint: disable=unused-variable
             path = request.match_info['path'] or 'index.html'
             if path == 'index.html':

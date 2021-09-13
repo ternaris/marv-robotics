@@ -69,7 +69,7 @@ def popattr(obj, name, default=NOTSET):
     try:
         value = getattr(obj, name)
         delattr(obj, name)
-        return value
+        return value  # noqa: R504
     except AttributeError:
         if default is NOTSET:
             raise
@@ -78,7 +78,7 @@ def popattr(obj, name, default=NOTSET):
 
 def popen(*args, env=None, **kw):
     env = sanitize_env(os.environ.copy() if env is None else env)
-    return Popen(*args, env=env, **kw)
+    return Popen(*args, env=env, **kw)  # pylint: disable=consider-using-with
 
 
 def sanitize_env(env):

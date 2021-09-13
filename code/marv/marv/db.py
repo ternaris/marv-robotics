@@ -31,7 +31,7 @@ from marv_api.setid import SetID
 
 from . import utils
 from .model import STATUS, STATUS_MISSING, STATUS_OUTDATED, Group, User
-from .model import __models__ as MODELS
+from .model import __models__ as MODELS  # noqa: N812
 from .utils import findfirst
 
 log = getLogger(__name__)
@@ -53,15 +53,15 @@ STATUS_STRS = {
 }
 
 
-class NoSetidFound(Exception):
+class NoSetidFoundError(Exception):
     pass
 
 
-class MultipleSetidFound(Exception):
+class MultipleSetidFoundError(Exception):
     pass
 
 
-class UnknownOperator(Exception):
+class UnknownOperatorError(Exception):
     pass
 
 
@@ -85,7 +85,7 @@ class DBVersionError(Exception):
     pass
 
 
-class DBNotInitialized(Exception):
+class DBNotInitializedError(Exception):
     pass
 
 
@@ -288,9 +288,9 @@ def resolve_filter(table, fltr, models):  # noqa: C901  pylint: disable=too-many
             subtable = Table(field.model_class._meta.table)
             resolved = resolve_filter(subtable, {'op': operator, 'name': subname, 'value': value},
                                       models)
-            return getattr(table, 'id').isin(Query.from_(subtable)
-                                             .select(getattr(subtable, field.relation_field))
-                                             .where(resolved))
+            return table.id.isin(Query.from_(subtable)
+                                 .select(getattr(subtable, field.relation_field))
+                                 .where(resolved))
 
         if fieldname in tablemeta.m2m_fields:
             field = tablemeta.fields_map[fieldname]
@@ -298,12 +298,12 @@ def resolve_filter(table, fltr, models):  # noqa: C901  pylint: disable=too-many
             rel = Table(field.model_class._meta.table)
             resolved = resolve_filter(rel, {'op': operator, 'name': subname, 'value': value},
                                       models)
-            return getattr(table, 'id').isin(Query.from_(through)
-                                             .join(rel)
-                                             .on(getattr(through, field.forward_key) == rel.id)
-                                             .where(resolved)
-                                             .select(getattr(through, field.backward_key))
-                                             .distinct())
+            return table.id.isin(Query.from_(through)
+                                 .join(rel)
+                                 .on(getattr(through, field.forward_key) == rel.id)
+                                 .where(resolved)
+                                 .select(getattr(through, field.backward_key))
+                                 .distinct())
 
         raise FilterError(f'Field {fieldname!r} not on model {tablemeta.table!r}')
 
@@ -341,7 +341,7 @@ def modelize(items, relations):
 
     dataset = namedtuple('dataset', keys[:relidx[1]] + list(relations))
     types = [
-        namedtuple(x, keys[relidx[i+1]:relidx[i+2]])
+        namedtuple(x, keys[relidx[i + 1]:relidx[i + 2]])
         for i, x in enumerate(relations)
     ]
 
@@ -349,7 +349,7 @@ def modelize(items, relations):
         group = list(group)
         related = [
             sorted(set(filter(lambda x: x.id, (
-                x(*y[relidx[i+1]:relidx[i+2]]) for y in group
+                x(*y[relidx[i + 1]:relidx[i + 2]]) for y in group
             ))), key=lambda x: x.id)
             for i, x in enumerate(types)
         ]
@@ -519,10 +519,10 @@ async def restore_datasets(site, dct, txn):
 
 class Tortoise(_Tortoise):
     @classmethod
-    def _discover_models(cls, model, app_label):  # pylint: disable=arguments-differ
-        model._meta.app = app_label
-        model._meta.finalise_pk()
-        return [model]
+    def _discover_models(cls, models_path, app_label):  # pylint: disable=arguments-differ
+        models_path._meta.app = app_label
+        models_path._meta.finalise_pk()
+        return [models_path]
 
 
 ACLS = {
@@ -665,9 +665,11 @@ class Database:
             raise DBError('User name can only contain alphanumeric characters and [-_+@.]')
         if not _restore and password is not None:
             password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-        now = datetime.utcnow()  # noqa: DTZ
-        time_created = datetime.utcfromtimestamp(time_created) if time_created else now
-        time_updated = datetime.utcfromtimestamp(time_updated) if time_updated else now
+        now = datetime.now(tz=timezone.utc)
+        time_created = datetime.fromtimestamp(time_created, tz=timezone.utc) \
+            if time_created else now
+        time_updated = datetime.fromtimestamp(time_updated, tz=timezone.utc) \
+            if time_updated else now
         try:
             user = await User.create(name=name, password=password, realm=realm,
                                      given_name=given_name, family_name=family_name,
@@ -865,11 +867,11 @@ class Database:
 
             if not setid:
                 discarded = 'discarded ' if discarded else ''
-                raise NoSetidFound(f'{prefix} does not match any {discarded}dataset')
+                raise NoSetidFoundError(f'{prefix} does not match any {discarded}dataset')
             if len(setid) > 1:
                 matches = '\n  '.join([f'{x}' for x in setid])
-                raise MultipleSetidFound(f'{prefix} matches multiple:\n'
-                                         f'  {matches}\n')
+                raise MultipleSetidFoundError(f'{prefix} matches multiple:\n'
+                                              f'  {matches}\n')
             setids.add(SetID(setid[0][0]))
         return sorted(setids)
 
@@ -1295,7 +1297,7 @@ class Database:
                     query = query.where(dataset.status.bitwiseand(bitmask) == bitmask)
 
                 else:
-                    raise UnknownOperator(operator)
+                    raise UnknownOperatorError(operator)
 
                 continue
 
@@ -1318,7 +1320,7 @@ class Database:
                                                         .having(fn.Count('*') == len(value))))
 
                 else:
-                    raise UnknownOperator(operator)
+                    raise UnknownOperatorError(operator)
 
                 continue
 
@@ -1410,7 +1412,7 @@ class Database:
                 for word in value:
                     query = query.where(escaped_contains(field, word))
             else:
-                raise UnknownOperator(operator)
+                raise UnknownOperatorError(operator)
 
         query = query.orderby(tag.value).groupby('id')
         return self.postprocess_listing(await txn.exq(query))
@@ -1529,11 +1531,10 @@ class Database:
         def customize_query(query, model, table, through=None):
             if model in ['collection', 'dataset']:
                 if through:
-                    query = query.where(through.isin(self.get_actionable(model, user, 'list')))
-                else:
-                    query = query.where(table.id.isin(self.get_actionable(model, user, 'list')))
-            elif model in ['group', 'user'] and not through:
-                query = query.where(table.name.not_like('marv:%'))
+                    return query.where(through.isin(self.get_actionable(model, user, 'list')))
+                return query.where(table.id.isin(self.get_actionable(model, user, 'list')))
+            if model in ['group', 'user'] and not through:
+                return query.where(table.name.not_like('marv:%'))
             return query
 
         query = customize_query(query, model, table)
@@ -1630,7 +1631,7 @@ class Database:
         dbpath = Path(dburi.split('sqlite://', 1)[1])
         if not dbpath.exists():
             if not missing_ok:
-                raise DBNotInitialized('There is no marv database.')
+                raise DBNotInitializedError('There is no marv database.')
             return
 
         metadata = Table('metadata')

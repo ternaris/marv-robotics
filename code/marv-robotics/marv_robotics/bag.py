@@ -12,7 +12,7 @@ from logging import getLogger
 from os import walk
 from pathlib import Path
 
-import capnp  # pylint: disable=unused-import
+import capnp  # noqa: F401,TC002  pylint: disable=unused-import
 from rosbags import rosbag1, rosbag2, serde
 from rosbags.serde.messages import MSGDEFCACHE
 from rosbags.typesys import get_types_from_idl, get_types_from_msg, register_types, types
@@ -36,7 +36,7 @@ class Baginfo(namedtuple('Baginfo', 'filename basename prefix timestamp idx')):
         else:
             idx = None
 
-        if re.match(r'\d{4}(?:-\d{2}){5}', parts[-1]):
+        if re.match(r'\d{4}(?:-\d{2}){5}', parts[-1]):  # noqa: FS003
             timestamp = parts.pop()
         else:
             timestamp = None
@@ -491,7 +491,7 @@ def raw_messages(dataset, bagmeta):  # noqa: C901  # pylint: disable=redefined-o
         return
 
     with reader:
-        connections = [x for x in reader.connections.values() if x.topic in bytopic.keys()]
+        connections = [x for x in reader.connections.values() if x.topic in bytopic]
         for conn, timestamp, data in reader.messages(connections=connections):
             dct = {'data': data, 'timestamp': timestamp}
             for stream in bytopic[conn.topic]:
@@ -529,6 +529,9 @@ def make_get_timestamp(log, stream=None):
         log: logger instance
         stream: Obsolete, previously needed argument
 
+    Returns:
+        Function retrieving timestamp from message.
+
     """
     fallback = None
 
@@ -551,6 +554,9 @@ def make_get_timestamp(log, stream=None):
         Args:
             rosmsg: Deserialized ROS message
             bagmsg: Bag message as streamed by marv_robotics.bag.messages
+
+        Returns:
+            Message timestamp.
 
         """
         nonlocal fallback

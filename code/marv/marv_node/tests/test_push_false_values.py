@@ -73,9 +73,8 @@ DATASET = make_dataset()
 
 
 async def test():
-    with pytest.raises(Exception):
-        if DONTBOOLME:
-            pass
+    with pytest.raises(Exception, match='^$'):
+        bool(DONTBOOLME)
 
     nodes = [source, consumer1, consumer2]
     streams = await run_nodes(DATASET, nodes)

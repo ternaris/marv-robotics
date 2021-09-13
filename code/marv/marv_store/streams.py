@@ -6,7 +6,7 @@ from collections import OrderedDict, deque
 from pathlib import Path
 
 from marv_node.io import THEEND
-from marv_node.stream import Handle, Msg, RequestedMessageTooOld, Stream
+from marv_node.stream import Handle, Msg, RequestedMessageTooOldError, Stream
 from marv_nodes.types_capnp import File  # pylint: disable=no-name-in-module
 from marv_pycapnp import Wrapper
 
@@ -33,7 +33,7 @@ class ReadStream(Stream):
         else:
             assert not info['streams']
             path = os.path.join(streamdir, f'{handle.name}-stream')
-            streamfile = open(path, 'rb')
+            streamfile = open(path, 'rb')  # noqa: SIM115  pylint: disable=consider-using-with
             self.streamfile = streamfile
             self.stream = (Wrapper(x, streamdir, setdir) for x in
                            handle.node.schema.read_multiple_packed(streamfile))
@@ -59,7 +59,7 @@ class ReadStream(Stream):
             try:
                 msg = self.cache[offset]
             except IndexError:
-                raise RequestedMessageTooOld(req, offset)
+                raise RequestedMessageTooOldError(req, offset)
         assert msg.data is not None
         self.logdebug('return %r', msg)
         return msg
@@ -80,7 +80,7 @@ class PersistentStream(Stream):
         self.streams = OrderedDict() if self.group else None
         # open right away: empty stream -> empty file
         path = os.path.join(streamdir, f'{handle.name}-stream')
-        self.streamfile = None if self.group else open(path, 'wb')
+        self.streamfile = None if self.group else open(path, 'wb')  # noqa: SIM115  pylint: disable=consider-using-with
         self.done = set()
         self._commit = commit
 
@@ -134,7 +134,7 @@ class PersistentStream(Stream):
         try:
             msg = self.cache[offset]
         except IndexError:
-            raise RequestedMessageTooOld(req, offset)
+            raise RequestedMessageTooOldError(req, offset)
         assert msg.data is not None
         self.logdebug('return %r', msg)
         return msg
@@ -143,10 +143,9 @@ class PersistentStream(Stream):
         assert self.group
         assert not self.ended
         handle = Handle(self.handle.setid, self.handle.node, name, group=group, header=header)
-        stream = type(self)(handle, self.streamdir, self.setdir,
-                            self.commit_substream, parent=self)
-        self.streams[handle.name] = stream
-        return stream
+        self.streams[handle.name] = type(self)(handle, self.streamdir, self.setdir,
+                                               self.commit_substream, parent=self)
+        return self.streams[handle.name]
 
     def commit_substream(self, substream):
         self.done.add(substream.handle.name)

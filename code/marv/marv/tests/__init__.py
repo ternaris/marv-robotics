@@ -2,4 +2,4 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 # Create loglevels
-import marv_cli  # pylint: disable=unused-import
+import marv_cli  # noqa: F401,TC001  pylint: disable=unused-import

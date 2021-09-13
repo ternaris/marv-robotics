@@ -8,7 +8,7 @@ import pendulum
 from aiohttp import web
 
 from marv.collection import Filter
-from marv.db import DBPermissionError, UnknownOperator
+from marv.db import DBPermissionError, UnknownOperatorError
 from marv.utils import parse_datetime, parse_filesize, parse_timedelta
 
 from .api import api
@@ -47,7 +47,7 @@ VALUE_TYPE_MAP = {
 }
 
 
-TIMEZONE = pendulum.local_timezone().name
+TIMEZONE = pendulum.local_timezone().name  # type: ignore
 
 
 def parse_filters(specs, filters):
@@ -76,7 +76,8 @@ async def meta(request):
     return resp
 
 
-@api.endpoint('/_collection{_:/?}{collection_id:((?<=/).*)?}', methods=['GET'], allow_anon=True)
+@api.endpoint('/_collection{_:/?}{collection_id:((?<=/).*)?}', methods=['GET'],  # noqa: FS003
+              allow_anon=True)
 async def collection(request):  # pylint: disable=too-many-locals  # noqa: C901
     site = request.app['site']
     collection_id = request.match_info['collection_id'] or site.collections.default_id
@@ -102,7 +103,7 @@ async def collection(request):  # pylint: disable=too-many-locals  # noqa: C901
     try:
         rows = await site.db.get_filtered_listing(collection.table_descriptors, filters,
                                                   collection, user=request['username'])
-    except (KeyError, ValueError, UnknownOperator):
+    except (KeyError, ValueError, UnknownOperatorError):
         raise web.HTTPBadRequest()
 
     real_id = next(

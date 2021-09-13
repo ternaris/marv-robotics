@@ -69,8 +69,7 @@ async def _send_detail_json(request, setid, setdir):
             await site.db.get_all_known_tags_for_collection(dataset.collections[0].name),
     })
 
-    resp = web.json_response(detail, headers={'Cache-Control': 'no-cache'})
-    return resp
+    return web.json_response(detail, headers={'Cache-Control': 'no-cache'})
 
 
 async def _get_filepath(request, setid, setdir, path):
@@ -100,7 +99,8 @@ async def _get_filepath(request, setid, setdir, path):
     return path
 
 
-@api.endpoint('/dataset/{setid:[^/]+}{_:/?}{path:((?<=/).*)?}', methods=['GET'], allow_anon=True)
+@api.endpoint('/dataset/{setid:[^/]+}{_:/?}{path:((?<=/).*)?}', methods=['GET'],  # noqa: FS003
+              allow_anon=True)
 async def detail(request):
     setid = request.match_info['setid']
     path = request.match_info['path'] or 'detail.json'

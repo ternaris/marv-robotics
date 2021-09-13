@@ -5,8 +5,18 @@ import math
 
 import pytest
 
-from marv.sexp import (RESERVED_WORDS, Identifier, InvalidNumber, InvalidStringEscape, List,
-                       Literal, ReservedWord, SexpError, UnexpectedCharacter, scan)
+from marv.sexp import (
+    RESERVED_WORDS,
+    Identifier,
+    InvalidNumberError,
+    InvalidStringEscapeError,
+    List,
+    Literal,
+    ReservedWordError,
+    SexpError,
+    UnexpectedCharacterError,
+    scan,
+)
 
 
 def test_parse_malformed():  # pylint: disable=too-many-statements
@@ -31,22 +41,22 @@ def test_parse_malformed():  # pylint: disable=too-many-statements
     assert einfo.value.args == ('Unbalanced parentheses', sexp, -1)
 
     sexp = r'("\q")'
-    with pytest.raises(InvalidStringEscape) as einfo:
+    with pytest.raises(InvalidStringEscapeError) as einfo:
         scan(sexp)
     assert einfo.value.args == (r'\q', sexp, 2)
 
     sexp = r'("\u)'
-    with pytest.raises(InvalidStringEscape) as einfo:
+    with pytest.raises(InvalidStringEscapeError) as einfo:
         scan(sexp)
     assert einfo.value.args == (r'\u)', sexp, 2)
 
     sexp = r'("\ux1234")'
-    with pytest.raises(InvalidStringEscape) as einfo:
+    with pytest.raises(InvalidStringEscapeError) as einfo:
         scan(sexp)
     assert einfo.value.args == (r'\ux123', sexp, 2)
 
     sexp = '(-a)'
-    with pytest.raises(InvalidNumber) as einfo:
+    with pytest.raises(InvalidNumberError) as einfo:
         scan(sexp)
     assert einfo.value.args == ('-a', sexp, 1)
 
@@ -81,20 +91,20 @@ def test_parse_malformed():  # pylint: disable=too-many-statements
     assert einfo.value.args == ('Unbalanced parentheses', sexp, -1)
 
     sexp = '(+)'
-    with pytest.raises(UnexpectedCharacter) as einfo:
+    with pytest.raises(UnexpectedCharacterError) as einfo:
         scan(sexp)
     assert einfo.value.args == ('+', sexp, 1)
 
     sexp = '(01)'
-    with pytest.raises(InvalidNumber):
+    with pytest.raises(InvalidNumberError):
         scan(sexp)
 
     sexp = '(-01)'
-    with pytest.raises(InvalidNumber):
+    with pytest.raises(InvalidNumberError):
         scan(sexp)
 
     sexp = '(1-)'
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match='1-'):
         scan(sexp)
 
     sexp = '(1\f\v\u2000\u2001)'
@@ -102,14 +112,14 @@ def test_parse_malformed():  # pylint: disable=too-many-statements
     assert rv.args[0].stop == 1  # pylint: disable=no-member
 
     sexp = '(foo-bar)'
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match='foo-bar'):
         scan(sexp)
 
 
 @pytest.mark.parametrize('string', range(0x20))
 def test_invalid_character(string):
     sexp = f'("{chr(string)}")'
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match='.'):
         scan(sexp)
 
 
@@ -118,14 +128,14 @@ def test_invalid_character(string):
 ])
 def test_invalid_number(string):
     sexp = f'({string})'
-    with pytest.raises(InvalidNumber):
+    with pytest.raises(InvalidNumberError):
         scan(sexp)
 
 
 @pytest.mark.parametrize('string', RESERVED_WORDS)
 def test_reserved_word(string):
     sexp = f'({string})'
-    with pytest.raises(ReservedWord):
+    with pytest.raises(ReservedWordError):
         scan(sexp)
 
 

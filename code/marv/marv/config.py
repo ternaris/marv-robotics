@@ -11,7 +11,7 @@ from enum import Enum
 from functools import partial
 from logging import getLogger
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple  # noqa: TC002
 
 from pkg_resources import resource_filename
 from pydantic import BaseModel, Extra, ValidationError, root_validator, validator
@@ -27,7 +27,7 @@ class ConfigError(Exception):
     pass
 
 
-class InvalidToken(Exception):
+class InvalidTokenError(Exception):
     pass
 
 
@@ -185,7 +185,7 @@ def _parse_list(node):
         elif isinstance(token, sexp.Literal):
             args.append(token.value)
         else:
-            raise InvalidToken(token)
+            raise InvalidTokenError(token)
     return (node.args[0].name, args)
 
 
@@ -205,7 +205,7 @@ class Model(BaseModel):
 
 
 class ReverseProxyEnum(str, Enum):
-    nginx = 'nginx'
+    nginx = 'nginx'  # pylint: disable=invalid-name
 
 
 def resolve_path(val):
@@ -270,27 +270,27 @@ apvalidator = partial(validator, always=True, pre=True)
 reapvalidator = partial(validator, allow_reuse=True, always=True, pre=True)
 
 
-class MarvConfig(Model):
+class MarvConfig(Model):  # type: ignore
     sitedir: Path  # TODO: workaround
     collections: Tuple[str, ...]
     ce_anonymous_readonly_access: bool = False
     dburi: str = 'sqlite://db/db.sqlite'
-    frontenddir: Path = 'frontend'
-    leavesdir: Path = 'leaves'
+    frontenddir: Path = 'frontend'  # type: ignore
+    leavesdir: Path = 'leaves'  # type: ignore
     leafbinpath: Optional[Path] = None
     mail_footer: str = ''
-    oauth: Dict[str, Tuple[str, ...]] = None
+    oauth: Dict[str, Tuple[str, ...]] = None  # type: ignore
     oauth_enforce_username: Optional[str] = None
     oauth_gitlab_groups: Optional[Tuple[str, ...]] = None
     reverse_proxy: Optional[ReverseProxyEnum] = None
-    resourcedir: Path = 'resources'
-    sessionkey_file: Path = 'sessionkey'
+    resourcedir: Path = 'resources'  # type: ignore
+    sessionkey_file: Path = 'sessionkey'  # type: ignore
     smtp_url: str = 'smtp://'
     smtp_from: str = ''
-    staticdir: Path = resource_filename('marv', 'app/static')
-    storedir: Path = 'store'
-    upload_checkpoint_commands: Tuple[str, ...] = None
-    venv: Path = 'venv'
+    staticdir: Path = resource_filename('marv', 'app/static')  # type: ignore
+    storedir: Path = 'store'  # type: ignore
+    upload_checkpoint_commands: Tuple[str, ...] = None  # type: ignore
+    venv: Path = 'venv'  # type: ignore
 
     @property
     def sitepackages(self):
@@ -306,7 +306,7 @@ class MarvConfig(Model):
     _strip = reapvalidator('reverse_proxy')(strip)
 
     @apvalidator('dburi')
-    def dburi_relto_site(cls, val, values):
+    def dburi_relto_site(cls, val, values):  # noqa: N805
         if val and val.startswith('sqlite:///'):
             return val
         if val and val.startswith('sqlite://'):
@@ -314,7 +314,7 @@ class MarvConfig(Model):
         raise ValueError(f'Invalid dburi {val!r}')
 
     @apvalidator('oauth')
-    def oauth_split(cls, val):
+    def oauth_split(cls, val):  # noqa: N805
         if val is not None:
             return {
                 (fields := [x.strip() for x in line.split('|')])[0]: fields
@@ -324,13 +324,13 @@ class MarvConfig(Model):
         return {}
 
     @root_validator()
-    def _root_validator(cls, values):
+    def _root_validator(cls, values):  # noqa: N805
         if values['oauth_enforce_username'] and len(values['oauth']) != 1:
             raise ValueError('Use oauth_enforce_username with exactly one oauth provider.')
         return values
 
     @root_validator(pre=True)
-    def _pre_root_validator(cls, values):
+    def _pre_root_validator(cls, values):  # noqa: N805
         if val := os.environ.get('MARV_LEAVES_PATH'):
             values['leavesdir'] = val
         if val := os.environ.get('MARV_REVERSE_PROXY'):
@@ -355,9 +355,9 @@ class CollectionConfig(Model):
     detail_summary_widgets: Tuple[str, ...] = """
     summary_keyval
     meta_table
-    """
-    detail_sections: Tuple[str, ...] = ''
-    detail_title: ParsedSexp = '(get "dataset.name")'
+    """  # type: ignore
+    detail_sections: Tuple[str, ...] = ''  # type: ignore
+    detail_title: ParsedSexp = '(get "dataset.name")'  # type: ignore
     filters: Tuple[str, ...] = """
     name       | Name       | substring         | string   | (get "dataset.name")
     setid      | Set Id     | startswith        | string   | (get "dataset.id")
@@ -367,24 +367,24 @@ class CollectionConfig(Model):
     comments   | Comments   | substring         | string   | (comments)
     files      | File paths | substring_any     | string[] | (get "dataset.files[:].path")
     time_added | Added      | lt le eq ne ge gt | datetime | (get "dataset.time_added")
-    """
+    """  # type: ignore
     listing_columns: Tuple[str, ...] = """
     name       | Name   | route    | (detail_route (get "dataset.id") (get "dataset.name"))
     size       | Size   | filesize | (sum (get "dataset.files[:].size"))
     status     | Status | icon[]   | (status)
     tags       | Tags   | pill[]   | (tags)
     time_added | Added  | datetime | (get "dataset.time_added")
-    """
-    listing_sort: Tuple[str, ...] = '| ascending'
+    """  # type: ignore
+    listing_sort: Tuple[str, ...] = '| ascending'  # type: ignore
     listing_summary: Tuple[str, ...] = """
     datasets | datasets | int       | (len (rows))
     size     | size     | filesize  | (sum (rows "size" 0))
-    """
+    """  # type: ignore
     nodes: Tuple[str, ...] = """
     marv_nodes:dataset
     marv_nodes:meta_table
     marv_nodes:summary_keyval
-    """
+    """  # type: ignore
 
     _parse_func = reapvalidator('detail_title')(parse_function)
     _strip = reapvalidator('scanner')(strip)
@@ -402,7 +402,7 @@ class Config(Model):
     _resolve_path = reapvalidator('filename')(resolve_path)
 
     @validator('collections')
-    def collections_missing(cls, val, values):
+    def collections_missing(cls, val, values):  # noqa: N805
         if 'marv' not in values:
             raise ValueError('Marv section could not be parsed')
         if missing := set(values['marv'].collections) - val.keys():

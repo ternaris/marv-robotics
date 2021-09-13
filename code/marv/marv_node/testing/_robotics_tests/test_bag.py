@@ -8,7 +8,7 @@ from marv_node.testing import make_dataset, run_nodes, temporary_directory
 from marv_robotics.bag import bagmeta as node
 from marv_store import Store
 
-# XXX: in what form do we need this test?
+# TODO: in what form do we need this test?
 
 
 class TestCase(marv_node.testing.TestCase):
@@ -23,4 +23,4 @@ class TestCase(marv_node.testing.TestCase):
             store.add_dataset(dataset)
             streams = await run_nodes(dataset, [node], store)
             self.assertNodeOutput(streams[0], node)
-            # XXX: test also header
+            # TODO: test also header

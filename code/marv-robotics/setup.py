@@ -10,7 +10,7 @@ from setuptools import find_packages, setup
 NAME = 'marv-robotics'
 VERSION = '21.08.1'
 DESCRIPTION = 'Data management platform for robot logs'
-ENTRY_POINTS = {}
+ENTRY_POINTS = {}  # type: ignore
 
 # Copy/paste block below here
 

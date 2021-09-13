@@ -4,7 +4,7 @@
 import pickle
 from pathlib import Path
 
-import capnp  # pylint: disable=unused-import
+import capnp  # noqa: F401,TC002  pylint: disable=unused-import
 import pytest
 
 from marv_api.types import File
@@ -43,8 +43,8 @@ def test():
     assert isinstance(wrapper.data_list[0], bytes)
     assert repr(wrapper.dataList) == "[b'\\xce\\xa8']"
 
-    builder.textListInList = [[u'\u03a8'], [u'\u03a8']]
-    builder.dataListInList = [[u'\u03a8'.encode()], [u'\u03a8'.encode()]]
+    builder.textListInList = [['\u03a8'], ['\u03a8']]
+    builder.dataListInList = [['\u03a8'.encode()], ['\u03a8'.encode()]]
     assert all(isinstance(x, str) for lst in wrapper.textListInList for x in lst)
     assert all(isinstance(x, bytes) for lst in wrapper.dataListInList for x in lst)
 
@@ -55,7 +55,7 @@ def test():
             'data': '\u03a8'.encode(),
             'textList': ['\u03a8'],
             'dataList': ['\u03a8'.encode()],
-            'textListInList': [['\u03a8'], [u'\u03a8']],
+            'textListInList': [['\u03a8'], ['\u03a8']],
             'dataListInList': [['\u03a8'.encode()], ['\u03a8'.encode()]],
         },
     )

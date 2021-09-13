@@ -1,6 +1,8 @@
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+from __future__ import annotations
+
 import asyncio
 import hashlib
 from base64 import b32encode
@@ -8,6 +10,7 @@ from collections import OrderedDict, namedtuple
 from contextlib import suppress
 from itertools import count, product
 from logging import getLogger
+from typing import TYPE_CHECKING
 
 from marv_api import dag
 from marv_api.ioctrl import NODE_SCHEMA, Abort
@@ -17,7 +20,10 @@ from marv_api.utils import find_obj
 from . import io
 from .mixins import Keyed
 
-NODE_CACHE = {}
+if TYPE_CHECKING:
+    from typing import Any, Callable, Dict
+
+NODE_CACHE: Dict[Callable, Any] = {}
 
 
 class InputSpec(Keyed, namedtuple('InputSpec', ('name', 'value', 'foreach'))):
@@ -36,7 +42,7 @@ class InputSpec(Keyed, namedtuple('InputSpec', ('name', 'value', 'foreach'))):
         return f'<{type(self)} {foreach}{self.name}={self.value!r}>'
 
 
-class StreamSpec:  # pylint: disable=too-few-public-methods
+class StreamSpec:  # noqa: SIM119  pylint: disable=too-few-public-methods
     def __init__(self, node, name=None):  # pylint: disable=redefined-outer-name
         assert isinstance(node, Node)
         self.node = node
@@ -88,18 +94,17 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
                                     StreamSpec(node=Node.from_dag_node(value.node),
                                                name=value.name)),
                              foreach=name == dnode.foreach))
-            for name, value in ((name, getattr(inputs, name)) for name in inputs.__fields__.keys())
+            for name, value in ((name, getattr(inputs, name)) for name in inputs.__fields__.keys())  # pylint: disable=superfluous-parens
         ))
-        node = cls(func,
-                   schema=schema,
-                   version=dnode.version,
-                   name=name,
-                   namespace=namespace,
-                   specs=specs,
-                   group=dnode.group,
-                   dag_node=dnode)
-        NODE_CACHE[dnode] = node
-        return node
+        NODE_CACHE[dnode] = cls(func,
+                                schema=schema,
+                                version=dnode.version,
+                                name=name,
+                                namespace=namespace,
+                                specs=specs,
+                                group=dnode.group,
+                                dag_node=dnode)
+        return NODE_CACHE[dnode]
 
     def __init__(self, func, schema=None, version=None,
                  name=None, namespace=None, specs=None, group=None, dag_node=None):

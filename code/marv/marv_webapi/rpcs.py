@@ -16,7 +16,7 @@ async def rpc_entry(request):  # noqa: C901
 
     try:
         posted = await request.json()
-    except json.JSONDecodeError as err:
+    except json.JSONDecodeError:
         raise web.HTTPBadRequest(text=json.dumps({'errors': ['request is not JSON']}))
     if not posted:
         raise web.HTTPBadRequest(text=json.dumps({'errors': ['nothing posted']}))
@@ -41,9 +41,8 @@ async def rpc_entry(request):  # noqa: C901
             limit = payload.get('limit')
             offset = payload.get('offset')
             # v1 keeps collection
-            if model == 'dataset':
-                if 'collection' in attrs:
-                    attrs['collection_id'] = attrs.pop('collection')
+            if model == 'dataset' and 'collection' in attrs:
+                attrs['collection_id'] = attrs.pop('collection')
             # /v1 keeps collection
             try:
                 result = await request.app['site'].db.rpc_query(model, filters, attrs,

@@ -1,10 +1,15 @@
 # Copyright 2020  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+from __future__ import annotations
+
 import functools
 import warnings
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Any, Optional
 
 
 @dataclass
@@ -12,7 +17,7 @@ class Info:
     module: str
     version: str
     obj: Any
-    msg: str = None
+    msg: Optional[str] = None
 
 
 def make_getattr(module, dct):

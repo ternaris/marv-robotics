@@ -5,6 +5,7 @@ import enum
 import itertools
 import re
 import sys
+from contextlib import suppress
 
 import cv2
 import numpy as np
@@ -68,10 +69,8 @@ ENCODINGMAP = {
 
 def to_cvtype(encoding):
     """Get typeinfo for encoding."""
-    try:
+    with suppress(KeyError):
         return ENCODINGMAP[encoding]
-    except KeyError:
-        pass
 
     mat = re.fullmatch('(8U|8S|16U|16S|32S|32F|64F)C([0-9]+)', encoding)
     if mat:
@@ -106,11 +105,10 @@ def convert_color(src, src_encoding, dst_encoding):
 
     if src_typestr != dst_typestr:
         if src_depth == 8 and dst_depth == 16:
-            src = src.astype(dst_typestr, copy=False) * 65535. / 255.
-        elif src_depth == 16 and dst_depth == 8:
-            src = (src * 255. / 65535.).astype(dst_typestr, copy=False)
-        else:
-            src = src.astype(dst_typestr, copy=False)
+            return src.astype(dst_typestr, copy=False) * 65535. / 255.
+        if src_depth == 16 and dst_depth == 8:
+            return(src * 255. / 65535.).astype(dst_typestr, copy=False)
+        return src.astype(dst_typestr, copy=False)
     return src
 
 

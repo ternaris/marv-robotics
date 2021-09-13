@@ -28,7 +28,7 @@ def image(cam):
     Args:
         cam: Input stream of raw rosbag messages.
 
-    Returns:
+    Yields:
         File instance for first image of input stream.
 
     """
@@ -60,7 +60,7 @@ def image_section(image, title):
         title (str): Title to be displayed for detail section.
         image: marv image file.
 
-    Returns:
+    Yields:
         One detail section.
 
     """
@@ -83,7 +83,7 @@ def images(cam):
     Args:
         cam: Input stream of raw rosbag messages.
 
-    Returns:
+    Yields:
         File instances for images of input stream.
 
     """
@@ -119,7 +119,7 @@ def gallery_section(images, title):
         title (str): Title to be displayed for detail section.
         images: stream of marv image files
 
-    Returns:
+    Yields:
         One detail section.
 
     """
@@ -147,7 +147,7 @@ def filesizes(images):
     Args:
         images: stream of marv image files
 
-    Returns:
+    Yields:
         Stream of filesizes
 
     """
@@ -280,7 +280,7 @@ def filesize_plot_fixed(filesizes):
 
     # save figure to file
     plotfile = yield marv.make_file('filesizes.json')
-    with open(plotfile.path, 'w') as f:
+    with open(plotfile.path, 'w', encoding='utf-8') as f:
         json.dump(mpld3.fig_to_dict(fig), f)
 
     # create plot widget referencing file

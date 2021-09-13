@@ -3,6 +3,7 @@
 
 import re
 from collections import namedtuple
+from contextlib import suppress
 from enum import Enum
 
 INVALID_CHARS = tuple(chr(x) for x in range(0x20))
@@ -24,45 +25,45 @@ class SexpError(Exception):
     """
 
 
-class InvalidCharacter(SexpError):
+class InvalidCharacterError(SexpError):
     """Invalid character within string.
 
-    InvalidCharacter('\x00', sexp, idx)
-    """
+    InvalidCharacterError('\x00', sexp, idx)
+    """  # noqa: D301
 
 
-class InvalidNumber(SexpError):
+class InvalidNumberError(SexpError):
     """Token is not a valid number but starts like one.
 
-    InvalidNumber('1a', sexp, idx)
+    InvalidNumberError('1a', sexp, idx)
     """
 
 
-class InvalidIdentifier(SexpError):
+class InvalidIdentifierError(SexpError):
     """Identifier is invalid.
 
-    InvalidIdentifier('a-b', sexp, idx)
+    InvalidIdentifierError('a-b', sexp, idx)
     """
 
 
-class InvalidStringEscape(SexpError):
+class InvalidStringEscapeError(SexpError):
     """Invalid string escape sequence.
 
-    InvalidStringEscape('\\uXYZ', sexp, idx)
-    """
+    InvalidStringEscapeError('\\uXYZ', sexp, idx)
+    """  # noqa: D301
 
 
-class UnexpectedCharacter(SexpError):
+class UnexpectedCharacterError(SexpError):
     """Unexpected character encountered at given index.
 
-    UnexpectedCharacter('+', sexp, idx)
+    UnexpectedCharacterError('+', sexp, idx)
     """
 
 
-class ReservedWord(SexpError):
+class ReservedWordError(SexpError):
     """Identifier is a reserved word.
 
-    ReservedWord('None', sexp, idx)
+    ReservedWordError('None', sexp, idx)
     """
 
 
@@ -82,17 +83,15 @@ def _scan_number(sexp, idx):
        string == '-0' or \
        string[:2] == '-0' and string[2] != '.' or \
        string[0] == '-' and string[1:] in RESERVED_WORDS:
-        raise InvalidNumber(string, sexp, start)
+        raise InvalidNumberError(string, sexp, start)
 
-    try:
+    with suppress(ValueError):
         return Literal(int(string), start, idx), idx
-    except ValueError:
-        pass
 
     try:
         return Literal(float(string), start, idx), idx
     except ValueError:
-        raise InvalidNumber(string, sexp, start)
+        raise InvalidNumberError(string, sexp, start)
 
 
 def _scan_string(sexp, idx):
@@ -109,7 +108,7 @@ def _scan_string(sexp, idx):
             string += esc
 
         elif char in INVALID_CHARS:
-            raise InvalidCharacter(char, sexp, start)
+            raise InvalidCharacterError(char, sexp, start)
 
         else:
             string += char
@@ -140,16 +139,16 @@ def _scan_string_escape(sexp, idx):
         return esc, idx
 
     if char == 'u':
-        hexcode = sexp[idx+1:idx+5]
+        hexcode = sexp[idx + 1:idx + 5]
         try:
             if len(hexcode) != 4:
                 raise ValueError()
             esc = chr(int(hexcode, 16))
         except ValueError:
-            raise InvalidStringEscape(rf'\u{hexcode}', sexp, start)
+            raise InvalidStringEscapeError(rf'\u{hexcode}', sexp, start)
         return esc, idx + 4
 
-    raise InvalidStringEscape(f'\\{char}', sexp, start)
+    raise InvalidStringEscapeError(f'\\{char}', sexp, start)
 
 
 def _scan_identifier(sexp, idx):
@@ -165,10 +164,10 @@ def _scan_identifier(sexp, idx):
         idx += 1
 
     if not string.isidentifier():
-        raise InvalidIdentifier(string, start, idx)
+        raise InvalidIdentifierError(string, start, idx)
 
     if string in RESERVED_WORDS:
-        raise ReservedWord(string, start, idx)
+        raise ReservedWordError(string, start, idx)
 
     return Identifier(string, start, idx), idx
 
@@ -184,7 +183,7 @@ def scan(sexp):  # noqa: C901  # pylint: disable=too-many-branches
     (true (false))
     (identifier ("foo" 1.2 -1e10 -100 "\u0022 \" \\ \b \f \n \r \t"))
 
-    """
+    """  # noqa: D301
     if sexp[0:1] != '(':
         raise SexpError("Expected '('", sexp, 0)
 
@@ -204,16 +203,16 @@ def scan(sexp):  # noqa: C901  # pylint: disable=too-many-branches
                 item = stack.pop()
             stack.append(List(tuple(tokens), item, idx))
 
-        elif char == 'n' and sexp[idx:idx+4] == 'null':
-            stack.append(Literal(None, idx, idx+3))
+        elif char == 'n' and sexp[idx:idx + 4] == 'null':
+            stack.append(Literal(None, idx, idx + 3))
             idx += 3
 
-        elif char == 't' and sexp[idx:idx+4] == 'true':
-            stack.append(Literal(True, idx, idx+3))
+        elif char == 't' and sexp[idx:idx + 4] == 'true':
+            stack.append(Literal(True, idx, idx + 3))
             idx += 3
 
-        elif char == 'f' and sexp[idx:idx+5] == 'false':
-            stack.append(Literal(False, idx, idx+4))
+        elif char == 'f' and sexp[idx:idx + 5] == 'false':
+            stack.append(Literal(False, idx, idx + 4))
             idx += 4
 
         elif char in '0123456789-':
@@ -232,15 +231,15 @@ def scan(sexp):  # noqa: C901  # pylint: disable=too-many-branches
             pass
 
         else:
-            raise UnexpectedCharacter(char, sexp, idx)
+            raise UnexpectedCharacterError(char, sexp, idx)
 
         idx += 1
 
         if isinstance(stack[-1], int):
             continue
 
-        nextchar = sexp[idx:idx+1]
-        if nextchar == ' ' and sexp[idx+1:idx+2] != ')':
+        nextchar = sexp[idx:idx + 1]
+        if nextchar == ' ' and sexp[idx + 1:idx + 2] != ')':
             idx += 1
 
         elif nextchar and not TOKEN_END.match(nextchar):

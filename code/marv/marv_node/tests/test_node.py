@@ -22,33 +22,31 @@ def b_orig(a):  # pylint: disable=unused-argument
 
 
 class TestCase(unittest.TestCase):
-    def test_node_repr(self):
+    def test_node_repr(self):  # pylint: disable=no-self-use
         @marv.node()
         def foo():
             yield
         foo()
-        self.assertEqual(
-            repr(Node.from_dag_node(foo)),
-            '<Node foo.fy4oo6zcym>',
-        )
+        assert repr(Node.from_dag_node(foo)) == '<Node foo.fy4oo6zcym>'
 
-    def test_comparisons(self):
+    def test_comparisons(self):  # pylint: disable=no-self-use
+        # pylint: disable=comparison-with-itself
         a = Node.from_dag_node(a_orig)
         b = Node.from_dag_node(b_orig)
-        self.assertIs(type(a), type(b))
-        self.assertIs(type(a), Node)
-        self.assertIs(a, a)
-        self.assertIsNot(a, b)
+        assert type(a) is type(b)
+        assert isinstance(a, Node)
+        assert a is a
+        assert a is not b
 
-        self.assertLess(a.key, b.key)
-        self.assertLess(a, b)
-        self.assertLessEqual(a, b)
-        self.assertLessEqual(a, a)
-        self.assertEqual(a, a)
-        self.assertNotEqual(a, b)
-        self.assertGreater(b, a)
-        self.assertGreaterEqual(b, a)
-        self.assertGreaterEqual(b, b)
+        assert a.key < b.key
+        assert a < b
+        assert a <= b
+        assert a <= a
+        assert a == a
+        assert a != b
+        assert b > a
+        assert b >= a
+        assert b >= b
 
-        self.assertEqual(a, Node.from_dag_node(a_orig.clone()))
-        self.assertNotEqual(a, Node.from_dag_node(a_orig.clone(a=2)))
+        assert a == Node.from_dag_node(a_orig.clone())
+        assert a != Node.from_dag_node(a_orig.clone(a=2))

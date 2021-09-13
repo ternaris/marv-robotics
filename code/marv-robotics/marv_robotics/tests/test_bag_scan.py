@@ -6,7 +6,7 @@ from pathlib import Path
 
 from ruamel.yaml import YAML
 
-from marv_api import DatasetInfo as DSI
+from marv_api import DatasetInfo as DSI  # noqa: N814
 from marv_robotics.bag import dirscan, scan
 
 

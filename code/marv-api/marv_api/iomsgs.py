@@ -3,7 +3,7 @@
 
 from collections import namedtuple
 
-from marv_node.stream import Handle  # pylint: disable=unused-import
+from marv_node.stream import Handle  # noqa: F401,TC001  pylint: disable=unused-import
 
 CreateStream = namedtuple('CreateStream', 'parent name group header')
 GetLogger = namedtuple('GetLogger', '')

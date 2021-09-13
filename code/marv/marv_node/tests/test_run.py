@@ -9,8 +9,8 @@ from ..testing import make_dataset, marv, run_nodes
 @marv.node()
 @marv.input('offset', default=0)
 def root(offset):
-    yield marv.push(10+offset)
-    yield marv.push(20+offset)
+    yield marv.push(10 + offset)
+    yield marv.push(20 + offset)
 
 
 @marv.node()
@@ -34,7 +34,7 @@ def add(stream_a, stream_b, stream_c):
         c = yield marv.pull(stream_c)
         if a is None:
             break
-        yield marv.push(a+b+c)
+        yield marv.push(a + b + c)
 
 
 DATASET = make_dataset()

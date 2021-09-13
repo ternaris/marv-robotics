@@ -7,6 +7,7 @@ import os
 import re
 from collections import OrderedDict, defaultdict, namedtuple
 from collections.abc import Mapping
+from contextlib import suppress
 from inspect import getmembers
 from itertools import groupby
 from logging import getLogger
@@ -278,7 +279,7 @@ class Collection:
                 next(i for i, x in enumerate(self.listing_columns)
                      if x.name == listing_sort[0])
         except StopIteration:
-            raise ValueError("No column named '%s'" % listing_sort[0])
+            raise ValueError(f'No column named {listing_sort[0]!r}')
 
     @cached_property
     def sortorder(self):
@@ -533,10 +534,8 @@ class Collection:
     def render_detail(self, dataset, store=None):
         storedir = self.config.marv.storedir
         setdir = os.path.join(storedir, str(dataset.setid))
-        try:
+        with suppress(OSError):
             os.mkdir(setdir)
-        except OSError:
-            pass
         assert os.path.isdir(setdir), setdir
         if store is None:
             store = Store(storedir, self.nodes)

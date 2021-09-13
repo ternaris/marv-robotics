@@ -12,7 +12,7 @@ async def test_user(site):
 
     await site.db.user_add('marv', 'test', 'marv', '')
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='exists already'):
         await site.db.user_add('marv', 'test', 'marv', '')
 
     await site.db.user_add('admin', 'admin_pw', 'marv', '',
@@ -35,22 +35,22 @@ async def test_user(site):
     await site.db.user_pw('marv', 'test2')
     assert await site.db.authenticate('marv', 'test2')
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='does not exist'):
         await site.db.user_pw('not a user', 'test2')
 
     await site.db.user_rm('admin2')
     assert not await site.db.authenticate('admin2', 'admin')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='does not exist'):
         await site.db.user_rm('admin2')
 
     await site.db.group_add('management')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='exists already'):
         await site.db.group_add('management')
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='does not exist'):
         await site.db.group_adduser('no group', 'marv')
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='does not exist'):
         await site.db.group_adduser('management', 'no user')
 
     await site.db.group_adduser('management', 'marv')
@@ -58,14 +58,14 @@ async def test_user(site):
 
     await site.db.group_rmuser('management', 'marv')
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='does not exist'):
         await site.db.group_rmuser('no group', 'marv')
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='does not exist'):
         await site.db.group_rmuser('management', 'no user')
 
     await site.db.group_rm('management')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='does not exist'):
         await site.db.group_rm('management')
 
     await site.db.group_add('finance')

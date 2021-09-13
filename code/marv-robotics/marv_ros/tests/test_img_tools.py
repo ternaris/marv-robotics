@@ -100,7 +100,7 @@ def generate_image(format):
     pxpos = step * int(height / 2 - 1) + pxsize * int(width / 2 - 1)
     ftype = {True: {32: 'f', 64: 'd'}, False: {8: 'B', 16: 'H', 32: 'I', 64: 'Q'}}[is_float][bits]
     val = (1 << bits - 2)
-    data[pxpos:pxpos+bits >> 8] = struct.pack(f'<{ftype}', val)
+    data[pxpos:pxpos + bits >> 8] = struct.pack(f'<{ftype}', val)
 
     # set remaining channels to 0, tests use this source value to check encoding conversions
     val = val if channels == 1 else numpy.array([val] + [0] * (channels - 1))
@@ -114,7 +114,7 @@ def test_noconvert(format):
     image, _, val = generate_image(format)
     img = imgmsg_to_cv2(image, dst_encoding=None)
     assert img.shape[0:2] == (image.height, image.width)
-    numpy.testing.assert_array_equal(img[11:13, 15:17], [[val, val*0], [val*0, val*0]])
+    numpy.testing.assert_array_equal(img[11:13, 15:17], [[val, val * 0], [val * 0, val * 0]])
 
 
 @pytest.mark.parametrize('format', FORMATS)
@@ -149,7 +149,7 @@ def test_convert_mono(format):
     elif format.startswith('bayer_g'):
         expect = [[37, 9], [9, 0]]
     else:
-        expect = [[val, val*0], [val*0, val*0]]
+        expect = [[val, val * 0], [val * 0, val * 0]]
 
     numpy.testing.assert_array_equal(img[11:13, 15:17], expect)
 
@@ -197,7 +197,7 @@ def test_convert_bgr8(format):  # noqa: C901
     elif format == 'yuv422':
         expect = [[[0, 102, 0], [0, 154, 0]], [[0, 154, 0], [0, 154, 0]]]
     else:
-        expect = [[val, val*0], [val*0, val*0]]
+        expect = [[val, val * 0], [val * 0, val * 0]]
 
     numpy.testing.assert_array_equal(img[11:13, 15:17], expect)
 

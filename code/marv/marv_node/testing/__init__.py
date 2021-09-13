@@ -1,6 +1,8 @@
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+from __future__ import annotations
+
 import functools
 import inspect
 import json
@@ -10,14 +12,18 @@ import tempfile
 from collections import namedtuple
 from contextlib import contextmanager
 from logging import getLogger
+from typing import TYPE_CHECKING
 
-import marv_api as marv  # pylint: disable=unused-import
+import marv_api as marv  # noqa: F401,TC001  pylint: disable=unused-import
 from marv_api.setid import SetID
 from marv_cli import create_loglevels
 from marv_node import run as marv_node_run
 from marv_node.node import Node
 
 from ..run import run_nodes as _run_nodes
+
+if TYPE_CHECKING:
+    from typing import List, Optional
 
 create_loglevels()
 
@@ -77,7 +83,7 @@ async def run_nodes(dataset, nodes, store=None, persistent=None, **kw):
     return [streams.get(x) for x in nodes]
 
 
-class Spy:  # pylint: disable=too-few-public-methods
+class Spy:  # noqa: SIM119  pylint: disable=too-few-public-methods
     def __init__(self):
         self.requests = []
 
@@ -108,10 +114,10 @@ def make_spy(node):
 
 
 class TestCase:  # pylint: disable=too-few-public-methods
-    BAGS = None
+    BAGS: Optional[List[str]] = None
     MARV_TESTING_RECORD = os.environ.get('MARV_TESTING_RECORD')
 
-    def assertNodeOutput(self, output, node):  # pylint: disable=invalid-name
+    def assertNodeOutput(self, output, node):  # noqa: N802  pylint: disable=invalid-name
         name = node.__marv_node__.function.rsplit('.', 1)[1]
         testfile = inspect.getmodule(type(self)).__file__
         dirpath = os.path.join(os.path.dirname(testfile), 'output')
@@ -120,8 +126,8 @@ class TestCase:  # pylint: disable=too-few-public-methods
         outfile = os.path.join(dirpath, name + '.json')
         out = [x.to_dict(which=True) for x in output]
         if self.MARV_TESTING_RECORD:
-            with open(outfile, 'w') as f:
+            with open(outfile, 'w', encoding='utf-8') as f:
                 json.dump(out, f, sort_keys=True, indent=2)
         else:
-            with open(outfile) as f:
+            with open(outfile, encoding='utf-8') as f:
                 assert json.loads(json.dumps(out)) == json.load(f)

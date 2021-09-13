@@ -47,7 +47,7 @@ def scan_bar(directory, subdirs, filenames):  # pylint: disable=unused-argument
 COUNTER = count()
 
 
-@pytest.fixture
+@pytest.fixture()
 async def site(loop):  # pylint: disable=unused-argument
     sitedir = tempfile.mkdtemp()
     scanroot = os.path.join(sitedir, 'scanroot')
@@ -55,7 +55,7 @@ async def site(loop):  # pylint: disable=unused-argument
     os.mkdir(os.path.join(scanroot, 'foo'))
     os.mkdir(os.path.join(scanroot, 'bar'))
     siteconf = os.path.join(sitedir, 'marv.conf')
-    with open(siteconf, 'w') as fobj:
+    with open(siteconf, 'w', encoding='utf-8') as fobj:
         fobj.write(inspect.cleandoc(CONFIG))
 
     site_ = await Site.create(Path(siteconf), init=True)
@@ -79,7 +79,7 @@ async def site(loop):  # pylint: disable=unused-argument
 
 def generate_foo(scanroot, name):
     filename = os.path.join(scanroot, 'foo', f'{name}.foo')
-    with open(filename, 'w') as f:
+    with open(filename, 'w', encoding='utf-8') as f:
         f.write('')
     log.verbose('wrote %s', filename)
     return filename
@@ -87,7 +87,7 @@ def generate_foo(scanroot, name):
 
 def generate_bar(scanroot, name):
     filename = os.path.join(scanroot, 'bar', f'{name}.bar')
-    with open(filename, 'w') as f:
+    with open(filename, 'w', encoding='utf-8') as f:
         f.write('')
     log.verbose('wrote %s', filename)
     return filename

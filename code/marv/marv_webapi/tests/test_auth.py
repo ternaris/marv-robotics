@@ -115,17 +115,17 @@ ADMIN = AuthtestParams(
 )
 
 
-@pytest.mark.parametrize('auth, params', [
+@pytest.mark.parametrize(('auth', 'params'), [
     pytest.param(
-       None, UNAUTH_PUBLIC,
+       None, UNAUTH_PUBLIC,  # noqa: E121
        marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:public'}),
     ),
     pytest.param(
-       ('test', 'test_pw'), AUTH,
+       ('test', 'test_pw'), AUTH,  # noqa: E121
        marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:public'}),
     ),
     pytest.param(
-       ('adm', 'adm_pw'), ADMIN,
+       ('adm', 'adm_pw'), ADMIN,  # noqa: E121
        marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:public'}),
     ),
     pytest.param(

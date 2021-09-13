@@ -3,14 +3,14 @@
 
 import pytest
 
-from marv.db import MultipleSetidFound, NoSetidFound
+from marv.db import MultipleSetidFoundError, NoSetidFoundError
 
 
 async def test_id_helpers(site):
     assert not await site.db.resolve_shortids([])
-    with pytest.raises(MultipleSetidFound):
+    with pytest.raises(MultipleSetidFoundError):
         await site.db.resolve_shortids([''])
-    with pytest.raises(NoSetidFound):
+    with pytest.raises(NoSetidFoundError):
         await site.db.resolve_shortids(['@'])
 
     sets = await site.db.get_datasets_for_collections(None)
@@ -57,14 +57,14 @@ async def test_discard(site):
     rest = await site.db.get_datasets_for_collections(None)
     assert set(sets) - set(rest) == {first}
 
-    with pytest.raises(NoSetidFound):
+    with pytest.raises(NoSetidFoundError):
         await site.db.resolve_shortids([first])
 
     res = await site.db.resolve_shortids([first], discarded=True)
     assert res == [first]
 
     await site.cleanup_discarded()
-    with pytest.raises(NoSetidFound):
+    with pytest.raises(NoSetidFoundError):
         await site.db.resolve_shortids([first], discarded=True)
 
     await site.cleanup_discarded()

@@ -24,4 +24,4 @@ class TestCase(marv_node.testing.TestCase):
             store.add_dataset(dataset)
             streams = await run_nodes(dataset, [node], store, PERSIST)
             self.assertNodeOutput(streams[0], node)
-            # XXX: test also header
+            # TODO: test also header

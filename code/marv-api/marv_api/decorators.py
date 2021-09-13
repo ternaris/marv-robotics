@@ -9,7 +9,7 @@ from .dag import Inputs, Node, Stream
 from .utils import NOTSET, exclusive_setitem, popattr
 
 
-class InputNameCollision(Exception):
+class InputNameCollisionError(Exception):
     """An input with the same name already has been declared."""
 
 
@@ -28,11 +28,15 @@ def input(name, default=NOTSET, foreach=None, type=None):
             any python object or another node.
         foreach (bool): This parameter is currently not supported and
             only for internal usage.
+        type: Stream message type.
 
     Returns:
         The original function decorated with this input
         specification. A function is turned into a node by the
         :func:`node` decorator.
+
+    Raises:
+        TypeError: If type not supported for input stream.
 
     """
     # NOTE: Foreach is deprecated and does not need a proper exception
@@ -60,7 +64,7 @@ def input(name, default=NOTSET, foreach=None, type=None):
             func.__marv_foreach__ = name
 
         inputs = func.__dict__.setdefault('__marv_inputs__', {})
-        exclusive_setitem(inputs, name, (type, field), InputNameCollision)
+        exclusive_setitem(inputs, name, (type, field), InputNameCollisionError)
         return func
     return deco
 
@@ -81,6 +85,9 @@ def node(schema=None, group=None, version=None):
     Returns:
         A :class:`Node` instance according to the given
         arguments and :func:`input` decorators.
+
+    Raises:
+        TypeError: If not called, double decorated, or not generator.
 
     """
     if hasattr(schema, 'from_bytes_packed'):  # capnp schema

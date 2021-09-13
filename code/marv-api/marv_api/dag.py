@@ -3,7 +3,7 @@
 
 # pylint: disable=too-few-public-methods,invalid-name,no-self-argument,no-self-use
 
-from typing import Optional, Union
+from typing import Optional, Union  # noqa: TC002
 
 from pydantic import BaseModel, Extra, create_model, validator
 
@@ -34,7 +34,7 @@ class Inputs(Model):
         return create_model('Inputs', __base__=Inputs, __module__=__module__, **kw)
 
     @validator('*', pre=True)
-    def streamify(cls, val):
+    def streamify(cls, val):  # noqa: N805
         """Turn Node inputs into streams."""
         if hasattr(val, '__marv_node__'):
             return Stream(node=val.__marv_node__)
@@ -52,7 +52,7 @@ class Node(Model):  # pylint: disable=too-few-public-methods
     foreach: Optional[str]
 
     @validator('function')
-    def function_needs_to_be_dotted_path(cls, val):
+    def function_needs_to_be_dotted_path(cls, val):  # noqa: N805
         if '.' not in val:
             raise ValueError(f'Expected dotted path to function, not: {val!r}')
         return val

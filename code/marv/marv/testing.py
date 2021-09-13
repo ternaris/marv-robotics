@@ -22,7 +22,7 @@ def make_scanroot(scanroot, names):
     if not os.path.exists(scanroot):
         os.makedirs(scanroot)
     for name in names:
-        with open(os.path.join(scanroot, name), 'w') as f:
+        with open(os.path.join(scanroot, name), 'w', encoding='utf-8') as f:
             f.write(name)
 
 
@@ -40,11 +40,11 @@ def temporary_directory(keep=None):
 
 def decode(data, encoding='utf-8'):
     if isinstance(data, str):
-        data = data.decode(encoding)
-    elif isinstance(data, dict):
-        data = {decode(k): decode(v) for k, v in data.items()}
-    elif isinstance(data, list):
-        data = [decode(x) for x in data]
-    elif isinstance(data, tuple):
-        data = tuple(decode(x) for x in data)
+        return data.decode(encoding)
+    if isinstance(data, dict):
+        return {decode(k): decode(v) for k, v in data.items()}
+    if isinstance(data, list):
+        return [decode(x) for x in data]
+    if isinstance(data, tuple):
+        return tuple(decode(x) for x in data)
     return data

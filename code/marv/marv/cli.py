@@ -3,7 +3,6 @@
 
 import asyncio
 import code
-import datetime
 import functools
 import json
 import signal
@@ -11,6 +10,7 @@ import sqlite3
 import sys
 import traceback
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from functools import reduce
 from logging import getLogger
 from pathlib import Path
@@ -25,15 +25,21 @@ from tortoise.exceptions import DoesNotExist
 
 import marv_node.run
 from marv.config import ConfigError
-from marv.db import USERGROUP_REGEX, DBError, DBNotInitialized, DBPermissionError, DBVersionError
+from marv.db import (
+    USERGROUP_REGEX,
+    DBError,
+    DBNotInitializedError,
+    DBPermissionError,
+    DBVersionError,
+)
 from marv.site import SiteError, load_sitepackages, make_config
 from marv.utils import within_pyinstaller_bundle
 from marv_api import ReaderError
 from marv_api.utils import echo, err, find_obj
 from marv_cli import PDB
 from marv_cli import marv as marvcli
-from marv_node.stream import RequestedMessageTooOld
-from marv_store import DirectoryAlreadyExists
+from marv_node.stream import RequestedMessageTooOldError
+from marv_store import DirectoryAlreadyExistsError
 
 try:
     import marv_ee
@@ -76,7 +82,7 @@ async def create_site(init=None):
     siteconf = get_site_config()
     try:
         site = await Site.create(siteconf, init=init)
-    except (sqlite3.OperationalError, DBNotInitialized) as exc:
+    except (sqlite3.OperationalError, DBNotInitializedError) as exc:
         if PDB:
             raise
         err(f'{exc!r}\n\nDid you run marv init?\n', exit=1)
@@ -217,11 +223,11 @@ def marvcli_serve(host, port, certfile, keyfile, approot):
         try:
             site = await Site.create(config)
             try:
-                application = App(site, app_root=approot).aioapp
+                return App(site, app_root=approot).aioapp
             except Exception:  # pylint: disable=broad-except
                 await site.destroy()
                 raise
-        except (sqlite3.OperationalError, DBNotInitialized) as exc:
+        except (sqlite3.OperationalError, DBNotInitializedError) as exc:
             err(f'{exc!r}\nDid you run marv init?', exit=4)
         except DBVersionError as exc:
             err(f'{exc!r}\n'
@@ -232,7 +238,6 @@ def marvcli_serve(host, port, certfile, keyfile, approot):
         except Exception:  # pylint: disable=broad-except
             traceback.print_exc()
             sys.exit(4)
-        return application
 
     GunicornApplication(app_factory, f'{host}:{port}', certfile, keyfile).run()
 
@@ -300,7 +305,7 @@ async def marvcli_dump(dump_file):
     siteconf = make_config(get_site_config())
     try:
         dump = await Site.Database.dump_database(siteconf.marv.dburi)
-    except DBNotInitialized as exc:
+    except DBNotInitializedError as exc:
         err(f'ERROR: {exc}', exit=1)
     except DBVersionError as exc:
         err(f'ERROR: {exc} Please use the correct version of marv to dump.', exit=1)
@@ -562,7 +567,7 @@ async def marvcli_run(  # noqa: C901
                     click.echo(f'ERROR: unknown {setid!r}', err=True)
                     if not keep_going:
                         raise
-                except RequestedMessageTooOld as e:
+                except RequestedMessageTooOldError as e:
                     _req = e.args[0]._requestor.node.name  # pylint: disable=no-member,protected-access
                     _handle = e.args[0].handle.node.name  # pylint: disable=no-member
                     click.echo(f"""
@@ -577,7 +582,7 @@ async def marvcli_run(  # noqa: C901
                     log.error('Reader error for dataset %s: %s', setid, e)
                 except Exception as e:  # pylint: disable=broad-except
                     errors.append(setid)
-                    if isinstance(e, DirectoryAlreadyExists):
+                    if isinstance(e, DirectoryAlreadyExistsError):
                         click.echo(f"""
     ERROR: Directory for node run already exists:
     {e.args[0]!r}
@@ -666,7 +671,7 @@ async def marvcli_comment_list(datasets):
         comments = await site.db.get_comments_by_setids(datasets)
         for comment in sorted(comments, key=lambda x: (x.dataset[0].setid, x.id)):
             echo(comment.dataset[0].setid, comment.id,
-                 datetime.datetime.fromtimestamp(int(comment.time_added / 1000)),  # noqa: DTZ
+                 datetime.fromtimestamp(int(comment.time_added / 1000), tz=timezone.utc),
                  comment.author, repr(comment.text))
 
 
@@ -697,7 +702,7 @@ async def marvcli_show(datasets):
     Some examples
       marv show setid  # show one dataset
       marv query --col=* | xargs marv show   # show all datasets
-    """
+    """  # noqa: D301
     async with create_site() as site:
         datasets = await site.db.get_datasets_by_setids(datasets, prefetch=['files'], user='::')
         yamldoc = SHOW_TEMPLATE.render(datasets=datasets)
@@ -755,7 +760,7 @@ async def marvcli_user_list():
             lambda xm_ym, x_y: (max(x_y[0], xm_ym[0]), max(x_y[1], xm_ym[1])),
             ((len(x), len(y)) for x, y in users),
         )
-        fmt = '{:%ds} | {}' % uwidth
+        fmt = f'{{:{uwidth}s}} | {{}}'
         for user, groups in users:
             click.echo(fmt.format(user, groups))
 

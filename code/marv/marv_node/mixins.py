@@ -1,13 +1,14 @@
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-from abc import ABCMeta, abstractproperty
+from abc import ABCMeta, abstractmethod
 from logging import getLogger
 
 
 class Keyed(metaclass=ABCMeta):
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def key(self):
         return None  # pragma: nocoverage
 
@@ -124,14 +125,14 @@ class LoggerMixin:
         return getLogger('.'.join(logkey))
 
 
-class Task(metaclass=ABCMeta):  # pylint: disable=too-few-public-methods
+class Task(metaclass=ABCMeta):  # noqa: SIM119  pylint: disable=too-few-public-methods
     __slots__ = ()
 
     def __repr__(self):
         return type(self).__name__
 
 
-class Request(metaclass=ABCMeta):  # pylint: disable=too-few-public-methods
+class Request(metaclass=ABCMeta):  # noqa: SIM119  pylint: disable=too-few-public-methods
     __slots__ = ()
 
     def __repr__(self):

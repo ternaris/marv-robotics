@@ -5,7 +5,7 @@ from unittest import mock
 
 import pytest
 
-from marv.db import Database, DBNotInitialized, DBVersionError
+from marv.db import Database, DBNotInitializedError, DBVersionError
 from marv.site import Site
 
 
@@ -14,7 +14,7 @@ async def test_metadata(tmpdir):
     marv_conf.write('[marv]\ncollections=')
 
     # starting without DB must fail
-    with pytest.raises(DBNotInitialized):
+    with pytest.raises(DBNotInitializedError):
         site = await Site.create(marv_conf, init=False)
 
     with mock.patch.object(Database, 'VERSION', '00.01'):

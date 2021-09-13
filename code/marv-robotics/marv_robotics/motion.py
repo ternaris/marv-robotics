@@ -380,7 +380,6 @@ def motion_section(easting_northing, distance, speed, acceleration):  # pylint: 
     """Create motion section.
 
     Args:
-        timestamp: Message stream of timestamps.
         easting_northing: Message stream of easting/northing coordinates.
         distance: Message stream of distances.
         speed: Message stream of speeds.

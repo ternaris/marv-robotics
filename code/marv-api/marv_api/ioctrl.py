@@ -8,14 +8,24 @@ from capnp.lib.capnp import KjException
 
 from marv_pycapnp import Wrapper
 
-from .iomsgs import (CreateStream, GetLogger, GetRequested, GetResourcePath, Handle, MakeFile, Pull,
-                     PullAll, Push, SetHeader)
+from .iomsgs import (
+    CreateStream,
+    GetLogger,
+    GetRequested,
+    GetResourcePath,
+    Handle,
+    MakeFile,
+    Pull,
+    PullAll,
+    Push,
+    SetHeader,
+)
 from .utils import err
 
-NODE_SCHEMA = ContextVar('NODE_SCHEMA')
+NODE_SCHEMA: ContextVar[dict] = ContextVar('NODE_SCHEMA')
 
 
-class Abort(Exception):
+class Abort(Exception):  # noqa: N818
     pass
 
 

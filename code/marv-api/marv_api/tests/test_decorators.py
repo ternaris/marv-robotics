@@ -3,7 +3,7 @@
 
 # pylint: disable=blacklisted-name,unused-variable,unused-argument
 
-import capnp  # pylint: disable=unused-import
+import capnp  # noqa: F401  pylint: disable=unused-import
 import pytest
 
 import marv_api as marv
@@ -64,7 +64,7 @@ def test_clone():
 
 
 def test_duplicate_input_fails():
-    with pytest.raises(marv.InputNameCollision):
+    with pytest.raises(marv.InputNameCollisionError):
         @marv.input('a', type=int)
         @marv.input('a', type=int)
         def collision():

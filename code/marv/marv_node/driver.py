@@ -6,14 +6,29 @@ from itertools import count
 
 from marv_pycapnp import Wrapper
 
-from .io import (NEXT, PAUSED, RESUME, THEEND, CreateStream, Fork, GetRequested, GetStream,
-                 MakeFile, MsgRequest, Pull, PullAll, Push, SetHeader, Task)
+from .io import (
+    NEXT,
+    PAUSED,
+    RESUME,
+    THEEND,
+    CreateStream,
+    Fork,
+    GetRequested,
+    GetStream,
+    MakeFile,
+    MsgRequest,
+    Pull,
+    PullAll,
+    Push,
+    SetHeader,
+    Task,
+)
 from .mixins import AGenWrapperMixin, LoggerMixin
 from .node import Keyed
 from .stream import Handle, Msg
 
 
-class MakeFileNotSupported(Exception):
+class MakeFileNotSupportedError(Exception):
     """Only persistent streams can make files."""
 
 
@@ -178,7 +193,7 @@ class Driver(Keyed, AGenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-
                 try:
                     make_file = stream.make_file
                 except AttributeError:
-                    raise MakeFileNotSupported(stream)
+                    raise MakeFileNotSupportedError(stream)
                 send = make_file(request.name)
                 continue
 

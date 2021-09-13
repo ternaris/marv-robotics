@@ -34,5 +34,5 @@ def test_exclusive_setitem():
     assert dct['foo'] == 1
     with pytest.raises(KeyError):
         utils.exclusive_setitem(dct, 'foo', 1)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='already in dictionary'):
         utils.exclusive_setitem(dct, 'foo', 1, ValueError)

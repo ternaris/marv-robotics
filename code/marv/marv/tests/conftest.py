@@ -11,7 +11,6 @@ from unittest import mock
 
 import pytest
 
-import marv.model
 import marv_api as marv
 from marv.app import App
 from marv.site import Site
@@ -122,7 +121,7 @@ def section_test(node):
     ]})
 
 
-@pytest.fixture
+@pytest.fixture()
 async def site(loop, request, tmpdir):  # pylint: disable=unused-argument  # noqa: C901
     # pylint: disable=too-many-locals
     collection_names = ('hodge', 'podge')
@@ -165,8 +164,7 @@ async def site(loop, request, tmpdir):  # pylint: disable=unused-argument  # noq
         class DatetimeBase(vanilla_datetime):
             @classmethod
             def utcnow(cls):
-                ret = vanilla_datetime.utcfromtimestamp(next(side_effect))
-                return ret
+                return vanilla_datetime.utcfromtimestamp(next(side_effect))
 
         return DatetimeMeta('datetime', (DatetimeBase,), {})
 
@@ -236,16 +234,15 @@ async def site(loop, request, tmpdir):  # pylint: disable=unused-argument  # noq
         await site.destroy()
 
 
-@pytest.fixture
+@pytest.fixture()
 def app(site, request):  # pylint: disable=redefined-outer-name
     mark = {x.name: x.kwargs for x in request.node.iter_markers()}
     app_cfg = mark.get('marv', {}).get('app', {})
     cls = app_cfg.get('cls', App)
-    app_ = cls(site).aioapp
-    yield app_
+    return cls(site).aioapp
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture()
 async def client(aiohttp_client, app):  # pylint: disable=redefined-outer-name
     client = await aiohttp_client(app)  # pylint: disable=redefined-outer-name
 
@@ -282,4 +279,4 @@ async def client(aiohttp_client, app):  # pylint: disable=redefined-outer-name
     client.get_json = get_json
     client.post_json = post_json
     client.unauthenticate = unauthenticate
-    yield client
+    return client

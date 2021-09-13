@@ -44,45 +44,45 @@ def messages(meta):
 
 @marv.node()
 @marv.input('a', default=marv.select(messages, 'a'))
-def nodeA(a):
+def node_a(a):
     yield marv.set_header(topic='a')
     while True:
         msg = yield marv.pull(a)
         if msg is None:
             return
-        yield marv.push(f'nodeA-{msg}')
+        yield marv.push(f'node_a-{msg}')
 
 
 @marv.node()
 @marv.input('b', default=marv.select(messages, 'b'))
-def nodeB(b):
+def node_b(b):
     yield marv.set_header(topic='b')
     while True:
         msg = yield marv.pull(b)
         if msg is None:
             return
-        yield marv.push(f'nodeB-{msg}')
+        yield marv.push(f'node_b-{msg}')
 
 
 @marv.node()
 @marv.input('c', default=marv.select(messages, 'c'))
-def nodeC(c):
+def node_c(c):
     yield marv.set_header(topic='c')
     while True:
         msg = yield marv.pull(c)
         if msg is None:
             return
-        yield marv.push(f'nodeC-{msg}')
+        yield marv.push(f'node_c-{msg}')
 
 
 @marv.node()
-@marv.input('nodeA', default=nodeA)
-@marv.input('nodeB', default=nodeB)
-@marv.input('nodeC', default=nodeC)
-def collect(nodeA, nodeB, nodeC):
+@marv.input('node_a', default=node_a)
+@marv.input('node_b', default=node_b)
+@marv.input('node_c', default=node_c)
+def collect(node_a, node_b, node_c):
     yield marv.set_header()
     acc = []
-    streams = [nodeA, nodeB, nodeC]
+    streams = [node_a, node_b, node_c]
     while streams:
         for stream in streams[:]:
             msg = yield marv.pull(stream)
@@ -97,5 +97,5 @@ async def test():
     nodes = [collect]
     streams = await run_nodes(DATASET, nodes)
     assert streams == [
-        [{'acc': ['nodeB-b0', 'nodeC-c0', 'nodeB-b1', 'nodeC-c1', 'nodeC-c2']}],
+        [{'acc': ['node_b-b0', 'node_c-c0', 'node_b-b1', 'node_c-c1', 'node_c-c2']}],
     ]

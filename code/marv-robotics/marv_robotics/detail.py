@@ -199,17 +199,24 @@ def trajectory_section(geojson, title, minzoom, maxzoom, tile_server_protocol):
         tile_server_protocol (str): Set to ``https:`` if you host marv
             behind http and prefer the tile requests to be secured.
 
+    Yields:
+        Trajectory section.
+
+    Raises:
+        Abort: If stream is empty.
+
     """
     geojson = yield marv.pull(geojson)
     if not geojson:
         raise marv.Abort()
+    suffix = '{z}/{x}/{y}.png'  # noqa: FS003
     layers = [
         {'title': 'Background',
          'tiles': [
              {'title': 'Roadmap',
               'url': (
-                  '%s//[abc].osm.ternaris.com/styles/osm-bright/rendered/{z}/{x}/{y}.png'
-                  % tile_server_protocol
+                  f'{tile_server_protocol}//[abc].osm.ternaris.com'
+                  f'/styles/osm-bright/rendered/{suffix}'
               ),
               'attribution': (
                   '© <a href="http://openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -218,8 +225,8 @@ def trajectory_section(geojson, title, minzoom, maxzoom, tile_server_protocol):
               'zoom': {'min': 0, 'max': 20}},
              {'title': 'Satellite',
               'url': (
-                  '%s//server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png'  # pylint: disable=line-too-long
-                  % tile_server_protocol
+                  f'{tile_server_protocol}//server.arcgisonline.com'
+                  f'/ArcGIS/rest/services/World_Imagery/MapServer/tile/{suffix}'
               ),
               'attribution': (
                   'Sources: Esri, DigitalGlobe, GeoEye, Earthstar Geographics, CNES/Airbus DS, '
@@ -236,7 +243,7 @@ def trajectory_section(geojson, title, minzoom, maxzoom, tile_server_protocol):
         'zoom': {'min': minzoom, 'max': maxzoom},
     })
     jsonfile = yield marv.make_file('data.json')
-    with open(jsonfile.path, 'w') as f:
+    with open(jsonfile.path, 'w', encoding='utf-8') as f:
         json.dump(dct, f, sort_keys=True)
     yield marv.push({'title': title,
                      'widgets': [{'map_partial': f'marv-partial:{jsonfile.relpath}'}]})
