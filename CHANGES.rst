@@ -17,6 +17,7 @@ Upcoming (unreleased)
 
 Added
 ~~~~~
+- Unified keyboard control for map, pointcloud, and video players
 - Filter for datasets without specific tag in frontend (EE)
 
 Changed
@@ -25,6 +26,8 @@ Changed
 - Update to latest rosbags and pillow python packages
 - Use ruamel.yaml instead of pyyaml
 - Linter configuration and introduced yapf for automatic code formatting
+- Improve frontend loading times and overall performance
+- Tweak frontend design for improved clarity
 
 Deprecated
 ~~~~~~~~~~
