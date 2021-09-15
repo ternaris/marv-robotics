@@ -6,7 +6,6 @@ numpy
 pillow
 plotly
 pycryptodome
-python-gnupg
 rosbags
 ruamel.yaml
 utm
