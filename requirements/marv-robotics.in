@@ -7,7 +7,6 @@ pillow
 plotly
 pycryptodome
 python-gnupg
-pyyaml
 rosbags
 ruamel.yaml
 utm

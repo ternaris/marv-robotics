@@ -22,6 +22,7 @@ Changed
 ~~~~~~~
 - Use rosbags library for all rosbag access **needs migration:** :ref:`migrate-upcoming`
 - Update to latest rosbags and pillow python packages
+- Use ruamel.yaml instead of pyyaml
 
 Deprecated
 ~~~~~~~~~~

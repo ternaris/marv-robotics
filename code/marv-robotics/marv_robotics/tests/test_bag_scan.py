@@ -4,7 +4,7 @@
 import logging
 from pathlib import Path
 
-import yaml
+from ruamel.yaml import YAML
 
 from marv_api import DatasetInfo as DSI
 from marv_robotics.bag import dirscan, scan
@@ -145,7 +145,7 @@ def test_scan_with_rosbag2(caplog, tmpdir):
     scanroot = Path(tmpdir)
     rb2 = (scanroot / 'rb2')
     rb2.mkdir()
-    (rb2 / 'metadata.yaml').write_text(yaml.dump({
+    YAML(typ='safe').dump({
         'rosbag2_bagfile_information': {
             'relative_file_paths': [
                 'foo.db3',
@@ -155,7 +155,7 @@ def test_scan_with_rosbag2(caplog, tmpdir):
             'topics_with_message_count': [],
             'version': 4,
         },
-    }))
+    }, rb2 / 'metadata.yaml')
     (rb2 / 'foo.db3').write_text('')
     (rb2 / 'bar.db3').write_text('')
 
@@ -187,14 +187,14 @@ def test_scan_not_a_rosbag2(caplog, tmpdir):
     scanroot = Path(tmpdir)
     rb2 = (scanroot / 'rb2')
     rb2.mkdir()
-    (rb2 / 'metadata.yaml').write_text(yaml.dump({
+    YAML(typ='safe').dump({
         'NOT_rosbag2': {
             'relative_file_paths': [
                 'foo.db3',
                 'bar.db3',
             ],
         },
-    }))
+    }, rb2 / 'metadata.yaml')
 
     # Extra dirs and files in rosbag2 are ignored and trigger warning
     dirnames = ['extradir']
@@ -228,7 +228,7 @@ def test_dirscan_with_rosbag2(caplog, tmpdir):
     scanroot = Path(tmpdir)
     rb2 = (scanroot / 'rb2')
     rb2.mkdir()
-    (rb2 / 'metadata.yaml').write_text(yaml.dump({
+    YAML(typ='safe').dump({
         'rosbag2_bagfile_information': {
             'relative_file_paths': [
                 'foo.db3',
@@ -238,7 +238,7 @@ def test_dirscan_with_rosbag2(caplog, tmpdir):
             'topics_with_message_count': [],
             'version': 4,
         },
-    }))
+    }, rb2 / 'metadata.yaml')
     (rb2 / 'foo.db3').write_text('')
     (rb2 / 'bar.db3').write_text('')
     dirnames = ['extradir']
