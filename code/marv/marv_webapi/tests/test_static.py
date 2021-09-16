@@ -9,7 +9,7 @@ async def test_frontend(client):
 
     res = await client.get('/main-built.js')
     assert res.status == 200
-    assert res.headers['Content-Type'] == 'application/javascript'
+    assert res.headers['Content-Type'] in ('application/javascript', 'application/x-javascript')
     data = await res.text(encoding='utf-8')
     assert data.startswith('/*')
 
