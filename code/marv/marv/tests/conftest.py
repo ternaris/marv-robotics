@@ -19,7 +19,6 @@ from marv_nodes import dataset as dataset_node
 
 log = getLogger(__name__)
 
-
 COLLECTION_CONF = """
 [collection {name}]
 scanner = marv.tests.conftest:scanner
@@ -58,7 +57,6 @@ detail_sections =
 {add_sections}
 """
 
-
 MARV_CONF = """
 [marv]
 ce_anonymous_readonly_access = {anon_read}
@@ -84,10 +82,7 @@ def recorded(data, path):
 
 def scanner(directory, subdirs, filenames):  # pylint: disable=unused-argument
     root = Path(directory).name
-    return [
-        (f'{root}_{x}_filtér' if x == '0043' else f'{root}_{x}', [x])
-        for x in filenames
-    ]
+    return [(f'{root}_{x}_filtér' if x == '0043' else f'{root}_{x}', [x]) for x in filenames]
 
 
 @marv.node(Int8Value)
@@ -104,10 +99,7 @@ def node_divisors(dataset):
     dataset = yield marv.pull(dataset)
     filename = Path(dataset.files[0].path).name
     idx = int(filename)
-    divisors = [
-        x for x in range(1, idx + 1)
-        if idx % x == 0
-    ]
+    divisors = [x for x in range(1, idx + 1) if idx % x == 0]
     yield marv.push({'words': [f'div{x}' for x in divisors]})
 
 
@@ -116,52 +108,80 @@ def node_divisors(dataset):
 def section_test(node):
     value = yield marv.pull(node)
     value = value.value
-    yield marv.push({'title': 'Test', 'widgets': [
-        {'keyval': {'items': [{'title': 'value', 'cell': {'uint64': value}}]}},
-    ]})
+    yield marv.push(
+        {
+            'title': 'Test',
+            'widgets': [
+                {
+                    'keyval': {
+                        'items': [{
+                            'title': 'value',
+                            'cell': {
+                                'uint64': value,
+                            },
+                        }],
+                    },
+                },
+            ],
+        },
+    )
 
 
 @pytest.fixture()
 async def site(loop, request, tmpdir):  # pylint: disable=unused-argument  # noqa: C901
     # pylint: disable=too-many-locals
     collection_names = ('hodge', 'podge')
-    add_nodes = '\n'.join([
-        '    marv.tests.conftest:node_test',
-        '    marv.tests.conftest:section_test',
-    ])
+    add_nodes = '\n'.join(
+        [
+            '    marv.tests.conftest:node_test',
+            '    marv.tests.conftest:section_test',
+        ],
+    )
     add_filters = '    node_test | Test node | any | subset' + \
         ' | (filter null (makelist (get "node_test.value" 0)))'
     add_columns = '    node_test  | Test   | int      | (get "node_test.value" 0)'
     add_sections = '    section_test'
-    collections = ''.join([
-        COLLECTION_CONF.format(name='hodge',
-                               add_nodes=add_nodes,
-                               add_filters=add_filters,
-                               add_columns=add_columns,
-                               add_sections=add_sections),
-        COLLECTION_CONF.format(name='podge',
-                               add_nodes='',
-                               add_filters='',
-                               add_columns='',
-                               add_sections=''),
-    ])
+    collections = ''.join(
+        [
+            COLLECTION_CONF.format(
+                name='hodge',
+                add_nodes=add_nodes,
+                add_filters=add_filters,
+                add_columns=add_columns,
+                add_sections=add_sections,
+            ),
+            COLLECTION_CONF.format(
+                name='podge',
+                add_nodes='',
+                add_filters='',
+                add_columns='',
+                add_sections='',
+            ),
+        ],
+    )
     marv_conf = (tmpdir / 'marv.conf')
     mark = {x.name: x.kwargs for x in request.node.iter_markers()}
     site_cfg = mark.get('marv', {}).get('site', {})
-    marv_conf.write(MARV_CONF.format(anon_read=site_cfg.get('acl') == 'marv_webapi.acls:public',
-                                     collection_names=' '.join(collection_names),
-                                     collections=collections))
+    marv_conf.write(
+        MARV_CONF.format(
+            anon_read=site_cfg.get('acl') == 'marv_webapi.acls:public',
+            collection_names=' '.join(collection_names),
+            collections=collections,
+        ),
+    )
 
     def create_datemock():
         vanilla_datetime = datetime.datetime
         side_effect = count(6000)
 
         class DatetimeMeta(type):
+
             @classmethod
             def __instancecheck__(cls, obj):
                 return isinstance(obj, vanilla_datetime)
 
         class DatetimeBase(vanilla_datetime):
+
             @classmethod
             def utcnow(cls):
                 return vanilla_datetime.utcfromtimestamp(next(side_effect))
@@ -182,6 +202,7 @@ async def site(loop, request, tmpdir):  # pylint: disable=unused-argument  # noq
         class Stat:  # pylint: disable=too-few-public-methods
             st_mtime = 1500000000 + idx * 1000
             st_size = idx
+
         return Stat()
 
     class Bcrypt:
@@ -215,10 +236,22 @@ async def site(loop, request, tmpdir):  # pylint: disable=unused-argument  # noq
                     mock.patch('marv.utils.walk', wraps=walker), \
                     mock.patch('os.path.isdir', return_value=True), \
                     mock.patch('secrets.choice', return_value='#'):
-                await site.db.user_add('test', password='test_pw', realm='marv', realmuid='',
-                                       time_created=0xdead0001, time_updated=0xdead0002)
-                await site.db.user_add('adm', password='adm_pw', realm='marv', realmuid='',
-                                       time_created=0xdead0003, time_updated=0xdead0004)
+                await site.db.user_add(
+                    'test',
+                    password='test_pw',
+                    realm='marv',
+                    realmuid='',
+                    time_created=0xdead0001,
+                    time_updated=0xdead0002,
+                )
+                await site.db.user_add(
+                    'adm',
+                    password='adm_pw',
+                    realm='marv',
+                    realmuid='',
+                    time_created=0xdead0003,
+                    time_updated=0xdead0004,
+                )
                 await site.db.group_adduser(groupname='admin', username='adm')
 
                 prescan = site_cfg.get('prescan', None)
@@ -253,10 +286,13 @@ async def client(aiohttp_client, app):  # pylint: disable=redefined-outer-name
     async def authenticate(username, password):
         if 'Authorization' in headers:
             del headers['Authorization']
-        resp = await client.post_json('/marv/api/auth', json={
-            'username': username,
-            'password': password,
-        })
+        resp = await client.post_json(
+            '/marv/api/auth',
+            json={
+                'username': username,
+                'password': password,
+            },
+        )
         headers['Authorization'] = f'Bearer {resp["access_token"]}'
 
     async def unauthenticate():

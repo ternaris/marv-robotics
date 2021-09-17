@@ -32,5 +32,7 @@ async def test():
 
     assert [x.msg for x in log.records if x.msg] == [
         ('Output 1', {}),
-        ('Output 2', {'foo': 1}),
+        ('Output 2', {
+            'foo': 1,
+        }),
     ]

@@ -7,6 +7,7 @@ from marv_api.setid import SetID
 
 
 class SetIDField(CharField):
+
     def __init__(self, max_length=32, **kwargs):
         super().__init__(max_length, **kwargs)
 

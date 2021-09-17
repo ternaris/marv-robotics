@@ -14,6 +14,7 @@ from .types_capnp import Test  # pylint: disable=import-error
 
 
 def test():
+
     @marv.node()
     def source():
         yield  # pragma: nocoverage
@@ -41,6 +42,7 @@ def test():
 
 
 def test_clone():
+
     @marv.node()
     def source1():
         yield  # pragma: nocoverage
@@ -65,6 +67,7 @@ def test_clone():
 
 def test_duplicate_input_fails():
     with pytest.raises(marv.InputNameCollisionError):
+
         @marv.input('a', type=int)
         @marv.input('a', type=int)
         def collision():
@@ -74,6 +77,7 @@ def test_duplicate_input_fails():
 def test_multi_foreach_fails():
     # NOTE: foreach is an internal deprecated feature
     with pytest.raises(AssertionError):
+
         @marv.input('foo', foreach='invalid')
         @marv.input('bar', foreach='invalid')
         def collision():
@@ -82,6 +86,7 @@ def test_multi_foreach_fails():
 
 def test_either_default_or_foreach():
     with pytest.raises(AssertionError):
+
         @marv.input('foo', 1, foreach='invalid')
         def foo():
             pass  # pragma: nocoverage
@@ -89,12 +94,14 @@ def test_either_default_or_foreach():
 
 def test_non_generator_fails():
     with pytest.raises(TypeError):
+
         @marv.node()
         def foo():
             pass  # pragma: nocoverage
 
 
 def test_no_inputs():
+
     @marv.node()
     def source():
         yield 1
@@ -104,6 +111,7 @@ def test_no_inputs():
 
 
 def test_func_works_normal():
+
     @marv.node()
     @marv.input('bar', default=1)
     def foo(bar):
@@ -117,66 +125,83 @@ def test_func_works_normal():
 
 def test_convert_twice():
     with pytest.raises(TypeError) as einfo:
+
         @marv.node()
         @marv.node()
         def foo():
             yield  # pragma: nocoverage
+
     assert einfo.match('twice')
 
 
 def test_type_or_default_for_input():
     with pytest.raises(TypeError) as einfo:
+
         @marv.input('abc')
         def foo():
             yield  # pragma: nocoverage
+
     assert einfo.match("'type' is needed")
 
 
 def test_no_type_for_streams():
+
     @marv.node()
     def source():
         yield  # pragma: nocoverage
 
     with pytest.raises(TypeError) as einfo:
+
         @marv.input('abc', default=source, type=int)
         def foo():
             yield  # pragma: nocoverage
+
     assert einfo.match("'type' is not")
 
 
 def test_missing_input_declaration():
     with pytest.raises(TypeError) as einfo:
+
         @marv.node()
         def foo(abc):
             yield  # pragma: nocoverage
+
     assert einfo.match('Missing input')
 
 
 def test_unsupported_func_sig():
     with pytest.raises(TypeError) as einfo:
+
         @marv.node()
         def foo(*args):
             yield  # pragma: nocoverage
+
     assert einfo.match('Only positional')
 
     with pytest.raises(TypeError) as einfo:
+
         @marv.node()
         @marv.input('abc', 1)
         def bar(abc=1):
             yield  # pragma: nocoverage
+
     assert einfo.match('Only positional')
 
     with pytest.raises(TypeError) as einfo:
+
         @marv.node()
         @marv.input('abc', 1)
         def baz(abc: int):
             yield  # pragma: nocoverage
+
     assert einfo.match('Only positional')
 
 
 def test_not_called():
     with pytest.raises(TypeError) as einfo:
+
         @marv.node
         def foo(*args):
             yield  # pragma: nocoverage
+
     assert einfo.match('must be called')

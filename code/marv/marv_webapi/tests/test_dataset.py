@@ -33,9 +33,11 @@ async def test_dataset(site, client):
 
 
 async def test_nginx(site, client, mocker):
-    site.config = site.config.copy(update={
-        'marv': site.config.marv.copy(update={'reverse_proxy': 'nginx'}),
-    })
+    site.config = site.config.copy(
+        update={
+            'marv': site.config.marv.copy(update={'reverse_proxy': 'nginx'}),
+        },
+    )
 
     sets = await site.db.get_datasets_for_collections(None)
 

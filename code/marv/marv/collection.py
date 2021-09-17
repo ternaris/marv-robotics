@@ -111,10 +111,7 @@ class Collections(Mapping):
         names = config.marv.collections
         collections = OrderedDict((x, Collection(config, x, site)) for x in names)
         assert not collections.keys() ^ names, (names, collections.keys())
-        scanroots = [
-            x for collection in collections.values()
-            for x in collection.scanroots
-        ]
+        scanroots = [x for collection in collections.values() for x in collection.scanroots]
         assert len(set(scanroots)) == len(scanroots),\
             'Scanroots must not be shared between collections'
         return collections
@@ -124,9 +121,9 @@ class Collections(Mapping):
         self.site = site
 
     def __dir__(self):
-        return list(self._dct.keys()
-                    | self.__dict__.keys()
-                    | {x[0] for x in getmembers(type(self))})
+        return list(
+            self._dct.keys() | self.__dict__.keys() | {x[0] for x in getmembers(type(self))},
+        )
 
     def __getattr__(self, name):
         return self[name]
@@ -143,6 +140,7 @@ class Collections(Mapping):
 
 def cached_property(func):
     """Create read-only property that caches its function's value."""
+
     @functools.wraps(func)
     def cached_func(self):
         cacheattr = f'_{func.__name__}'
@@ -152,6 +150,7 @@ def cached_property(func):
             value = func(self)
             setattr(self, cacheattr, value)
             return value
+
     return property(cached_func)
 
 
@@ -186,7 +185,8 @@ class Collection:
             return [nodes[x] for x in self.section.detail_summary_widgets]
         except KeyError as exc:
             raise ConfigError(
-                f'Collection {self.name!r}: unknown node {exc} in detail_summary_widgets')
+                f'Collection {self.name!r}: unknown node {exc} in detail_summary_widgets',
+            )
 
     @cached_property
     def detail_title(self):
@@ -254,7 +254,8 @@ class Collection:
 
             if node in linemap:
                 raise ConfigError(
-                    f'Collection {self.name!r} node {line!r} already listed as {linemap[node]!r}')
+                    f'Collection {self.name!r} node {line!r} already listed as {linemap[node]!r}',
+                )
             linemap[node] = line
             if nodename in nodes:
                 raise ConfigError(f'Collection {self.name!r} duplicate name {nodename!r}')
@@ -275,9 +276,9 @@ class Collection:
     def sortcolumn(self):
         listing_sort = self.section.listing_sort
         try:
-            return 0 if not listing_sort[0] else \
-                next(i for i, x in enumerate(self.listing_columns)
-                     if x.name == listing_sort[0])
+            return 0 if not listing_sort[0] else next(
+                i for i, x in enumerate(self.listing_columns) if x.name == listing_sort[0]
+            )
         except StopIteration:
             raise ValueError(f'No column named {listing_sort[0]!r}')
 
@@ -389,8 +390,7 @@ class Collection:
                     continue
 
                 for name, files in self.scanner(directory, subdirs, filenames):
-                    files = [x if os.path.isabs(x) else os.path.join(directory, x)
-                             for x in files]
+                    files = [x if os.path.isabs(x) else os.path.join(directory, x) for x in files]
                     assert all(x.startswith(directory) for x in files), files
                     if dry_run:
                         log.info("would add '%s': '%s'", directory, name)
@@ -409,9 +409,10 @@ class Collection:
     def _check_outdated(self, dataset):
         storedir = self.config.marv.storedir
         setdir = os.path.join(storedir, str(dataset.setid))
-        latest = [os.path.realpath(x)
-                  for x in [os.path.join(setdir, x) for x in os.listdir(setdir)]
-                  if os.path.islink(x)]
+        latest = [
+            os.path.realpath(x) for x in [os.path.join(setdir, x)
+                                          for x in os.listdir(setdir)] if os.path.islink(x)
+        ]
         oldest_mtime = utils.mtime(os.path.join(setdir, 'detail.json'))
         for nodedir in latest:
             for dirpath, _, filenames in utils.walk(nodedir):
@@ -453,16 +454,22 @@ class Collection:
         descs = self.table_descriptors
         rendered = [(dataset.id, *self.render_listing(dataset)) for dataset in batch]
         listing_values = ((id, rowdumps(row), *fields.values()) for id, row, fields, _ in rendered)
-        relvalues = sorted((key, value, id)
-                           for id, _, _, relfields in rendered
-                           for key, values in relfields.items()
-                           for value in values)
+        relvalues = sorted(
+            (key, value, id) for id, _, _, relfields in rendered
+            for key, values in relfields.items() for value in values
+        )
 
-        await txn.execute_query(Query.into(descs[0].table)
-                                .columns('id', 'row', *rendered[0][2].keys())
-                                .insert(*listing_values)
-                                .ignore()
-                                .get_sql().replace('IGNORE', 'OR REPLACE'))
+        # yapf: disable
+        await txn.execute_query(
+            Query
+            .into(descs[0].table)
+            .columns('id', 'row', *rendered[0][2].keys())
+            .insert(*listing_values)
+            .ignore()
+            .get_sql()
+            .replace('IGNORE', 'OR REPLACE'),
+        )
+        # yapf: enable
 
         for key, group in groupby(relvalues, key=lambda x: x[0]):
             group = list(group)
@@ -475,8 +482,18 @@ class Collection:
         for dataset in batch:
             log.info(f'{"updated" if update else "added"} %r', dataset)
 
-    async def make_dataset(self, connection, files, name, time_added=None, discarded=False,
-                           setid=None, status=0, timestamp=None, _restore=None):
+    async def make_dataset(
+        self,
+        connection,
+        files,
+        name,
+        time_added=None,
+        discarded=False,
+        setid=None,
+        status=0,
+        timestamp=None,
+        _restore=None,
+    ):
         # pylint: disable=too-many-arguments,too-many-locals
         time_added = int(utils.now() * 1000) if time_added is None else time_added
 
@@ -490,41 +507,95 @@ class Collection:
                     'mtime': int(stat.st_mtime * 1000),
                     'path': path,
                     'size': stat.st_size,
-                }
-                for i, (path, stat) in enumerate((path, utils.stat(path)) for path in files)
+                } for i, (path, stat) in enumerate((path, utils.stat(path)) for path in files)
             ]
         timestamp = timestamp or max(x['mtime'] for x in files)
 
         collection_t, dataset_t, file_t = Tables('collection', 'dataset', 'file')  # pylint: disable=unbalanced-tuple-unpacking
-        collection = (await connection.exq(Query.from_(collection_t)
-                                           .select(collection_t.id, collection_t.acn_id)
-                                           .where(collection_t.name == self.name)))[0]
+        # yapf: disable
+        collection = (
+            await connection.exq(
+                Query
+                .from_(collection_t)
+                .select(collection_t.id, collection_t.acn_id)
+                .where(collection_t.name == self.name),
+            )
+        )[0]
+        # yapf: enable
 
         setid = SetID(setid or SetID.random())
 
-        await connection.exq(Query.into(dataset_t)
-                             .columns('collection_id', 'name', 'discarded', 'status', 'time_added',
-                                      'timestamp', 'setid', 'acn_id', 'dacn_id')
-                             .insert((collection['id'], name, discarded, status, time_added,
-                                      timestamp, str(setid), collection['acn_id'], 2)))
+        await connection.exq(
+            Query.into(dataset_t).columns(
+                'collection_id',
+                'name',
+                'discarded',
+                'status',
+                'time_added',
+                'timestamp',
+                'setid',
+                'acn_id',
+                'dacn_id',
+            ).insert(
+                (
+                    collection['id'],
+                    name,
+                    discarded,
+                    status,
+                    time_added,
+                    timestamp,
+                    str(setid),
+                    collection['acn_id'],
+                    2,
+                ),
+            ),
+        )
         dataset_id = (await connection.execute_query('SELECT last_insert_rowid()'))[1][0][0]
 
-        await connection.exq(Query.into(file_t)
-                             .columns('dataset_id', 'idx', 'missing', 'mtime', 'path', 'size')
-                             .insert(*[(dataset_id, x['idx'], x.get('missing', False), x['mtime'],
-                                        x['path'], x['size']) for x in files]))
+        await connection.exq(
+            Query.into(file_t).columns(
+                'dataset_id',
+                'idx',
+                'missing',
+                'mtime',
+                'path',
+                'size',
+            ).insert(
+                *[
+                    (
+                        dataset_id,
+                        x['idx'],
+                        x.get('missing', False),
+                        x['mtime'],
+                        x['path'],
+                        x['size'],
+                    ) for x in files
+                ],
+            ),
+        )
 
-        dataset = type('dataset', (), {
-            'id': dataset_id,
-            'discarded': discarded,
-            'name': name,
-            'status': status,
-            'time_added': time_added,
-            'timestamp': timestamp,
-            'setid': setid,
-            'files': [type('file', (), {'missing': False, **x})() for x in files],
-            '__repr__': lambda _: f'<Dataset {setid} {name}>',
-        })()
+        dataset = type(
+            'dataset',
+            (),
+            {
+                'id': dataset_id,
+                'discarded': discarded,
+                'name': name,
+                'status': status,
+                'time_added': time_added,
+                'timestamp': timestamp,
+                'setid': setid,
+                'files': [type(
+                    'file',
+                    (),
+                    {
+                        'missing': False,
+                        **x,
+                    },
+                )() for x in files],
+                '__repr__': lambda _: f'<Dataset {setid} {name}>',
+            },
+        )()
         storedir = self.config.marv.storedir
         store = Store(storedir, self.nodes)
         store.add_dataset(dataset, exists_okay=_restore)
@@ -543,28 +614,32 @@ class Collection:
 
         summary_widgets = [
             x[0]._reader for x in  # pylint: disable=protected-access
-            [store.load(setdir, node, default=None) for node in self.detail_summary_widgets]
-            if x
+            [store.load(setdir, node, default=None) for node in self.detail_summary_widgets] if x
         ]
 
         sections = [
             x[0]._reader for x in  # pylint: disable=protected-access
-            [store.load(setdir, node, default=None) for node in self.detail_sections]
-            if x
+            [store.load(setdir, node, default=None) for node in self.detail_sections] if x
         ]
 
-        dct = {'title': calltree(self.detail_title, funcs),
-               'sections': sections,
-               'summary': {'widgets': summary_widgets}}
+        dct = {
+            'title': calltree(self.detail_title, funcs),
+            'sections': sections,
+            'summary': {
+                'widgets': summary_widgets,
+            },
+        }
         detail = Detail.new_message(**dct).as_reader()
         dct = detail_to_dict(detail)
-        fd = os.open(os.path.join(setdir, '.detail.json'),
-                     os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o666)
+        fd = os.open(
+            os.path.join(setdir, '.detail.json'),
+            os.O_CREAT | os.O_EXCL | os.O_WRONLY,
+            0o666,
+        )
         jsonfile = os.fdopen(fd, 'w')
         json.dump(dct, jsonfile, sort_keys=True)
         jsonfile.close()
-        os.rename(os.path.join(setdir, '.detail.json'),
-                  os.path.join(setdir, 'detail.json'))
+        os.rename(os.path.join(setdir, '.detail.json'), os.path.join(setdir, 'detail.json'))
         self._check_outdated(dataset)
 
     def render_listing(self, dataset):
@@ -582,10 +657,7 @@ class Collection:
                 transform = FORMATTER_MAP[col.formatter + ('[]' if col.islist else '')]
                 value = transform(value)
             values.append(value)
-        row = {'id': dataset.id,
-               'setid': str(dataset.setid),
-               'tags': ['#TAGS#'],
-               'values': values}
+        row = {'id': dataset.id, 'setid': str(dataset.setid), 'tags': ['#TAGS#'], 'values': values}
         fields = {}
         relfields = {}
         relations = [x.key for x in self.table_descriptors if x.key]

@@ -36,9 +36,7 @@ def _to_dict(value, field=None, field_type=None, which=False):
 
     if isinstance(value, _DynamicListReader):
         element_type = (field_type or field.proto.slot.type).list.elementType
-        return [
-            _to_dict(element, field_type=element_type, which=which) for element in value
-        ]
+        return [_to_dict(element, field_type=element_type, which=which) for element in value]
 
     if isinstance(value, _DynamicEnum):
         return value._as_str()  # pylint: disable=protected-access
@@ -61,6 +59,7 @@ def _wrap(value, streamdir, setdir, field=None, field_type=None):
 
 
 class ListWrapper:
+
     def __init__(self, list_reader, field_type, streamdir, setdir):
         assert isinstance(list_reader, _DynamicListReader), type(list_reader)
         self._field_type = field_type
@@ -90,6 +89,7 @@ class ListWrapper:
 
 
 class Wrapper:
+
     def __init__(self, struct_reader, streamdir, setdir, storedir=None):
         assert isinstance(struct_reader, _DynamicStructReader), type(struct_reader)
         self._reader = struct_reader

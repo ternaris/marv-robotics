@@ -20,9 +20,12 @@ async def comment(request):
 
     now = int(time.time() * 1000)
     comments = [
-        {'dataset_id': id, 'author': username, 'time_added': now, 'text': text}
-        for id, ops in changes.items()
-        for text in ops.get('add', [])
+        {
+            'dataset_id': id,
+            'author': username,
+            'time_added': now,
+            'text': text,
+        } for id, ops in changes.items() for text in ops.get('add', [])
     ]
     try:
         await request.app['site'].db.bulk_comment(comments, user=username)

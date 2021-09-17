@@ -72,10 +72,14 @@ async def test_discard(site):
 
 async def test_query(site):
     await site.db.discard_datasets_by_dbids([10], True, '::')
-    res = await site.db.bulk_tag([
-        ('foo', 1),
-        ('foo', 2),
-    ], [], '::')
+    res = await site.db.bulk_tag(
+        [
+            ('foo', 1),
+            ('foo', 2),
+        ],
+        [],
+        '::',
+    )
 
     res = await site.db.query()
     assert len(res) == 29

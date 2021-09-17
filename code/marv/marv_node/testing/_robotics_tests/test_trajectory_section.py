@@ -9,8 +9,7 @@ from marv_robotics.detail import trajectory_section as node
 from marv_robotics.trajectory import trajectory
 from marv_store import Store
 
-PERSIST = {'trajectory': trajectory,
-           'trajectory_section': node}
+PERSIST = {'trajectory': trajectory, 'trajectory_section': node}
 
 
 class TestCase(marv_node.testing.TestCase):

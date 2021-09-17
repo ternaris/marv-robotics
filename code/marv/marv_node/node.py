@@ -27,6 +27,7 @@ NODE_CACHE: Dict[Callable, Any] = {}
 
 
 class InputSpec(Keyed, namedtuple('InputSpec', ('name', 'value', 'foreach'))):
+
     @property
     def key(self):
         value = self.value.key if hasattr(self.value, 'key') else self.value
@@ -43,6 +44,7 @@ class InputSpec(Keyed, namedtuple('InputSpec', ('name', 'value', 'foreach'))):
 
 
 class StreamSpec:  # noqa: SIM119  pylint: disable=too-few-public-methods
+
     def __init__(self, node, name=None):  # pylint: disable=redefined-outer-name
         assert isinstance(node, Node)
         self.node = node
@@ -88,26 +90,45 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
         namespace, name = dnode.function.rsplit('.', 1)
         schema = find_obj(dnode.message_schema) if dnode.message_schema is not None else None
         inputs = dnode.inputs
-        specs = OrderedDict((
-            (name, InputSpec(name=name,
-                             value=(value if not isinstance(value, dag.Stream) else
-                                    StreamSpec(node=Node.from_dag_node(value.node),
-                                               name=value.name)),
-                             foreach=name == dnode.foreach))
-            for name, value in ((name, getattr(inputs, name)) for name in inputs.__fields__.keys())  # pylint: disable=superfluous-parens
-        ))
-        NODE_CACHE[dnode] = cls(func,
-                                schema=schema,
-                                version=dnode.version,
-                                name=name,
-                                namespace=namespace,
-                                specs=specs,
-                                group=dnode.group,
-                                dag_node=dnode)
+        specs = OrderedDict(
+            (
+                (
+                    name,
+                    InputSpec(
+                        name=name,
+                        value=(
+                            value if not isinstance(value, dag.Stream) else
+                            StreamSpec(node=Node.from_dag_node(value.node), name=value.name)
+                        ),
+                        foreach=name == dnode.foreach,
+                    ),
+                ) for name, value in
+                ((name, getattr(inputs, name)) for name in inputs.__fields__.keys())  # pylint: disable=superfluous-parens
+            ),
+        )
+        NODE_CACHE[dnode] = cls(
+            func,
+            schema=schema,
+            version=dnode.version,
+            name=name,
+            namespace=namespace,
+            specs=specs,
+            group=dnode.group,
+            dag_node=dnode,
+        )
         return NODE_CACHE[dnode]
 
-    def __init__(self, func, schema=None, version=None,
-                 name=None, namespace=None, specs=None, group=None, dag_node=None):
+    def __init__(
+        self,
+        func,
+        schema=None,
+        version=None,
+        name=None,
+        namespace=None,
+        specs=None,
+        group=None,
+        dag_node=None,
+    ):
         # pylint: disable=too-many-arguments
         # TODO: assert no default values on func, or consider default
         # values (instead of) marv.input() declarations
@@ -121,14 +142,11 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
         self.schema = schema
         self.specs = specs or {}
         assert group in (None, False, True, 'ondemand'), group
-        self.group = (group if group is not None else
-                      any(x.foreach for x in self.specs.values()))
+        self.group = (group if group is not None else any(x.foreach for x in self.specs.values()))
         # TODO: StreamSpec, seriously?
-        self.deps = {x.value.node for x in self.specs.values()
-                     if isinstance(x.value, StreamSpec)}
+        self.deps = {x.value.node for x in self.specs.values() if isinstance(x.value, StreamSpec)}
         self.alldeps = self.deps.copy()
-        self.alldeps.update(x for dep in self.deps
-                            for x in dep.alldeps)
+        self.alldeps.update(x for dep in self.deps for x in dep.alldeps)
 
         self.consumers = set()
         for dep in self.deps:
@@ -161,8 +179,11 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
             for spec in self.specs.values():
                 assert not isinstance(spec.value, Node), (self, spec.value)
                 if isinstance(spec.value, StreamSpec):
-                    value = yield io.GetStream(setid=None, node=spec.value.node,
-                                               name=spec.value.name or 'default')
+                    value = yield io.GetStream(
+                        setid=None,
+                        node=spec.value.node,
+                        name=spec.value.name or 'default',
+                    )
                     target = foreach_stream if spec.foreach else common
                 else:
                     value = spec.value
@@ -203,9 +224,10 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
             if inputs is None:
                 inputs = dict(common)
             qout, qin = asyncio.Queue(1), asyncio.Queue(1)
-            task = asyncio.create_task(self.execnode(key_abbrev, inputs, qin=qout, qout=qin,
-                                                     site=site),
-                                       name=key_abbrev)
+            task = asyncio.create_task(
+                self.execnode(key_abbrev, inputs, qin=qout, qout=qin, site=site),
+                name=key_abbrev,
+            )
             while True:
                 request = await qin.get()
                 if request is None:

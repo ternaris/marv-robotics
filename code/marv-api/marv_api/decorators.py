@@ -66,6 +66,7 @@ def input(name, default=NOTSET, foreach=None, type=None):
         inputs = func.__dict__.setdefault('__marv_inputs__', {})
         exclusive_setitem(inputs, name, (type, field), InputNameCollisionError)
         return func
+
     return deco
 
 
@@ -113,9 +114,13 @@ def node(schema=None, group=None, version=None):
         missing = inputs.keys() ^ argspec.args
         unsupported = {
             x for x in (
-                'varargs', 'varkw', 'defaults', 'kwonlyargs', 'kwonlydefaults', 'annotations',
-            )
-            if getattr(argspec, x)
+                'varargs',
+                'varkw',
+                'defaults',
+                'kwonlyargs',
+                'kwonlydefaults',
+                'annotations',
+            ) if getattr(argspec, x)
         }
         if missing:
             raise TypeError(f'Missing input declarations: {missing}')
@@ -124,14 +129,17 @@ def node(schema=None, group=None, version=None):
 
         func.__marv_inputs__ = Inputs.subclass(func.__module__, **inputs)
         func.__marv_inputs__.__qualname__ = f'{func.__qualname__}.__marv_inputs__'
-        func.__marv_node__ = Node(function=f'{func.__module__}.{func.__qualname__}',
-                                  inputs=func.__marv_inputs__(),
-                                  message_schema=schema,
-                                  group=group,
-                                  version=version,
-                                  foreach=foreach)
+        func.__marv_node__ = Node(
+            function=f'{func.__module__}.{func.__qualname__}',
+            inputs=func.__marv_inputs__(),
+            message_schema=schema,
+            group=group,
+            version=version,
+            foreach=foreach,
+        )
         func.clone = func.__marv_node__.clone
         return func
+
     return deco
 
 

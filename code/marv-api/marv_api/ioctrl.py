@@ -113,8 +113,10 @@ def push(msg):
         except KjException:
             from pprint import pformat  # pylint: disable=import-outside-toplevel
             _node = schema.schema.node
-            err(f'Schema violation for {_node.displayName} with data:\n'
-                f'{pformat(msg)}\nschema: {_node.displayName}')
+            err(
+                f'Schema violation for {_node.displayName} with data:\n'
+                f'{pformat(msg)}\nschema: {_node.displayName}',
+            )
             raise
     return Push(msg)
 

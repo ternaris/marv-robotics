@@ -200,18 +200,16 @@ class Driver(Keyed, AGenWrapperMixin, LoggerMixin):  # pylint: disable=too-many-
             if isinstance(request, Fork):
                 parent_handle = self.stream.handle
                 parent = self.streams[parent_handle]
-                stream = parent.create_stream(name=request.name,
-                                              group=request.group)
+                stream = parent.create_stream(name=request.name, group=request.group)
                 fork = type(self)(stream, inputs=request.inputs)
                 if not self.stream.cache:
                     yield self.stream.handle.msg(self.stream.handle)
                 yield fork
-                send = None   # TODO: What should we send back?
+                send = None  # TODO: What should we send back?
                 continue
 
             if isinstance(request, GetStream):
-                handle = Handle(request.setid or self.setid,
-                                request.node, request.name)
+                handle = Handle(request.setid or self.setid, request.node, request.name)
                 msg = yield MsgRequest(handle, -1, self)
                 send = msg.data
                 assert send == handle, (send, handle)

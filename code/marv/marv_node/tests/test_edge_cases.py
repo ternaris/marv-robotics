@@ -63,8 +63,14 @@ async def test_foreach_cascade():
     nodes = [images_section]
     streams = await run_nodes(DATASET, nodes)
     assert streams == [
-        [{'galleries': [
-            {'images': [1, 2, 3, 4, 5]},
-            {'images': [11, 12, 13, 14, 15]},
-        ]}],
+        [{
+            'galleries': [
+                {
+                    'images': [1, 2, 3, 4, 5],
+                },
+                {
+                    'images': [11, 12, 13, 14, 15],
+                },
+            ],
+        }],
     ]

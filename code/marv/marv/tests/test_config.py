@@ -89,9 +89,7 @@ def test_config():
     colcfg = cfg.collections['foo']
     assert colcfg.sitedir == sitedir
     assert colcfg.scanner == 'marv_robotics.bag:scan'
-    assert colcfg.scanroots == (sitedir.parent / 'foo',
-                                sitedir / 'bar',
-                                Path('/absolute'))
+    assert colcfg.scanroots == (sitedir.parent / 'foo', sitedir / 'bar', Path('/absolute'))
 
 
 def test_marv_collections():
@@ -134,5 +132,6 @@ def test_validators():
         'bar': ['bar', 'bar1', 'bar2'],
     }
     # pylint: enable=no-value-for-parameter
+
 
 # TODO: mismatch collections = and [collections]

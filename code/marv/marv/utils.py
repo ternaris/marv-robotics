@@ -58,7 +58,9 @@ def parse_filesize(string):
 
 
 def parse_datetime(string):
+
     class TZInfo(tzinfo_base):
+
         def __init__(self, offset=None):
             self.offset = offset
 
@@ -76,17 +78,17 @@ def parse_datetime(string):
             offset = timedelta(hours=int(hours), minutes=int(minutes))
             return offset if self.offset[0] == '+' else -offset
 
-    groups = re.match(r'^(\d\d\d\d)-(\d\d)-(\d\d)T'
-                      r'(\d\d):(\d\d):(\d\d)((?:[+-]\d\d:\d\d)|Z)$', string)\
-               .groups()
+    groups = re.match(
+        r'^(\d\d\d\d)-(\d\d)-(\d\d)T'
+        r'(\d\d):(\d\d):(\d\d)((?:[+-]\d\d:\d\d)|Z)$',
+        string,
+    ).groups()
     tzinfo = TZInfo(groups[-1])
     return datetime(*(int(x) for x in groups[:-1]), tzinfo=tzinfo)
 
 
 def parse_timedelta(delta):
-    match = re.match(r'^\s*(?:(\d+)\s*h)?'
-                     r'\s*(?:(\d+)\s*m)?'
-                     r'\s*(?:(\d+)\s*s?)?\s*$', delta)
+    match = re.match(r'^\s*(?:(\d+)\s*h)?' r'\s*(?:(\d+)\s*m)?' r'\s*(?:(\d+)\s*s?)?\s*$', delta)
     h, m, s = match.groups() if match else (None, None, None)  # pylint: disable=invalid-name
     return (int(h or 0) * 3600 + int(m or 0) * 60 + int(s or 0)) * 1000
 
@@ -106,6 +108,7 @@ def profile(func, sort='cumtime'):
         stats = pstats.Stats(_profile).sort_stats(sort)
         stats.print_stats()
         return result  # noqa: R504
+
     return profiled
 
 

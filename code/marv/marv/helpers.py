@@ -13,7 +13,5 @@ def download_link(file, dataset):
 def file_status(file):
     state = []
     if file and file.missing:
-        state.append({'icon': 'hdd',
-                      'title': 'This file is missing',
-                      'classes': 'text-danger'})
+        state.append({'icon': 'hdd', 'title': 'This file is missing', 'classes': 'text-danger'})
     return state

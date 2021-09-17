@@ -24,6 +24,7 @@ def encode_setid(uint128):
 
 
 class SetID(int):
+
     def __new__(cls, value, hi=None):
         if hi is not None:
             value = (hi << 64) + value

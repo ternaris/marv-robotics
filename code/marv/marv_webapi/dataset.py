@@ -42,11 +42,18 @@ async def file_list(request):
 async def _send_detail_json(request, setid, setdir):
     site = request.app['site']
     try:
-        sets = await site.db.get_datasets_by_setids((setid,), user=request['username'],
-                                                    action='read',
-                                                    prefetch=('collections', 'comments', 'tags'))
-        acl = await site.db.get_acl('dataset', sets[0].id, request['username'],
-                                    get_local_granted(request))
+        sets = await site.db.get_datasets_by_setids(
+            (setid,),
+            user=request['username'],
+            action='read',
+            prefetch=('collections', 'comments', 'tags'),
+        )
+        acl = await site.db.get_acl(
+            'dataset',
+            sets[0].id,
+            request['username'],
+            get_local_granted(request),
+        )
     except DBPermissionError:
         raise HTTPPermissionError(request)
 
@@ -57,17 +64,24 @@ async def _send_detail_json(request, setid, setdir):
         raise web.HTTPNotFound()
 
     dataset = sets[0]  # pylint: disable=redefined-outer-name
-    detail.update({
-        'acl': acl,
-        'collection': dataset.collections[0].name,
-        'id': dataset.id,
-        'setid': str(dataset.setid),
-        'comments': [{'author': x.author, 'text': x.text, 'timeAdded': x.time_added}
-                     for x in sorted(dataset.comments, key=lambda x: x.time_added)],
-        'tags': [x.value for x in sorted(dataset.tags, key=lambda x: x.value)],
-        'all_known_tags':
-            await site.db.get_all_known_tags_for_collection(dataset.collections[0].name),
-    })
+    detail.update(
+        {
+            'acl': acl,
+            'collection': dataset.collections[0].name,
+            'id': dataset.id,
+            'setid': str(dataset.setid),
+            'comments': [
+                {
+                    'author': x.author,
+                    'text': x.text,
+                    'timeAdded': x.time_added,
+                } for x in sorted(dataset.comments, key=lambda x: x.time_added)
+            ],
+            'tags': [x.value for x in sorted(dataset.tags, key=lambda x: x.value)],
+            'all_known_tags': await
+            site.db.get_all_known_tags_for_collection(dataset.collections[0].name),
+        },
+    )
 
     return web.json_response(detail, headers={'Cache-Control': 'no-cache'})
 
@@ -86,9 +100,12 @@ async def _get_filepath(request, setid, setdir, path):
 
     else:
         try:
-            await request.app['site'].db.get_datasets_by_setids([setid], [],
-                                                                user=request['username'],
-                                                                action='read')
+            await request.app['site'].db.get_datasets_by_setids(
+                [setid],
+                [],
+                user=request['username'],
+                action='read',
+            )
         except DBPermissionError:
             raise HTTPPermissionError(request)
         path = safejoin(setdir, path)
@@ -99,8 +116,11 @@ async def _get_filepath(request, setid, setdir, path):
     return path
 
 
-@api.endpoint('/dataset/{setid:[^/]+}{_:/?}{path:((?<=/).*)?}', methods=['GET'],  # noqa: FS003
-              allow_anon=True)
+@api.endpoint(
+    '/dataset/{setid:[^/]+}{_:/?}{path:((?<=/).*)?}',  # noqa: FS003
+    methods=['GET'],
+    allow_anon=True,
+)
 async def detail(request):
     setid = request.match_info['setid']
     path = request.match_info['path'] or 'detail.json'
@@ -116,5 +136,8 @@ async def detail(request):
 
     path = await _get_filepath(request, setid, setdir, path)
 
-    return sendfile(path, request.path.split('/marv/api/dataset/')[0],
-                    request.app['site'].config.marv.reverse_proxy)
+    return sendfile(
+        path,
+        request.path.split('/marv/api/dataset/')[0],
+        request.app['site'].config.marv.reverse_proxy,
+    )

@@ -9,6 +9,7 @@ from ..testing import make_dataset, marv, run_nodes
 
 
 class Falsish:
+
     def __bool__(self):
         return False
 
@@ -23,6 +24,7 @@ FALSISH = Falsish()
 
 
 class DontBoolMe:
+
     def __bool__(self):
         raise Exception
 

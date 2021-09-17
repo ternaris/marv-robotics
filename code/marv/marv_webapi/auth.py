@@ -24,6 +24,8 @@ async def auth_post(request):
     if not await request.app['site'].db.authenticate(username, password):
         raise web.HTTPUnprocessableEntity
 
-    return web.json_response({
-        'access_token': generate_token(username, request.app['config']['SECRET_KEY']),
-    })
+    return web.json_response(
+        {
+            'access_token': generate_token(username, request.app['config']['SECRET_KEY']),
+        },
+    )

@@ -79,8 +79,10 @@ def fixup_widget(dct):  # noqa: C901
         transform = data['transform']
         assert len(transform) == 16, transform
     elif which == 'table':
-        formatter = [FORMATTER_MAP[col['formatter'] + ('[]' if col['list'] else '')]
-                     for col in data['columns']]
+        formatter = [
+            FORMATTER_MAP[col['formatter'] + ('[]' if col['list'] else '')]
+            for col in data['columns']
+        ]
         for row in data['rows']:
             row['values'] = values = []
             for idx, cell in enumerate(row['cells']):
@@ -160,5 +162,7 @@ def fixup_geometry(geometry):
 
 
 def ccw(points):
-    return sum((x2 + x1) / 2 * (y2 - y1) for (x1, y1), (x2, y2) in
-               (points[i:i + 2] for i in range(len(points) - 1))) > 0
+    return sum(
+        (x2 + x1) / 2 * (y2 - y1)
+        for (x1, y1), (x2, y2) in (points[i:i + 2] for i in range(len(points) - 1))
+    ) > 0

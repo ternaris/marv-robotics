@@ -105,8 +105,15 @@ def generate_image(format):
     # set remaining channels to 0, tests use this source value to check encoding conversions
     val = val if channels == 1 else numpy.array([val] + [0] * (channels - 1))
 
-    return Image(header=None, height=height, width=width, encoding=format, is_bigendian=False,
-                 step=step, data=data), bits, val
+    return Image(
+        header=None,
+        height=height,
+        width=width,
+        encoding=format,
+        is_bigendian=False,
+        step=step,
+        data=data,
+    ), bits, val
 
 
 @pytest.mark.parametrize('format', FORMATS)
@@ -203,18 +210,30 @@ def test_convert_bgr8(format):  # noqa: C901
 
 
 def test_compressed_png():
-    image = CompressedImage(None, 'png', b64decode("""
-        iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9
-        awAAAABJRU5ErkJggg==
-    """))
+    image = CompressedImage(
+        None,
+        'png',
+        b64decode(
+            """
+            iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9
+            awAAAABJRU5ErkJggg==
+            """,
+        ),
+    )
     img = compressed_imgmsg_to_cv2(image, 'bgr8')
     numpy.testing.assert_array_equal(img, [[[0, 255, 0]]])
 
 
 def test_compressed_jpg():
-    image = CompressedImage(None, 'jpeg', b64decode("""
-        /9j/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8Q
-        EBEQCgwSExIQEw8QEBD/yQALCAABAAEBAREA/8wABgAQEAX/2gAIAQEAAD8A0s8g/9k=
-    """))
+    image = CompressedImage(
+        None,
+        'jpeg',
+        b64decode(
+            """
+            /9j/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8Q
+            EBEQCgwSExIQEw8QEBD/yQALCAABAAEBAREA/8wABgAQEAX/2gAIAQEAAD8A0s8g/9k=
+            """,
+        ),
+    )
     img = compressed_imgmsg_to_cv2(image, 'bgr8')
     numpy.testing.assert_array_equal(img, [[190]])

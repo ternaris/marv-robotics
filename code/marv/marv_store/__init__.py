@@ -25,6 +25,7 @@ class DirectoryAlreadyExistsError(Exception):
 
 
 class Store(Mapping, LoggerMixin):
+
     def __init__(self, path, nodes):
         self.path = path
         self.pending = {}
@@ -121,10 +122,12 @@ class Store(Mapping, LoggerMixin):
         return stream
 
     def _streaminfo(self, stream):
-        return {'name': stream.name,
-                'header': stream.handle.header,
-                'version': stream.handle.node.version,
-                'streams': {x.name: self._streaminfo(x) for x in (stream.streams or {}).values()}}
+        return {
+            'name': stream.name,
+            'header': stream.handle.header,
+            'version': stream.handle.node.version,
+            'streams': {x.name: self._streaminfo(x) for x in (stream.streams or {}).values()},
+        }
 
     def load(self, setdir, node=None, nodename=None, default=NOTSET):
         assert bool(node) != bool(nodename)

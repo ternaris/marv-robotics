@@ -37,12 +37,19 @@ class Format(enum.IntEnum):
 
 CONVERSIONS = {
     key: getattr(cv2, f'COLOR_{n1}2{n2}{({"YUV": "_Y422"}).get(n1, "")}', None)
-    for key in itertools.product(*(2 * (list(Format)[1:], )))
+    for key in itertools.product(*(2 * (list(Format)[1:],)))
     if (n1 := key[0].name) == (n2 := key[1].name) or hasattr(cv2, f'COLOR_{n1}2{n2}')
 }
 
-DEPTHMAP = {'8U': 'uint8', '8S': 'int8', '16U': 'uint16', '16S': 'int16',
-            '32S': 'int32', '32F': 'float32', '64F': 'float64'}
+DEPTHMAP = {
+    '8U': 'uint8',
+    '8S': 'int8',
+    '16U': 'uint16',
+    '16S': 'int16',
+    '32S': 'int32',
+    '32F': 'float32',
+    '64F': 'float64',
+}
 
 ENCODINGMAP = {
     'mono8': (8, Format.GRAY, 'uint8', 1),
@@ -107,7 +114,7 @@ def convert_color(src, src_encoding, dst_encoding):
         if src_depth == 8 and dst_depth == 16:
             return src.astype(dst_typestr, copy=False) * 65535. / 255.
         if src_depth == 16 and dst_depth == 8:
-            return(src * 255. / 65535.).astype(dst_typestr, copy=False)
+            return (src * 255. / 65535.).astype(dst_typestr, copy=False)
         return src.astype(dst_typestr, copy=False)
     return src
 

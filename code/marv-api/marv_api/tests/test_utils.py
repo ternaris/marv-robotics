@@ -16,6 +16,7 @@ def test_notset():
 
 
 def test_popattr():
+
     class Foo:
         a = 1
         bb = 2

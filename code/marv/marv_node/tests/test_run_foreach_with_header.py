@@ -50,7 +50,13 @@ async def test():
         await run_nodes(DATASET, [consumer])
 
     assert [x.msg for x in log.records if x.msg] == [
-        ('0', {'foo': 1}),
-        {'a': 1},
-        {'a': 2},
+        ('0', {
+            'foo': 1,
+        }),
+        {
+            'a': 1,
+        },
+        {
+            'a': 2,
+        },
     ]

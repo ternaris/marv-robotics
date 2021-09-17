@@ -84,11 +84,9 @@ def popen(*args, env=None, **kw):
 def sanitize_env(env):
     ld_library_path = env.get('LD_LIBRARY_PATH')
     if ld_library_path:
-        clean_path = ':'.join([
-            x
-            for x in ld_library_path.split(':')
-            if not x.startswith('/tmp/_MEI')
-        ])
+        clean_path = ':'.join(
+            [x for x in ld_library_path.split(':') if not x.startswith('/tmp/_MEI')],
+        )
         if clean_path:
             env['LD_LIBRARY_PATH'] = clean_path
         else:

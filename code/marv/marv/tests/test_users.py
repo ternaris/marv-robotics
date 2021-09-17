@@ -15,17 +15,30 @@ async def test_user(site):
     with pytest.raises(ValueError, match='exists already'):
         await site.db.user_add('marv', 'test', 'marv', '')
 
-    await site.db.user_add('admin', 'admin_pw', 'marv', '',
-                           given_name='John', family_name='Doe',
-                           email='john@doe.com',
-                           time_created=10, time_updated=10)
+    await site.db.user_add(
+        'admin',
+        'admin_pw',
+        'marv',
+        '',
+        given_name='John',
+        family_name='Doe',
+        email='john@doe.com',
+        time_created=10,
+        time_updated=10,
+    )
 
-    await site.db.user_add('admin2',
-                           '$2b$12$3LFRuJWVGMsOyaOHAVNOUu0IRM/VCehCuOiRRA/7qc4ZlxUo.NcuS',
-                           'marv', '',
-                           given_name='John', family_name='Doe',
-                           email='john@doe.com',
-                           time_created=10, time_updated=10, _restore=True)
+    await site.db.user_add(
+        'admin2',
+        '$2b$12$3LFRuJWVGMsOyaOHAVNOUu0IRM/VCehCuOiRRA/7qc4ZlxUo.NcuS',
+        'marv',
+        '',
+        given_name='John',
+        family_name='Doe',
+        email='john@doe.com',
+        time_created=10,
+        time_updated=10,
+        _restore=True,
+    )
 
     assert await site.db.authenticate('marv', 'test')
     assert not await site.db.authenticate('marv', 'wrong pw')

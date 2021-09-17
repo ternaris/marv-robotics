@@ -26,13 +26,9 @@ async def destroy_site(aioapp):
 
 
 class App():
-    STARTUP_FNS = (
-        site_load_for_web,
-    )
+    STARTUP_FNS = (site_load_for_web,)
 
-    SHUTDOWN_FNS = (
-        destroy_site,
-    )
+    SHUTDOWN_FNS = (destroy_site,)
 
     CACHE = {'Cache-Control': 'max-age=604800'}
     NOCACHE = {'Cache-Control': 'no-cache'}
@@ -91,8 +87,11 @@ class App():
                 raise web.HTTPNotFound
             return web.FileResponse(fullpath, headers=self.NOCACHE)
 
-        @self.api.endpoint(r'/docs{_:/?}{path:((?<=/).*)?}', methods=['GET'],  # noqa: FS003
-                           allow_anon=True)
+        @self.api.endpoint(
+            r'/docs{_:/?}{path:((?<=/).*)?}',  # noqa: FS003
+            methods=['GET'],
+            allow_anon=True,
+        )
         async def docs(request):  # pylint: disable=unused-variable
             path = request.match_info['path'] or 'index.html'
             return web.FileResponse(safejoin(DOCS, path), headers={'Cache-Control': 'no-cache'})
@@ -101,17 +100,21 @@ class App():
         async def assets(request):  # pylint: disable=unused-variable
             path = request.match_info['path'] or 'index.html'
             if path == 'index.html':
-                return web.Response(text=self.index_html, headers={
-                    'Content-Type': 'text/html',
-                    **self.NOCACHE,
-                })
+                return web.Response(
+                    text=self.index_html,
+                    headers={
+                        'Content-Type': 'text/html',
+                        **self.NOCACHE,
+                    },
+                )
 
             fullpath = safejoin(staticdir, path)
             if not fullpath.is_file():
                 raise web.HTTPNotFound
 
-            headers = (self.CACHE if aggressive_caching and fullpath.suffix == '.svg' else
-                       self.NOCACHE)
+            headers = (
+                self.CACHE if aggressive_caching and fullpath.suffix == '.svg' else self.NOCACHE
+            )
             return web.FileResponse(fullpath, headers=headers)
 
         for ep in self.api.endpoints:

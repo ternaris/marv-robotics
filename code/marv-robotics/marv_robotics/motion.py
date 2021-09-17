@@ -1,6 +1,5 @@
 # Copyright 2019 - 2020  Ternaris, all rights reserved.
 # SPDX-License-Identifier: PROPRIETARY
-
 """Nodes processing motion data."""
 
 # pylint: disable=redefined-outer-name
@@ -42,8 +41,14 @@ def position_xyz(stream):
     while msg := (yield marv.pull(stream)):
         rosmsg = deserialize(msg.data)
         pos = rosmsg.pose.position
-        yield marv.push({'x': pos.x, 'y': pos.y, 'z': pos.z,
-                         'timestamp': get_timestamp(rosmsg, msg)})
+        yield marv.push(
+            {
+                'x': pos.x,
+                'y': pos.y,
+                'z': pos.z,
+                'timestamp': get_timestamp(rosmsg, msg),
+            },
+        )
 
 
 @marv.node()
@@ -68,8 +73,14 @@ def position_gps(stream):
     get_timestamp = make_get_timestamp(log)
     while msg := (yield marv.pull(stream)):
         rosmsg = deserialize(msg.data)
-        yield marv.push({'lat': rosmsg.latitude, 'lon': rosmsg.longitude, 'alt': rosmsg.altitude,
-                         'timestamp': get_timestamp(rosmsg, msg)})
+        yield marv.push(
+            {
+                'lat': rosmsg.latitude,
+                'lon': rosmsg.longitude,
+                'alt': rosmsg.altitude,
+                'timestamp': get_timestamp(rosmsg, msg),
+            },
+        )
 
 
 @marv.node()
@@ -107,9 +118,12 @@ def filter_pos(pos, pvar, qvar, rvar, keys):  # pylint: disable=too-many-argumen
 
     F = numpy.eye(6)
     x = numpy.array([
-        msg[keys[0]], 0.,
-        msg[keys[1]], 0.,
-        msg[keys[2]], 0.,
+        msg[keys[0]],
+        0.,
+        msg[keys[1]],
+        0.,
+        msg[keys[2]],
+        0.,
     ])
     P = numpy.eye(6) * pvar
     Q = numpy.eye(6)
@@ -151,8 +165,10 @@ def filter_pos(pos, pvar, qvar, rvar, keys):  # pylint: disable=too-many-argumen
 
 
 @marv.node(TimedFloat64, version=1)
-@marv.input('pos', filter_pos.clone(pos=position_xyz,
-                                    pvar=100., qvar=4., rvar=.1, keys=['x', 'y', 'z']))
+@marv.input(
+    'pos',
+    filter_pos.clone(pos=position_xyz, pvar=100., qvar=4., rvar=.1, keys=['x', 'y', 'z']),
+)
 # @marv.input('pos', position_xyz)  # use this input for unfiltered data
 def distance_xyz(pos):
     """Calculate distance from Cartesian positions.
@@ -182,9 +198,16 @@ def distance_xyz(pos):
 
 
 @marv.node(TimedFloat64, version=1)
-@marv.input('pos', filter_pos.clone(pos=position_gps,
-                                    pvar=100., qvar=1e-17, rvar=1e-18,
-                                    keys=['lat', 'lon', 'alt']))
+@marv.input(
+    'pos',
+    filter_pos.clone(
+        pos=position_gps,
+        pvar=100.,
+        qvar=1e-17,
+        rvar=1e-18,
+        keys=['lat', 'lon', 'alt'],
+    ),
+)
 # @marv.input('pos', position_gps)  # use this input for unfiltered data
 def distance_gps(pos):
     """Calculate distance from GPS positions.
@@ -213,7 +236,7 @@ def distance_gps(pos):
         lat_d = lat_p - lat
         lon_d = lon_p - lon
         alt_d = alt_p - alt
-        dis = sin(lat_d * 0.5) ** 2 + cos(lat) * cos(lat_p) * sin(lon_d * 0.5) ** 2
+        dis = sin(lat_d * 0.5)**2 + cos(lat) * cos(lat_p) * sin(lon_d * 0.5)**2
         dis = 2 * 6371008.8 * asin(sqrt(dis))
         if not math.isnan(alt_d):
             dis = sqrt(dis**2 + alt_d**2)  # euclidean approx taking altitude into account
@@ -392,13 +415,9 @@ def motion_section(easting_northing, distance, speed, acceleration):  # pylint: 
     yield marv.set_header()
 
     traces = {
-        name: empty_trace(name, 'scatter')
-        for name in ['en', 'distance', 'speed', 'acceleration']
+        name: empty_trace(name, 'scatter') for name in ['en', 'distance', 'speed', 'acceleration']
     }
-    plots = {
-        name: empty_plotly_widget(trace, name)
-        for name, trace in traces.items()
-    }
+    plots = {name: empty_plotly_widget(trace, name) for name, trace in traces.items()}
     # customize individual plots
     del plots['en']['layout']['xaxis']['type']
     plots['en']['layout']['xaxis']['title'] = 'filtered easting (m)'
@@ -415,7 +434,11 @@ def motion_section(easting_northing, distance, speed, acceleration):  # pylint: 
     distsum = 0
     while True:
         msg_en, msg_distance, msg_speed, msg_acceleration = yield marv.pull_all(
-            easting_northing, distance, speed, acceleration)
+            easting_northing,
+            distance,
+            speed,
+            acceleration,
+        )
         if msg_en is None or msg_distance is None or msg_speed is None or msg_acceleration is None:
             break
 
@@ -450,9 +473,26 @@ def motion_section(easting_northing, distance, speed, acceleration):  # pylint: 
         Path(file_speed.path).write_text(json.dumps(plots['speed']))
         file_accel = yield marv.make_file('acceleration.json')
         Path(file_accel.path).write_text(json.dumps(plots['acceleration']))
-        yield marv.push({'title': 'Motion plots', 'widgets': [
-            {'title': '', 'plotly': f'marv-partial:{file_en.relpath}'},
-            {'title': '', 'plotly': f'marv-partial:{file_dist.relpath}'},
-            {'title': '', 'plotly': f'marv-partial:{file_speed.relpath}'},
-            {'title': '', 'plotly': f'marv-partial:{file_accel.relpath}'},
-        ]})
+        yield marv.push(
+            {
+                'title': 'Motion plots',
+                'widgets': [
+                    {
+                        'title': '',
+                        'plotly': f'marv-partial:{file_en.relpath}',
+                    },
+                    {
+                        'title': '',
+                        'plotly': f'marv-partial:{file_dist.relpath}',
+                    },
+                    {
+                        'title': '',
+                        'plotly': f'marv-partial:{file_speed.relpath}',
+                    },
+                    {
+                        'title': '',
+                        'plotly': f'marv-partial:{file_accel.relpath}',
+                    },
+                ],
+            },
+        )

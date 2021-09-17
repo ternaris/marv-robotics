@@ -90,6 +90,7 @@ class GenWrapperMixin:
 
 
 class LoggerMixin:
+
     @property
     def logdebug(self):
         return self.log.debug
@@ -118,10 +119,10 @@ class LoggerMixin:
     def log(self):
         logkey = ('marv', type(self).__name__.lower())
         if hasattr(self, 'key'):
-            logkey += ((str(self.setid.abbrev),
-                        self.node.name,
-                        self.node.specs_hash[:10])
-                       + tuple(str(x) for x in self.key[2:]))
+            logkey += (
+                (str(self.setid.abbrev), self.node.name, self.node.specs_hash[:10]) +
+                tuple(str(x) for x in self.key[2:])
+            )
         return getLogger('.'.join(logkey))
 
 

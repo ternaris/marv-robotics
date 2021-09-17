@@ -40,7 +40,9 @@ def make_getattr(module, dct):
 
 def deprecated(version, msg=None, name=None):
     """Wrap function to trigger deprecated message upon call."""
+
     def deco(func):
+
         @functools.wraps(func)
         def wrapper(*args, **kw):
             _msg = (
@@ -49,5 +51,7 @@ def deprecated(version, msg=None, name=None):
             )
             warnings.warn(_msg, FutureWarning, stacklevel=2)
             return func(*args, **kw)
+
         return wrapper
+
     return deco

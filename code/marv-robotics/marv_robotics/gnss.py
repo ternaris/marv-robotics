@@ -73,13 +73,19 @@ def positions(stream):
         n = n - n_offset
         u = rosmsg.altitude - u_offset
 
-        positions.append([get_timestamp(rosmsg, msg) / 1e9,
-                          rosmsg.latitude,
-                          rosmsg.longitude,
-                          rosmsg.altitude,
-                          e, n, u,
-                          rosmsg.status.status,
-                          np.sqrt(rosmsg.position_covariance[0])])
+        positions.append(
+            [
+                get_timestamp(rosmsg, msg) / 1e9,
+                rosmsg.latitude,
+                rosmsg.longitude,
+                rosmsg.altitude,
+                e,
+                n,
+                u,
+                rosmsg.status.status,
+                np.sqrt(rosmsg.position_covariance[0]),
+            ],
+        )
     if erroneous:
         log = yield marv.get_logger()
         log.warning('skipped %d erroneous messages', erroneous)
@@ -103,8 +109,7 @@ def imus(stream):
             erroneous += 1
             continue
 
-        imus.append([get_timestamp(rosmsg, msg) / 1e9,
-                     yaw_angle(rosmsg.orientation)])
+        imus.append([get_timestamp(rosmsg, msg) / 1e9, yaw_angle(rosmsg.orientation)])
     if erroneous:
         log = yield marv.get_logger()
         log.warning('skipped %d erroneous messages', erroneous)
@@ -128,8 +133,7 @@ def navsatorients(stream):
             erroneous += 1
             continue
 
-        navsatorients.append([get_timestamp(rosmsg, msg) / 1e9,
-                              rosmsg.yaw])
+        navsatorients.append([get_timestamp(rosmsg, msg) / 1e9, rosmsg.yaw])
     if erroneous:
         log.warning('skipped %d erroneous messages', erroneous)
     if navsatorients:
@@ -203,8 +207,14 @@ def gnss_plots(gps, orientation):
     # precompute plot vars
     c = cm.prism(gps[:, 7] / 2)  # pylint: disable=no-member
 
-    ax1.scatter(gps[:, 4], gps[:, 5], c=c, edgecolor='none', s=3,
-                label='green: RTK\nyellow: DGPS\nred: Single')
+    ax1.scatter(
+        gps[:, 4],
+        gps[:, 5],
+        c=c,
+        edgecolor='none',
+        s=3,
+        label='green: RTK\nyellow: DGPS\nred: Single',
+    )
 
     xfmt = md.DateFormatter('%H:%M:%S')
     ax3.xaxis.set_major_formatter(xfmt)
@@ -214,8 +224,10 @@ def gnss_plots(gps, orientation):
     if orientation:
         ax2.xaxis.set_major_formatter(xfmt)
         orientation = np.array(orientation)
-        ax2.plot([datetime.fromtimestamp(x) for x in orientation[:, 0]],  # noqa: DTZ
-                 orientation[:, 1])
+        ax2.plot(
+            [datetime.fromtimestamp(x) for x in orientation[:, 0]],  # noqa: DTZ
+            orientation[:, 1],
+        )
 
     ax3.plot([datetime.fromtimestamp(x) for x in gps[:, 0]], gps[:, 4])  # noqa: DTZ
     ax4.plot([datetime.fromtimestamp(x) for x in gps[:, 0]], gps[:, 6])  # noqa: DTZ

@@ -35,13 +35,11 @@ scanroots = scanroot/bar
 
 
 def scan_foo(directory, subdirs, filenames):  # pylint: disable=unused-argument
-    return [(os.path.basename(x), [x]) for x in filenames
-            if x.endswith('.foo')]
+    return [(os.path.basename(x), [x]) for x in filenames if x.endswith('.foo')]
 
 
 def scan_bar(directory, subdirs, filenames):  # pylint: disable=unused-argument
-    return [(os.path.basename(x), [x]) for x in filenames
-            if x.endswith('.bar')]
+    return [(os.path.basename(x), [x]) for x in filenames if x.endswith('.bar')]
 
 
 COUNTER = count()
@@ -65,8 +63,9 @@ async def site(loop):  # pylint: disable=unused-argument
     yield site_
 
     async with scoped_session(site_.db) as connection:
-        tables = (await connection
-                  .execute_query('SELECT name FROM sqlite_master WHERE type="table"'))[1]
+        tables = (
+            await connection.execute_query('SELECT name FROM sqlite_master WHERE type="table"')
+        )[1]
         tables = (x['name'] for x in tables if x['name'].startswith('l_'))
         for table in sorted(tables, key=len, reverse=True):
             await connection.execute_query(f'DROP TABLE {table}')
@@ -109,9 +108,11 @@ async def test_flow_query_and_tag(site):  # pylint: disable=redefined-outer-name
     foo2 = generate_foo(site.scanroot_, 'foo2')
     bar1 = generate_bar(site.scanroot_, 'bar1')
     await site.scan()
-    assert [str(x) for x in await site.db.query()] == ['k5jgqruqhoyt5xsweq46tqnyem',
-                                                       'tv43di37ggabzui2m4dpwqgwxu',
-                                                       'vfqitpfhd46ru3jnhsw3gzu4xu']
+    assert [str(x) for x in await site.db.query()] == [
+        'k5jgqruqhoyt5xsweq46tqnyem',
+        'tv43di37ggabzui2m4dpwqgwxu',
+        'vfqitpfhd46ru3jnhsw3gzu4xu',
+    ]
 
     # generate more and rescan
     foo3 = generate_foo(site.scanroot_, 'foo3')

@@ -22,17 +22,18 @@ from tortoise.models import Model
 from . import model_fields as custom
 from .utils import underscore_to_camelCase
 
-STATUS = OrderedDict((
-    ('error', 'ERROR: One or more errors occurred while processing this dataset'),
-    ('missing', 'MISSING: One or more files of this dataset are missing'),
-    ('outdated', 'OUTDATED: There are outdated nodes for this dataset'),
-    ('pending', 'PENDING: There are pending node runs'),
-))
+STATUS = OrderedDict(
+    (
+        ('error', 'ERROR: One or more errors occurred while processing this dataset'),
+        ('missing', 'MISSING: One or more files of this dataset are missing'),
+        ('outdated', 'OUTDATED: There are outdated nodes for this dataset'),
+        ('pending', 'PENDING: There are pending node runs'),
+    ),
+)
 STATUS_ERROR = 1
 STATUS_MISSING = 2
 STATUS_OUTDATED = 4
 STATUS_PENDING = 8
-
 
 tortoise.logger.setLevel(logging.WARN)
 
@@ -54,6 +55,7 @@ if sqlite3.sqlite_version_info < (3, 23, 0):
 
 
 def make_status_property(bitmask, doc=None):
+
     def fget(obj):
         return obj.status & bitmask
 
@@ -172,7 +174,6 @@ __models__ = [
     User,
 ]
 
-
 ListingModel = namedtuple('ListingModel', 'Listing relations secondaries')
 ListingDescriptor = namedtuple('ListingDescriptor', 'table key through rel_id listing_id')
 
@@ -187,12 +188,16 @@ def make_listing_model(name, filter_specs):
         rel_model_name = underscore_to_camelCase(rel_name)
         assert '_' not in rel_model_name, rel_model_name
 
-        model = type(rel_model_name, (Model,), {
-            'Meta': type('Meta', (), {'table': rel_name}),
-            'id': IntField(pk=True),
-            'value': CharField(max_length=255, index=True, unique=True),
-            '__repr__': lambda self: f'<{type(self).__name__} {self.id} {self.value!r}>',
-        })
+        model = type(
+            rel_model_name,
+            (Model,),
+            {
+                'Meta': type('Meta', (), {'table': rel_name}),
+                'id': IntField(pk=True),
+                'value': CharField(max_length=255, index=True, unique=True),
+                '__repr__': lambda self: f'<{type(self).__name__} {self.id} {self.value!r}>',
+            },
+        )
 
         models.append(model)
         return ManyToManyField(f'models.{rel_model_name}', related_name='listing')
@@ -217,10 +222,12 @@ def make_listing_model(name, filter_specs):
         '__repr__': lambda self: f'<{type(self).__name__} {self.dataset_id}>',
     }
 
-    dct.update((fspec.name, coltype_factories[fspec.value_type](fspec.name))
-               for fspec in filter_specs.values()
-               if fspec.name not in ('row', 'f_comments', 'f_status', 'f_tags')
-               if not fspec.name.startswith('f_leaf_'))
+    dct.update(
+        (fspec.name, coltype_factories[fspec.value_type](fspec.name))
+        for fspec in filter_specs.values()
+        if fspec.name not in ('row', 'f_comments', 'f_status', 'f_tags')
+        if not fspec.name.startswith('f_leaf_')
+    )
 
     models.append(type(listing_model_name, (Model,), dct))
     return models
@@ -235,6 +242,7 @@ def make_table_descriptors(models):
         field = meta.fields_map[key]
         table = field.model_class.Meta.table
         result.append(
-            ListingDescriptor(table, key, field.through, field.forward_key, field.backward_key))
+            ListingDescriptor(table, key, field.through, field.forward_key, field.backward_key),
+        )
 
     return result

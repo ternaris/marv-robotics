@@ -25,6 +25,7 @@ Request.register(MakeFile)
 
 
 class Signal(Task):  # pylint: disable=too-few-public-methods
+
     def __repr__(self):
         return type(self).__name__.upper()
 

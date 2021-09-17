@@ -1,6 +1,5 @@
 # Copyright 2016 - 2021  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
-
 """Marv config parsing."""
 
 import os
@@ -44,10 +43,13 @@ def make_funcs(dataset, setdir, store):
         'join': lambda sep, *args: sep.join([x for x in args if x]),
         'len': lambda x: len(x) if x is not None else None,
         'leaf': lambda x: f'#LEAF.{x}#',
-        'link': (lambda href, title, target=None:
-                 {'href': href or '',
-                  'title': title or '',
-                  'target': '_blank' if target is None else target}),
+        'link': (
+            lambda href, title, target=None: {
+                'href': href or '',
+                'title': title or '',
+                'target': '_blank' if target is None else target,
+            }
+        ),
         'makelist': lambda *x: list(x),
         'max': lambda x: max(x) if x else None,
         'min': lambda x: min(x) if x else None,
@@ -65,8 +67,7 @@ def summary_rows(rows, ids, id=None, default=None):
     if not id:
         return rows
     idx = ids.index(id)
-    return [default if value is None else value
-            for value in (x['values'][idx] for x in rows)]
+    return [default if value is None else value for value in (x['values'][idx] for x in rows)]
 
 
 def calltree(functree, funcs):
@@ -199,6 +200,7 @@ def parse_function(string):
 
 
 class Model(BaseModel):
+
     class Config:
         allow_mutation = False
         extra = Extra.forbid
@@ -242,9 +244,9 @@ def splitlines(val):
 
 def splitlines_relto_site(val, values):
     if val is not None:
-        return [(values['sitedir'] / path).resolve()
-                for x in val.splitlines()
-                if (path := x.strip())]
+        return [
+            (values['sitedir'] / path).resolve() for x in val.splitlines() if (path := x.strip())
+        ]
     return []
 
 
@@ -298,9 +300,15 @@ class MarvConfig(Model):  # type: ignore
 
     _oauth_gitlab_groups = reapvalidator('oauth_gitlab_groups')(splitcommastrip)
     _resolve_path = reapvalidator('sitedir')(resolve_path)
-    _resolve_relto_site = reapvalidator('frontenddir', 'leavesdir', 'resourcedir',
-                                        'sessionkey_file', 'staticdir', 'storedir',
-                                        'venv')(resolve_relto_site)
+    _resolve_relto_site = reapvalidator(
+        'frontenddir',
+        'leavesdir',
+        'resourcedir',
+        'sessionkey_file',
+        'staticdir',
+        'storedir',
+        'venv',
+    )(resolve_relto_site)
     _split = reapvalidator('collections')(split)
     _splitlines_split = reapvalidator('upload_checkpoint_commands')(splitlines_split)
     _strip = reapvalidator('reverse_proxy')(strip)
@@ -317,7 +325,8 @@ class MarvConfig(Model):  # type: ignore
     def oauth_split(cls, val):  # noqa: N805
         if val is not None:
             return {
-                (fields := [x.strip() for x in line.split('|')])[0]: fields
+                (fields := [x.strip()
+                            for x in line.split('|')])[0]: fields
                 for x in val.splitlines()
                 if (line := x.strip())
             }
@@ -388,8 +397,14 @@ class CollectionConfig(Model):
 
     _parse_func = reapvalidator('detail_title')(parse_function)
     _strip = reapvalidator('scanner')(strip)
-    _splitlines = reapvalidator('detail_sections', 'detail_summary_widgets', 'filters',
-                                'listing_columns', 'listing_summary', 'nodes')(splitlines)
+    _splitlines = reapvalidator(
+        'detail_sections',
+        'detail_summary_widgets',
+        'filters',
+        'listing_columns',
+        'listing_summary',
+        'nodes',
+    )(splitlines)
     _splitlines_relto_site = reapvalidator('scanroots')(splitlines_relto_site)
     _splitpipe = reapvalidator('listing_sort')(splitpipe)
 

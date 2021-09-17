@@ -26,6 +26,7 @@ from .bag_capnp import Bagmeta, Message  # pylint: disable=import-error
 
 
 class Baginfo(namedtuple('Baginfo', 'filename basename prefix timestamp idx')):
+
     @classmethod
     def parse(cls, filename):
         assert filename.endswith('.bag'), filename
@@ -83,8 +84,11 @@ def _scan_rosbag2(log, dirpath, dirnames, filenames):
         log.warning('Ignoring files not listed in metadata.yaml %s: %r', dirpath, sorted(extra))
 
     if missing := _setfiles - filenames:
-        log.error('Refusing to create rosbag2 dataset %s missing files: %r',
-                  dirpath, sorted(missing))
+        log.error(
+            'Refusing to create rosbag2 dataset %s missing files: %r',
+            dirpath,
+            sorted(missing),
+        )
         return None
 
     return DatasetInfo(dirpath.name, setfiles)
@@ -199,8 +203,10 @@ def scan(dirpath, dirnames, filenames):  # pylint: disable=unused-argument
     if dataset:
         return [dataset]
 
-    groups = groupby([Baginfo.parse(x) for x in reversed(filenames) if x.endswith('.bag')],
-                     lambda x: x.prefix)
+    groups = groupby(
+        [Baginfo.parse(x) for x in reversed(filenames) if x.endswith('.bag')],
+        lambda x: x.prefix,
+    )
     bags = []
     datasets = []
     for prefix, group in groups:
@@ -242,8 +248,7 @@ def _read_bagmeta2(path):
                 'datatype': x['topic_metadata']['type'],
                 'msg_count': x['message_count'],
                 'serialization_format': x['topic_metadata']['serialization_format'],
-            }
-            for x in reader.metadata['topics_with_message_count']
+            } for x in reader.metadata['topics_with_message_count']
         ],
     }
 
@@ -254,11 +259,13 @@ def open_rosbag1(path):
         with rosbag1.Reader(path) as bag:
             yield bag
     except rosbag1.ReaderError:
-        raise ReaderError((
-            f'Unindexed bag file: {path}\n'
-            '  File was not copied in full or recording did not finish properly\n'
-            '  Use `rosbag reindex` to index what is there.'
-        )) from None
+        raise ReaderError(
+            (
+                f'Unindexed bag file: {path}\n'
+                '  File was not copied in full or recording did not finish properly\n'
+                '  Use `rosbag reindex` to index what is there.'
+            ),
+        ) from None
 
 
 @marv.node(Bagmeta)
@@ -301,24 +308,27 @@ def bagmeta(dataset):
             end_time = _end_time if _end_time > end_time else end_time
 
             _connections = [
-                {'topic': x.topic,
-                 'datatype': x.msgtype,
-                 'md5sum': x.md5sum,
-                 'msg_def': x.msgdef,
-                 'msg_count': len(x.indexes),
-                 'latching': bool(x.latching)}
-                for x in bag.connections.values()
+                {
+                    'topic': x.topic,
+                    'datatype': x.msgtype,
+                    'md5sum': x.md5sum,
+                    'msg_def': x.msgdef,
+                    'msg_count': len(x.indexes),
+                    'latching': bool(x.latching),
+                } for x in bag.connections.values()
             ]
 
             _start_time = _start_time if _start_time != sys.maxsize else 0
-            bags.append({
-                'start_time': _start_time,
-                'end_time': _end_time,
-                'duration': _end_time - _start_time,
-                'msg_count': sum(x['msg_count'] for x in _connections),
-                'connections': _connections,
-                'version': 200,
-            })
+            bags.append(
+                {
+                    'start_time': _start_time,
+                    'end_time': _end_time,
+                    'duration': _end_time - _start_time,
+                    'msg_count': sum(x['msg_count'] for x in _connections),
+                    'connections': _connections,
+                    'version': 200,
+                },
+            )
 
             for _con in _connections:
                 key = (_con['topic'], _con['datatype'], _con['md5sum'])
@@ -329,19 +339,23 @@ def bagmeta(dataset):
                 else:
                     connections[key] = _con.copy()
 
-    connections = sorted(connections.values(),
-                         key=lambda x: (x['topic'], x['datatype'], x['md5sum']))
+    connections = sorted(
+        connections.values(),
+        key=lambda x: (x['topic'], x['datatype'], x['md5sum']),
+    )
     start_time = start_time if start_time != sys.maxsize else 0
-    yield marv.push({
-        'start_time': start_time,
-        'end_time': end_time,
-        'duration': end_time - start_time,
-        'msg_count': sum(x['msg_count'] for x in bags),
-        'msg_types': sorted({x['datatype'] for x in connections}),
-        'topics': sorted({x['topic'] for x in connections}),
-        'connections': connections,
-        'bags': bags,
-    })
+    yield marv.push(
+        {
+            'start_time': start_time,
+            'end_time': end_time,
+            'duration': end_time - start_time,
+            'msg_count': sum(x['msg_count'] for x in bags),
+            'msg_types': sorted({x['datatype'] for x in connections}),
+            'topics': sorted({x['topic'] for x in connections}),
+            'connections': connections,
+            'bags': bags,
+        },
+    )
 
 
 def read_messages(paths, topics=None, start_time=None, end_time=None, wipe_typesys=False):
@@ -361,8 +375,10 @@ def read_messages(paths, topics=None, start_time=None, end_time=None, wipe_types
 
     with ExitStack() as stack:
         if wipe_typesys:
-            stack.callback(lambda: types.FIELDDEFS.clear() or types.FIELDDEFS.update(backup)
-                           or MSGDEFCACHE.clear())
+            stack.callback(
+                lambda:
+                (types.FIELDDEFS.clear() or types.FIELDDEFS.update(backup) or MSGDEFCACHE.clear()),
+            )
         bags = [stack.enter_context(open_rosbag1(path)) for path in paths]
         if wipe_typesys:
             typs = {}
@@ -375,8 +391,7 @@ def read_messages(paths, topics=None, start_time=None, end_time=None, wipe_types
                 connections=[x for x in bag.connections.values() if x.topic in topics],
                 start=start_time,
                 stop=end_time,
-            )
-            for bag in bags
+            ) for bag in bags
         ]
         prev_time = 0
         for connection, time, data in heapq.merge(*gens, key=lambda x: x[1]):
@@ -427,14 +442,16 @@ def raw_messages(dataset, bagmeta):  # noqa: C901  # pylint: disable=redefined-o
         # TODO: topic with more than one type is not supported
         con = next((x for x in connections if x.topic == topic), None)
         # TODO: start/end_time per topic?
-        return {'start_time': bagmeta.start_time,
-                'end_time': bagmeta.end_time,
-                'msg_count': con.msg_count if con else 0,
-                'msg_type': con.datatype if con else '',
-                'msg_type_def': con.msg_def if con else '',
-                'msg_type_md5sum': con.md5sum if con else '',
-                'rosbag2': reader is not None,
-                'topic': topic}
+        return {
+            'start_time': bagmeta.start_time,
+            'end_time': bagmeta.end_time,
+            'msg_count': con.msg_count if con else 0,
+            'msg_type': con.datatype if con else '',
+            'msg_type_def': con.msg_def if con else '',
+            'msg_type_md5sum': con.md5sum if con else '',
+            'rosbag2': reader is not None,
+            'topic': topic,
+        }
 
     deprecated_names = set()
     bytopic = defaultdict(list)
@@ -453,7 +470,8 @@ def raw_messages(dataset, bagmeta):  # noqa: C901  # pylint: disable=redefined-o
 
             # TODO: topic with more than one type is not supported
             topics.update(
-                con.topic for con in connections
+                con.topic
+                for con in connections
                 if reqtop in ('*', con.topic) and reqtype in ('*', con.datatype)
             )
         group = yield marv.create_group(name)

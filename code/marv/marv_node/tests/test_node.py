@@ -22,10 +22,13 @@ def b_orig(a):  # pylint: disable=unused-argument
 
 
 class TestCase(unittest.TestCase):
+
     def test_node_repr(self):  # pylint: disable=no-self-use
+
         @marv.node()
         def foo():
             yield
+
         foo()
         assert repr(Node.from_dag_node(foo)) == '<Node foo.fy4oo6zcym>'
 

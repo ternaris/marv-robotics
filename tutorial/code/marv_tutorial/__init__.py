@@ -205,20 +205,24 @@ def filesize_plot(filesizes):
     # create image widget referencing file
     widget_image = {
         'title': 'Filesizes (image)',
-        'image': {'src': plotfile.relpath},
+        'image': {
+            'src': plotfile.relpath,
+        },
     }
 
     # Let the user choose which widget to show with a dropdown
-    yield marv.push({
-        'title': 'Filesize plots',
-        'dropdown': {
-            'widgets': [
-                widget_plotly,
-                widget_mpld3,
-                widget_image,
-            ],
+    yield marv.push(
+        {
+            'title': 'Filesize plots',
+            'dropdown': {
+                'widgets': [
+                    widget_plotly,
+                    widget_mpld3,
+                    widget_image,
+                ],
+            },
         },
-    })
+    )
 
 
 @marv.node(Section)
@@ -233,8 +237,17 @@ def combined_section(title, images, filesizes, filesize_plot):
 
     # A table with two columns
     rows = []
-    columns = [{'title': 'Name', 'formatter': 'rellink', 'sortkey': 'title'},
-               {'title': 'Size', 'formatter': 'filesize'}]
+    columns = [
+        {
+            'title': 'Name',
+            'formatter': 'rellink',
+            'sortkey': 'title',
+        },
+        {
+            'title': 'Size',
+            'formatter': 'filesize',
+        },
+    ]
     table = {'table': {'columns': columns, 'rows': rows}}
 
     # pull images and filesizes synchronously
@@ -243,11 +256,21 @@ def combined_section(title, images, filesizes, filesize_plot):
         if img is None:
             break
         imgs.append({'src': img.relpath})
-        rows.append({'cells': [
-            {'link': {'href': img.relpath,
-                      'title': Path(img.relpath).name}},
-            {'uint64': filesize},
-        ]})
+        rows.append(
+            {
+                'cells': [
+                    {
+                        'link': {
+                            'href': img.relpath,
+                            'title': Path(img.relpath).name,
+                        },
+                    },
+                    {
+                        'uint64': filesize,
+                    },
+                ],
+            },
+        )
 
     # pull filesize_plot AFTER individual messages
     plot = yield marv.pull(filesize_plot)

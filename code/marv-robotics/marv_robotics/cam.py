@@ -25,7 +25,6 @@ try:
 except ImportError:
     cv2 = None
 
-
 IMAGE_MSG_TYPES = ','.join([
     '*:sensor_msgs/msg/Image',
     '*:sensor_msgs/msg/CompressedImage',
@@ -74,6 +73,7 @@ def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):  # noqa: N
 
             if not encoder:
                 dims = img.shape[:2]
+                # yapf: disable
                 ffargs = [
                     'ffmpeg',
                     '-f', 'rawvideo',
@@ -82,9 +82,13 @@ def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):  # noqa: N
                     '-framerate', str(framerate),
                     '-i', '-',
                     '-c:v', 'libvpx-vp9',
-                    '-keyint_min', '25', '-g', '25',
-                    '-tile-columns', '4', '-frame-parallel', '1',
-                    '-an', '-f', 'webm', '-dash', '1',
+                    '-keyint_min', '25',
+                    '-g', '25',
+                    '-tile-columns', '4',
+                    '-frame-parallel', '1',
+                    '-an',
+                    '-f', 'webm',
+                    '-dash', '1',
                     '-pix_fmt', 'yuv420p',
                     '-loglevel', 'error',
                     '-threads', '8',
@@ -92,6 +96,7 @@ def ffmpeg(stream, speed, convert_32FC1_scale, convert_32FC1_offset):  # noqa: N
                     '-y',
                     video.path,
                 ]
+                # yapf: enable
                 encoder = stack.enter_context(popen(ffargs, stdin=PIPE))
 
             if dims != img.shape[:2]:
@@ -149,8 +154,7 @@ def images(stream, image_width, max_frames, convert_32FC1_scale, convert_32FC1_o
             return
 
         height = int(round(image_width * img.shape[0] / img.shape[1]))
-        scaled_img = cv2.resize(img, (image_width, height),
-                                interpolation=cv2.INTER_AREA)
+        scaled_img = cv2.resize(img, (image_width, height), interpolation=cv2.INTER_AREA)
         name = name_template.format(idx)
         imgfile = yield marv.make_file(name)
         cv2.imwrite(imgfile.path, scaled_img, (cv2.IMWRITE_JPEG_QUALITY, 60))

@@ -1,6 +1,8 @@
 # Copyright 2016 - 2019  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+# pylint: disable=too-many-lines
+
 import asyncio
 import code
 import functools
@@ -71,9 +73,11 @@ def get_site_config():
     ctx = click.get_current_context()
     siteconf = ctx.obj
     if siteconf is None:
-        ctx.fail('Could not find config file: ./marv.conf or /etc/marv/marv.conf.\n'
-                 'Change working directory or specify explicitly:\n\n'
-                 '  marv --config /path/to/marv.conf\n')
+        ctx.fail(
+            'Could not find config file: ./marv.conf or /etc/marv/marv.conf.\n'
+            'Change working directory or specify explicitly:\n\n'
+            '  marv --config /path/to/marv.conf\n',
+        )
     return siteconf
 
 
@@ -87,9 +91,12 @@ async def create_site(init=None):
             raise
         err(f'{exc!r}\n\nDid you run marv init?\n', exit=1)
     except DBVersionError as exc:
-        err(f'{exc!r}\n\n'
+        err(
+            f'{exc!r}\n\n'
             'Existing database is not compatible with this version of MARV. '
-            'Check the migration instructions.', exit=1)
+            'Check the migration instructions.',
+            exit=1,
+        )
     except (ConfigError, SiteError) as exc:
         err(f'ERROR: {exc}', exit=1)
     try:
@@ -99,19 +106,23 @@ async def create_site(init=None):
 
 
 def click_async(func):
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         return asyncio.run(func(*args, **kwargs))
+
     return wrapper
 
 
 class NoSigintArbiter(Arbiter):
+
     def handle_int(self):
         signal.signal(signal.SIGINT, lambda *_: self.kill_workers(signal.SIGKILL))
         super().handle_term()
 
 
 class GunicornApplication(BaseApplication):  # pylint: disable=abstract-method
+
     def __init__(self, app_factory, bind, certfile, keyfile, *args, **kw):
         # pylint: disable=too-many-arguments
         self.app_factory = app_factory
@@ -178,6 +189,7 @@ def marvcli_develop_server(port, public):
     """
     middlewares = []
     if PDB:
+
         @web.middleware
         async def pdb_middleware(request, handler):
             try:
@@ -196,9 +208,7 @@ def marvcli_develop_server(port, public):
     loop = asyncio.get_event_loop()
     app = loop.run_until_complete(create_app(middlewares=middlewares))
     app['debug'] = True
-    web.run_app(app,
-                host=('0.0.0.0' if public else '127.0.0.1'),
-                port=port)
+    web.run_app(app, host=('0.0.0.0' if public else '127.0.0.1'), port=port)
 
 
 @marvcli.command('serve')
@@ -230,9 +240,12 @@ def marvcli_serve(host, port, certfile, keyfile, approot):
         except (sqlite3.OperationalError, DBNotInitializedError) as exc:
             err(f'{exc!r}\nDid you run marv init?', exit=4)
         except DBVersionError as exc:
-            err(f'{exc!r}\n'
+            err(
+                f'{exc!r}\n'
                 'Existing database is not compatible with this version of MARV. '
-                'Check the migration instructions.', exit=4)
+                'Check the migration instructions.',
+                exit=4,
+            )
         except (PermissionError, SiteError) as exc:
             err(f'ERROR: {exc}', exit=4)
         except Exception:  # pylint: disable=broad-except
@@ -252,7 +265,9 @@ def marvcli_serve(host, port, certfile, keyfile, approot):
     help='Delete tags',
 )
 @click.option(
-    '--confirm/--no-confirm', default=True, show_default=True,
+    '--confirm/--no-confirm',
+    default=True,
+    show_default=True,
     help='Ask for confirmation before deleting tags and comments',
 )
 @click.argument('datasets', nargs=-1, required=True)
@@ -267,10 +282,15 @@ async def marvcli_discard(datasets, tags, comments, confirm):
     Otherwise, selected data associated with the specified datasets is
     discarded right away.
     """
-    delete_related = list(filter(None, [
-        'comments' if comments else None,
-        'tags' if tags else None,
-    ]))
+    delete_related = list(
+        filter(
+            None,
+            [
+                'comments' if comments else None,
+                'tags' if tags else None,
+            ],
+        ),
+    )
     if delete_related and confirm:
         msg = ''.join(f'  - {x}\n' for x in delete_related)
         click.confirm(f'About to PERMANENTLY delete:\n{msg}Do you want to continue?', abort=True)
@@ -341,11 +361,15 @@ async def marvcli_init():
 
 @marvcli.command('query')
 @click.option(
-    '--list-tags', is_flag=True,
+    '--list-tags',
+    is_flag=True,
     help='List all tags',
 )
 @click.option(
-    '--col', '--collection', 'collections', multiple=True,
+    '--col',
+    '--collection',
+    'collections',
+    multiple=True,
     help='Limit to one or more collections or force listing of all with --collection=*',
 )
 @click.option(
@@ -353,29 +377,45 @@ async def marvcli_init():
     help='Dataset is discarded',
 )
 @click.option(
-    '--missing', is_flag=True,
+    '--missing',
+    is_flag=True,
     help='Datasets with missing files',
 )
 @click.option(
-    '--outdated', is_flag=True,
+    '--outdated',
+    is_flag=True,
     help='Datasets with outdated node output',
 )
 @click.option(
-    '--path', type=click.Path(resolve_path=True),
+    '--path',
+    type=click.Path(resolve_path=True),
     help='Dataset contains files whose path starts with PATH',
 )
 @click.option(
-    '--tagged', 'tags', multiple=True,
+    '--tagged',
+    'tags',
+    multiple=True,
     help='Match any given tag',
 )
 @click.option(
-    '-0', '--null', is_flag=True,
+    '-0',
+    '--null',
+    is_flag=True,
     help='Use null byte to separate output instead of newlines',
 )
 @click.pass_context
 @click_async
-async def marvcli_query(ctx, list_tags, collections, discarded,
-                        missing, outdated, path, tags, null):
+async def marvcli_query(
+    ctx,
+    list_tags,
+    collections,
+    discarded,
+    missing,
+    outdated,
+    path,
+    tags,
+    null,
+):
     """Query datasets.
 
     Use --col=* to list all datasets across all collections.
@@ -410,7 +450,9 @@ async def marvcli_query(ctx, list_tags, collections, discarded,
 
 @marvcli.command('run', short_help='Run nodes for DATASETS')
 @click.option(
-    '--node', 'selected_nodes', multiple=True,
+    '--node',
+    'selected_nodes',
+    multiple=True,
     help=(
         'Run individual nodes instead of all nodes used by detail and listing '
         'Use --list-nodes for a list of known nodes. Beyond that any node can be run '
@@ -418,23 +460,30 @@ async def marvcli_query(ctx, list_tags, collections, discarded,
     ),
 )
 @click.option(
-    '--list-nodes', is_flag=True,
+    '--list-nodes',
+    is_flag=True,
     help='List known nodes instead of running',
 )
 @click.option(
-    '--list-dependent', is_flag=True,
+    '--list-dependent',
+    is_flag=True,
     help='List nodes depending on selected nodes',
 )
 @click.option(
-    '--deps/--no-deps', default=True, show_default=True,
+    '--deps/--no-deps',
+    default=True,
+    show_default=True,
     help='Run dependencies of requested nodes',
 )
 @click.option(
-    '--exclude', 'excluded_nodes', multiple=True,
+    '--exclude',
+    'excluded_nodes',
+    multiple=True,
     help='Exclude individual nodes instead of running all nodes used by detail and listing',
 )
 @click.option(
-    '-f', '--force/--no-force',
+    '-f',
+    '--force/--no-force',
     help='Force run of nodes whose output is already available from store',
 )
 # TODO: force-deps is bad as it does not allow to resume
@@ -454,19 +503,26 @@ async def marvcli_query(ctx, list_tags, collections, discarded,
     help='In case of an exception keep going with remaining datasets',
 )
 @click.option(
-    '--detail/--no-detail', 'update_detail',
+    '--detail/--no-detail',
+    'update_detail',
     help='Update detail view from stored node output',
 )
 @click.option(
-    '--listing/--no-listing', 'update_listing',
+    '--listing/--no-listing',
+    'update_listing',
     help='Update listing view from stored node output',
 )
 @click.option(
-    '--cachesize', default=50, show_default=True,
+    '--cachesize',
+    default=50,
+    show_default=True,
     help='Number of messages to keep in memory for each stream',
 )
 @click.option(
-    '--col', '--collection', 'collections', multiple=True,
+    '--col',
+    '--collection',
+    'collections',
+    multiple=True,
     help='Run nodes for all datasets of selected collections, use "*" for all',
 )
 @click.argument('datasets', nargs=-1)
@@ -508,8 +564,10 @@ async def marvcli_run(  # noqa: C901
     async with create_site() as site:
         if '*' in collections:
             if selected_nodes:
-                collections = [k for k, v in site.collections.items()
-                               if set(v.nodes).issuperset(selected_nodes)]
+                collections = [
+                    k for k, v in site.collections.items()
+                    if set(v.nodes).issuperset(selected_nodes)
+                ]
                 if not collections:
                     ctx.fail('No collections have all selected nodes')
             else:
@@ -531,8 +589,10 @@ async def marvcli_run(  # noqa: C901
         if list_dependent:
             for col in (collections or sorted(site.collections.keys())):
                 click.echo(f'{col}:')
-                dependent = {x for name in selected_nodes
-                             for x in site.collections[col].nodes[name].dependent}
+                dependent = {
+                    x for name in selected_nodes
+                    for x in site.collections[col].nodes[name].dependent
+                }
                 for name in sorted(x.name for x in dependent):
                     click.echo(f'    {name}')
             return
@@ -553,14 +613,32 @@ async def marvcli_run(  # noqa: C901
 
         for setid in setids:
             if PDB:
-                await site.run(setid, selected_nodes, deps, force, keep,
-                               force_dependent, update_detail, update_listing,
-                               excluded_nodes, cachesize=cachesize)
+                await site.run(
+                    setid,
+                    selected_nodes,
+                    deps,
+                    force,
+                    keep,
+                    force_dependent,
+                    update_detail,
+                    update_listing,
+                    excluded_nodes,
+                    cachesize=cachesize,
+                )
             else:
                 try:
-                    await site.run(setid, selected_nodes, deps, force, keep,
-                                   force_dependent, update_detail, update_listing,
-                                   excluded_nodes, cachesize=cachesize)
+                    await site.run(
+                        setid,
+                        selected_nodes,
+                        deps,
+                        force,
+                        keep,
+                        force_dependent,
+                        update_detail,
+                        update_listing,
+                        excluded_nodes,
+                        cachesize=cachesize,
+                    )
                 except ConfigError as exc:
                     err(f'ERROR: {exc}', exit=1)
                 except DoesNotExist:
@@ -570,10 +648,13 @@ async def marvcli_run(  # noqa: C901
                 except RequestedMessageTooOldError as e:
                     _req = e.args[0]._requestor.node.name  # pylint: disable=no-member,protected-access
                     _handle = e.args[0].handle.node.name  # pylint: disable=no-member
-                    click.echo(f"""
+                    click.echo(
+                        f"""
     ERROR: {_req} pulled {_handle} message {e.args[1]} not being in memory anymore.
     See https://ternaris.com/marv-robotics/docs/patterns.html#reduce-separately
-    """, err=True)
+    """,
+                        err=True,
+                    )
                     ctx.abort()
                 except marv_node.run.Aborted:
                     ctx.abort()
@@ -583,12 +664,15 @@ async def marvcli_run(  # noqa: C901
                 except Exception as e:  # pylint: disable=broad-except
                     errors.append(setid)
                     if isinstance(e, DirectoryAlreadyExistsError):
-                        click.echo(f"""
+                        click.echo(
+                            f"""
     ERROR: Directory for node run already exists:
     {e.args[0]!r}
     In case no other node run is in progress, this is a bug which you are kindly
     asked to report, providing information regarding any previous, failed node runs.
-    """, err=True)
+    """,
+                            err=True,
+                        )
                         if not keep_going:
                             ctx.abort()
                     else:
@@ -618,8 +702,10 @@ async def marvcli_scan(dry_run):
 @click.option(
     '--strict',
     is_flag=True,
-    help=('By default tagging via CLI is idempotent; in strict mode it will fail if tags'
-          ' are repeatedly added or removed.'),
+    help=(
+        'By default tagging via CLI is idempotent; in strict mode it will fail if tags'
+        ' are repeatedly added or removed.'
+    ),
 )
 @click.argument('datasets', nargs=-1)
 @click.pass_context
@@ -635,8 +721,10 @@ async def marvcli_tag(ctx, add, remove, strict, datasets):
             await site.db.update_tags_by_setids(datasets, add, remove, idempotent=not strict)
         except DBPermissionError:
             if strict:
-                err('ERROR: --strict prevented add of existing or remove of non-existing tag(s).',
-                    exit=1)
+                err(
+                    'ERROR: --strict prevented add of existing or remove of non-existing tag(s).',
+                    exit=1,
+                )
             raise
 
 
@@ -670,12 +758,17 @@ async def marvcli_comment_list(datasets):
     async with create_site() as site:
         comments = await site.db.get_comments_by_setids(datasets)
         for comment in sorted(comments, key=lambda x: (x.dataset[0].setid, x.id)):
-            echo(comment.dataset[0].setid, comment.id,
-                 datetime.fromtimestamp(int(comment.time_added / 1000), tz=timezone.utc),
-                 comment.author, repr(comment.text))
+            echo(
+                comment.dataset[0].setid,
+                comment.id,
+                datetime.fromtimestamp(int(comment.time_added / 1000), tz=timezone.utc),
+                comment.author,
+                repr(comment.text),
+            )
 
 
-SHOW_TEMPLATE = Template("""
+SHOW_TEMPLATE = Template(
+    """
 {% for dataset in datasets %}
 - name: {{ dataset.name }}
   collection: {{ dataset.collection }}
@@ -687,7 +780,10 @@ SHOW_TEMPLATE = Template("""
   {% endfor %}
 
 {% endfor %}
-""".strip(), trim_blocks=True, lstrip_blocks=True)
+""".strip(),
+    trim_blocks=True,
+    lstrip_blocks=True,
+)
 
 
 @marvcli.command('show')
@@ -767,7 +863,10 @@ async def marvcli_user_list():
 
 @marvcli_user.command('pw')
 @click.option(
-    '--password', prompt=True, hide_input=True, confirmation_prompt=True,
+    '--password',
+    prompt=True,
+    hide_input=True,
+    confirmation_prompt=True,
     help='Password will be prompted',
 )
 @click.argument('username')
@@ -878,9 +977,11 @@ def ensure_python(siteconf, sitepackages):
     pyexe = Path(code.__file__).parent / 'python'
     if not pyexe.exists():
         with pyexe.open('w') as f:
-            f.write(f'#!/bin/sh\n'
-                    f'export PYTHONPATH="{sitepackages}:$PYTHONPATH"\n'
-                    f'exec {sys.executable} --config {siteconf} python "$@"')
+            f.write(
+                f'#!/bin/sh\n'
+                f'export PYTHONPATH="{sitepackages}:$PYTHONPATH"\n'
+                f'exec {sys.executable} --config {siteconf} python "$@"',
+            )
         pyexe.chmod(0o700)
     sys.executable = str(pyexe)
 

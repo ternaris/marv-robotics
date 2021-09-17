@@ -18,7 +18,6 @@
 import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -28,12 +27,14 @@ import sys
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc',
-              'sphinx.ext.intersphinx',
-              'sphinx.ext.viewcode',
-              'sphinx.ext.napoleon',
-              'sphinx_paramlinks',
-              'sphinx.ext.todo']
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.napoleon',
+    'sphinx_paramlinks',
+    'sphinx.ext.todo',
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -88,7 +89,6 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
 
-
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -114,7 +114,6 @@ html_favicon = 'favicon-32x32.png'
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'MARVdoc'
 
-
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {
@@ -139,20 +138,14 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'MARV.tex', 'MARV Documentation',
-     'Ternaris', 'manual'),
+    (master_doc, 'MARV.tex', 'MARV Documentation', 'Ternaris', 'manual'),
 ]
-
 
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, 'marv', 'MARV Documentation',
-     [author], 1)
-]
-
+man_pages = [(master_doc, 'marv', 'MARV Documentation', [author], 1)]
 
 # -- Options for Texinfo output -------------------------------------------
 
@@ -160,7 +153,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'MARV', 'MARV Documentation',
-     author, 'MARV', 'One line description of project.',
-     'Miscellaneous'),
+    (
+        master_doc, 'MARV', 'MARV Documentation', author, 'MARV',
+        'One line description of project.', 'Miscellaneous'
+    ),
 ]

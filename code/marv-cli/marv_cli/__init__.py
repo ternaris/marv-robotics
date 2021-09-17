@@ -36,15 +36,17 @@ PDB = None
 STATICX_PROG_PATH = os.environ.get('STATICX_PROG_PATH')
 
 # needs to be in line with logging
-LOGLEVEL = OrderedDict((
-    ('critical', 50),
-    ('error', 40),
-    ('warning', 30),
-    ('info', 20),
-    ('verbose', 18),
-    ('noisy', 15),
-    ('debug', 10),
-))
+LOGLEVEL = OrderedDict(
+    (
+        ('critical', 50),
+        ('error', 40),
+        ('warning', 30),
+        ('info', 20),
+        ('verbose', 18),
+        ('noisy', 15),
+        ('debug', 10),
+    ),
+)
 
 
 # TODO: duplicated from marv_api.utils
@@ -77,6 +79,7 @@ def make_log_method(name, numeric):
     def method(self, msg, *args, **kw):
         if self.isEnabledFor(numeric):
             self._log(numeric, msg, args, **kw)  # pylint: disable=protected-access
+
     method.__name__ = name
     return method
 
@@ -97,12 +100,14 @@ def setup_logging(loglevel, verbosity=0, logfilter=None):
     create_loglevels()
 
     class Filter(logging.Filter):  # pylint: disable=too-few-public-methods
+
         def filter(self, record):
             if logfilter and not any(record.name.startswith(x) for x in logfilter):
                 return False
             if record.name == 'aiosqlite' and 'returning exception' in record.msg:
                 return False
             return True
+
     filter = Filter()
 
     formatter = logging.Formatter(FORMAT)
@@ -116,22 +121,32 @@ def setup_logging(loglevel, verbosity=0, logfilter=None):
     level = levels[min(levels.index(loglevel) + verbosity, len(levels) - 1)]
     root.setLevel(LOGLEVEL[level])
 
-    logging.getLogger('tortoise').setLevel(logging.INFO if os.environ.get('MARV_ECHO_SQL') else
-                                           logging.WARN)
+    sqlloglevel = logging.INFO if os.environ.get('MARV_ECHO_SQL') else logging.WARN
+    logging.getLogger('tortoise').setLevel(sqlloglevel)
 
 
 @click.group()
-@click.option('--config',
-              type=click.Path(dir_okay=False, exists=True, resolve_path=True),
-              help='Path to config file'
-              ' (default: 1. ./marv.conf, 2. /etc/marv/marv.conf)')
-@click.option('--loglevel', default='info', show_default=True,
-              type=click.Choice(LOGLEVEL.keys()),
-              help='Set loglevel directly')
-@click.option('--logfilter', multiple=True,
-              help='Display only log messages for selected loggers')
-@click.option('-v', '--verbose', 'verbosity', count=True,
-              help='Increase verbosity beyond --loglevel')
+@click.option(
+    '--config',
+    type=click.Path(dir_okay=False, exists=True, resolve_path=True),
+    help='Path to config file'
+    ' (default: 1. ./marv.conf, 2. /etc/marv/marv.conf)',
+)
+@click.option(
+    '--loglevel',
+    default='info',
+    show_default=True,
+    type=click.Choice(LOGLEVEL.keys()),
+    help='Set loglevel directly',
+)
+@click.option('--logfilter', multiple=True, help='Display only log messages for selected loggers')
+@click.option(
+    '-v',
+    '--verbose',
+    'verbosity',
+    count=True,
+    help='Increase verbosity beyond --loglevel',
+)
 @click.version_option(message=VERSION_MESSAGE)
 @copying_option
 @click.pass_context
@@ -158,9 +173,7 @@ def cli():
     ldpath = os.environ.get('LD_LIBRARY_PATH')
     if ldpath:
         os.environ['LD_LIBRARY_PATH'] = ':'.join(
-            x
-            for x in ldpath.split(':')
-            if not x.startswith('/tmp/_MEI')
+            x for x in ldpath.split(':') if not x.startswith('/tmp/_MEI')
         )
 
     global PDB  # pylint: disable=global-statement

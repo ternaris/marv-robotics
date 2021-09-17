@@ -123,9 +123,17 @@ def test_invalid_character(string):
         scan(sexp)
 
 
-@pytest.mark.parametrize('string', [
-    '-inf', '-infinity', '-Inf', '-Infinity', '-nan', '-NaN',
-])
+@pytest.mark.parametrize(
+    'string',
+    [
+        '-inf',
+        '-infinity',
+        '-Inf',
+        '-Infinity',
+        '-nan',
+        '-NaN',
+    ],
+)
 def test_invalid_number(string):
     sexp = f'({string})'
     with pytest.raises(InvalidNumberError):
@@ -156,8 +164,11 @@ def test_parse_empty():
 def test_parse_literals():
     """Test support for JSON literals."""
     rv = scan(r'("foo \" \u0022 \/ \\ \b \f \n \r \t )(" "")')
-    assert rv == List((Literal('foo " " / \\ \b \f \n \r \t )(', 1, 39),
-                       Literal('', 41, 42)), 0, 43)
+    assert rv == List(
+        (Literal('foo " " / \\ \b \f \n \r \t )(', 1, 39), Literal('', 41, 42)),
+        0,
+        43,
+    )
 
     rv = scan('(null)')
     assert rv == List((Literal(None, 1, 4),), 0, 5)
@@ -170,8 +181,16 @@ def test_parse_literals():
     assert rv.args[1].value == -1  # pylint: disable=no-member
 
     rv = scan('(1.2 -1e10 -1E+10 -1.42e-10)')
-    assert rv == List((Literal(1.2, 1, 3), Literal(-1e10, 5, 9), Literal(-1e10, 11, 16),
-                       Literal(-1.42e-10, 18, 26)), 0, 27)
+    assert rv == List(
+        (
+            Literal(1.2, 1, 3),
+            Literal(-1e10, 5, 9),
+            Literal(-1e10, 11, 16),
+            Literal(-1.42e-10, 18, 26),
+        ),
+        0,
+        27,
+    )
 
     rv = scan('(-0.0)')
     minus_one = math.copysign(1, rv.args[0].value)  # pylint: disable=no-member

@@ -58,8 +58,10 @@ class Site:
     def __init__(self, siteconf):
         self.config = make_config(siteconf)
         self.collections = Collections(config=self.config, site=self)
-        self.db = self.Database([y for x in self.collections.values() for y in x.model],  # pylint: disable=invalid-name
-                                self.config)
+        self.db = self.Database(  # pylint: disable=invalid-name
+            [y for x in self.collections.values() for y in x.model],
+            self.config,
+        )
 
     @classmethod
     async def create(cls, siteconf, init=None):  # noqa: C901
@@ -77,8 +79,11 @@ class Site:
             site.init_directory()
 
         try:
-            fd = os.open(site.config.marv.sessionkey_file,
-                         os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+            fd = os.open(
+                site.config.marv.sessionkey_file,
+                os.O_CREAT | os.O_EXCL | os.O_WRONLY,
+                0o600,
+            )
         except OSError as e:
             if e.errno != 17:
                 raise
@@ -90,22 +95,24 @@ class Site:
         # Generate all dynamic models
         models = site.db.MODELS + site.db.listing_models
 
-        await Tortoise.init(config={
-            'connections': {
-                'default': {
-                    'engine': 'tortoise.backends.sqlite',
-                    'credentials': {
-                        'file_path': dbpath,
-                        'foreign_keys': 1,
+        await Tortoise.init(
+            config={
+                'connections': {
+                    'default': {
+                        'engine': 'tortoise.backends.sqlite',
+                        'credentials': {
+                            'file_path': dbpath,
+                            'foreign_keys': 1,
+                        },
+                    },
+                },
+                'apps': {
+                    'models': {
+                        'models': models,
                     },
                 },
             },
-            'apps': {
-                'models': {
-                    'models': models,
-                },
-            },
-        })
+        )
 
         await site.db.initialize_connections()
 
@@ -129,10 +136,20 @@ class Site:
         await Tortoise.close_connections()
 
     def load_for_web(self):
-        _ = [getattr(x, y) and None for x, y, in product(
-            self.collections.values(),
-            ('compare', 'filter_specs', 'listing_columns', 'model',
-             'sortcolumn', 'sortorder', 'summary_items'))]
+        _ = [
+            getattr(x, y) and None for x, y, in product(
+                self.collections.values(),
+                (
+                    'compare',
+                    'filter_specs',
+                    'listing_columns',
+                    'model',
+                    'sortcolumn',
+                    'sortorder',
+                    'summary_items',
+                ),
+            )
+        ]
 
     def init_directory(self):
         try:
@@ -152,19 +169,22 @@ class Site:
 
     async def store_db_version(self, txn):
         metadata = Table('metadata')
-        await txn.exq(Query.into(metadata)
-                      .columns(metadata.key, metadata.value)
-                      .insert('database_version', self.db.VERSION))
+        # yapf: disable
+        await txn.exq(
+            Query
+            .into(metadata)
+            .columns(metadata.key, metadata.value)
+            .insert('database_version', self.db.VERSION),
+        )
+        # yapf: enable
 
     async def drop_listings(self, txn):
         prefixes = [f'l_{col}' for col in self.collections.keys()]
         tables = {
             name for name in [
-                x['name'] for x in (await txn.execute_query(
-                    'SELECT name FROM sqlite_master WHERE type="table"',
-                ))[1]
-            ]
-            if any(name.startswith(prefix) for prefix in prefixes)
+                x['name'] for x in
+                (await txn.execute_query('SELECT name FROM sqlite_master WHERE type="table"'))[1]
+            ] if any(name.startswith(prefix) for prefix in prefixes)
         }
         for table in sorted(tables, key=len, reverse=True):
             await txn.execute_query(f'DROP TABLE {table};')
@@ -180,8 +200,13 @@ class Site:
                 await Group.get_or_create(name=name, using_db=txn)
 
             for name in ('marv:anonymous',):
-                user = await User.get_or_create(name=name, realm='marv', realmuid='',
-                                                active=True, using_db=txn)
+                user = await User.get_or_create(
+                    name=name,
+                    realm='marv',
+                    realmuid='',
+                    active=True,
+                    using_db=txn,
+                )
                 await user[0].groups.add(
                     await Group.get(name=name.replace(':', ':user:')).using_db(txn),
                     using_db=txn,
@@ -216,10 +241,7 @@ class Site:
         log.info('Initialized from %s', self.config.filename)
 
     async def cleanup_discarded(self):
-        descs = {
-            key: x.table_descriptors
-            for key, x in self.collections.items()
-        }
+        descs = {key: x.table_descriptors for key, x in self.collections.items()}
         await self.db.cleanup_discarded(descs)
         # TODO: Cleanup corresponding store paths
 
@@ -230,9 +252,19 @@ class Site:
     async def restore_database(self, **kw):
         await self.db.restore_database(self, kw)
 
-    async def run(self, setid, selected_nodes=None, deps=None, force=None, keep=None,
-                  force_dependent=None, update_detail=None, update_listing=None,
-                  excluded_nodes=None, cachesize=None):
+    async def run(
+        self,
+        setid,
+        selected_nodes=None,
+        deps=None,
+        force=None,
+        keep=None,
+        force_dependent=None,
+        update_detail=None,
+        update_listing=None,
+        excluded_nodes=None,
+        cachesize=None,
+    ):
         # pylint: disable=too-many-arguments,too-many-locals,too-many-branches
 
         assert not force_dependent or selected_nodes
@@ -249,10 +281,11 @@ class Site:
             selected_nodes.update(collection.detail_deps)
         persistent = collection.nodes
         try:
-            nodes = {persistent[name] if ':' not in name else Node.from_dag_node(find_obj(name))
-                     for name in selected_nodes
-                     if name not in excluded_nodes
-                     if name != 'dataset'}
+            nodes = {
+                persistent[name] if ':' not in name else Node.from_dag_node(find_obj(name))
+                for name in selected_nodes
+                if name not in excluded_nodes if name != 'dataset'
+            }
         except KeyError as exc:
             raise ConfigError(f'Collection {collection.name!r} has no node {exc}')
 
@@ -266,9 +299,16 @@ class Site:
         changed = False
         try:
             if nodes:
-                changed = await run_nodes(dataset, nodes, store, force=force,
-                                          persistent=persistent,
-                                          deps=deps, cachesize=cachesize, site=self)
+                changed = await run_nodes(
+                    dataset,
+                    nodes,
+                    store,
+                    force=force,
+                    persistent=persistent,
+                    deps=deps,
+                    cachesize=cachesize,
+                    site=self,
+                )
         finally:
             if not keep:
                 for stream in store.pending:

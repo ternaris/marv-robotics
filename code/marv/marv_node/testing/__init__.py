@@ -51,19 +51,37 @@ def temporary_directory(keep=KEEP):
             LOG.debug('keeping temporary directory %r by request', tmpdir)
 
 
-def make_dataset(files=None, setid=None, name=None, collection=None,
-                 time_added=None, timestamp=None):
+def make_dataset(
+    files=None,
+    setid=None,
+    name=None,
+    collection=None,
+    time_added=None,
+    timestamp=None,
+):
     # pylint: disable=too-many-arguments
     setid = SetID(42) if setid is None else setid
     name = 'NAME' if name is None else name
     collection = 'COL' if collection is None else collection
-    files = [StubFile(i, x, False, 42, os.stat(x).st_size)
-             for i, x in enumerate([] if files is None else files)]
+    files = [
+        StubFile(
+            i,
+            x,
+            False,
+            42,
+            os.stat(x).st_size,
+        ) for i, x in enumerate([] if files is None else files)
+    ]
     time_added = 0 if time_added is None else time_added
     timestamp = 0 if timestamp is None else timestamp
-    return StubDataset(setid=setid, name=name, collection=collection,
-                       files=files, time_added=time_added,
-                       timestamp=timestamp)
+    return StubDataset(
+        setid=setid,
+        name=name,
+        collection=collection,
+        files=files,
+        time_added=time_added,
+        timestamp=timestamp,
+    )
 
 
 async def run_nodes(dataset, nodes, store=None, persistent=None, **kw):
@@ -74,16 +92,19 @@ async def run_nodes(dataset, nodes, store=None, persistent=None, **kw):
         for k, v in (persistent or {}).items()
     }
     streams = {}
-    await _run_nodes(dataset,
-                     nodes,
-                     {} if store is None else store,
-                     persistent=persistent,
-                     _gather_into=streams,
-                     **kw)
+    await _run_nodes(
+        dataset,
+        nodes,
+        {} if store is None else store,
+        persistent=persistent,
+        _gather_into=streams,
+        **kw,
+    )
     return [streams.get(x) for x in nodes]
 
 
 class Spy:  # noqa: SIM119  pylint: disable=too-few-public-methods
+
     def __init__(self):
         self.requests = []
 

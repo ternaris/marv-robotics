@@ -21,12 +21,17 @@ class ReadStream(Stream):
         self.handle = handle
         self.cache = deque([Msg(idx=-1, handle=handle, data=handle)], self.CACHESIZE)
         if handle.group:
-            self.stream = iter([
-                Handle(handle.setid, handle.node, x['name'],
-                       group=bool(x['streams']),
-                       header=x['header'])
-                for x in info['streams'].values()
-            ])
+            self.stream = iter(
+                [
+                    Handle(
+                        handle.setid,
+                        handle.node,
+                        x['name'],
+                        group=bool(x['streams']),
+                        header=x['header'],
+                    ) for x in info['streams'].values()
+                ],
+            )
         elif msgs:
             # pylint: disable=protected-access
             self.stream = (Wrapper(x._reader, streamdir, setdir) for x in msgs)
@@ -35,8 +40,10 @@ class ReadStream(Stream):
             path = os.path.join(streamdir, f'{handle.name}-stream')
             streamfile = open(path, 'rb')  # noqa: SIM115  pylint: disable=consider-using-with
             self.streamfile = streamfile
-            self.stream = (Wrapper(x, streamdir, setdir) for x in
-                           handle.node.schema.read_multiple_packed(streamfile))
+            self.stream = (
+                Wrapper(x, streamdir, setdir)
+                for x in handle.node.schema.read_multiple_packed(streamfile)
+            )
 
     def get_msg(self, req):
         self.logdebug('got %r', req)
@@ -108,9 +115,11 @@ class PersistentStream(Stream):
             assert msg.data._streamdir == Path(self.streamdir)
             stat = os.stat(msg.data.path)
             mtime = int(stat.st_mtime * 1e9)
-            msg.data._reader = File.new_message(path=msg.data._reader.path,
-                                                mtime=mtime, size=stat.st_size)\
-                                   .as_reader()
+            msg.data._reader = File.new_message(
+                path=msg.data._reader.path,
+                mtime=mtime,
+                size=stat.st_size,
+            ).as_reader()
         self.cache.appendleft(msg)
         if not self.group and msg.idx >= 0:
             # TODO: Maybe we want to have a builder and change to
@@ -143,8 +152,9 @@ class PersistentStream(Stream):
         assert self.group
         assert not self.ended
         handle = Handle(self.handle.setid, self.handle.node, name, group=group, header=header)
-        self.streams[handle.name] = type(self)(handle, self.streamdir, self.setdir,
-                                               self.commit_substream, parent=self)
+        self.streams[
+            handle.name
+        ] = type(self)(handle, self.streamdir, self.setdir, self.commit_substream, parent=self)
         return self.streams[handle.name]
 
     def commit_substream(self, substream):

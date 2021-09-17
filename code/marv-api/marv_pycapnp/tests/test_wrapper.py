@@ -158,26 +158,40 @@ def test_file_wrapper():
     with pytest.raises(AttributeError):
         assert wrapper.relpath
 
-    wrapper = Wrapper.from_dict(File, {'path': __file__},
-                                setdir=Path(__file__).parent.parent,
-                                streamdir=Path(__file__).parent)
+    wrapper = Wrapper.from_dict(
+        File,
+        {'path': __file__},
+        setdir=Path(__file__).parent.parent,
+        streamdir=Path(__file__).parent,
+    )
     assert wrapper.path == __file__
 
-    wrapper = Wrapper.from_dict(File, {'path': '/path/to/setdir/streamdir/file'},
-                                setdir='/path/to/moved/setdir', streamdir='/irrelevant')
+    wrapper = Wrapper.from_dict(
+        File,
+        {'path': '/path/to/setdir/streamdir/file'},
+        setdir='/path/to/moved/setdir',
+        streamdir='/irrelevant',
+    )
     assert wrapper.path == '/path/to/moved/setdir/streamdir/file'
 
-    wrapper = Wrapper.from_dict(File, {'path': '/path/to/setdir/.streamdir/file'},
-                                setdir='/path/to/moved/setdir', streamdir='/irrelevant')
+    wrapper = Wrapper.from_dict(
+        File,
+        {'path': '/path/to/setdir/.streamdir/file'},
+        setdir='/path/to/moved/setdir',
+        streamdir='/irrelevant',
+    )
     assert wrapper.path == '/path/to/moved/setdir/streamdir/file'
     assert wrapper.relpath == 'streamdir/file'
 
     # Moved, but old path exists, i.e. copied
     # Rhe last component of setdir is the setid, which usually is a random hash and looked for
     # in the stored path to return the new path.
-    wrapper = Wrapper.from_dict(File, {'path': __file__},
-                                setdir=f'/path/to/moved/{Path(__file__).parent.name}',
-                                streamdir='/irrelevant')
+    wrapper = Wrapper.from_dict(
+        File,
+        {'path': __file__},
+        setdir=f'/path/to/moved/{Path(__file__).parent.name}',
+        streamdir='/irrelevant',
+    )
     assert wrapper.path == f'/path/to/moved/{Path(__file__).parent.name}/{Path(__file__).name}'
 
 
@@ -189,18 +203,28 @@ def test_dataset_userdata(tmpdir):
     wrapper = Wrapper.from_dict(Dataset, {})
     assert wrapper.userdata is None
 
-    wrapper = Wrapper.from_dict(Dataset, {
-        'files': [
-            {'path': '/68b329da9893e34099c7d8ad5cb9c940/meta.json'},
-        ],
-    })
+    wrapper = Wrapper.from_dict(
+        Dataset,
+        {
+            'files': [
+                {
+                    'path': '/68b329da9893e34099c7d8ad5cb9c940/meta.json',
+                },
+            ],
+        },
+    )
     assert wrapper.userdata is None
 
-    wrapper = Wrapper.from_dict(Dataset, {
-        'files': [
-            {'path': '/68b329da9893e34099c7d8ad5cb9c940/meta.yaml'},
-        ],
-    })
+    wrapper = Wrapper.from_dict(
+        Dataset,
+        {
+            'files': [
+                {
+                    'path': '/68b329da9893e34099c7d8ad5cb9c940/meta.yaml',
+                },
+            ],
+        },
+    )
     assert wrapper.userdata is None
 
     metajson = tmpdir / 'foo' / 'meta.json'
@@ -209,17 +233,29 @@ def test_dataset_userdata(tmpdir):
     metayaml.parent.mkdir()
     metajson.write_text('{"userdata": {"foo": 2}}')
     metayaml.write_text('userdata:\n  bar: 1')
-    wrapper = Wrapper.from_dict(Dataset, {
-        'files': [
-            {'path': str(metayaml)},
-            {'path': str(metajson)},
-        ],
-    })
+    wrapper = Wrapper.from_dict(
+        Dataset,
+        {
+            'files': [
+                {
+                    'path': str(metayaml),
+                },
+                {
+                    'path': str(metajson),
+                },
+            ],
+        },
+    )
     assert wrapper.userdata == {'foo': 2}
 
-    wrapper = Wrapper.from_dict(Dataset, {
-        'files': [
-            {'path': str(metayaml)},
-        ],
-    })
+    wrapper = Wrapper.from_dict(
+        Dataset,
+        {
+            'files': [
+                {
+                    'path': str(metayaml),
+                },
+            ],
+        },
+    )
     assert wrapper.userdata == {'bar': 1}

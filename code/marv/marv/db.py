@@ -36,20 +36,24 @@ from .utils import findfirst
 
 log = getLogger(__name__)
 
-
 USERGROUP_REGEX = re.compile(r'[0-9a-zA-Z\-_\.@+]+$')
 
 # Order corresponds to marv.model.STATUS OrderedDict
 STATUS_ICON = ['fire', 'eye-close', 'warning-sign', 'time']
-STATUS_JSON = [json.dumps({'icon': STATUS_ICON[i], 'title': x},
-                          separators=(',', ':'))
-               for i, x in enumerate(STATUS.values())]
+STATUS_JSON = [
+    json.dumps(
+        {
+            'icon': STATUS_ICON[i],
+            'title': x,
+        },
+        separators=(',', ':'),
+    ) for i, x in enumerate(STATUS.values())
+]
 # TODO: reconsider in case we get a couple of more states
 STATUS_STRS = {
-    bitmask: ','.join(filter(None,
-                             (STATUS_JSON[i] if bitmask & 2**i else None
-                              for i in range(len(STATUS_JSON)))))
-    for bitmask in range(2**(len(STATUS_JSON)))
+    bitmask: ','.join(
+        filter(None, (STATUS_JSON[i] if bitmask & 2**i else None for i in range(len(STATUS_JSON)))),
+    ) for bitmask in range(2**(len(STATUS_JSON)))
 }
 
 
@@ -99,9 +103,11 @@ async def scoped_session(database, txn=None):
         try:
             # pylint: disable=protected-access
             async with connection._in_transaction() as txn:
+
                 async def exq(query, count=False):
                     cnt, res = await txn.execute_query(query.get_sql())
                     return cnt if count else res
+
                 txn.exq = exq
                 yield txn
         finally:
@@ -109,6 +115,7 @@ async def scoped_session(database, txn=None):
 
 
 class JsonListAgg:
+
     def __init__(self):
         self.items = set()
 
@@ -131,6 +138,7 @@ async def create_or_ignore(tablename, txn, **kw):
 
 
 def run_in_transaction(func):
+
     async def wrapper(database, *args, txn=None, **kwargs):
         async with scoped_session(database, txn=txn) as txn:
             return await func(database, *args, txn=txn, **kwargs)
@@ -139,7 +147,9 @@ def run_in_transaction(func):
 
 
 class FromExceptQuery:
+
     class Builder:
+
         def __init__(self, from_=None, except_=None):
             self._from = from_
             self._except = except_
@@ -166,6 +176,7 @@ class FromExceptQuery:
 
 
 class ValuesTuple(Tuple):
+
     def get_sql(self, **kw):
         sql = f'(VALUES {",".join(x.get_sql(**kw) for x in self.values)})'
         if self.alias:
@@ -174,11 +185,13 @@ class ValuesTuple(Tuple):
 
 
 class GroupConcat(AggregateFunction):
+
     def __init__(self, term, alias=None):
         super().__init__('GROUP_CONCAT', term, alias=alias)
 
 
 class JsonGroupArray(AggregateFunction):
+
     def __init__(self, term, alias=None):
         super().__init__('JSON_GROUP_ARRAY', term, alias=alias)
 
@@ -196,8 +209,10 @@ class EscapableLikeCriterion(Criterion):
         return self.left.fields() + self.right.fields()
 
     def get_sql(self, with_alias=False, **kwargs):  # pylint: disable=arguments-differ
-        sql = (f'{self.left.get_sql(**kwargs)} {self.operator} {self.right.get_sql(**kwargs)} '
-               f'ESCAPE "{self.escchr}"')
+        sql = (
+            f'{self.left.get_sql(**kwargs)} {self.operator} {self.right.get_sql(**kwargs)} '
+            f'ESCAPE "{self.escchr}"'
+        )
         if with_alias and self.alias:
             return f'{sql} "{self.alias}"'
         return sql
@@ -286,24 +301,48 @@ def resolve_filter(table, fltr, models):  # noqa: C901  pylint: disable=too-many
         if fieldname in tablemeta.backward_fk_fields:
             field = tablemeta.fields_map[fieldname]
             subtable = Table(field.model_class._meta.table)
-            resolved = resolve_filter(subtable, {'op': operator, 'name': subname, 'value': value},
-                                      models)
-            return table.id.isin(Query.from_(subtable)
-                                 .select(getattr(subtable, field.relation_field))
-                                 .where(resolved))
+            resolved = resolve_filter(
+                subtable,
+                {
+                    'op': operator,
+                    'name': subname,
+                    'value': value,
+                },
+                models,
+            )
+            # yapf: disable
+            return table.id.isin(
+                Query
+                .from_(subtable)
+                .select(getattr(subtable, field.relation_field))
+                .where(resolved),
+            )
+            # yapf: enable
 
         if fieldname in tablemeta.m2m_fields:
             field = tablemeta.fields_map[fieldname]
             through = Table(field.through)
             rel = Table(field.model_class._meta.table)
-            resolved = resolve_filter(rel, {'op': operator, 'name': subname, 'value': value},
-                                      models)
-            return table.id.isin(Query.from_(through)
-                                 .join(rel)
-                                 .on(getattr(through, field.forward_key) == rel.id)
-                                 .where(resolved)
-                                 .select(getattr(through, field.backward_key))
-                                 .distinct())
+            resolved = resolve_filter(
+                rel,
+                {
+                    'op': operator,
+                    'name': subname,
+                    'value': value,
+                },
+                models,
+            )
+            # yapf: disable
+            return table.id.isin(
+                Query
+                .from_(through)
+                .join(rel)
+                .on(getattr(through, field.forward_key) == rel.id)
+                .where(resolved)
+                .select(getattr(through, field.backward_key))
+                .distinct(),
+            )
+            # yapf: enable
 
         raise FilterError(f'Field {fieldname!r} not on model {tablemeta.table!r}')
 
@@ -319,7 +358,9 @@ def resolve_filter(table, fltr, models):  # noqa: C901  pylint: disable=too-many
 
 def cleanup_attrs(items):
     return [
-        {k: x[k] for k in x.keys() if k not in ['acn_id', 'dacn_id', 'password', 'row']}
+        {k: x[k]
+         for k in x.keys()
+         if k not in ['acn_id', 'dacn_id', 'password', 'row']}
         for x in items
     ]
 
@@ -340,18 +381,15 @@ def modelize(items, relations):
     relidx = [i for i, x in enumerate(keys) if x == 'id'] + [len(keys)]
 
     dataset = namedtuple('dataset', keys[:relidx[1]] + list(relations))
-    types = [
-        namedtuple(x, keys[relidx[i + 1]:relidx[i + 2]])
-        for i, x in enumerate(relations)
-    ]
+    types = [namedtuple(x, keys[relidx[i + 1]:relidx[i + 2]]) for i, x in enumerate(relations)]
 
     for _, group in groupby(items, lambda x: x[0]):
         group = list(group)
         related = [
-            sorted(set(filter(lambda x: x.id, (
-                x(*y[relidx[i + 1]:relidx[i + 2]]) for y in group
-            ))), key=lambda x: x.id)
-            for i, x in enumerate(types)
+            sorted(
+                set(filter(lambda x: x.id, (x(*y[relidx[i + 1]:relidx[i + 2]]) for y in group))),
+                key=lambda x: x.id,
+            ) for i, x in enumerate(types)
         ]
         res.append(dataset(*(cast_fields(keys[:relidx[1]], group[0]) + related)))
     return res
@@ -363,10 +401,7 @@ def dt_to_sec(dtime):
 
 
 async def get_items_for_query(query, txn):
-    return [
-        {k: x[k] for k in x.keys()}
-        for x in (await txn.execute_query(query.get_sql()))[1]
-    ]
+    return [{k: x[k] for k in x.keys()} for x in (await txn.execute_query(query.get_sql()))[1]]
 
 
 async def process_items(query, delkeys, getkey, txn):
@@ -389,14 +424,21 @@ async def dump_users_groups(tables, dump, txn):
     user_t = tables.pop('user')
     user_group_t = tables.pop('user_group')
     groups = {}
-    items = await get_items_for_query(Query.from_(user_group_t)
-                                      .join(group_t)
-                                      .on(user_group_t.group_id == group_t.id)
-                                      .select('*')
-                                      .where(~escaped_startswith(group_t.name, 'marv:'))
-                                      .orderby(user_group_t.user_id)
-                                      .orderby(group_t.name),
-                                      txn)
+    # yapf: disable
+    items = await get_items_for_query(
+        (
+            Query
+            .from_(user_group_t)
+            .join(group_t)
+            .on(user_group_t.group_id == group_t.id)
+            .select('*')
+            .where(~escaped_startswith(group_t.name, 'marv:'))
+            .orderby(user_group_t.user_id)
+            .orderby(group_t.name)
+        ),
+        txn,
+    )
+    # yapf: enable
     for uid, grp in groupby(items, key=lambda x: x['user_id']):
         assert uid not in groups
         groups[uid] = lst = []
@@ -409,11 +451,10 @@ async def dump_users_groups(tables, dump, txn):
             lst.append(name)
 
     dump['users'] = users = []
-    items = await get_items_for_query(Query.from_(user_t)
-                                      .select('*')
-                                      .where(user_t.name != 'marv:anonymous')
-                                      .orderby(user_t.name),
-                                      txn)
+    items = await get_items_for_query(
+        Query.from_(user_t).select('*').where(user_t.name != 'marv:anonymous').orderby(user_t.name),
+        txn,
+    )
     for user in items:
         uid = user.pop('id')
         user['groups'] = groups.pop(uid, [])
@@ -429,38 +470,43 @@ async def dump_acns(tables, dump, txn):  # pylint: disable=unused-argument
 
 async def dump_comments(tables, dump, txn):
     table = tables.pop('comment')
-    dump['comments'] = await process_items(Query.from_(table)
-                                           .select(table.star)
-                                           .orderby(table.dataset_id)
-                                           .orderby(table.id),
-                                           (),
-                                           None,
-                                           txn)
+    dump['comments'] = await process_items(
+        Query.from_(table).select(table.star).orderby(table.dataset_id).orderby(table.id),
+        (),
+        None,
+        txn,
+    )
 
 
 async def dump_files(tables, dump, txn):
     table = tables.pop('file')
-    dump['files'] = await process_items(Query.from_(table)
-                                        .select(table.star)
-                                        .orderby(table.dataset_id)
-                                        .orderby(table.id),
-                                        ('idx',),
-                                        None,
-                                        txn)
+    dump['files'] = await process_items(
+        Query.from_(table).select(table.star).orderby(table.dataset_id).orderby(table.id),
+        ('idx',),
+        None,
+        txn,
+    )
 
 
 async def dump_tags(tables, dump, txn):
     dataset_tag_t = tables.pop('dataset_tag')
     tag_t = tables.pop('tag')
-    dump['tags'] = await process_items(Query.from_(dataset_tag_t)
-                                       .join(tag_t)
-                                       .on(dataset_tag_t.tag_id == tag_t.id)
-                                       .select('*')
-                                       .orderby(dataset_tag_t.dataset_id)
-                                       .orderby(tag_t.value),
-                                       ('tag_id',),
-                                       'value',
-                                       txn)
+    # yapf: disable
+    dump['tags'] = await process_items(
+        (
+            Query
+            .from_(dataset_tag_t)
+            .join(tag_t)
+            .on(dataset_tag_t.tag_id == tag_t.id)
+            .select('*')
+            .orderby(dataset_tag_t.dataset_id)
+            .orderby(tag_t.value)
+        ),
+        ('tag_id',),
+        'value',
+        txn,
+    )
+    # yapf: enable
 
 
 async def dump_datasets(tables, dump, txn):
@@ -471,12 +517,19 @@ async def dump_datasets(tables, dump, txn):
     dump['datasets'] = collections = {}
     collection_t = tables.pop('collection')
     dataset_t = tables.pop('dataset')
-    items = await get_items_for_query(Query.from_(dataset_t)
-                                      .join(collection_t)
-                                      .on(dataset_t.collection_id == collection_t.id)
-                                      .select(dataset_t.star, collection_t.name.as_('collection'))
-                                      .orderby(dataset_t.setid),
-                                      txn)
+    # yapf: disable
+    items = await get_items_for_query(
+        (
+            Query
+            .from_(dataset_t)
+            .join(collection_t)
+            .on(dataset_t.collection_id == collection_t.id)
+            .select(dataset_t.star, collection_t.name.as_('collection'))
+            .orderby(dataset_t.setid)
+        ),
+        txn,
+    )
+    # yapf: enable
     for dataset in items:
         did = dataset.pop('id')
         del dataset['acn_id']
@@ -518,6 +571,7 @@ async def restore_datasets(site, dct, txn):
 
 
 class Tortoise(_Tortoise):
+
     @classmethod
     def _discover_models(cls, models_path, app_label):  # pylint: disable=arguments-differ
         models_path._meta.app = app_label
@@ -565,11 +619,13 @@ class Database:
         self.config = config
         self.acls = ACLS.copy()
         if self.config.marv.ce_anonymous_readonly_access:
-            self.acls.update({
-                'download_raw': ['__unauthenticated__', '__authenticated__'],
-                'list': ['__unauthenticated__', '__authenticated__'],
-                'read': ['__unauthenticated__', '__authenticated__'],
-            })
+            self.acls.update(
+                {
+                    'download_raw': ['__unauthenticated__', '__authenticated__'],
+                    'list': ['__unauthenticated__', '__authenticated__'],
+                    'read': ['__unauthenticated__', '__authenticated__'],
+                },
+            )
 
     async def initialize_connections(self):
         defcon = Tortoise.get_connection('default')
@@ -609,8 +665,16 @@ class Database:
         return bcrypt.checkpw(password.encode(), user.password.encode())
 
     @run_in_transaction
-    async def bulk_um(self, users_add, users_remove, groups_add, groups_remove,  # noqa: C901
-                      groups_add_users, groups_remove_users, txn=None):
+    async def bulk_um(  # noqa: C901
+        self,
+        users_add,
+        users_remove,
+        groups_add,
+        groups_remove,
+        groups_add_users,
+        groups_remove_users,
+        txn=None,
+    ):
         # pylint: disable=too-many-arguments
         try:
             everybody = await Group.get(name='marv:users').using_db(txn)
@@ -657,9 +721,21 @@ class Database:
             raise DBError('Entity exists already')
 
     @run_in_transaction
-    async def user_add(self, name, password, realm, realmuid, given_name=None, family_name=None,
-                       email=None, active=True, time_created=None, time_updated=None, _restore=None,
-                       txn=None):
+    async def user_add(
+        self,
+        name,
+        password,
+        realm,
+        realmuid,
+        given_name=None,
+        family_name=None,
+        email=None,
+        active=True,
+        time_created=None,
+        time_updated=None,
+        _restore=None,
+        txn=None,
+    ):
         # pylint: disable=too-many-arguments
         if not USERGROUP_REGEX.match(name) and not _restore:
             raise DBError('User name can only contain alphanumeric characters and [-_+@.]')
@@ -671,11 +747,19 @@ class Database:
         time_updated = datetime.fromtimestamp(time_updated, tz=timezone.utc) \
             if time_updated else now
         try:
-            user = await User.create(name=name, password=password, realm=realm,
-                                     given_name=given_name, family_name=family_name,
-                                     email=email, realmuid=realmuid, active=active,
-                                     time_created=time_created, time_updated=time_updated,
-                                     using_db=txn)
+            user = await User.create(
+                name=name,
+                password=password,
+                realm=realm,
+                given_name=given_name,
+                family_name=family_name,
+                email=email,
+                realmuid=realmuid,
+                active=active,
+                time_created=time_created,
+                time_updated=time_updated,
+                using_db=txn,
+            )
             if name != 'marv:anonymous':
                 everybody = await Group.get(name='marv:users').using_db(txn)
                 await user.groups.add(
@@ -685,9 +769,14 @@ class Database:
                 )
             if _restore:
                 user = Table('user')
-                await txn.exq(Query.update(user)
-                              .set(user.time_updated, time_updated)
-                              .where(user.name == name))
+                # yapf: disable
+                await txn.exq(
+                    Query
+                    .update(user)
+                    .set(user.time_updated, time_updated)
+                    .where(user.name == name),
+                )
+                # yapf: enable
         except IntegrityError:
             raise ValueError(f'User {name} exists already')
         return user
@@ -794,14 +883,18 @@ class Database:
     @staticmethod
     def if_admin(username, query):
         user, user_group, group = Tables('user', 'user_group', 'group')
-        return (query
-                .join(user)
-                .cross()
-                .join(user_group)
-                .on(user.id == user_group.user_id)
-                .join(group)
-                .on(user_group.group_id == group.id)
-                .where((group.name == 'admin') & (user.name == username)))
+        # yapf: disable
+        return (
+            query
+            .join(user)
+            .cross()
+            .join(user_group)
+            .on(user.id == user_group.user_id)
+            .join(group)
+            .on(user_group.group_id == group.id)
+            .where((group.name == 'admin') & (user.name == username))
+        )
+        # yapf: enable
 
     def generate_crit(self, ids, empty, user, action):
         if user == '::':
@@ -825,14 +918,24 @@ class Database:
     def get_resolve_value_query(self, rel, relations, user, action):
         # pylint: disable=unused-argument
         out, tmp = Tables('out', 'tmp')
-        query = Query.with_(Query.with_(Query.from_(ValuesTuple(*relations))
-                                        .select('*'), 'tmp(value, back_id)')
-                            .from_(tmp)
-                            .join(rel)
-                            .on(tmp.value == rel.value)
-                            .select(rel.id, tmp.back_id), 'out(rel_id, back_id)')\
-                     .from_(out)\
-                     .select(out.rel_id, out.back_id)
+        # yapf: disable
+        query = (
+            Query.with_(
+                Query.with_(
+                    Query
+                    .from_(ValuesTuple(*relations))
+                    .select('*'), 'tmp(value, back_id)',
+                )
+                .from_(tmp)
+                .join(rel)
+                .on(tmp.value == rel.value)
+                .select(rel.id, tmp.back_id),
+                'out(rel_id, back_id)',
+            )
+            .from_(out)
+            .select(out.rel_id, out.back_id)
+        )
+        # yapf: enable
 
         ids = Table('ids')
         empty = Query.select(ids.star).from_(ValuesTuple(Tuple(0, 0)).as_(ids)).where(NullValue())
@@ -859,33 +962,42 @@ class Database:
             if isinstance(prefix, SetID):
                 prefix = str(prefix)
 
-            setid = await txn.exq(Query.from_(dataset)
-                                  .select('setid')
-                                  .where(escaped_startswith(dataset.setid, prefix)
-                                         & (dataset.discarded == discarded))
-                                  .limit(2))
+            # yapf: disable
+            setid = await txn.exq(
+                Query
+                .from_(dataset)
+                .select('setid')
+                .where(escaped_startswith(dataset.setid, prefix) & (dataset.discarded == discarded))
+                .limit(2),
+            )
+            # yapf: enable
 
             if not setid:
                 discarded = 'discarded ' if discarded else ''
                 raise NoSetidFoundError(f'{prefix} does not match any {discarded}dataset')
             if len(setid) > 1:
                 matches = '\n  '.join([f'{x}' for x in setid])
-                raise MultipleSetidFoundError(f'{prefix} matches multiple:\n'
-                                              f'  {matches}\n')
+                raise MultipleSetidFoundError(f'{prefix} matches multiple:\n' f'  {matches}\n')
             setids.add(SetID(setid[0][0]))
         return sorted(setids)
 
     @run_in_transaction
     async def get_collections(self, user, txn=None):  # pylint: disable=unused-argument
         collection = Table('collection')
+        # yapf: disable
         return [
-            {'id': x, 'name': y}
-            for x, y in await txn.exq(Query.from_(collection)
-                                      .select(collection.id, collection.name)
-                                      .where(collection.id.isin(
-                                          self.get_actionable('collection', user, 'list')))
-                                      .orderby(collection.name))
+            {
+                'id': x,
+                'name': y,
+            } for x, y in await txn.exq(
+                Query
+                .from_(collection)
+                .select(collection.id, collection.name)
+                .where(collection.id.isin(self.get_actionable('collection', user, 'list')))
+                .orderby(collection.name),
+            )
         ]
+        # yapf: enable
 
     async def _get_datasets_by_crit(self, crit, prefetch, txn):
         dataset = Table('dataset')
@@ -929,12 +1041,16 @@ class Database:
     @run_in_transaction
     async def get_filepath_by_setid_idx(self, setid, idx, user, txn=None):
         dataset, file = Tables('dataset', 'file')
-        res = await txn.exq(Query.from_(file)
-                            .join(dataset)
-                            .on(file.dataset_id == dataset.id)
-                            .where((file.idx == idx)
-                                   & self.setid_crit([setid], user, 'download_raw'))
-                            .select('path'))
+        # yapf: disable
+        res = await txn.exq(
+            Query
+            .from_(file)
+            .join(dataset)
+            .on(file.dataset_id == dataset.id)
+            .where((file.idx == idx) & self.setid_crit([setid], user, 'download_raw'))
+            .select('path'),
+        )
+        # yapf: enable
         if not res:
             raise DBPermissionError
         return res[0]['path']
@@ -943,10 +1059,14 @@ class Database:
     async def get_datasets_for_collections(self, collections, txn=None):
         dataset = Table('dataset')
         bitmask = ValueWrapper(STATUS_MISSING)
-        query = Query.from_(dataset)\
-                     .select('setid')\
-                     .where((dataset.discarded.eq(False))
-                            & dataset.status.bitwiseand(bitmask).ne(bitmask))
+        # yapf: disable
+        query = (
+            Query
+            .from_(dataset)
+            .select('setid')
+            .where((dataset.discarded.eq(False)) & dataset.status.bitwiseand(bitmask).ne(bitmask))
+        )
+        # yapf: enable
         if collections is not None:
             collection = Table('collection')
             query = query.join(collection)\
@@ -956,9 +1076,10 @@ class Database:
 
     async def _set_dataset_discarded_by_crit(self, crit, state, txn):
         dataset = Table('dataset')
-        return await txn.exq(Query.update(dataset)
-                             .set(dataset.discarded, state)
-                             .where(crit), count=True)
+        return await txn.exq(
+            Query.update(dataset).set(dataset.discarded, state).where(crit),
+            count=True,
+        )
 
     @run_in_transaction
     async def discard_datasets_by_setids(self, setids, state=True, txn=None):
@@ -966,68 +1087,77 @@ class Database:
 
     @run_in_transaction
     async def discard_datasets_by_dbids(self, ids, state, user, txn=None):
-        count = await self._set_dataset_discarded_by_crit(self.id_crit(ids, user, 'delete'),
-                                                          state, txn)
+        count = await self._set_dataset_discarded_by_crit(
+            self.id_crit(ids, user, 'delete'),
+            state,
+            txn,
+        )
         if count != len(ids):
             raise DBPermissionError
 
     @run_in_transaction
     async def cleanup_discarded(self, descs, txn=None):
         collection, dataset = Tables('collection', 'dataset')
-        datasets = await txn.exq(Query.from_(dataset)
-                                 .join(collection)
-                                 .on(dataset.collection_id == collection.id)
-                                 .select(collection.name, dataset.id)
-                                 .where(dataset.discarded.eq(True))
-                                 .orderby(collection.name))
+        # yapf: disable
+        datasets = await txn.exq(
+            Query
+            .from_(dataset)
+            .join(collection)
+            .on(dataset.collection_id == collection.id)
+            .select(collection.name, dataset.id)
+            .where(dataset.discarded.eq(True))
+            .orderby(collection.name),
+        )
+        # yapf: disable
         if not datasets:
             return
 
         datasets = [
-            (col, [x[1] for x in tuples])
-            for col, tuples in groupby(datasets, lambda x: x[0])
+            (col, [x[1] for x in tuples]) for col, tuples in groupby(datasets, lambda x: x[0])
         ]
         for col, ids in datasets:
-            await txn.exq(Query.from_(dataset)
-                          .where(dataset.id.isin(ids))
-                          .delete())
+            await txn.exq(Query.from_(dataset).where(dataset.id.isin(ids)).delete())
 
             for table in (Table('dataset_tag'), Table('comment'), Table('file')):
-                await txn.exq(Query.from_(table)
-                              .where(table.dataset_id.isin(ids))
-                              .delete())
+                await txn.exq(Query.from_(table).where(table.dataset_id.isin(ids)).delete())
 
             tbls = descs[col]
             assert not tbls[0].through, 'Listing table should be first'
             listing = Table(tbls[0].table)
 
-            await txn.exq(Query.from_(listing)
-                          .where(listing.id.isin(ids))
-                          .delete())
+            await txn.exq(Query.from_(listing).where(listing.id.isin(ids)).delete())
 
             for desc in [x for x in tbls if x.through]:
                 through = Table(desc.through)
                 id_field = getattr(through, desc.listing_id)
-                await txn.exq(Query.from_(through)
-                              .where(id_field.isin(ids))
-                              .delete())
+                await txn.exq(Query.from_(through).where(id_field.isin(ids)).delete())
 
     @run_in_transaction
     async def bulk_comment(self, comments, user, txn=None):
         comment, dataset, tmp, user_t = Tables('comment', 'dataset', 'tmp', 'user')
         comments = [(x['dataset_id'], x['author'], x['time_added'], x['text']) for x in comments]
-        query = Query.into(comment)\
-                     .columns('dataset_id', 'author', 'time_added', 'text')\
-                     .from_(Query.with_(Query.from_(ValuesTuple(*comments))
-                                        .select('*'), 'tmp(dataset_id, author, time_added, text)')
-                            .from_(tmp)
-                            .join(dataset)
-                            .on(tmp.dataset_id == dataset.id)
-                            .where(self.id_crit([x[0] for x in comments], user, 'comment'))
-                            .join(user_t)
-                            .on(tmp.author == user_t.name)
-                            .select(tmp.star))\
-                     .select('*')
+        # yapf: disable
+        query = (
+            Query
+            .into(comment)
+            .columns('dataset_id', 'author', 'time_added', 'text')
+            .from_(
+                Query.with_(
+                    Query
+                    .from_(ValuesTuple(*comments))
+                    .select('*'), 'tmp(dataset_id, author, time_added, text)',
+                )
+                .from_(tmp)
+                .join(dataset)
+                .on(tmp.dataset_id == dataset.id)
+                .where(self.id_crit([x[0] for x in comments], user, 'comment'))
+                .join(user_t)
+                .on(tmp.author == user_t.name)
+                .select(tmp.star),
+            )
+            .select('*')
+        )
+        # yapf: enable
         count = await txn.exq(query, count=True)
         if count != len(comments):
             raise DBPermissionError
@@ -1036,18 +1166,27 @@ class Database:
     async def comment_by_setids(self, setids, author, text, txn=None):
         comment, dataset, tmp, user = Tables('comment', 'dataset', 'tmp', 'user')
         time_added = int(utils.now() * 1000)
-        query = Query.into(comment)\
-                     .columns('dataset_id', 'author', 'time_added', 'text')\
-                     .from_(Query.with_(Query.from_(ValuesTuple((author, time_added, text)))
-                                        .select('*'), 'tmp(author, time_added, text)')
-                            .from_(dataset)
-                            .join(tmp)
-                            .cross()
-                            .join(user)
-                            .on(tmp.author == user.name)
-                            .where(dataset.setid.isin([str(x) for x in setids]))
-                            .select(dataset.id, tmp.star))\
-                     .select('*')
+        # yapf: disable
+        query = (
+            Query
+            .into(comment)
+            .columns('dataset_id', 'author', 'time_added', 'text')
+            .from_(
+                Query.with_(
+                    Query.from_(ValuesTuple((author, time_added, text)))
+                    .select('*'), 'tmp(author, time_added, text)',
+                )
+                .from_(dataset)
+                .join(tmp)
+                .cross()
+                .join(user)
+                .on(tmp.author == user.name)
+                .where(dataset.setid.isin([str(x) for x in setids]))
+                .select(dataset.id, tmp.star),
+            )
+            .select('*')
+        )
+        # yapf: enable
         count = await txn.exq(query, count=True)
         if count != len(setids):
             raise DBError(f'Commenting failed. User {author!r} or one of the datasets are missing')
@@ -1055,9 +1194,7 @@ class Database:
     @run_in_transaction
     async def delete_comments_by_ids(self, ids, txn=None):
         comment = Table('comment')
-        await txn.exq(Query.from_(comment)
-                      .where(comment.id.isin(ids))
-                      .delete())
+        await txn.exq(Query.from_(comment).where(comment.id.isin(ids)).delete())
 
     @run_in_transaction
     async def get_comments_by_setids(self, setids, txn=None):
@@ -1066,62 +1203,114 @@ class Database:
             crit = dataset.setid.isin([str(x) for x in setids])
         else:
             crit = dataset.discarded.ne(True)
-        query = Query.from_(comment)\
-                     .join(dataset).on(comment.dataset_id == dataset.id)\
-                     .select(comment.star, dataset.star)\
-                     .where(crit)
+        # yapf: disable
+        query = (
+            Query
+            .from_(comment)
+            .join(dataset).on(comment.dataset_id == dataset.id)
+            .select(comment.star, dataset.star)
+            .where(crit)
+        )
+        # yapf: enable
         items = await txn.exq(query)
         return modelize(items, ['dataset'])
 
     async def _ensure_values(self, tablename, values, user, txn):
         # pylint: disable=unused-argument
         table = Table(tablename)
-        query = Query.into(table)\
-                     .columns('value')\
-                     .from_(FromExceptQuery
-                            .from_(Query.from_(ValuesTuple(*values)).select('*'))
-                            .except_(Query().from_(table).select(table.value)))\
-                     .select('*')
+        # yapf: disable
+        query = (
+            Query
+            .into(table)
+            .columns('value')
+            .from_(
+                FromExceptQuery
+                .from_(Query.from_(ValuesTuple(*values)).select('*'))
+                .except_(Query().from_(table).select(table.value)),
+            )
+            .select('*')
+        )
+        # yapf: enable
         return await txn.exq(query, count=True)
 
-    async def _ensure_refs(self, relname, throughname, rel_id, back_id, relations, user,
-                           action, txn):
+    async def _ensure_refs(
+        self,
+        relname,
+        throughname,
+        rel_id,
+        back_id,
+        relations,
+        user,
+        action,
+        txn,
+    ):
         # pylint: disable=too-many-arguments
         rel, through = Tables(relname, throughname)
         relid = getattr(through, rel_id)
         backid = getattr(through, back_id)
-        query = Query.into(through)\
-                     .columns(rel_id, back_id)\
-                     .from_(FromExceptQuery
-                            .from_(self.get_resolve_value_query(rel, relations, user, action))
-                            .except_(Query.from_(through).select(relid, backid)))\
-                     .select('*')
+        # yapf: disable
+        query = (
+            Query
+            .into(through)
+            .columns(rel_id, back_id)
+            .from_(
+                FromExceptQuery
+                .from_(self.get_resolve_value_query(rel, relations, user, action))
+                .except_(Query.from_(through).select(relid, backid)),
+            )
+            .select('*')
+        )
+        # yapf: enable
         return await txn.exq(query, count=True)
 
     async def _delete_values_without_ref(self, relname, throughname, rel_id, txn):
         rel, through = Tables(relname, throughname)
-        await txn.exq(Query.from_(rel)
-                      .where(rel.id.notin(Query.from_(throughname)
-                                          .select(getattr(through, rel_id))
-                                          .distinct()))
-                      .delete())
+        # yapf: disable
+        await txn.exq(
+            Query
+            .from_(rel)
+            .where(
+                rel.id.notin(
+                    Query
+                    .from_(throughname)
+                    .select(getattr(through, rel_id))
+                    .distinct(),
+                ),
+            ).delete(),
+        )
+        # yapf: enable
 
     @run_in_transaction
     async def bulk_tag(self, add, remove, user, txn=None):
         if add:
             await self._ensure_values('tag', [(x[0],) for x in add], user, txn)
-            count = await self._ensure_refs('tag', 'dataset_tag', 'tag_id', 'dataset_id', add,
-                                            user, 'tag', txn)
+            count = await self._ensure_refs(
+                'tag',
+                'dataset_tag',
+                'tag_id',
+                'dataset_id',
+                add,
+                user,
+                'tag',
+                txn,
+            )
             if count != len(add):
                 raise DBPermissionError
 
         if remove:
             through, tag = Tables('dataset_tag', 'tag')
-            query = Query.from_(through)\
-                         .delete()\
-                         .select(through.tag_id, through.dataset_id)\
-                         .where(Tuple(through.tag_id, through.dataset_id)
-                                .isin(self.get_resolve_value_query(tag, remove, user, 'tag')))
+            # yapf: disable
+            query = (
+                Query
+                .from_(through)
+                .delete()
+                .select(through.tag_id, through.dataset_id)
+                .where(
+                    Tuple(through.tag_id, through.dataset_id)
+                    .isin(self.get_resolve_value_query(tag, remove, user, 'tag')),
+                )
+            )
+            # yapf: enable
             count = await txn.exq(query, count=True)
             if count != len(remove):
                 raise DBPermissionError
@@ -1130,13 +1319,18 @@ class Database:
     async def update_tags_by_setids(self, setids, add, remove, idempotent=False, txn=None):
         setids = [str(x) for x in setids]
         dataset, dataset_tag, tag = Tables('dataset', 'dataset_tag', 'tag')
-        tagmap = await txn.exq(Query.from_(dataset)
-                               .join(dataset_tag, how=JoinType.left_outer)
-                               .on(dataset.id == dataset_tag.dataset_id)
-                               .join(tag, how=JoinType.left_outer)
-                               .on(tag.id == dataset_tag.tag_id)
-                               .select(tag.value, dataset.id)
-                               .where(dataset.setid.isin(setids)))
+        # yapf: disable
+        tagmap = await txn.exq(
+            Query
+            .from_(dataset)
+            .join(dataset_tag, how=JoinType.left_outer)
+            .on(dataset.id == dataset_tag.dataset_id)
+            .join(tag, how=JoinType.left_outer)
+            .on(tag.id == dataset_tag.tag_id)
+            .select(tag.value, dataset.id)
+            .where(dataset.setid.isin(setids)),
+        )
+        # yapf: enable
         current = {tuple(x) for x in tagmap}
         ids = [x[1] for x in current]
         add = set(product(add, ids))
@@ -1148,39 +1342,48 @@ class Database:
 
     @run_in_transaction
     async def list_tags(self, collections=None, txn=None):
-        collection, dataset, dataset_tag, tag = Tables('collection', 'dataset', 'dataset_tag',
-                                                       'tag')
-        query = Query.from_(tag)\
-                     .select('value')\
-                     .distinct()\
-                     .orderby('value')
+        collection, dataset, dataset_tag, tag = Tables(
+            'collection',
+            'dataset',
+            'dataset_tag',
+            'tag',
+        )
+        query = Query.from_(tag).select('value').distinct().orderby('value')
 
         if collections:
-            query = query.join(dataset_tag, how=JoinType.left_outer)\
-                         .on(tag.id == dataset_tag.tag_id)\
-                         .join(dataset)\
-                         .on(dataset_tag.dataset_id == dataset.id)\
-                         .join(collection)\
-                         .on(dataset.collection_id == collection.id)\
-                         .where(collection.name.isin(collections))
+            # yapf: disable
+            query = (
+                query
+                .join(dataset_tag, how=JoinType.left_outer)
+                .on(tag.id == dataset_tag.tag_id)
+                .join(dataset)
+                .on(dataset_tag.dataset_id == dataset.id)
+                .join(collection)
+                .on(dataset.collection_id == collection.id)
+                .where(collection.name.isin(collections))
+            )
+            # yapf: enable
 
         return [x['value'] for x in await txn.exq(query)]
 
     @run_in_transaction
     async def delete_comments_tags(self, setids, comments, tags, txn=None):
         dataset, dataset_tag, comment = Tables('dataset', 'dataset_tag', 'comment')
-        subq = Query.from_(dataset)\
-                    .select(dataset.id)\
-                    .where(dataset.setid.isin([str(x) for x in setids]))
+        # yapf: disable
+        subq = (
+            Query
+            .from_(dataset)
+            .select(dataset.id)
+            .where(dataset.setid.isin([str(x) for x in setids]))
+        )
+        # yapf: enable
         if tags:
-            await txn.exq(Query.from_(dataset_tag)
-                          .where(dataset_tag.dataset_id.isin(subq))
-                          .delete())
+            await txn.exq(
+                Query.from_(dataset_tag).where(dataset_tag.dataset_id.isin(subq)).delete(),
+            )
 
         if comments:
-            await txn.exq(Query.from_(comment)
-                          .where(comment.dataset_id.isin(subq))
-                          .delete())
+            await txn.exq(Query.from_(comment).where(comment.dataset_id.isin(subq)).delete())
 
     @run_in_transaction
     async def delete_tag_values_without_ref(self, txn=None):
@@ -1189,40 +1392,55 @@ class Database:
     @run_in_transaction
     async def get_all_known_for_collection(self, collections, name, user, txn=None):
         collection_t = Table('collection')
-        res = await txn.exq(self.get_actionable('collection', user, 'read')
-                            .where(collection_t.name == name))
+        res = await txn.exq(
+            self.get_actionable('collection', user, 'read').where(collection_t.name == name),
+        )
         if len(res) != 1:
             raise DBPermissionError
         collection = collections[name]
         descs = [x for x in collection.table_descriptors if x.through]
         all_known = {
-            desc.key: [
-                x['value'] for x in await txn.exq(Query.from_(desc.table).select('value'))
-            ]
+            desc.key: [x['value'] for x in await txn.exq(Query.from_(desc.table).select('value'))]
             for desc in descs
             if {'any', 'all'}.intersection(collection.filter_specs[desc.key].operators)
         }
-        all_known.update({
-            'f_status': list(STATUS),
-            'f_tags': await self.get_all_known_tags_for_collection(collection.name),
-        })
+        all_known.update(
+            {
+                'f_status': list(STATUS),
+                'f_tags': await self.get_all_known_tags_for_collection(collection.name),
+            },
+        )
         return all_known
 
     @run_in_transaction
     async def get_all_known_tags_for_collection(self, collection_name, txn=None):
-        collection, dataset, dataset_tag, tag = Tables('collection', 'dataset', 'dataset_tag',
-                                                       'tag')
-        query = Query.from_(tag)\
-                     .select(tag.value)\
-                     .where(tag.id.isin(Query.from_(dataset_tag)
-                                        .join(dataset)
-                                        .on(dataset_tag.dataset_id == dataset.id)
-                                        .select(dataset_tag.tag_id)
-                                        .join(collection)
-                                        .on(dataset.collection_id == collection.id)
-                                        .where(collection.name == collection_name)
-                                        .distinct()))\
-                     .orderby(tag.value)
+        collection, dataset, dataset_tag, tag = Tables(
+            'collection',
+            'dataset',
+            'dataset_tag',
+            'tag',
+        )
+        # yapf: disable
+        query = (
+            Query
+            .from_(tag)
+            .select(tag.value)
+            .where(
+                tag.id.isin(
+                    Query
+                    .from_(dataset_tag)
+                    .join(dataset)
+                    .on(dataset_tag.dataset_id == dataset.id)
+                    .select(dataset_tag.tag_id)
+                    .join(collection)
+                    .on(dataset.collection_id == collection.id)
+                    .where(collection.name == collection_name)
+                    .distinct(),
+                ),
+            )
+            .orderby(tag.value)
+        )
+        # yapf: enable
         return [x['value'] for x in await txn.exq(query)]
 
     @staticmethod
@@ -1230,17 +1448,24 @@ class Database:
         listing, dataset, dataset_tag, tag = \
             Tables(listing, 'dataset', 'dataset_tag', 'tag')
 
-        return Query.from_(listing)\
-                    .join(dataset, how=JoinType.left_outer)\
-                    .on(listing.id == dataset.id)\
-                    .join(dataset_tag, how=JoinType.left_outer)\
-                    .on(dataset.id == dataset_tag.dataset_id)\
-                    .join(tag, how=JoinType.left_outer)\
-                    .on(dataset_tag.tag_id == tag.id)\
-                    .select(listing.id.as_('id'),
-                            listing.row.as_('row'),
-                            dataset.status.as_('status'),
-                            GroupConcat(tag.value).as_('tag_value'))
+        # yapf: disable
+        return (
+            Query
+            .from_(listing)
+            .join(dataset, how=JoinType.left_outer)
+            .on(listing.id == dataset.id)
+            .join(dataset_tag, how=JoinType.left_outer)
+            .on(dataset.id == dataset_tag.dataset_id)
+            .join(tag, how=JoinType.left_outer)
+            .on(dataset_tag.tag_id == tag.id)
+            .select(
+                listing.id.as_('id'),
+                listing.row.as_('row'),
+                dataset.status.as_('status'),
+                GroupConcat(tag.value).as_('tag_value'),
+            )
+        )
+        # yapf: enable
 
     @staticmethod
     def try_extended_filter(query, name, value, operator, val_type, col):  # pylint: disable=unused-argument
@@ -1248,6 +1473,7 @@ class Database:
 
     @staticmethod
     def postprocess_listing(rows):
+
         def fmt(row):
             if not row['tag_value']:
                 return '[]'
@@ -1256,13 +1482,13 @@ class Database:
         return [
             {
                 'id': row['id'],
-                'row': (row['row']
-                        .replace('["#TAGS#"]', fmt(row))
-                        .replace('"#TAGS#"', fmt(row)[1:-1] if fmt(row) != '[]' else '')
-                        .replace('[,', '[')
-                        .replace('"#STATUS#"', STATUS_STRS[row['status']])),
-            }
-            for row in rows
+                'row': (
+                    row['row'].replace('["#TAGS#"]', fmt(row)).replace(
+                        '"#TAGS#"',
+                        fmt(row)[1:-1] if fmt(row) != '[]' else '',
+                    ).replace('[,', '[').replace('"#STATUS#"', STATUS_STRS[row['status']])
+                ),
+            } for row in rows
         ]
 
     @run_in_transaction
@@ -1271,9 +1497,15 @@ class Database:
         listing, dataset, dataset_tag, tag = \
             Tables(descs[0].table, 'dataset', 'dataset_tag', 'tag')
 
-        query = self.get_listing_query(descs[0].table)\
-                    .where(dataset.discarded.ne(True)
-                           & dataset.id.isin(self.get_actionable('dataset', user, 'list')))
+        # yapf: disable
+        query = (
+            self.get_listing_query(descs[0].table)
+            .where(
+                dataset.discarded.ne(True) &
+                dataset.id.isin(self.get_actionable('dataset', user, 'list')),
+            )
+        )
+        # yapf: enable
 
         for name, value, operator, val_type in filters:
             if isinstance(value, int):
@@ -1281,9 +1513,16 @@ class Database:
 
             if name == 'f_comments':
                 comment = Table('comment')
-                query = query.where(listing.id.isin(Query.from_(comment)
-                                                    .select(comment.dataset_id)
-                                                    .where(escaped_contains(comment.text, value))))
+                # yapf: disable
+                query = query.where(
+                    listing.id.isin(
+                        Query
+                        .from_(comment)
+                        .select(comment.dataset_id)
+                        .where(escaped_contains(comment.text, value)),
+                    ),
+                )
+                # yapf: enable
                 continue
 
             if name == 'f_status':
@@ -1303,21 +1542,35 @@ class Database:
 
             if name == 'f_tags':
                 if operator == 'any':
-                    query = query.where(listing.id.isin(Query.from_(dataset_tag)
-                                                        .join(tag)
-                                                        .on(dataset_tag.tag_id == tag.id)
-                                                        .where(tag.value.isin(value))
-                                                        .select(dataset_tag.dataset_id)
-                                                        .distinct()))
+                    # yapf: disable
+                    query = query.where(
+                        listing.id.isin(
+                            Query
+                            .from_(dataset_tag)
+                            .join(tag)
+                            .on(dataset_tag.tag_id == tag.id)
+                            .where(tag.value.isin(value))
+                            .select(dataset_tag.dataset_id)
+                            .distinct(),
+                        ),
+                    )
+                    # yapf: enable
 
                 elif operator == 'all':
-                    query = query.where(listing.id.isin(Query.from_(dataset_tag)
-                                                        .join(tag)
-                                                        .on(dataset_tag.tag_id == tag.id)
-                                                        .where(tag.value.isin(value))
-                                                        .select(dataset_tag.dataset_id)
-                                                        .groupby(dataset_tag.dataset_id)
-                                                        .having(fn.Count('*') == len(value))))
+                    # yapf: disable
+                    query = query.where(
+                        listing.id.isin(
+                            Query
+                            .from_(dataset_tag)
+                            .join(tag)
+                            .on(dataset_tag.tag_id == tag.id)
+                            .where(tag.value.isin(value))
+                            .select(dataset_tag.dataset_id)
+                            .groupby(dataset_tag.dataset_id)
+                            .having(fn.Count('*') == len(value)),
+                        ),
+                    )
+                    # yapf: enable
 
                 else:
                     raise UnknownOperatorError(operator)
@@ -1338,8 +1591,14 @@ class Database:
                 if operator in ['le', 'gt']:
                     value = value + 24 * 3600 * 1000 - 1
 
-            extended_done, query = self.try_extended_filter(query, name, value, operator, val_type,
-                                                            collection)
+            extended_done, query = self.try_extended_filter(
+                query,
+                name,
+                value,
+                operator,
+                val_type,
+                collection,
+            )
             if extended_done:
                 continue
 
@@ -1374,12 +1633,18 @@ class Database:
                 through = Table(desc.through)
                 rel_id = getattr(through, desc.rel_id)
                 listing_id = getattr(through, desc.listing_id)
-                query = query.where(listing.id.isin(Query.from_(through)
-                                                    .join(rel)
-                                                    .on(rel_id == rel.id)
-                                                    .where(rel.value.isin(value))
-                                                    .select(listing_id)
-                                                    .distinct()))
+                # yapf: disable
+                query = query.where(
+                    listing.id.isin(
+                        Query
+                        .from_(through)
+                        .join(rel)
+                        .on(rel_id == rel.id)
+                        .where(rel.value.isin(value))
+                        .select(listing_id).distinct(),
+                    ),
+                )
+                # yapf: enable
 
             elif operator == 'all':
                 desc = findfirst(lambda x, name=name: x.key == name, descs)
@@ -1387,13 +1652,20 @@ class Database:
                 through = Table(desc.through)
                 rel_id = getattr(through, desc.rel_id)
                 listing_id = getattr(through, desc.listing_id)
-                query = query.where(listing.id.isin(Query.from_(through)
-                                                    .join(rel)
-                                                    .on(rel_id == rel.id)
-                                                    .where(rel.value.isin(value))
-                                                    .select(listing_id)
-                                                    .groupby(listing_id)
-                                                    .having(fn.Count('*') == len(value))))
+                # yapf: disable
+                query = query.where(
+                    listing.id.isin(
+                        Query
+                        .from_(through)
+                        .join(rel)
+                        .on(rel_id == rel.id)
+                        .where(rel.value.isin(value))
+                        .select(listing_id)
+                        .groupby(listing_id)
+                        .having(fn.Count('*') == len(value)),
+                    ),
+                )
+                # yapf: enable
 
             elif operator == 'substring_any':
                 desc = findfirst(lambda x, name=name: x.key == name, descs)
@@ -1401,12 +1673,19 @@ class Database:
                 through = Table(desc.through)
                 rel_id = getattr(through, desc.rel_id)
                 listing_id = getattr(through, desc.listing_id)
-                query = query.where(listing.id.isin(Query.from_(through)
-                                                    .join(rel)
-                                                    .on(rel_id == rel.id)
-                                                    .where(escaped_contains(rel.value, value))
-                                                    .select(listing_id)
-                                                    .distinct()))
+                # yapf: disable
+                query = query.where(
+                    listing.id.isin(
+                        Query
+                        .from_(through)
+                        .join(rel)
+                        .on(rel_id == rel.id)
+                        .where(escaped_contains(rel.value, value))
+                        .select(listing_id)
+                        .distinct(),
+                    ),
+                )
+                # yapf: enable
 
             elif operator == 'words':
                 for word in value:
@@ -1423,8 +1702,17 @@ class Database:
             await self._delete_values_without_ref(desc.table, desc.through, desc.rel_id, txn)
 
     @run_in_transaction
-    async def query(self, collections=None, discarded=None, outdated=None, path=None, tags=None,
-                    abbrev=None, missing=None, txn=None):
+    async def query(
+        self,
+        collections=None,
+        discarded=None,
+        outdated=None,
+        path=None,
+        tags=None,
+        abbrev=None,
+        missing=None,
+        txn=None,
+    ):
         # pylint: disable=too-many-arguments, too-many-locals
 
         abbrev = 10 if abbrev is True else abbrev
@@ -1435,9 +1723,14 @@ class Database:
 
         if collections:
             collection = Table('collection')
-            query = query.join(collection)\
-                         .on(dataset.collection_id == collection.id)\
-                         .where(collection.name.isin(collections))
+            # yapf: disable
+            query = (
+                query
+                .join(collection)
+                .on(dataset.collection_id == collection.id)
+                .where(collection.name.isin(collections))
+            )
+            # yapf: enable
 
         if outdated:
             bitmask = ValueWrapper(STATUS_OUTDATED)
@@ -1448,52 +1741,93 @@ class Database:
         if path or missing:
             files = Table('file')
             if path:
-                query = query.where(dataset.id.isin(Query.from_(files)
-                                                    .where(escaped_startswith(files.path, path))
-                                                    .select(files.dataset_id)
-                                                    .distinct()))
+                # yapf: disable
+                query = query.where(
+                    dataset.id.isin(
+                        Query
+                        .from_(files)
+                        .where(escaped_startswith(files.path, path))
+                        .select(files.dataset_id)
+                        .distinct(),
+                    ),
+                )
+                # yapf: enable
             if missing:
-                query = query.where(dataset.id.isin(Query.from_(files)
-                                                    .where(files.missing == missing)
-                                                    .select(files.dataset_id)
-                                                    .distinct()))
+                # yapf: disable
+                query = query.where(
+                    dataset.id.isin(
+                        Query
+                        .from_(files)
+                        .where(files.missing == missing)
+                        .select(files.dataset_id)
+                        .distinct(),
+                    ),
+                )
+                # yapf: enable
 
         if tags:
             tag = Table('tag')
             dataset_tag = Table('dataset_tag')
-            query = query.where(dataset.id.isin(Query.from_(dataset_tag)
-                                                .join(tag)
-                                                .on(dataset_tag.tag_id == tag.id)
-                                                .where(tag.value.isin(tags))
-                                                .select(dataset_tag.dataset_id)
-                                                .distinct()))
+            # yapf: disable
+            query = query.where(
+                dataset.id.isin(
+                    Query
+                    .from_(dataset_tag)
+                    .join(tag)
+                    .on(dataset_tag.tag_id == tag.id)
+                    .where(tag.value.isin(tags))
+                    .select(dataset_tag.dataset_id)
+                    .distinct(),
+                ),
+            )
+            # yapf: enable
 
-        query = query.select(dataset.setid)\
-                     .orderby(dataset.setid)
+        query = query.select(dataset.setid).orderby(dataset.setid)
         datasets = await txn.exq(query)
-        return [
-            x['setid'][:abbrev] if abbrev else x['setid']
-            for x in datasets
-        ]
+        return [x['setid'][:abbrev] if abbrev else x['setid'] for x in datasets]
 
     @run_in_transaction
     async def update_listing_relations(self, desc, values, relations, txn=None):
         await self._ensure_values(desc.table, values, None, txn)
-        await self._ensure_refs(desc.table, desc.through, desc.rel_id, desc.listing_id, relations,
-                                '::', None, txn=txn)
+        await self._ensure_refs(
+            desc.table,
+            desc.through,
+            desc.rel_id,
+            desc.listing_id,
+            relations,
+            '::',
+            None,
+            txn=txn,
+        )
 
         table, through = Tables(desc.table, desc.through)
         relid = getattr(through, desc.rel_id)
         backid = getattr(through, desc.listing_id)
-        await txn.exq(Query.from_(through)
-                      .where(backid.isin({x[1] for x in relations})
-                             & ~Tuple(relid, backid).isin(
-                                 self.get_resolve_value_query(table, relations, '::', None)))
-                      .delete())
+        # yapf: disable
+        await txn.exq(
+            Query
+            .from_(through)
+            .where(
+                backid.isin({x[1] for x in relations}) &
+                ~Tuple(relid, backid).isin(
+                    self.get_resolve_value_query(table, relations, '::', None),
+                ),
+            ).delete(),
+        )
+        # yapf: enable
 
     @run_in_transaction
-    async def rpc_query(self, model, filters, attrs, order, limit, offset,  # noqa: C901
-                        user, txn=None):
+    async def rpc_query(  # noqa: C901
+        self,
+        model,
+        filters,
+        attrs,
+        order,
+        limit,
+        offset,
+        user,
+        txn=None,
+    ):
         # pylint: disable=too-many-arguments, too-many-statements, too-many-locals, too-many-branches
         result = {}
         if model.startswith('collection:'):
@@ -1511,9 +1845,7 @@ class Database:
                 raise ValueError(f'there is no model "{model}"')
 
         select = [
-            getattr(table, k)
-            for k, v in attrs.items()
-            if v is True and k in tablemeta.db_fields
+            getattr(table, k) for k, v in attrs.items() if v is True and k in tablemeta.db_fields
         ]
         if select:
             if 'id' not in attrs:
@@ -1542,8 +1874,10 @@ class Database:
         if order:
             if not isinstance(order, list) or len(order) != 2:
                 raise ValueError(f'Order "{order}" should be ["fieldname", "ASC|DESC"]')
-            query = query.orderby(getattr(table, order[0]),
-                                  order=Order.desc if order[1] == 'DESC' else Order.asc)
+            query = query.orderby(
+                getattr(table, order[0]),
+                order=Order.desc if order[1] == 'DESC' else Order.asc,
+            )
         if limit:
             query = query.limit(limit)
             if offset:
@@ -1575,16 +1909,19 @@ class Database:
                 subtable = Table(tablename)
                 if '*' not in select and field.relation_field not in select:
                     select.append(field.relation_field)
-                query = Query.from_(subtable)\
-                             .select(*select)\
-                             .where(getattr(subtable, field.relation_field).isin(ids))
+                # yapf: disable
+                query = (
+                    Query
+                    .from_(subtable)
+                    .select(*select)
+                    .where(getattr(subtable, field.relation_field).isin(ids))
+                )
+                # yapf: enable
                 query = customize_query(query, tablename, subtable)
                 relres = await txn.exq(query)
                 for prime in qres:
                     prime[fieldname] = [
-                        x['id']
-                        for x in relres
-                        if x[field.relation_field] == prime['id']
+                        x['id'] for x in relres if x[field.relation_field] == prime['id']
                     ]
                 if model.startswith('collection:'):
                     reskey = fieldname
@@ -1597,15 +1934,29 @@ class Database:
                 through = Table(field.through)
                 tablename = field.model_class._meta.table
                 rel = Table(tablename)
-                query = Query.from_(through)\
-                             .select(field.backward_key, field.forward_key)\
-                             .where(getattr(through, field.backward_key).isin(ids))
-                query = customize_query(query, field.through, through,
-                                        getattr(through, field.forward_key))
+                # yapf: disable
+                query = (
+                    Query
+                    .from_(through)
+                    .select(field.backward_key, field.forward_key)
+                    .where(getattr(through, field.backward_key).isin(ids))
+                )
+                # yapf: enable
+                query = customize_query(
+                    query,
+                    field.through,
+                    through,
+                    getattr(through, field.forward_key),
+                )
                 refs = await txn.exq(query)
-                query = Query.from_(rel)\
-                             .select(*select)\
-                             .where(rel.id.isin({x[field.forward_key] for x in refs}))
+                # yapf: disable
+                query = (
+                    Query
+                    .from_(rel)
+                    .select(*select)
+                    .where(rel.id.isin({x[field.forward_key] for x in refs}))
+                )
+                # yapf: enable
                 query = customize_query(query, tablename, rel)
                 relres = await txn.exq(query)
                 relids = [x['id'] for x in relres]
@@ -1639,19 +1990,21 @@ class Database:
         try:
             conn = sqlite3.connect(f'file:{dbpath}?mode=ro', uri=True)
             with conn:
-                have = conn.execute(Query.from_(metadata)
-                                    .select(metadata.value)
-                                    .where(metadata.key == 'database_version')
-                                    .get_sql())\
-                           .fetchone()[0]
+                # yapf: disable
+                have = conn.execute(
+                    Query
+                    .from_(metadata)
+                    .select(metadata.value)
+                    .where(metadata.key == 'database_version')
+                    .get_sql(),
+                ).fetchone()[0]
+                # yapf: enable
                 if have != required:
                     raise DBVersionError(
                         f'DB version on disk "{have}", but "{required}" required.',
                     )
         except (sqlite3.OperationalError, TypeError):
-            raise DBVersionError(
-                'DB version is unknown, metadata table or version entry missing.',
-            )
+            raise DBVersionError('DB version is unknown, metadata table or version entry missing.')
         finally:
             conn.close()
 
@@ -1694,17 +2047,20 @@ class Database:
         dump = {'version': Database.DUMP_VERSION}
         async with await T2.transaction() as txn:
             master = Table('sqlite_master')
+            # yapf: disable
             tables = {
-                x['name']: Table(x['name'])
-                for x in await get_items_for_query(
-                    Query.from_(master)
+                x['name']: Table(x['name']) for x in await get_items_for_query(
+                    Query
+                    .from_(master)
                     .select(master.name)
-                    .where((master.type == 'table')
-                           & escaped_not_startswith(master.name, 'sqlite_')
-                           & escaped_not_startswith(master.name, 'l_')),
+                    .where(
+                        (master.type == 'table') & escaped_not_startswith(master.name, 'sqlite_') &
+                        escaped_not_startswith(master.name, 'l_'),
+                    ),
                     txn,
                 )
             }
+            # yapf: enable
 
             for tbls, dumper in cls.EXPORT_HANDLERS:
                 assert tbls.issubset(tables.keys()), tbls

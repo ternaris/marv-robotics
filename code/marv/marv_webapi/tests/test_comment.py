@@ -8,9 +8,12 @@ async def test_comment(client):
     res = await client.post('/marv/api/comment', headers=client.headers, json={})
     assert res.status == 400
 
-    res = await client.post_json('/marv/api/comment', json={
-        '1': {
-            'add': ['lorem ipsum', 'dolor'],
+    res = await client.post_json(
+        '/marv/api/comment',
+        json={
+            '1': {
+                'add': ['lorem ipsum', 'dolor'],
+            },
         },
-    })
+    )
     assert res == {}

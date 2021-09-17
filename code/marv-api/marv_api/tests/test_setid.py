@@ -7,6 +7,7 @@ from ..setid import SetID, decode_setid, encode_setid
 
 
 class TestCase(unittest.TestCase):
+
     def test_setid(self):  # pylint: disable=no-self-use
         assert SetID(42) != SetID(17)
         assert SetID(42) == SetID('fiaaaaaaaaaaaaaaaaaaaaaaaa')

@@ -57,15 +57,39 @@ async def test():
         await run_nodes(DATASET, [foreach, withall])
 
     assert [x.msg for x in log.records if x.msg[0] == 0] == [
-        (0, 'Output 1', {'a': 1}),
-        (0, 'Output 2', {'b': 10}),
-        (0, 'Output 3', {'c': 100}),
-        (0, 'Output 1', {'a': 2}),
-        (0, 'Output 2', {'b': 20}),
-        (0, 'Output 3', {'c': 200}),
+        (0, 'Output 1', {
+            'a': 1,
+        }),
+        (0, 'Output 2', {
+            'b': 10,
+        }),
+        (0, 'Output 3', {
+            'c': 100,
+        }),
+        (0, 'Output 1', {
+            'a': 2,
+        }),
+        (0, 'Output 2', {
+            'b': 20,
+        }),
+        (0, 'Output 3', {
+            'c': 200,
+        }),
     ]
     assert [x.msg for x in log.records if x.msg[0] == 1] == [
-        (1, [{'a': 1}, {'b': 10}, {'c': 100}]),
-        (1, [{'a': 2}, {'b': 20}, {'c': 200}]),
+        (1, [{
+            'a': 1,
+        }, {
+            'b': 10,
+        }, {
+            'c': 100,
+        }]),
+        (1, [{
+            'a': 2,
+        }, {
+            'b': 20,
+        }, {
+            'c': 200,
+        }]),
         (1, [None, None, None]),
     ]

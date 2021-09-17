@@ -26,20 +26,53 @@ def summary_keyval(dataset, bagmeta):
     Useful for detail_summary_widgets.
     """
     dataset, bagmeta = yield marv.pull_all(dataset, bagmeta)
-    yield marv.push({'keyval': {
-        'items': [
-            {'title': 'size', 'formatter': 'filesize', 'list': False,
-             'cell': {'uint64': sum(x.size for x in dataset.files)}},
-            {'title': 'files', 'list': False,
-             'cell': {'uint64': len(dataset.files)}},
-            {'title': 'start time', 'formatter': 'datetime', 'list': False,
-             'cell': {'timestamp': bagmeta.start_time}},
-            {'title': 'end time', 'formatter': 'datetime', 'list': False,
-             'cell': {'timestamp': bagmeta.end_time}},
-            {'title': 'duration', 'formatter': 'timedelta', 'list': False,
-             'cell': {'timedelta': bagmeta.duration}},
-        ],
-    }})
+    yield marv.push(
+        {
+            'keyval': {
+                'items': [
+                    {
+                        'title': 'size',
+                        'formatter': 'filesize',
+                        'list': False,
+                        'cell': {
+                            'uint64': sum(x.size for x in dataset.files),
+                        },
+                    },
+                    {
+                        'title': 'files',
+                        'list': False,
+                        'cell': {
+                            'uint64': len(dataset.files),
+                        },
+                    },
+                    {
+                        'title': 'start time',
+                        'formatter': 'datetime',
+                        'list': False,
+                        'cell': {
+                            'timestamp': bagmeta.start_time,
+                        },
+                    },
+                    {
+                        'title': 'end time',
+                        'formatter': 'datetime',
+                        'list': False,
+                        'cell': {
+                            'timestamp': bagmeta.end_time,
+                        },
+                    },
+                    {
+                        'title': 'duration',
+                        'formatter': 'timedelta',
+                        'list': False,
+                        'cell': {
+                            'timedelta': bagmeta.duration,
+                        },
+                    },
+                ],
+            },
+        },
+    )
 
 
 @marv.node(Widget)
@@ -52,12 +85,31 @@ def bagmeta_table(bagmeta, dataset):
     """
     dataset, bagmeta = yield marv.pull_all(dataset, bagmeta)
     columns = [
-        {'title': 'Name', 'formatter': 'rellink', 'sortkey': 'title'},
-        {'title': 'Size', 'formatter': 'filesize'},
-        {'title': 'Start time', 'formatter': 'datetime'},
-        {'title': 'End time', 'formatter': 'datetime'},
-        {'title': 'Duration', 'formatter': 'timedelta'},
-        {'title': 'Message count', 'align': 'right'},
+        {
+            'title': 'Name',
+            'formatter': 'rellink',
+            'sortkey': 'title',
+        },
+        {
+            'title': 'Size',
+            'formatter': 'filesize',
+        },
+        {
+            'title': 'Start time',
+            'formatter': 'datetime',
+        },
+        {
+            'title': 'End time',
+            'formatter': 'datetime',
+        },
+        {
+            'title': 'Duration',
+            'formatter': 'timedelta',
+        },
+        {
+            'title': 'Message count',
+            'align': 'right',
+        },
     ]
     rows = []
     bags = list(bagmeta.bags)
@@ -70,23 +122,63 @@ def bagmeta_table(bagmeta, dataset):
             continue
         if path.suffix == '.bag':
             bag = bags.pop(0)
-            rows.append({'id': idx, 'cells': [
-                {'link': {'href': f'{idx}', 'title': path.name}},
-                {'uint64': file.size},
-                {'timestamp': bag.start_time},
-                {'timestamp': bag.end_time},
-                {'timedelta': bag.duration},
-                {'uint64': bag.msg_count},
-            ]})
+            rows.append(
+                {
+                    'id': idx,
+                    'cells': [
+                        {
+                            'link': {
+                                'href': f'{idx}',
+                                'title': path.name,
+                            },
+                        },
+                        {
+                            'uint64': file.size,
+                        },
+                        {
+                            'timestamp': bag.start_time,
+                        },
+                        {
+                            'timestamp': bag.end_time,
+                        },
+                        {
+                            'timedelta': bag.duration,
+                        },
+                        {
+                            'uint64': bag.msg_count,
+                        },
+                    ],
+                },
+            )
         else:
-            rows.append({'id': idx, 'cells': [
-                {'link': {'href': f'{idx}', 'title': path.name}},
-                {'uint64': file.size},
-                {'void': None},
-                {'void': None},
-                {'void': None},
-                {'void': None},
-            ]})
+            rows.append(
+                {
+                    'id': idx,
+                    'cells': [
+                        {
+                            'link': {
+                                'href': f'{idx}',
+                                'title': path.name,
+                            },
+                        },
+                        {
+                            'uint64': file.size,
+                        },
+                        {
+                            'void': None,
+                        },
+                        {
+                            'void': None,
+                        },
+                        {
+                            'void': None,
+                        },
+                        {
+                            'void': None,
+                        },
+                    ],
+                },
+            )
     yield marv.push({'table': {'columns': columns, 'rows': rows}})
 
 
@@ -108,8 +200,7 @@ def gnss_section(plots, title):
     for plot in plots:
         plotfile = yield marv.pull(plot)
         if plotfile:
-            widgets.append({'title': plot.title,
-                            'image': {'src': plotfile.relpath}})
+            widgets.append({'title': plot.title, 'image': {'src': plotfile.relpath}})
     assert len({x['title'] for x in widgets}) == len(widgets)
     if widgets:
         yield marv.push({'title': title, 'widgets': widgets})
@@ -157,19 +248,45 @@ def connections_section(bagmeta, dataset, title):
     if not bagmeta.topics:
         raise marv.Abort()
     columns = [
-        {'title': 'Topic'},
-        {'title': 'Type'},
-        {'title': 'MD5'},
-        {'title': 'Latching'},
-        {'title': 'Message count', 'align': 'right'},
+        {
+            'title': 'Topic',
+        },
+        {
+            'title': 'Type',
+        },
+        {
+            'title': 'MD5',
+        },
+        {
+            'title': 'Latching',
+        },
+        {
+            'title': 'Message count',
+            'align': 'right',
+        },
     ]
-    rows = [{'id': idx, 'cells': [
-        {'text': con.topic},
-        {'text': con.datatype},
-        {'text': con.md5sum},
-        {'bool': con.latching},
-        {'uint64': con.msg_count},
-    ]} for idx, con in enumerate(bagmeta.connections)]
+    rows = [
+        {
+            'id': idx,
+            'cells': [
+                {
+                    'text': con.topic,
+                },
+                {
+                    'text': con.datatype,
+                },
+                {
+                    'text': con.md5sum,
+                },
+                {
+                    'bool': con.latching,
+                },
+                {
+                    'uint64': con.msg_count,
+                },
+            ],
+        } for idx, con in enumerate(bagmeta.connections)
+    ]
     widgets = [{'table': {'columns': columns, 'rows': rows}}]
     # TODO: Add text widget explaining what can be seen here: ROS bag
     # files store connections. There can be multiple connections for
@@ -210,43 +327,68 @@ def trajectory_section(geojson, title, minzoom, maxzoom, tile_server_protocol):
     if not geojson:
         raise marv.Abort()
     suffix = '{z}/{x}/{y}.png'  # noqa: FS003
+    osm_attribution = (
+        '© <a href="http://openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    )
+    arcgis_attribution = (
+        'Sources: Esri, DigitalGlobe, GeoEye, Earthstar Geographics, CNES/Airbus DS, '
+        'USDA, USGS, AeroGRID, IGN, and the GIS User Community'
+    )
     layers = [
-        {'title': 'Background',
-         'tiles': [
-             {'title': 'Roadmap',
-              'url': (
-                  f'{tile_server_protocol}//[abc].osm.ternaris.com'
-                  f'/styles/osm-bright/rendered/{suffix}'
-              ),
-              'attribution': (
-                  '© <a href="http://openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              ),
-              'retina': 3,
-              'zoom': {'min': 0, 'max': 20}},
-             {'title': 'Satellite',
-              'url': (
-                  f'{tile_server_protocol}//server.arcgisonline.com'
-                  f'/ArcGIS/rest/services/World_Imagery/MapServer/tile/{suffix}'
-              ),
-              'attribution': (
-                  'Sources: Esri, DigitalGlobe, GeoEye, Earthstar Geographics, CNES/Airbus DS, '
-                  'USDA, USGS, AeroGRID, IGN, and the GIS User Community'
-              ),
-              'zoom': {'min': 0, 'max': 18}},
-         ]},
-        {'title': 'Trajectory',
-         'color': (0., 1., 0., 1.),
-         'geojson': geojson},
+        {
+            'title': 'Background',
+            'tiles': [
+                {
+                    'title': 'Roadmap',
+                    'url': (
+                        f'{tile_server_protocol}//[abc].osm.ternaris.com'
+                        f'/styles/osm-bright/rendered/{suffix}'
+                    ),
+                    'attribution': osm_attribution,
+                    'retina': 3,
+                    'zoom': {
+                        'min': 0,
+                        'max': 20,
+                    },
+                },
+                {
+                    'title': 'Satellite',
+                    'url': (
+                        f'{tile_server_protocol}//server.arcgisonline.com'
+                        f'/ArcGIS/rest/services/World_Imagery/MapServer/tile/{suffix}'
+                    ),
+                    'attribution': arcgis_attribution,
+                    'zoom': {
+                        'min': 0,
+                        'max': 18,
+                    },
+                },
+            ],
+        },
+        {
+            'title': 'Trajectory',
+            'color': (0., 1., 0., 1.),
+            'geojson': geojson,
+        },
     ]
     dct = make_map_dict({
         'layers': layers,
-        'zoom': {'min': minzoom, 'max': maxzoom},
+        'zoom': {
+            'min': minzoom,
+            'max': maxzoom,
+        },
     })
     jsonfile = yield marv.make_file('data.json')
     with open(jsonfile.path, 'w', encoding='utf-8') as f:
         json.dump(dct, f, sort_keys=True)
-    yield marv.push({'title': title,
-                     'widgets': [{'map_partial': f'marv-partial:{jsonfile.relpath}'}]})
+    yield marv.push(
+        {
+            'title': title,
+            'widgets': [{
+                'map_partial': f'marv-partial:{jsonfile.relpath}',
+            }],
+        },
+    )
 
 
 @marv.node(Section)
@@ -265,10 +407,10 @@ def video_section(videos, title):
     widgets = [
         {
             'title': video.title,
-            'video': {'src': videofile.relpath},
-        }
-        for video, videofile in zip(videos, videofiles)
-        if videofile is not None
+            'video': {
+                'src': videofile.relpath,
+            },
+        } for video, videofile in zip(videos, videofiles) if videofile is not None
     ]
     assert len({x['title'] for x in widgets}) == len(widgets)
     if widgets:

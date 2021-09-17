@@ -80,11 +80,15 @@ def get_local_granted(request):
 
 def generate_token(username, key):
     now = math.ceil(time.time())
-    return jwt.encode({
-        'exp': now + 2419200,  # 4 weeks expiration
-        'iat': now,
-        'sub': username,
-    }, key, algorithm='HS256')
+    return jwt.encode(
+        {
+            'exp': now + 2419200,  # 4 weeks expiration
+            'iat': now,
+            'sub': username,
+        },
+        key,
+        algorithm='HS256',
+    )
 
 
 def safejoin(basepath, rel):
@@ -104,9 +108,9 @@ def sendfile(path, approot, reverse_proxy, filename=None, headers=None):
     headers.setdefault('Content-Disposition', f'attachment; filename={filename or path.name}')
 
     if AGGRESSIVE_CACHING and (
-            path.suffix in ('.jpg', '.json')
-            or (path.suffix == '.mrv' and path.stat().st_size < 20 * 10**6)
-            or path.name == 'default-stream'
+        path.suffix in ('.jpg', '.json') or
+        (path.suffix == '.mrv' and path.stat().st_size < 20 * 10**6) or
+        path.name == 'default-stream'
     ):
         headers['Cache-Control'] = 'max-age=14400'
     else:
@@ -114,23 +118,27 @@ def sendfile(path, approot, reverse_proxy, filename=None, headers=None):
 
     if reverse_proxy == 'nginx':
         mime = mimetypes.guess_type(str(path))[0]
-        return web.Response(headers={
-            'Content-Type': mime or 'application/octet-stream',
-            'X-Accel-Buffering': 'no',
-            'X-Accel-Redirect': f'{approot}{str(path)}',
-            **headers,
-        })
+        return web.Response(
+            headers={
+                'Content-Type': mime or 'application/octet-stream',
+                'X-Accel-Buffering': 'no',
+                'X-Accel-Redirect': f'{approot}{str(path)}',
+                **headers,
+            },
+        )
 
     assert not reverse_proxy, f'Unknown reverse_proxy {reverse_proxy}'
     return web.FileResponse(path, headers=headers)
 
 
 class Webapi:
+
     def __init__(self, url_prefix=''):
         self.url_prefix = url_prefix
         self.endpoints = []
 
     def endpoint(self, url_rule, methods, only_anon=False, allow_anon=False):
+
         def closure(func):
             func.name = func.__name__
             func.url_rule = f'{self.url_prefix}{url_rule}'
@@ -142,6 +150,7 @@ class Webapi:
                     func.acl |= {'__unauthenticated__'}
             func.methods = methods
             self.endpoints.append(func)
+
         return closure
 
     def __repr__(self):

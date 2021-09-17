@@ -20,9 +20,15 @@ async def try_filelist(client):
 
 
 async def try_comment(client):
-    return await client.post('/marv/api/comment', headers=client.headers, json={
-        '1': {'add': ['lorem ipsum', 'dolor']},
-    })
+    return await client.post(
+        '/marv/api/comment',
+        headers=client.headers,
+        json={
+            '1': {
+                'add': ['lorem ipsum', 'dolor'],
+            },
+        },
+    )
 
 
 async def try_delete(client):
@@ -30,9 +36,17 @@ async def try_delete(client):
 
 
 async def try_tag(client):
-    return await client.post('/marv/api/tag', headers=client.headers, json={
-        'hodge': {'add': {f'tag{time.time()}': [1]}},
-    })
+    return await client.post(
+        '/marv/api/tag',
+        headers=client.headers,
+        json={
+            'hodge': {
+                'add': {
+                    f'tag{time.time()}': [1],
+                },
+            },
+        },
+    )
 
 
 async def try_untag(client):
@@ -40,19 +54,36 @@ async def try_untag(client):
 
     auth = await client.unauthenticate()
     await client.authenticate('adm', 'adm_pw')
-    await client.post('/marv/api/tag', headers=client.headers, json={
-        'hodge': {'add': {tag: [1]}},
-    })
+    await client.post(
+        '/marv/api/tag',
+        headers=client.headers,
+        json={
+            'hodge': {
+                'add': {
+                    tag: [1],
+                },
+            },
+        },
+    )
     await client.unauthenticate()
     if auth:
         client.headers['Authorization'] = auth
 
-    return await client.post('/marv/api/tag', headers=client.headers, json={
-        'hodge': {'remove': {tag: [1]}},
-    })
+    return await client.post(
+        '/marv/api/tag',
+        headers=client.headers,
+        json={
+            'hodge': {
+                'remove': {
+                    tag: [1],
+                },
+            },
+        },
+    )
 
 
 class AuthtestParams(namedtuple('Param', 'count expected forbidden local calls')):
+
     def __new__(cls, *args):
         assert len(args[-1]) == 7
         return super().__new__(cls, *args)
@@ -63,13 +94,15 @@ UNAUTH_PUBLIC = AuthtestParams(
     set(),
     {'admin'},
     {'download_raw', 'list', 'read'},
-    [(200, try_listing),
-     (200, try_details),
-     (200, try_filelist),
-     (401, try_comment),
-     (401, try_tag),
-     (401, try_untag),
-     (401, try_delete)],
+    [
+        (200, try_listing),
+        (200, try_details),
+        (200, try_filelist),
+        (401, try_comment),
+        (401, try_tag),
+        (401, try_untag),
+        (401, try_delete),
+    ],
 )
 
 UNAUTH_AUTHENTICATED = AuthtestParams(
@@ -77,13 +110,15 @@ UNAUTH_AUTHENTICATED = AuthtestParams(
     set(),
     {'admin'},
     set(),
-    [(401, try_listing),
-     (401, try_details),
-     (401, try_filelist),
-     (401, try_comment),
-     (401, try_tag),
-     (401, try_untag),
-     (401, try_delete)],
+    [
+        (401, try_listing),
+        (401, try_details),
+        (401, try_filelist),
+        (401, try_comment),
+        (401, try_tag),
+        (401, try_untag),
+        (401, try_delete),
+    ],
 )
 
 AUTH = AuthtestParams(
@@ -91,13 +126,15 @@ AUTH = AuthtestParams(
     set(),
     {'admin'},
     {'download_raw', 'list', 'read', 'comment', 'tag'},
-    [(200, try_listing),
-     (200, try_details),
-     (200, try_filelist),
-     (200, try_comment),
-     (200, try_tag),
-     (200, try_untag),
-     (403, try_delete)],
+    [
+        (200, try_listing),
+        (200, try_details),
+        (200, try_filelist),
+        (200, try_comment),
+        (200, try_tag),
+        (200, try_untag),
+        (403, try_delete),
+    ],
 )
 
 ADMIN = AuthtestParams(
@@ -105,42 +142,53 @@ ADMIN = AuthtestParams(
     {'admin'},
     set(),
     {'download_raw', 'list', 'read', 'comment', 'tag', 'delete'},
-    [(200, try_listing),
-     (200, try_details),
-     (200, try_filelist),
-     (200, try_comment),
-     (200, try_tag),
-     (200, try_untag),
-     (200, try_delete)],
+    [
+        (200, try_listing),
+        (200, try_details),
+        (200, try_filelist),
+        (200, try_comment),
+        (200, try_tag),
+        (200, try_untag),
+        (200, try_delete),
+    ],
 )
 
 
-@pytest.mark.parametrize(('auth', 'params'), [
-    pytest.param(
-       None, UNAUTH_PUBLIC,  # noqa: E121
-       marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:public'}),
-    ),
-    pytest.param(
-       ('test', 'test_pw'), AUTH,  # noqa: E121
-       marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:public'}),
-    ),
-    pytest.param(
-       ('adm', 'adm_pw'), ADMIN,  # noqa: E121
-       marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:public'}),
-    ),
-    pytest.param(
-        None, UNAUTH_AUTHENTICATED,
-        marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:authenticated'}),
-    ),
-    pytest.param(
-        ('test', 'test_pw'), AUTH,
-        marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:authenticated'}),
-    ),
-    pytest.param(
-        ('adm', 'adm_pw'), ADMIN,
-        marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:authenticated'}),
-    ),
-])
+@pytest.mark.parametrize(
+    ('auth', 'params'),
+    [
+        pytest.param(
+            None,
+            UNAUTH_PUBLIC,
+            marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:public'}),
+        ),
+        pytest.param(
+            ('test', 'test_pw'),
+            AUTH,
+            marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:public'}),
+        ),
+        pytest.param(
+            ('adm', 'adm_pw'),
+            ADMIN,
+            marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:public'}),
+        ),
+        pytest.param(
+            None,
+            UNAUTH_AUTHENTICATED,
+            marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:authenticated'}),
+        ),
+        pytest.param(
+            ('test', 'test_pw'),
+            AUTH,
+            marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:authenticated'}),
+        ),
+        pytest.param(
+            ('adm', 'adm_pw'),
+            ADMIN,
+            marks=pytest.mark.marv(site={'acl': 'marv_webapi.acls:authenticated'}),
+        ),
+    ],
+)
 async def test_profiles(client, auth, params):
     if auth:
         await client.authenticate(*auth)

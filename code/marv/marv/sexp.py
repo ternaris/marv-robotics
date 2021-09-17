@@ -8,7 +8,15 @@ from enum import Enum
 
 INVALID_CHARS = tuple(chr(x) for x in range(0x20))
 RESERVED_WORDS = (
-    'inf', 'infinity', 'Inf', 'Infinity', 'nan', 'NaN', 'True', 'False', 'None',
+    'inf',
+    'infinity',
+    'Inf',
+    'Infinity',
+    'nan',
+    'NaN',
+    'True',
+    'False',
+    'None',
 )
 STATE = Enum('ParserState', 'START LIST')
 TOKEN_END = re.compile(r'[\s\)]', flags=re.UNICODE)

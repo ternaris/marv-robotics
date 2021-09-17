@@ -21,9 +21,7 @@ def messages(meta):
     """Produce streams for requested topics if they exist."""
     meta = yield marv.pull(meta)
     requested = yield marv.get_requested()
-    all_msgs = {'a': list(range(1)),
-                'b': list(range(2)),
-                'c': list(range(3))}
+    all_msgs = {'a': list(range(1)), 'b': list(range(2)), 'c': list(range(3))}
     topics = [x.name for x in requested]
     streams = {}
     for topic in topics:
@@ -97,5 +95,7 @@ async def test():
     nodes = [collect]
     streams = await run_nodes(DATASET, nodes)
     assert streams == [
-        [{'acc': ['node_b-b0', 'node_c-c0', 'node_b-b1', 'node_c-c1', 'node_c-c2']}],
+        [{
+            'acc': ['node_b-b0', 'node_c-c0', 'node_b-b1', 'node_c-c1', 'node_c-c2'],
+        }],
     ]

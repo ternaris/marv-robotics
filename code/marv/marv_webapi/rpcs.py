@@ -29,9 +29,11 @@ async def rpc_entry(request):  # noqa: C901
         try:
             (func, payload), = rpc.items()
         except ValueError:
-            raise web.HTTPBadRequest(text=json.dumps({
-                'errors': ['rpc should be a single key value pair'],
-            }))
+            raise web.HTTPBadRequest(
+                text=json.dumps({
+                    'errors': ['rpc should be a single key value pair'],
+                }),
+            )
 
         if func == 'query':
             model = payload.get('model')
@@ -45,9 +47,15 @@ async def rpc_entry(request):  # noqa: C901
                 attrs['collection_id'] = attrs.pop('collection')
             # /v1 keeps collection
             try:
-                result = await request.app['site'].db.rpc_query(model, filters, attrs,
-                                                                order, limit, offset,
-                                                                request['username'])
+                result = await request.app['site'].db.rpc_query(
+                    model,
+                    filters,
+                    attrs,
+                    order,
+                    limit,
+                    offset,
+                    request['username'],
+                )
             except (OperationalError, ValueError) as err:
                 raise web.HTTPBadRequest(text=json.dumps({'errors': [str(err)]}))
 
@@ -56,11 +64,9 @@ async def rpc_entry(request):  # noqa: C901
                 # v1 keeps collection
                 if key == 'dataset':
                     collections = {
-                        x['id']: x['name']
-                        for x in (
-                            await request.app['site'].db.rpc_query('collection', {}, {},
-                                                                   None, None, None,
-                                                                   request['username'])
+                        x['id']: x['name'] for x in (
+                            await request.app['site'].db.
+                            rpc_query('collection', {}, {}, None, None, None, request['username'])
                         )['collection']
                     }
                     for value in values:

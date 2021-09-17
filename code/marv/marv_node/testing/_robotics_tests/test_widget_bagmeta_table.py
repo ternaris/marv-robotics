@@ -11,8 +11,10 @@ from marv_store import Store
 
 class TestCase(marv_node.testing.TestCase):
     # TODO: Generate bags instead, but with connection info!
-    BAGS = [resource_filename('marv_node.testing._robotics_tests', 'data/test_0.bag'),
-            resource_filename('marv_node.testing._robotics_tests', 'data/test_1.bag')]
+    BAGS = [
+        resource_filename('marv_node.testing._robotics_tests', 'data/test_0.bag'),
+        resource_filename('marv_node.testing._robotics_tests', 'data/test_1.bag'),
+    ]
 
     async def test_node(self):
         with temporary_directory() as storedir:

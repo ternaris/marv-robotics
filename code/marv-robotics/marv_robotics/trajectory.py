@@ -27,12 +27,14 @@ def navsatfix(stream):
             erroneous += 1
             continue
 
-        yield marv.push({
-            'status': rosmsg.status.status,
-            'lon': rosmsg.longitude,
-            'lat': rosmsg.latitude,
-            'timestamp': get_timestamp(rosmsg, msg),
-        })
+        yield marv.push(
+            {
+                'status': rosmsg.status.status,
+                'lon': rosmsg.longitude,
+                'lat': rosmsg.latitude,
+                'timestamp': get_timestamp(rosmsg, msg),
+            },
+        )
 
     if erroneous:
         log.warning('skipped %d erroneous messages', erroneous)
@@ -45,17 +47,24 @@ def _create_feature(coords, quality, timestamps):
     else:
         geotype = 'line_string'
 
-    color = ((1., 0.00, 0., 1.),  # rgba
-             (1., 0.65, 0., 1.),
-             (0., 0.00, 1., 1.),
-             (0., 1.00, 0., 1.))[quality]
+    color = (
+        (1., 0.00, 0., 1.),  # rgba
+        (1., 0.65, 0., 1.),
+        (0., 0.00, 1., 1.),
+        (0., 1.00, 0., 1.),
+    )[quality]
     return {
         'properties': {
             'color': color,
             'width': 4.,
             'timestamps': timestamps,
-            'markervertices': [c * 30 for c in (0., 0., -1., .3, -1., -.3)]},
-        'geometry': {geotype: {'coordinates': coords}},
+            'markervertices': [c * 30 for c in (0., 0., -1., .3, -1., -.3)],
+        },
+        'geometry': {
+            geotype: {
+                'coordinates': coords,
+            },
+        },
     }
 
 
