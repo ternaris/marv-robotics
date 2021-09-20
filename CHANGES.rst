@@ -23,9 +23,11 @@ Changed
 - Use rosbags library for all rosbag access **needs migration:** :ref:`migrate-upcoming`
 - Update to latest rosbags and pillow python packages
 - Use ruamel.yaml instead of pyyaml
+- Linter configuration and introduced yapf for automatic code formatting
 
 Deprecated
 ~~~~~~~~~~
+- 21.12.0 will remove support for ROS1 message type names, use new ROS2 names instead
 
 Removed
 ~~~~~~~
