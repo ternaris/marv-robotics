@@ -210,7 +210,7 @@ def test_scan_with_rosbag2(caplog, tmpdir):
     dirnames = ['extradir']
     with caplog.at_level(logging.WARNING):
         rv = scan(str(rb2), dirnames, ['metadata.yaml', 'foo.db3', 'bar.db3', 'extrafile'])
-    assert rv == [DSI('rb2', ['metadata.yaml', 'foo.db3', 'bar.db3'])]
+    assert rv == [DSI('rb2', ['bar.db3', 'foo.db3', 'metadata.yaml'])]
     assert dirnames == []
     assert caplog.record_tuples == [
         (
@@ -230,7 +230,7 @@ def test_scan_with_rosbag2(caplog, tmpdir):
     dirnames = []
     with caplog.at_level(logging.WARNING):
         rv = scan(str(rb2), dirnames, ['metadata.yaml', 'foo.db3', 'bar.db3'])
-    assert rv == [DSI('rb2', ['metadata.yaml', 'foo.db3', 'bar.db3'])]
+    assert rv == [DSI('rb2', ['bar.db3', 'foo.db3', 'metadata.yaml'])]
     assert caplog.record_tuples == []
 
 
@@ -306,5 +306,5 @@ def test_dirscan_with_rosbag2(caplog, tmpdir):
     dirnames = ['extradir']
     with caplog.at_level(logging.WARNING):
         rv = dirscan(str(rb2), dirnames, ['metadata.yaml', 'foo.db3', 'bar.db3'])
-    assert rv == [DSI('rb2', ['metadata.yaml', 'foo.db3', 'bar.db3'])]
+    assert rv == [DSI('rb2', ['bar.db3', 'foo.db3', 'metadata.yaml'])]
     assert dirnames == []

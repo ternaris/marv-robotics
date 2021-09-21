@@ -77,13 +77,12 @@ def _scan_rosbag2(log, dirpath, dirnames, filenames):
             return None
 
     filenames = set(filenames)
-    setfiles = ['metadata.yaml'] + [x.name for x in reader.paths]
+    setfiles = {'metadata.yaml'} | {x.name for x in reader.paths}
 
-    _setfiles = set(setfiles)
-    if extra := filenames - _setfiles:
+    if extra := filenames - setfiles:
         log.warning('Ignoring files not listed in metadata.yaml %s: %r', dirpath, sorted(extra))
 
-    if missing := _setfiles - filenames:
+    if missing := setfiles - filenames:
         log.error(
             'Refusing to create rosbag2 dataset %s missing files: %r',
             dirpath,
@@ -91,7 +90,7 @@ def _scan_rosbag2(log, dirpath, dirnames, filenames):
         )
         return None
 
-    return DatasetInfo(dirpath.name, setfiles)
+    return DatasetInfo(dirpath.name, sorted(setfiles))
 
 
 def _add_message_types(msgpath):
