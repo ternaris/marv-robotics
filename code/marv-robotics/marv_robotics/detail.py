@@ -114,8 +114,7 @@ def bagmeta_table(bagmeta, dataset):
     rows = []
     bags = list(bagmeta.bags)
     files = list(dataset.files)
-    first = Path(files[0].path)
-    rb2path = first.parent if first.name == 'metadata.yaml' else None
+    rb2path = next((Path(x.path).parent for x in files if x.path.endswith('metadata.yaml')), None)
     for idx, file in enumerate(files):
         path = Path(file.path)
         if rb2path and path.relative_to(rb2path).parts[0] == 'messages':

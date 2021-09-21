@@ -282,9 +282,9 @@ def bagmeta(dataset):
     # pylint: disable=too-many-locals
 
     dataset = yield marv.pull(dataset)
-    files = dataset.files[:]
-    if files[0].path.endswith('metadata.yaml'):
-        meta = _read_bagmeta2(files[0].path)
+    files = list(dataset.files)
+    if metadatapath := next((x.path for x in files if x.path.endswith('metadata.yaml')), None):
+        meta = _read_bagmeta2(metadatapath)
         if meta:
             yield marv.push(meta)
             return
