@@ -28,6 +28,7 @@ Changed
 - Linter configuration and introduced yapf for automatic code formatting
 - Improve frontend loading times and overall performance
 - Tweak frontend design for improved clarity
+- Unify upload and local ingest of rosbag2, single bag, and directory-based datasets (EE)
 
 Deprecated
 ~~~~~~~~~~
