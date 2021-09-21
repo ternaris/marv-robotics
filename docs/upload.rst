@@ -46,7 +46,19 @@ Once server and leaf have been prepared uploading datasets to MARV is straightfo
 
    (leaf)$ marv-leaf upload --collection bags recording.bag
 
-This command will upload the file ``recording.bag`` to the MARV instance ``example.com`` and add the dataset to the ``bags`` collection. Upload multiple files as one dataset by placing them into one directory and pass this to ``marv-leaf upload``. For rosbag2 place additional files into the directory first. To upload multiple datasets call the command multiple times. See ``marv-leaf upload --help`` for more information.
+This command will upload the file ``recording.bag`` to the MARV instance ``example.com`` and add the dataset to the ``bags`` collection.
+
+Upload multiple files as one dataset by placing them into one directory and pass this to ``marv-leaf upload``. For rosbag2 place additional files into the directory first.
+
+To upload multiple datasets call the command multiple times. See ``marv-leaf upload --help`` for more information.
+
+
+Metadata / userdata
+^^^^^^^^^^^^^^^^^^^
+
+Optionally, pass a json file ``marv-leaf upload --meta meta.json ...`` containing one top-level ``userdata`` key with dictionary value. This *userdata* is available as ``dataset.userdata`` in nodes and config functions.
+
+Multiple uploads may use the same metadata file, the file name is not important, but the file must not reside in the directory to be uploaded.
 
 
 Return code
