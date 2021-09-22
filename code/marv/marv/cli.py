@@ -111,6 +111,7 @@ def click_async(func):
     def wrapper(*args, **kwargs):
         return asyncio.run(func(*args, **kwargs))
 
+    wrapper.orig_func = func
     return wrapper
 
 
