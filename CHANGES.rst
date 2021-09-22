@@ -32,6 +32,7 @@ Changed
 - Sort dataset files for rosbag2 scanner, dirscan was already sorting (CE)
 - Sort dataset files for uploaded and locally ingested datasets (EE)
 - Unify upload and local ingest of rosbag2, single bag, and directory-based datasets (EE)
+- Upload and ingest initial dataset userdata as annotation instead of dataset file to allow for changes (EE)
 
 Deprecated
 ~~~~~~~~~~
