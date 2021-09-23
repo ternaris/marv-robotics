@@ -423,7 +423,6 @@ class Collection:
         dataset.outdated = int(oldest_mtime * 1000) < dataset_mtime
 
     async def restore_datasets(self, data, txn=None):
-        log = getLogger('.'.join([__name__, self.name]))
         batch = []
         comments = []
         tags = []
@@ -437,13 +436,11 @@ class Collection:
                 batch.append(dataset)
                 if len(batch) > 50:
                     await Comment.bulk_create(comments, using_db=connection)
-                    await self._upsert_listing(connection, log, batch)
                     await self._add_tags(connection, tags)
                     comments.clear()
                     batch.clear()
                     tags.clear()
             await Comment.bulk_create(comments, using_db=connection)
-            await self._upsert_listing(connection, log, batch)
             await self._add_tags(connection, tags)
 
     async def _add_tags(self, connection, data):
@@ -599,7 +596,8 @@ class Collection:
         storedir = self.config.marv.storedir
         store = Store(storedir, self.nodes)
         store.add_dataset(dataset, exists_okay=_restore)
-        self.render_detail(dataset, store)
+        if not _restore:
+            self.render_detail(dataset, store)
         return dataset
 
     def render_detail(self, dataset, store=None):

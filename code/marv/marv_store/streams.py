@@ -34,7 +34,7 @@ class ReadStream(Stream):
             )
         elif msgs:
             # pylint: disable=protected-access
-            self.stream = (Wrapper(x._reader, streamdir, setdir) for x in msgs)
+            self.stream = (Wrapper(x._reader, streamdir, setdir, userdata=x.userdata) for x in msgs)
         else:
             assert not info['streams']
             path = os.path.join(streamdir, f'{handle.name}-stream')

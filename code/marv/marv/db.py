@@ -570,6 +570,10 @@ async def restore_datasets(site, dct, txn):
         await site.collections[key].restore_datasets(sets, txn)
 
 
+async def render_detail_and_listing(site, _, txn):
+    await site.render_detail_and_listing_for_all(txn)
+
+
 class Tortoise(_Tortoise):
 
     @classmethod
@@ -608,6 +612,7 @@ class Database:
     IMPORT_HANDLERS = (
         ({'users'}, restore_users),
         ({'datasets'}, restore_datasets),
+        (set(), render_detail_and_listing),
     )
 
     MODELS = MODELS

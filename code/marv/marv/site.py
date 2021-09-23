@@ -54,6 +54,8 @@ def load_sitepackages(sitepackages):
 
 class Site:
     Database = Database
+    PREFETCH_FOR_RENDER = ('files',)
+    PREFETCH_FOR_RUN = ('collection', 'files')
 
     def __init__(self, siteconf):
         self.config = make_config(siteconf)
@@ -221,24 +223,27 @@ class Site:
                 await create_or_ignore('collection', name=name, acn_id=1, txn=txn)
 
             log.verbose('Initialized database %s', self.config.marv.dburi)
-            for col, collection in self.collections.items():
-                loop = count()
-                batchsize = 50
-                # TODO: increase verbosity and probably introduce --reinit
-                while True:
-                    batch = await Dataset.filter(collection__name=col)\
-                                         .using_db(txn)\
-                                         .prefetch_related('files')\
-                                         .limit(batchsize)\
-                                         .offset(batchsize * next(loop))\
-                                         .all()
-                    for dataset in batch:
-                        collection.render_detail(dataset)
-                    if batch:
-                        await collection.update_listings(batch, txn=txn)
-                    if len(batch) < batchsize:
-                        break
+            await self.render_detail_and_listing_for_all(txn=txn)
         log.info('Initialized from %s', self.config.filename)
+
+    async def render_detail_and_listing_for_all(self, txn):
+        for col, collection in self.collections.items():
+            loop = count()
+            batchsize = 50
+            # TODO: increase verbosity and probably introduce --reinit
+            while True:
+                batch = await Dataset.filter(collection__name=col)\
+                                     .using_db(txn)\
+                                     .prefetch_related(*self.PREFETCH_FOR_RENDER)\
+                                     .limit(batchsize)\
+                                     .offset(batchsize * next(loop))\
+                                     .all()
+                for dataset in batch:
+                    collection.render_detail(dataset)
+                if batch:
+                    await collection.update_listings(batch, txn=txn)
+                if len(batch) < batchsize:
+                    break
 
     async def cleanup_discarded(self):
         descs = {key: x.table_descriptors for key, x in self.collections.items()}
@@ -272,7 +277,7 @@ class Site:
         excluded_nodes = set(excluded_nodes or [])
         async with scoped_session(self.db) as txn:
             dataset = await Dataset.get(setid=setid)\
-                                   .prefetch_related('collection', 'files')\
+                                   .prefetch_related(*self.PREFETCH_FOR_RUN)\
                                    .using_db(txn)
         collection = self.collections[dataset.collection.name]
         selected_nodes = set(selected_nodes or [])

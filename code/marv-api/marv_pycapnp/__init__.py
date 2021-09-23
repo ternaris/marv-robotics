@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import json
 from collections.abc import Mapping, Sequence
 from itertools import dropwhile, islice
 from pathlib import Path
@@ -11,7 +10,6 @@ from pickle import PickleBuffer
 from typing import TYPE_CHECKING
 
 from capnp.lib.capnp import _DynamicEnum, _DynamicListReader, _DynamicStructReader
-from ruamel.yaml import YAML
 
 if TYPE_CHECKING:
     from typing import Callable, List
@@ -90,12 +88,13 @@ class ListWrapper:
 
 class Wrapper:
 
-    def __init__(self, struct_reader, streamdir, setdir, storedir=None):
+    def __init__(self, struct_reader, streamdir, setdir, storedir=None, userdata=None):
         assert isinstance(struct_reader, _DynamicStructReader), type(struct_reader)
         self._reader = struct_reader
         self._streamdir = Path(streamdir) if streamdir else None
         self._setdir = Path(setdir) if setdir else None
         self._storedir = Path(storedir) if storedir else None
+        self.userdata = userdata
 
     def __reduce_ex__(self, protocol):
         if protocol < 5:
@@ -112,43 +111,6 @@ class Wrapper:
         }
         segments = builder.to_segments()
         return (self.from_segments, (meta, *[PickleBuffer(x) for x in segments]))
-
-    @property
-    def userdata(self):
-        """Return dataset user data from meta.json/.yaml userdata key.
-
-        User data is read from a top-level 'userdata' key in either meta.json or meta.yaml
-        searched for in that order among the dataset files.
-
-        """
-        if self._reader.schema.node.displayName != 'marv_nodes/types.capnp:Dataset':
-            raise AttributeError('path')
-
-        paths = [Path(x.path) for x in self.files]
-        if meta := next((x for x in paths if x.name == 'meta.json'), None):
-            # We can be called during local ingest before files are moved into
-            # position.
-            try:
-                dct = json.loads(meta.read_text())
-            except FileNotFoundError:
-                return None
-            return dct.get('userdata')
-
-        meta = next((x for x in paths if x.name == 'meta.yaml'), None)
-        # TODO: Waiting for https://github.com/ros2/rosbag2/issues/547
-        # if meta is None:
-        #     meta = next((x for x in paths if x.name == 'metadata.yaml'), None)
-        if meta is None:
-            return None
-
-        # We can be called during local ingest before files are moved into
-        # position.
-        yaml = YAML(typ='safe')
-        try:
-            dct = yaml.load(meta.read_text())
-        except FileNotFoundError:
-            return None
-        return dct.get('userdata')
 
     @property
     def path(self):
@@ -205,7 +167,7 @@ class Wrapper:
         return cls(struct_reader, **meta)
 
     @classmethod
-    def from_dict(cls, schema, data, setdir=None, streamdir=None):
+    def from_dict(cls, schema, data, setdir=None, streamdir=None, userdata=None):
         from marv_api.setid import SetID  # pylint: disable=import-outside-toplevel
 
         setid = data.pop('id', None)
@@ -213,7 +175,7 @@ class Wrapper:
             data['id0'], data['id1'] = setid.lohi
         dct = cls._unwrap(data)
         struct_reader = schema.new_message(**dct).as_reader()
-        return cls(struct_reader, streamdir, setdir)
+        return cls(struct_reader, streamdir, setdir, userdata=userdata)
 
     def to_dict(self, which=None):
         return _to_dict(self._reader, which=which)

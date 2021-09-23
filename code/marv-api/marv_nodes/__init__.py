@@ -1,6 +1,7 @@
 # Copyright 2016 - 2018  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+import json
 import os
 
 from capnp.lib.capnp import KjException
@@ -37,8 +38,16 @@ def load_dataset(setdir, dataset):  # pylint: disable=redefined-outer-name
         'time_added': dataset.time_added * 10**6,
         'timestamp': dataset.timestamp * 10**6,
     }
+    userdata = next(
+        (
+            json.loads(x.payload)
+            for x in getattr(dataset, 'annotations', ())
+            if x.type == 'userdata'
+        ),
+        {},
+    )
     try:
-        wrapper = Wrapper.from_dict(Dataset, dct, setdir=setdir)
+        wrapper = Wrapper.from_dict(Dataset, dct, setdir=setdir, userdata=userdata)
     except KjException as e:
         from pprint import pformat  # pylint: disable=import-outside-toplevel
         err(
