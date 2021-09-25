@@ -45,6 +45,8 @@ Replace the pattern
 
 .. code-block:: python
 
+   from marv_robotics.bag import get_message_type
+   ...
    rosmsg = get_message_type(stream)() if stream.msg_type else None
    ...
    rosmsg.deserialize(msg.data)
@@ -53,6 +55,8 @@ with
 
 .. code-block:: python
 
+   from marv_robotics.bag import make_deserialize
+   ...
    deserialize = make_deserialize(stream)
    ...
    rosmsg = deserialize(msg.data)
