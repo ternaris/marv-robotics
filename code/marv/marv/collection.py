@@ -638,7 +638,6 @@ class Collection:
         json.dump(dct, jsonfile, sort_keys=True)
         jsonfile.close()
         os.rename(os.path.join(setdir, '.detail.json'), os.path.join(setdir, 'detail.json'))
-        self._check_outdated(dataset)
 
     def render_listing(self, dataset):
         # pylint: disable=too-many-locals
