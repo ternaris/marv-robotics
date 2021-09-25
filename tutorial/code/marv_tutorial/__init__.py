@@ -175,7 +175,7 @@ def filesize_plot(filesizes):
 
     # save plotly figure to file
     plotfile = yield marv.make_file('filesizes_plotly.json')
-    Path(plotfile.path).write_text(fig.to_json())
+    Path(plotfile.path).write_text(fig.to_json(), encoding='utf-8')
 
     # create plotly widget referencing file
     widget_plotly = {
@@ -190,7 +190,7 @@ def filesize_plot(filesizes):
 
     # save mpld3 figure to file
     plotfile = yield marv.make_file('filesizes_mpld3.json')
-    Path(plotfile.path).write_text(json.dumps(mpld3.fig_to_dict(fig)))
+    Path(plotfile.path).write_text(json.dumps(mpld3.fig_to_dict(fig)), encoding='utf-8')
 
     # create mpld3 plot widget referencing file
     widget_mpld3 = {

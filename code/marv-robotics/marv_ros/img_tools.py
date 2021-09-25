@@ -102,7 +102,7 @@ def convert_color(src, src_encoding, dst_encoding):
     try:
         conversion = CONVERSIONS[(src_fmt, dst_fmt)]
     except KeyError:
-        if (src_fmt == Format.GENERIC or dst_fmt == Format.GENERIC) and src_nchan == dst_nchan:
+        if (src_fmt == Format.GENERIC or dst_fmt == Format.GENERIC) and src_nchan == dst_nchan:  # pylint: disable=consider-using-in
             conversion = None
         else:
             raise ImageConversionError(f'Conversion {src_encoding} -> {dst_encoding} not supported')

@@ -103,12 +103,12 @@ def _add_message_types(msgpath):
         for fname in sorted(files):
             path = Path(root, fname)
             if path.suffix == '.idl':
-                typs.update(get_types_from_idl(path.read_text()))
+                typs.update(get_types_from_idl(path.read_text(encoding='utf-8')))
             elif path.suffix == '.msg':
                 name = path.relative_to(path.parents[2]).with_suffix('')
                 if '/msg/' not in str(name):
                     name = name.parent / 'msg' / name.name
-                typs.update(get_types_from_msg(path.read_text(), str(name)))
+                typs.update(get_types_from_msg(path.read_text(encoding='utf-8'), str(name)))
     register_types(typs)
 
 

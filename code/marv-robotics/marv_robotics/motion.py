@@ -466,13 +466,13 @@ def motion_section(easting_northing, distance, speed, acceleration):  # pylint: 
 
     if traces['distance']['x']:
         file_en = yield marv.make_file('easting_northing.json')
-        Path(file_en.path).write_text(json.dumps(plots['en']))
+        Path(file_en.path).write_text(json.dumps(plots['en']), encoding='utf-8')
         file_dist = yield marv.make_file('distance.json')
-        Path(file_dist.path).write_text(json.dumps(plots['distance']))
+        Path(file_dist.path).write_text(json.dumps(plots['distance']), encoding='utf-8')
         file_speed = yield marv.make_file('speed.json')
-        Path(file_speed.path).write_text(json.dumps(plots['speed']))
+        Path(file_speed.path).write_text(json.dumps(plots['speed']), encoding='utf-8')
         file_accel = yield marv.make_file('acceleration.json')
-        Path(file_accel.path).write_text(json.dumps(plots['acceleration']))
+        Path(file_accel.path).write_text(json.dumps(plots['acceleration']), encoding='utf-8')
         yield marv.push(
             {
                 'title': 'Motion plots',

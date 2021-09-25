@@ -1,7 +1,7 @@
 # Copyright 2016 - 2021  Ternaris.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-# pylint: disable=too-many-lines
+# pylint: disable=no-self-use,too-many-lines
 
 import asyncio
 import json
