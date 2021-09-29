@@ -477,7 +477,11 @@ class Collection:
             await self.site.db.update_listing_relations(desc, values, relations, txn=txn)
 
         for dataset in batch:
-            log.info(f'{"updated" if update else "added"} %r', dataset)
+            log.info(
+                f'{"updated" if update else "added"} <Dataset %s %s>',
+                dataset.setid,
+                dataset.name,
+            )
 
     async def make_dataset(
         self,
