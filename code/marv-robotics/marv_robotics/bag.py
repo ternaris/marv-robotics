@@ -461,7 +461,7 @@ def raw_messages(dataset, bagmeta):  # noqa: C901  # pylint: disable=redefined-o
                 reqtop, reqtype = selector.split(':')
             except ValueError:
                 reqtop, reqtype = selector, '*'
-            else:
+            if reqtype != '*':
                 norm = normalize_msgtype(reqtype)
                 if reqtype != norm:
                     deprecated_names.add((reqtype, norm))
