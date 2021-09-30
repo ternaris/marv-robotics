@@ -90,7 +90,7 @@ def postprocess_functree(name, arguments):
 
 
 def rowdumps(*args, **kw):
-    return json.dumps(*args, sort_keys=True, separators=(',', ':'), **kw)
+    return json.dumps(*args, sort_keys=True, separators=(',', ':'), allow_nan=False, **kw)
 
 
 class Collections(Mapping):
@@ -641,7 +641,7 @@ class Collection:
             0o666,
         )
         jsonfile = os.fdopen(fd, 'w')
-        json.dump(dct, jsonfile, sort_keys=True)
+        json.dump(dct, jsonfile, sort_keys=True, allow_nan=False)
         jsonfile.close()
         os.rename(os.path.join(setdir, '.detail.json'), os.path.join(setdir, 'detail.json'))
 
