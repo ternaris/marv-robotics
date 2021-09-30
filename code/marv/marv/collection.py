@@ -5,6 +5,7 @@ import functools
 import json
 import os
 import re
+import traceback
 from collections import OrderedDict, defaultdict, namedtuple
 from collections.abc import Mapping
 from contextlib import suppress
@@ -248,7 +249,8 @@ class Collection:
             try:
                 nodename, node = find_obj(line, True)
             except (AttributeError, ModuleNotFoundError):
-                raise ConfigError(f'Collection {self.name!r} cannot find node {line!r}')
+                traceback.print_exc()
+                raise ConfigError(f'Collection {self.name!r} cannot import node {line!r}')
 
             node = Node.from_dag_node(node)
 
