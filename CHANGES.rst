@@ -20,6 +20,7 @@ Added
 - Unified keyboard control for map, pointcloud, and video players
 - Filter for datasets without specific tag in frontend (EE)
 - Userdata annotation editor in web frontend (EE)
+- Option to calculate hashes for ingest and upload in parallel (EE)
 
 Changed
 ~~~~~~~
