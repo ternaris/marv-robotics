@@ -21,6 +21,7 @@ Added
 - Filter for datasets without specific tag in frontend (EE)
 - Userdata annotation editor in web frontend (EE)
 - Option to calculate hashes for ingest and upload in parallel (EE)
+- Display of bag time during video playback and control to jump to specific time (EE)
 
 Changed
 ~~~~~~~
