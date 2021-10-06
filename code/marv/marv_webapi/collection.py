@@ -94,6 +94,8 @@ async def collection(request):  # pylint: disable=too-many-locals  # noqa: C901
     except DBPermissionError:
         raise HTTPPermissionError(request)
 
+    all_known = {k: sorted(v) if v else v for k, v in all_known.items()}
+
     # try .. except for legacy reasons. will disappear with better data structuring
     try:
         collection = site.collections[collection_id]  # pylint: disable=redefined-outer-name
