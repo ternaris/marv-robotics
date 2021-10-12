@@ -80,7 +80,6 @@ def test_config():
     assert cfg.marv.sessionkey_file == sitedir / 'sessionkey'
     assert cfg.marv.staticdir.is_absolute()
     assert cfg.marv.storedir == sitedir / 'store'
-    assert cfg.marv.upload_checkpoint_commands == ()
     assert cfg.marv.venv == sitedir / 'venv'
     assert cfg.marv.sitepackages == sitedir / 'venv' / 'lib' / \
         f'python{sysconfig.get_python_version()}' / 'site-packages'

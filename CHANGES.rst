@@ -45,6 +45,7 @@ Deprecated
 
 Removed
 ~~~~~~~
+- Checkpoint commands run before uploads (EE)
 
 Fixed
 ~~~~~

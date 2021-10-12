@@ -291,7 +291,6 @@ class MarvConfig(Model):  # type: ignore
     smtp_from: str = ''
     staticdir: Path = resource_filename('marv', 'app/static')  # type: ignore
     storedir: Path = 'store'  # type: ignore
-    upload_checkpoint_commands: Tuple[str, ...] = None  # type: ignore
     venv: Path = 'venv'  # type: ignore
 
     @property
@@ -310,7 +309,6 @@ class MarvConfig(Model):  # type: ignore
         'venv',
     )(resolve_relto_site)
     _split = reapvalidator('collections')(split)
-    _splitlines_split = reapvalidator('upload_checkpoint_commands')(splitlines_split)
     _strip = reapvalidator('reverse_proxy')(strip)
 
     @apvalidator('dburi')
