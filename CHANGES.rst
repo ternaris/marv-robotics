@@ -10,10 +10,10 @@ Changes necessitating migration reference the corresponding migration section. R
 If we're deprecating features you rely on, please speak up.
 
 
-.. _upcoming_changes:
+.. _v21.10.0:
 
-Upcoming (unreleased)
-^^^^^^^^^^^^^^^^^^^^^
+21.10.0 (2021-10-13)
+^^^^^^^^^^^^^^^^^^^^
 
 Added
 ~~~~~
@@ -26,7 +26,7 @@ Added
 
 Changed
 ~~~~~~~
-- Use rosbags library for all rosbag access **needs migration:** :ref:`migrate-upcoming`
+- Use rosbags library for all rosbag access **needs migration:** :ref:`migrate-21.10.0`
 - Update to latest rosbags and pillow python packages
 - Use ruamel.yaml instead of pyyaml
 - Linter configuration and introduced yapf for automatic code formatting
@@ -52,10 +52,6 @@ Fixed
 ~~~~~
 - Handling of topics without messages
 - Include missing DLLs in Windows leaf binaries (EE)
-
-Security
-~~~~~~~~
-
 
 .. _v21.08.1:
 

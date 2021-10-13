@@ -11,10 +11,10 @@ Listed here are all versions that necessitate migration. Depending on the versio
 In case of database migrations it is sufficient to ``marv dump`` the database with the version you are currently using and ``marv restore`` with the latest version; marv is able to *dump* itself and *restore* any older version. In case this does not hold true ``marv restore`` will complain and provide instructions what to do.
 
 
-.. _migrate-upcoming:
+.. _migrate-21.10.0:
 
-Upcoming (unreleased)
----------------------
+21.10.0
+-------
 Previously MARV shipped a fork of the upstream rosbag Python library for ROS1 bag reading and writing. These tasks are now handled by `rosbags`_ which offers better performance and a unified interface for ROS1 and ROS2 bags. One of the main user facing changes is that ROS1 message type names are now normalized to their ROS2 counterparts. While searching a database with ROS1 and ROS2 bags for images required filtering for message type ``sensor_msgs/Image`` **and** ``sensor_msgs/msg/Image`` in the past, the same query is now achieved just by filtering for ``sensor_msgs/msg/Image``.
 
 .. _rosbags: https://gitlab.com/ternaris/rosbags
