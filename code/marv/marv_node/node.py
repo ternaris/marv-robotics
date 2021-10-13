@@ -10,10 +10,11 @@ from collections import OrderedDict, namedtuple
 from contextlib import suppress
 from itertools import count, product
 from logging import getLogger
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from marv_api import dag
-from marv_api.ioctrl import NODE_SCHEMA, Abort
+from marv_api.ioctrl import NODE_SCHEMA, Abort, ResourceNotFoundError
 from marv_api.iomsgs import GetLogger, GetResourcePath
 from marv_api.utils import find_obj
 
@@ -251,7 +252,10 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
         log = getLogger(f'marv.node.{key_abbrev}')
         while True:
             try:
-                request = gen.send(response)
+                if isinstance(response, Exception):
+                    request = gen.throw(response)
+                else:
+                    request = gen.send(response)
             # TODO: Abort exception needs to invalidate previous node output
             except (Abort, StopIteration) as exc:
                 msg = str(exc)
@@ -268,7 +272,16 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
                 continue
 
             if isinstance(request, GetResourcePath):
-                response = site.config.marv.resourcedir / request.name
+                rel = Path(request.name)
+                if rel.anchor:
+                    response = ResourceNotFoundError(request.name)
+                else:
+                    basepath = site.config.marv.resourcedir
+                    fullpath = basepath.joinpath(rel).resolve()
+                    if basepath.resolve() not in fullpath.parents or not fullpath.is_file():
+                        response = ResourceNotFoundError(request.name)
+                    else:
+                        response = fullpath
                 continue
 
             qout.put_nowait(request)

@@ -5,6 +5,7 @@ from .decorators import InputNameCollisionError, input, node, select
 from .ioctrl import (
     Abort,
     ReaderError,
+    ResourceNotFoundError,
     create_group,
     create_stream,
     get_logger,
@@ -23,6 +24,7 @@ __all__ = (
     'DatasetInfo',
     'InputNameCollisionError',
     'ReaderError',
+    'ResourceNotFoundError',
     'create_group',
     'create_stream',
     'get_logger',

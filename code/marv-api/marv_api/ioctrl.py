@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 from contextvars import ContextVar
-from pathlib import Path
 
 from capnp.lib.capnp import KjException
 
@@ -33,6 +32,10 @@ class ReaderError(Exception):
     """A file could not be read, full node run is aborted."""
 
 
+class ResourceNotFoundError(Exception):
+    """Requested resource could not be found."""
+
+
 def create_stream(name, **header):
     """Create a stream for publishing messages.
 
@@ -55,13 +58,18 @@ def get_requested():
     return GetRequested()
 
 
-def get_resource_path(name):
+def get_resource_path(name: str) -> GetResourcePath:
     """Request path to resource from site/resources.
 
     Treat resource as readonly, do NOT modify.
+
+    Args:
+        name: Name of resource, interpreted as path relative to resource directory.
+
+    Returns:
+        GetRequestPath request to yield to marv.
     """
-    if Path(name).resolve().name != name:
-        raise ValueError('Resource name must be a valid file name.')
+    # We validate once we process the request and throw excepetion into node.
     return GetResourcePath(name)
 
 
