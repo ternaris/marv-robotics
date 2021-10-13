@@ -1,5 +1,7 @@
 # building documentation
 Sphinx
+sphinx-autodoc-typehints
+sphinx-rtd-theme
 sphinx_paramlinks
 
 # development

@@ -33,6 +33,7 @@ Changed
 - Tweak frontend design for improved clarity
 - Improved error message for failed import of node
 - Adhere to strict JSON for rendered details and listing
+- Switch to documentation theme with better use of horizontal space
 - Sort dataset files for rosbag2 scanner, dirscan was already sorting (CE)
 - Sort dataset files for uploaded and locally ingested datasets (EE)
 - Unify upload and local ingest of rosbag2, single bag, and directory-based datasets (EE)
