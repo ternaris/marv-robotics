@@ -85,7 +85,7 @@ pages:
   image: alpine:latest
   rules:
     - if: '$CI_PIPELINE_SOURCE != "schedule" &&
-           ($CI_COMMIT_BRANCH == "master" || $CI_COMMIT_TAG =~ /^v\d\d\.\d\d\.\d+ce$/)'
+           ($CI_COMMIT_BRANCH == "master" || $CI_COMMIT_TAG =~ /^v\d\d\.\d\d\.\d\+ce$/)'
   needs:
     - Image
     - pytest
