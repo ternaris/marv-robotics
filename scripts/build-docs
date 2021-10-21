@@ -11,10 +11,6 @@ sphinx-build --help >/dev/null 2>&1 || (
     echo "ERROR: sphinx-build is not available, have you activated the virtualenv?"
     exit 1
 )
-marv --help >/dev/null 2>&1 || (
-    echo "ERROR: marv is not available, have you activated the virtualenv?"
-    exit 1
-)
 
 make clean
 make html
