@@ -20,6 +20,7 @@ Added
 
 Changed
 ~~~~~~~
+- Timeout settings for direct leaf upload (EE)
 
 Deprecated
 ~~~~~~~~~~
