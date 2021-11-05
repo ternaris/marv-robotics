@@ -29,6 +29,7 @@ Removed
 
 Fixed
 ~~~~~
+- Oauth login form (EE)
 
 Security
 ~~~~~~~~
