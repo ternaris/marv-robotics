@@ -21,6 +21,7 @@ Added
 
 Changed
 ~~~~~~~
+- Update to rosbags 0.9.7
 - Timeout settings for direct leaf upload (EE)
 
 Deprecated
