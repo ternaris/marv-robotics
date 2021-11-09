@@ -278,7 +278,7 @@ class Node(Keyed):  # pylint: disable=too-many-instance-attributes
                 else:
                     basepath = site.config.marv.resourcedir
                     fullpath = basepath.joinpath(rel).resolve()
-                    if basepath.resolve() not in fullpath.parents or not fullpath.is_file():
+                    if basepath.resolve() not in fullpath.parents or not fullpath.exists():
                         response = ResourceNotFoundError(request.name)
                     else:
                         response = fullpath

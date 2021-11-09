@@ -17,6 +17,7 @@ Upcoming (unreleased)
 
 Added
 ~~~~~
+- Support to fetch path to site resource directory in addition to files
 
 Changed
 ~~~~~~~
