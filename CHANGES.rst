@@ -31,6 +31,7 @@ Removed
 
 Fixed
 ~~~~~
+- Regression in rosbag2 reader for datasets without message definitions
 - Oauth login form (EE)
 
 Security

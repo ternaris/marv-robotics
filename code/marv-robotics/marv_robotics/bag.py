@@ -413,8 +413,11 @@ def raw_messages(dataset, bagmeta):  # noqa: C901  # pylint: disable=redefined-o
         reader = rosbag2.Reader(rosbag_path)
         msgpath = rosbag_path / 'messages'
         if not msgpath.exists():
-            msgpath = yield marv.get_resource_path('messages')
-        if msgpath.exists():
+            try:
+                msgpath = yield marv.get_resource_path('messages')
+            except marv.ResourceNotFoundError:
+                msgpath = None
+        if msgpath and msgpath.exists():
             _add_message_types(msgpath)
     except rosbag2.ReaderError:
         reader = None
