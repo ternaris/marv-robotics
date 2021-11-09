@@ -7,6 +7,7 @@ import asyncio
 import code
 import functools
 import json
+import os
 import signal
 import sqlite3
 import sys
@@ -971,6 +972,7 @@ async def marvcli_group_rm(ctx, groupname):
 @marvcli.group('pip', hidden=not marv_ee)
 def marvcli_pip():
     """Integrate pip commands (EE)."""
+    os.environ['PIP_DISABLE_PIP_VERSION_CHECK'] = '1'
 
 
 def ensure_python(siteconf, sitepackages):
@@ -1000,7 +1002,7 @@ def marvcli_pip_install(pipargs):
     sitepackages = config.marv.sitepackages
     load_sitepackages(sitepackages)
     ensure_python(siteconf, sitepackages)
-    from pip._internal.main import main as pip_main  # pylint: disable=import-outside-toplevel
+    from pip._internal.cli.main import main as pip_main  # pylint: disable=import-outside-toplevel
     sys.argv = [sys.executable, 'install', '--prefix', str(config.marv.venv), *pipargs]
     sys.exit(pip_main())
 
@@ -1014,7 +1016,7 @@ def marvcli_pip_uninstall(pipargs):
     sitepackages = make_config(siteconf).marv.sitepackages
     load_sitepackages(sitepackages)
     ensure_python(siteconf, sitepackages)
-    from pip._internal.main import main as pip_main  # pylint: disable=import-outside-toplevel
+    from pip._internal.cli.main import main as pip_main  # pylint: disable=import-outside-toplevel
     sys.argv = [sys.executable, 'uninstall', *pipargs]
     sys.exit(pip_main())
 

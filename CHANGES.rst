@@ -23,6 +23,7 @@ Changed
 ~~~~~~~
 - Update to rosbags 0.9.7
 - Timeout settings for direct leaf upload (EE)
+- Disable pip version checks for bundled pip (EE)
 
 Deprecated
 ~~~~~~~~~~
