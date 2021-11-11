@@ -520,8 +520,6 @@ def raw_messages(dataset, bagmeta):  # noqa: C901  # pylint: disable=redefined-o
 
 messages = raw_messages  # pylint: disable=invalid-name
 
-_ConnectionInfo = namedtuple('_ConnectionInfo', 'md5sum datatype msg_def')
-
 
 def make_deserialize(stream):
     """Create appropriate deserialize function for rosbag1 and 2."""
