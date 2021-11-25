@@ -21,7 +21,7 @@ Added
 
 Changed
 ~~~~~~~
-- Update to rosbags 0.9.7
+- Update to rosbags 0.9.8 for support of Empty message type and bool and float constants
 - Timeout settings for direct leaf upload (EE)
 - Disable pip version checks for bundled pip (EE)
 
