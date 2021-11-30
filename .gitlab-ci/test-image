@@ -20,10 +20,14 @@ RUN chown -R 1000:1000 /home/marv
 EOF
 
 # Start container
-ID=$(docker run --rm --detach \
+ID=$(docker run --detach \
     -e DEBUG=1 -e MARV_UID=1000 -e MARV_GID=1000 -e TIMEZONE=Europe/Berlin \
     "$TARGET")
-{ docker logs -f "$ID" 2>&1 & } | grep -q 'Container startup complete.'
+if ! { docker logs -f "$ID" 2>&1 & } | grep -q 'Container startup complete.'; then
+    docker logs "$ID"
+    docker rm -f "$ID"
+    exit 1
+fi
 
 # Scan and run first to give marv server to finish startup as well
 docker exec "$ID" bash -lc 'marv scan'
