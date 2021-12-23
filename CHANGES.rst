@@ -10,10 +10,10 @@ Changes necessitating migration reference the corresponding migration section. R
 If we're deprecating features you rely on, please speak up.
 
 
-.. _upcoming_changes:
+.. _v21.12.0:
 
-Upcoming (unreleased)
-^^^^^^^^^^^^^^^^^^^^^
+21.12.0 (2021-12-23)
+^^^^^^^^^^^^^^^^^^^^
 
 Added
 ~~~~~
@@ -25,20 +25,10 @@ Changed
 - Timeout settings for direct leaf upload (EE)
 - Disable pip version checks for bundled pip (EE)
 
-Deprecated
-~~~~~~~~~~
-
-Removed
-~~~~~~~
-
 Fixed
 ~~~~~
 - Regression in rosbag2 reader for datasets without message definitions
 - Oauth login form (EE)
-
-Security
-~~~~~~~~
-
 
 .. _v21.10.0:
 
